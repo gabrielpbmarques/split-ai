@@ -18,11 +18,11 @@ export class ValidateTokenService {
             token: payload.token
         });
 
-        const expired = token.expiresAt < new Date();
-
         if (!token) {
             throw new Error('Token inválido');
         }
+        
+        const expired = token.expiresAt < new Date();
 
         if (expired) {
             throw new Error('Token expirado');
