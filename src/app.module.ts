@@ -1,18 +1,18 @@
 import { Module } from '@nestjs/common';
-import { AuthGuard } from './auth/auth.guard';
-import { APP_GUARD } from '@nestjs/core';
-import { JwtService } from '@nestjs/jwt';
-import { CreateUserModule } from './components/User/CreateUser/CreateUser.module';
+// import { AuthGuard } from './auth/auth.guard';
+// import { APP_GUARD } from '@nestjs/core';
+// import { JwtService } from '@nestjs/jwt';
+import { CreateTokenModule } from './components/Token/CreateToken/CreateToken.module';
+import { DatabaseModule } from './database/database.module';
+import { ValidateTokenModule } from './components/Token/ValidateToken/ValidateToken.module';
 
 @Module({
-  imports: [CreateUserModule],
-  controllers: [],
-  providers: [
-    JwtService,
-    {
-      provide: APP_GUARD,
-      useClass: AuthGuard,
-    },
+  imports: [
+    DatabaseModule,
+    CreateTokenModule,
+    ValidateTokenModule
   ],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}
