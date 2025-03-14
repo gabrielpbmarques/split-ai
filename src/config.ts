@@ -5,13 +5,13 @@ dotenv.config();
 interface IConfig {
   env: string;
   jwtSecret: string;
-  dbUrl: string;
+  mongoUri: string;
   sentryDsn: string;
 }
 
 export const config: IConfig = {
   env: process.env.MODE,
   jwtSecret: process.env.JWT_SECRET,
-  dbUrl: process.env.DB_URL,
+  mongoUri: process.env.MONGO_URI || 'mongodb://localhost:27017/token-service',
   sentryDsn: process.env.SENTRY_DSN,
 };

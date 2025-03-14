@@ -1,5 +1,7 @@
+import { ObjectId } from "mongoose";
+
 export interface User {
-  readonly id: string;
+  readonly id: ObjectId;
 
   firstName: string;
   lastName: string;
