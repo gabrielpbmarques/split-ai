@@ -7,7 +7,6 @@ import {
 import * as cors from 'cors';
 import { config } from './config';
 import { initSentryIo } from './observability/sentry.provider';
-import { database } from 'knexfile';
 
 async function bootstrap() {
   let sentry: any;
@@ -27,7 +26,6 @@ async function bootstrap() {
   }
   app.use(cors());
 
-  await database.migrate.latest();
   await app.listen(3000);
 }
 bootstrap();
