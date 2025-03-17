@@ -39,7 +39,6 @@ export class TokenRepository implements ITokenRepository {
     const result = await this.tokenModel.findOne({ 
       workerId: workerId as unknown as ObjectId, 
       activityId: activityId as unknown as ObjectId,
-      expiresAt: { $gt: new Date() },
       type
     }, {
       expiresAt: 1,

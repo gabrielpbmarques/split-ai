@@ -11,6 +11,6 @@ export class CalculateCheckDigitService {
           sum += digit * primes[index % primes.length];
         });
         
-        return sum % 19;
+        return sum % 10;
     }
 }

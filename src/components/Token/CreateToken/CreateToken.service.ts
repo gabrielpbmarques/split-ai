@@ -14,14 +14,14 @@ export class CreateTokenService {
   ) {}
 
   async execute(payload: CreateTokenDTO): Promise<Pick<Token, 'token' | 'expiresAt'>> {
-    const existingToken = await this.tokenRepository.findByWorkerAndActivity(
-      payload.workerId,
-      payload.activityId,
-      payload.type
-    );
+    if (payload.type !== 'checkIn') {
+      const hasCheckIn = await this.tokenRepository.findByWorkerAndActivity(
+        payload.workerId,
+        payload.activityId,
+        "checkIn"
+      );
 
-    if (existingToken) {
-      return existingToken;
+      if (!hasCheckIn) throw new Error('É necessário solicitar o checkIn antes');
     }
 
     const baseToken = Array.from({ length: 6 }, () => Math.floor(Math.random() * 10)).join('');
