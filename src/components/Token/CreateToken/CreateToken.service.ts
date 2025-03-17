@@ -3,6 +3,7 @@ import { Token } from 'src/models/Token.model';
 import { TokenRepository } from 'src/repositories/Token.repository';
 import { CreateTokenDTO } from './CreateToken.dto';
 import { CalculateCheckDigitService } from '../CalculateCheckDigit/CalculateCheckDigit.service';
+import { config } from 'src/config';
 
 @Injectable()
 export class CreateTokenService {
@@ -11,7 +12,7 @@ export class CreateTokenService {
     private readonly calculateCheckDigitService: CalculateCheckDigitService
   ) {}
 
-  async execute(payload: CreateTokenDTO): Promise<Token> {
+  async execute(payload: CreateTokenDTO): Promise<Pick<Token, 'token' | 'expiresAt'>> {
     const existingToken = await this.tokenRepository.findByWorkerAndActivity(
       payload.workerId,
       payload.activityId,
@@ -25,8 +26,7 @@ export class CreateTokenService {
     const baseToken = Array.from({ length: 6 }, () => Math.floor(Math.random() * 10)).join('');
     const checkDigit = this.calculateCheckDigitService.execute(baseToken);
 
-    // expiration time should be 1 minute from now
-    const expiresAt = payload.expiresAt || new Date(new Date().getTime() + 60000);
+    const expiresAt = payload.expiresAt || new Date(new Date().getTime() + config.tokenExpirationTime);
 
     const newToken: Omit<Token, '_id' | 'createdAt' | 'updatedAt'> = {
       token: `${baseToken}-${checkDigit}`,

@@ -10,9 +10,9 @@ export class ValidateTokenService {
         private readonly calculateCheckDigitService: CalculateCheckDigitService
     ) { }
 
-    async execute(payload: ValidateTokenDTO): Promise<boolean> {
+    async execute(payload: ValidateTokenDTO, workerId: string): Promise<boolean> {
         const token = await this.tokenRepository.findOne({
-            workerId: payload.workerId,
+            workerId,
             activityId: payload.activityId,
             type: payload.type,
             token: payload.token

@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, ObjectId, Schema as MongooseSchema } from 'mongoose';
+import { TokenType } from 'src/types/TokenType';
 
 export type TokenDocument = HydratedDocument<Token>;
 
@@ -19,7 +20,7 @@ export class Token {
   workerId: ObjectId;
 
   @Prop({ type: String, required: true })
-  type: "checkIn" | "checkOut";
+  type: TokenType;
 }
 
 export const TokenSchema = SchemaFactory.createForClass(Token);

@@ -1,4 +1,5 @@
 import { ObjectId } from "mongoose";
+import { TokenType } from "src/types/TokenType";
 
 export interface Token {
   _id?: ObjectId;
@@ -6,7 +7,7 @@ export interface Token {
   expiresAt: Date;
   activityId: ObjectId;
   workerId: ObjectId;
-  type: "checkIn" | "checkOut";
+  type: TokenType;
   createdAt?: Date;
   updatedAt?: Date;
 }

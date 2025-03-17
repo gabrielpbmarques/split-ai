@@ -3,38 +3,44 @@ import {
   ExecutionContext,
   Injectable,
   UnauthorizedException,
+  ForbiddenException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { FastifyRequest } from 'fastify';
-import { config } from 'src/config';
+import { Observable } from 'rxjs';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  constructor(private jwtService: JwtService) {}
-
-  async canActivate(context: ExecutionContext): Promise<boolean> {
+  canActivate(
+    context: ExecutionContext,
+  ): boolean | Promise<boolean> | Observable<boolean> {
     const request = context.switchToHttp().getRequest();
-    const token = this.extractTokenFromHeader(request);
-    if (!token) {
-      throw new UnauthorizedException('Token not provided');
-    }
-    try {
-      const payload = await this.jwtService.verifyAsync(token, {
-        secret: config.jwtSecret,
-      });
+    const [_, token] = request.headers.authorization?.split(' ') ?? [];
 
-      request['user'] = {
-        id: payload.sub,
-        organizationId: payload.organization_id,
-      };
-    } catch {
+    if (!token) {
       throw new UnauthorizedException();
     }
+
+    const payload = parseJwt(token);
+    request.user = payload;
+
+    const url = request.url;
+    const userType = payload.userType;
+
+    if (url.startsWith('/validate-token') && userType !== 'worker') {
+      throw new ForbiddenException('Only workers can access this endpoint');
+    }
+
+    if (url.startsWith('/token') && userType !== 'establishment' && userType !== 'company') {
+      throw new ForbiddenException('Only establishments and companies can access this endpoint');
+    }
+
     return true;
   }
+}
 
-  private extractTokenFromHeader(request: FastifyRequest): string | undefined {
-    const [type, token] = request.headers.authorization?.split(' ') ?? [];
-    return type === 'Bearer' ? token : undefined;
+export function parseJwt(token: string): any {
+  try {
+    return JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+  } catch {
+    throw new UnauthorizedException();
   }
 }

@@ -1,8 +1,8 @@
 import { ObjectId } from "mongoose";
+import { TokenType } from "src/types/TokenType";
 
 export class ValidateTokenDTO {
   activityId: ObjectId;
-  workerId: ObjectId;
   token: string;
-  type: "checkIn" | "checkOut";
+  type: TokenType;
 }

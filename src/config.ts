@@ -7,6 +7,7 @@ interface IConfig {
   jwtSecret: string;
   mongoUri: string;
   sentryDsn: string;
+  tokenExpirationTime: number;
 }
 
 export const config: IConfig = {
@@ -14,4 +15,5 @@ export const config: IConfig = {
   jwtSecret: process.env.JWT_SECRET,
   mongoUri: process.env.MONGO_URI || 'mongodb://localhost:27017/token-service',
   sentryDsn: process.env.SENTRY_DSN,
+  tokenExpirationTime: Number(process.env.TOKEN_EXPIRATION_TIME),
 };

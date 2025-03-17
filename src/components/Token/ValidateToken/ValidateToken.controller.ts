@@ -1,6 +1,6 @@
-import { Body, Controller, Post, Res } from '@nestjs/common';
+import { Body, Controller, Post, Res, Req } from '@nestjs/common';
 import { ValidateTokenService } from './ValidateToken.service';
-import { FastifyReply } from 'fastify';
+import { FastifyReply, FastifyRequest } from 'fastify';
 import { ValidateTokenDTO } from './ValidateToken.dto';
 
 @Controller('validate-token')
@@ -11,9 +11,11 @@ export class ValidateTokenController {
     async handle(
         @Body() validateTokenDTO: ValidateTokenDTO,
         @Res() reply: FastifyReply,
+        @Req() request: FastifyRequest,
     ): Promise<void> {
         try {
-            const token = await this.validateTokenService.execute(validateTokenDTO);
+            const workerId = request.user.workerId;
+            const token = await this.validateTokenService.execute(validateTokenDTO, workerId);
             reply.status(200).send(token);
         } catch (error) {
             reply.status(400).send({
