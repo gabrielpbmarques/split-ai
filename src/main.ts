@@ -11,19 +11,41 @@ import { initSentryIo } from './observability/sentry.provider';
 async function bootstrap() {
   let sentry: any;
 
-  const app = await NestFactory.create<NestFastifyApplication>(
-    AppModule,
-    new FastifyAdapter({
-      logger: true,
-    }),
-  );
+  const fastifyAdapter = new FastifyAdapter({
+    logger: true,
+  });
 
+  // Initialize Sentry before creating the app
   if (config.env === 'production') {
     sentry = initSentryIo();
-    app.use(sentry?.Handlers.requestHandler());
-    app.use(sentry?.Handlers.tracingHandler());
-    app.use(sentry?.Handlers.errorHandler());
+
+    // Add Sentry request hooks for Fastify
+    fastifyAdapter
+      .getInstance()
+      .addHook('onRequest', (request, reply, done) => {
+        sentry.setUser({ ip_address: request.ip });
+        sentry.setContext('request', {
+          method: request.method,
+          url: request.url,
+          headers: request.headers,
+        });
+        done();
+      });
+
+    // Add Sentry error hook for Fastify
+    fastifyAdapter
+      .getInstance()
+      .addHook('onError', (request, reply, error, done) => {
+        sentry.captureException(error);
+        done();
+      });
   }
+
+  const app = await NestFactory.create<NestFastifyApplication>(
+    AppModule,
+    fastifyAdapter,
+  );
+
   app.enableCors();
 
   // Use PORT environment variable provided by Cloud Run, fallback to 80 for local development
