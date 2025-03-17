@@ -19,8 +19,14 @@ export class Token {
   @Prop({ required: true, type: MongooseSchema.Types.ObjectId })
   workerId: ObjectId;
 
+  @Prop({ type: Boolean, default: false })
+  validated: boolean;
+
   @Prop({ type: String, required: true })
   type: TokenType;
+
+  @Prop({ type: Date, default: null })
+  validatedAt: Date;
 }
 
 export const TokenSchema = SchemaFactory.createForClass(Token);

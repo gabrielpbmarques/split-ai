@@ -1,4 +1,5 @@
 import { ObjectId } from "mongoose";
+import { TokenType } from "src/types/TokenType";
 
 export interface Coordinates {
   type: string;
@@ -27,6 +28,13 @@ export interface ActivityAddress {
   number: number;
   neighborhood: string;
   cep: string;
+}
+
+export interface Token {
+  _id: ObjectId;
+  type: TokenType;
+  validated: boolean;
+  validatedAt: Date;
 }
 
 export interface Activity {
@@ -97,4 +105,5 @@ export interface Activity {
   endDateTime: Date;
   workerId: string;
   checkIn: ObjectId;
+  tokens: Token[];
 }

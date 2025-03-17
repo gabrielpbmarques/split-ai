@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, ObjectId, Schema as MongooseSchema } from 'mongoose';
+import { TokenType } from 'src/types/TokenType';
 
 export type ActivityDocument = HydratedDocument<Activity>;
 
@@ -64,6 +65,21 @@ class ActivityAddress {
 
   @Prop({ type: String })
   cep: string;
+}
+
+@Schema({ timestamps: false })
+export class Token {
+  @Prop({ required: true, type: MongooseSchema.Types.ObjectId, immutable: true })
+  _id: ObjectId;
+
+  @Prop({ type: String, required: true, immutable: true })
+  type: TokenType;
+
+  @Prop({ type: Boolean, default: false, immutable: true })
+  validated: boolean;
+
+  @Prop({ type: Date, required: true })
+  validatedAt: Date;
 }
 
 @Schema({ timestamps: true })
@@ -259,6 +275,9 @@ export class Activity {
 
   @Prop({ type: MongooseSchema.Types.ObjectId })
   checkIn: ObjectId;
+
+  @Prop({ type: [Token], default: [] })
+  tokens: Token[];
 }
 
 export const ActivitySchema = SchemaFactory.createForClass(Activity);

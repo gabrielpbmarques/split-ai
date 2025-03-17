@@ -10,7 +10,8 @@ export interface ITokenRepository {
   findOne(query: FilterQuery<TokenDocument>): Promise<Token | null>;
   findById(id: string): Promise<Token | null>;
   findByToken(token: string): Promise<Token | null>;
-  findByWorkerAndActivity(workerId: ObjectId, activityId: ObjectId, type: TokenType): Promise<Token | null>;
+  findByWorkerAndActivity(workerId: string, activityId: string, type: TokenType): Promise<Token | null>;
+  updateOne(id: ObjectId, payload: Partial<Token>): Promise<Token>;
 }
 
 @Injectable()
@@ -34,10 +35,10 @@ export class TokenRepository implements ITokenRepository {
     return result as unknown as Token | null;
   }
 
-  async findByWorkerAndActivity(workerId: ObjectId, activityId: ObjectId, type: TokenType): Promise<Token | null> {
+  async findByWorkerAndActivity(workerId: string, activityId: string, type: TokenType): Promise<Token | null> {
     const result = await this.tokenModel.findOne({ 
-      workerId, 
-      activityId,
+      workerId: workerId as unknown as ObjectId, 
+      activityId: activityId as unknown as ObjectId,
       expiresAt: { $gt: new Date() },
       type
     }, {
@@ -49,6 +50,11 @@ export class TokenRepository implements ITokenRepository {
 
   async findOne(query: FilterQuery<TokenDocument>): Promise<Token | null> {
     const result = await this.tokenModel.findOne(query).exec();
+    return result as unknown as Token | null;
+  }
+
+  async updateOne(id: ObjectId, payload: Partial<Token>): Promise<Token> {
+    const result = await this.tokenModel.findByIdAndUpdate(id, payload, { new: true }).exec();
     return result as unknown as Token | null;
   }
 }

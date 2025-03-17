@@ -8,6 +8,8 @@ export interface Token {
   activityId: ObjectId;
   workerId: ObjectId;
   type: TokenType;
+  validated: boolean;
+  validatedAt?: Date;
   createdAt?: Date;
   updatedAt?: Date;
 }

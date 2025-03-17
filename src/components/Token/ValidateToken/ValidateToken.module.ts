@@ -7,6 +7,7 @@ import { DatabaseModule } from 'src/database/database.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Activity, ActivitySchema } from 'src/schemas/Activity.schema';
 import { Token, TokenSchema } from 'src/schemas/Token.schema';
+import { UpdateActivityTokenModule } from 'src/components/Activity/UpdateActivityToken/UpdateActivityToken.module';
 
 @Module({
   imports: [
@@ -14,7 +15,8 @@ import { Token, TokenSchema } from 'src/schemas/Token.schema';
     MongooseModule.forFeature([
       { name: Activity.name, schema: ActivitySchema },
       { name: Token.name, schema: TokenSchema }
-    ])
+    ]),
+    UpdateActivityTokenModule
   ],
   providers: [ValidateTokenService, TokenRepository, CalculateCheckDigitService],
   controllers: [ValidateTokenController]

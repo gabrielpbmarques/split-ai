@@ -4,6 +4,7 @@ import { TokenRepository } from 'src/repositories/Token.repository';
 import { CreateTokenDTO } from './CreateToken.dto';
 import { CalculateCheckDigitService } from '../CalculateCheckDigit/CalculateCheckDigit.service';
 import { config } from 'src/config';
+import { ObjectId } from 'mongoose';
 
 @Injectable()
 export class CreateTokenService {
@@ -31,9 +32,10 @@ export class CreateTokenService {
     const newToken: Omit<Token, '_id' | 'createdAt' | 'updatedAt'> = {
       token: `${baseToken}-${checkDigit}`,
       expiresAt,
-      activityId: payload.activityId,
-      workerId: payload.workerId,
-      type: payload.type
+      activityId: payload.activityId as unknown as ObjectId,
+      workerId: payload.workerId as unknown as ObjectId,
+      type: payload.type,
+      validated: false
     };
 
     return this.tokenRepository.create(newToken);
