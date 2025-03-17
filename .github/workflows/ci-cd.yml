@@ -1,0 +1,103 @@
+name: CI/CD for Token Service
+
+concurrency:
+  group: ci-cd-token-service-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - master
+      - develop
+  pull_request:
+    types: ['opened', 'synchronize', 'reopened', 'ready_for_review']
+    branches:
+      - master
+      - develop
+    paths:
+      - src/**
+      - .github/workflows/**
+  workflow_dispatch:
+
+jobs:
+  ci:
+    name: CI
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Run tests
+        run: bun run test
+
+      - uses: jwalton/gh-find-current-pr@v1
+        if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
+        id: findPr
+        with:
+          state: open
+
+  cd-prod:
+    name: Deploy Prod
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    needs: ci
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - id: 'auth'
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
+          token_format: 'access_token'
+
+      - name: Docker configuration
+        uses: 'docker/login-action@v2'
+        with:
+          registry: 'us-docker.pkg.dev'
+          username: 'oauth2accesstoken'
+          password: '${{ steps.auth.outputs.access_token }}'
+
+      - name: Cache docker image layers
+        uses: satackey/action-docker-layer-caching@v0.0.11
+        continue-on-error: true
+
+      - name: Build Prod Docker Image
+        env:
+          ENV: production
+          GCP_DOCKER_IMAGE: us-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/gcr.io/token-service
+          GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
+        run: docker build -t $GCP_DOCKER_IMAGE:${GITHUB_SHA::8} .
+
+      - name: Publish Prod
+        run: |-
+          docker push "us-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/gcr.io/token-service:${GITHUB_SHA::8}"
+
+      - name: Deploy Prod
+        env:
+          ENV: production
+          GCP_DOCKER_IMAGE: us-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/gcr.io/token-service
+          CLOUDSDK_CORE_PROJECT: ${{ secrets.GCP_PROJECT }}
+          CLOUDSDK_COMPUTE_REGION: southamerica-east1
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          TOKEN_EXPIRATION_TIME: ${{ secrets.TOKEN_EXPIRATION_TIME }}
+        run: |-
+          gcloud run deploy token-service --region $CLOUDSDK_COMPUTE_REGION \
+          --image $GCP_DOCKER_IMAGE:${GITHUB_SHA::8} \
+          --set-env-vars NODE_ENV=$ENV \
+          --set-env-vars MONGO_URI=$MONGO_URI \
+          --set-env-vars SENTRY_DSN=$SENTRY_DSN \
+          --set-env-vars TOKEN_EXPIRATION_TIME=$TOKEN_EXPIRATION_TIME \
+          --set-env-vars GCP_PROJECT_ID=$CLOUDSDK_CORE_PROJECT
