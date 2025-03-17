@@ -1,14 +1,17 @@
-import { AuthGuard, parseJwt } from './auth.guard';
+import { AuthGuard, parseJwt, IS_PUBLIC_KEY } from './auth.guard';
 import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { ExecutionContext } from '@nestjs/common';
 
 describe('AuthGuard', () => {
   let guard: AuthGuard;
   let mockContext: any;
   let mockRequest: any;
+  let reflector: Reflector;
 
   beforeEach(() => {
-    guard = new AuthGuard();
+    reflector = new Reflector();
+    guard = new AuthGuard(reflector);
     mockRequest = {
       headers: {},
       url: '',
@@ -17,7 +20,9 @@ describe('AuthGuard', () => {
       switchToHttp: () => ({
         getRequest: () => mockRequest,
       }),
-    } as ExecutionContext;
+      getHandler: () => ({}),
+      getClass: () => ({}),
+    } as unknown as ExecutionContext;
   });
 
   it('should be defined', () => {
@@ -25,7 +30,26 @@ describe('AuthGuard', () => {
   });
 
   describe('canActivate', () => {
+    it('should allow access if endpoint is marked as public', () => {
+      jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(true);
+
+      const result = guard.canActivate(mockContext);
+
+      expect(result).toBe(true);
+    });
+
+    it('should proceed with authorization if endpoint is not public', () => {
+      jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(false);
+      const payload = { userType: 'establishment' };
+      const token = generateMockJwt(payload);
+      mockRequest.headers.authorization = `Bearer ${token}`;
+
+      const result = guard.canActivate(mockContext);
+
+      expect(result).toBe(true);
+    });
     it('should throw UnauthorizedException when no token is provided', () => {
+      jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(false);
       mockRequest.headers.authorization = undefined;
 
       expect(() => guard.canActivate(mockContext)).toThrow(
@@ -34,6 +58,7 @@ describe('AuthGuard', () => {
     });
 
     it('should throw UnauthorizedException for invalid token format', () => {
+      jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(false);
       mockRequest.headers.authorization = 'Bearer invalid';
 
       expect(() => guard.canActivate(mockContext)).toThrow(
@@ -42,6 +67,7 @@ describe('AuthGuard', () => {
     });
 
     it('should allow access to token endpoint for establishment users', () => {
+      jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(false);
       const payload = { userType: 'establishment' };
       const token = generateMockJwt(payload);
       mockRequest.headers.authorization = `Bearer ${token}`;
@@ -54,6 +80,7 @@ describe('AuthGuard', () => {
     });
 
     it('should allow access to token endpoint for company users', () => {
+      jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(false);
       const payload = { userType: 'company' };
       const token = generateMockJwt(payload);
       mockRequest.headers.authorization = `Bearer ${token}`;
@@ -66,6 +93,7 @@ describe('AuthGuard', () => {
     });
 
     it('should throw ForbiddenException for worker user accessing token endpoint', () => {
+      jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(false);
       const payload = { userType: 'worker' };
       const token = generateMockJwt(payload);
       mockRequest.headers.authorization = `Bearer ${token}`;
@@ -75,6 +103,7 @@ describe('AuthGuard', () => {
     });
 
     it('should allow access to validate-token endpoint for worker users', () => {
+      jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(false);
       const payload = { userType: 'worker' };
       const token = generateMockJwt(payload);
       mockRequest.headers.authorization = `Bearer ${token}`;
@@ -87,6 +116,7 @@ describe('AuthGuard', () => {
     });
 
     it('should throw ForbiddenException for establishment user accessing validate-token endpoint', () => {
+      jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(false);
       const payload = { userType: 'establishment' };
       const token = generateMockJwt(payload);
       mockRequest.headers.authorization = `Bearer ${token}`;
