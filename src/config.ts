@@ -10,7 +10,7 @@ interface IConfig {
 }
 
 export const config: IConfig = {
-  env: process.env.ENV,
+  env: process.env.ENV || process.env.NODE_ENV,
   mongoUri: process.env.MONGO_URI || 'mongodb://localhost:27017/token-service',
   sentryDsn: process.env.SENTRY_DSN,
   tokenExpirationTime: Number(process.env.TOKEN_EXPIRATION_TIME),
