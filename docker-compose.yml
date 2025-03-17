@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  token-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: token-service
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    env_file:
+      - .env
+    environment:
+      - BUN_ENV=development
+    networks:
+      - token-network
+
+networks:
+  token-network:
+    driver: bridge

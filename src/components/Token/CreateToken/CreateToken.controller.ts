@@ -1,5 +1,5 @@
 import { Body, Controller, Post, Res } from '@nestjs/common';
-import { FastifyReply } from 'fastify';
+import type { FastifyReply } from 'fastify';
 import { CreateTokenService } from './CreateToken.service';
 import { CreateTokenDTO } from './CreateToken.dto';
 
@@ -18,7 +18,7 @@ export class CreateTokenController {
     } catch (error) {
       reply.status(400).send({
         message: error.message || 'Erro ao criar token',
-        statusCode: 400
+        statusCode: 400,
       });
     }
   }

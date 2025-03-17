@@ -4,7 +4,7 @@ import {
   FastifyAdapter,
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
-import * as cors from 'cors';
+// Using Fastify's built-in CORS support instead of the cors package
 import { config } from './config';
 import { initSentryIo } from './observability/sentry.provider';
 
@@ -24,7 +24,7 @@ async function bootstrap() {
     app.use(sentry?.Handlers.tracingHandler());
     app.use(sentry?.Handlers.errorHandler());
   }
-  app.use(cors());
+  app.enableCors();
 
   await app.listen(3000);
 }

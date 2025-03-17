@@ -3,7 +3,7 @@ import { UpdateActivityTokenService } from './UpdateActivityToken.service';
 import { ActivityRepository } from 'src/repositories/Activity.repository';
 import { Activity } from 'src/models/Activity.model';
 import { ObjectId } from 'mongoose';
-import { TokenType } from 'src/types/TokenType';
+import type { TokenType } from 'src/types/TokenType';
 
 describe('UpdateActivityTokenService', () => {
   let service: UpdateActivityTokenService;

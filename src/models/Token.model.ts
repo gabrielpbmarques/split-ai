@@ -1,5 +1,5 @@
-import { ObjectId } from "mongoose";
-import { TokenType } from "src/types/TokenType";
+import { ObjectId } from 'mongoose';
+import type { TokenType } from 'src/types/TokenType';
 
 export interface Token {
   _id?: ObjectId;

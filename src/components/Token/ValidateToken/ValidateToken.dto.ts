@@ -1,5 +1,4 @@
-import { ObjectId } from "mongoose";
-import { TokenType } from "src/types/TokenType";
+import type { TokenType } from 'src/types/TokenType';
 
 export class ValidateTokenDTO {
   activityId: string;

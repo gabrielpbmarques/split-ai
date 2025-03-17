@@ -1,4 +1,4 @@
-import { TokenType } from "src/types/TokenType";
+import type { TokenType } from 'src/types/TokenType';
 
 export class CreateTokenDTO {
   activityId: string;
