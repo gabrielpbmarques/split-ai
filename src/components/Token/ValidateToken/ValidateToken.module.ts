@@ -14,11 +14,15 @@ import { UpdateActivityTokenModule } from 'src/components/Activity/UpdateActivit
     DatabaseModule,
     MongooseModule.forFeature([
       { name: Activity.name, schema: ActivitySchema },
-      { name: Token.name, schema: TokenSchema }
+      { name: Token.name, schema: TokenSchema },
     ]),
-    UpdateActivityTokenModule
+    UpdateActivityTokenModule,
   ],
-  providers: [ValidateTokenService, TokenRepository, CalculateCheckDigitService],
-  controllers: [ValidateTokenController]
+  providers: [
+    ValidateTokenService,
+    TokenRepository,
+    CalculateCheckDigitService,
+  ],
+  controllers: [ValidateTokenController],
 })
 export class ValidateTokenModule {}

@@ -7,11 +7,7 @@ import { DatabaseModule } from './database/database.module';
 import { ValidateTokenModule } from './components/Token/ValidateToken/ValidateToken.module';
 
 @Module({
-  imports: [
-    DatabaseModule,
-    CreateTokenModule,
-    ValidateTokenModule
-  ],
+  imports: [DatabaseModule, CreateTokenModule, ValidateTokenModule],
   controllers: [],
   providers: [
     JwtService,

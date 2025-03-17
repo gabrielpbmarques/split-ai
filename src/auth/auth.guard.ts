@@ -29,8 +29,14 @@ export class AuthGuard implements CanActivate {
       throw new ForbiddenException('Only workers can access this endpoint');
     }
 
-    if (url.startsWith('/token') && userType !== 'establishment' && userType !== 'company') {
-      throw new ForbiddenException('Only establishments and companies can access this endpoint');
+    if (
+      url.startsWith('/token') &&
+      userType !== 'establishment' &&
+      userType !== 'company'
+    ) {
+      throw new ForbiddenException(
+        'Only establishments and companies can access this endpoint',
+      );
     }
 
     return true;

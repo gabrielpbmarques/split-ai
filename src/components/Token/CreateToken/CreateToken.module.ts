@@ -13,10 +13,10 @@ import { CalculateCheckDigitService } from '../CalculateCheckDigit/CalculateChec
     DatabaseModule,
     MongooseModule.forFeature([
       { name: Activity.name, schema: ActivitySchema },
-      { name: Token.name, schema: TokenSchema }
-    ])
+      { name: Token.name, schema: TokenSchema },
+    ]),
   ],
   providers: [CreateTokenService, TokenRepository, CalculateCheckDigitService],
-  controllers: [CreateTokenController]
+  controllers: [CreateTokenController],
 })
 export class CreateTokenModule {}

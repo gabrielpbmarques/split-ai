@@ -10,24 +10,31 @@ import { ObjectId } from 'mongoose';
 export class CreateTokenService {
   constructor(
     private readonly tokenRepository: TokenRepository,
-    private readonly calculateCheckDigitService: CalculateCheckDigitService
+    private readonly calculateCheckDigitService: CalculateCheckDigitService,
   ) {}
 
-  async execute(payload: CreateTokenDTO): Promise<Pick<Token, 'token' | 'expiresAt'>> {
+  async execute(
+    payload: CreateTokenDTO,
+  ): Promise<Pick<Token, 'token' | 'expiresAt'>> {
     if (payload.type !== 'checkIn') {
       const hasCheckIn = await this.tokenRepository.findByWorkerAndActivity(
         payload.workerId,
         payload.activityId,
-        "checkIn"
+        'checkIn',
       );
 
-      if (!hasCheckIn) throw new Error('É necessário solicitar o checkIn antes');
+      if (!hasCheckIn)
+        throw new Error('É necessário solicitar o checkIn antes');
     }
 
-    const baseToken = Array.from({ length: 6 }, () => Math.floor(Math.random() * 10)).join('');
+    const baseToken = Array.from({ length: 6 }, () =>
+      Math.floor(Math.random() * 10),
+    ).join('');
     const checkDigit = this.calculateCheckDigitService.execute(baseToken);
 
-    const expiresAt = payload.expiresAt || new Date(new Date().getTime() + config.tokenExpirationTime);
+    const expiresAt =
+      payload.expiresAt ||
+      new Date(new Date().getTime() + config.tokenExpirationTime);
 
     const newToken: Omit<Token, '_id' | 'createdAt' | 'updatedAt'> = {
       token: `${baseToken}-${checkDigit}`,
@@ -35,7 +42,7 @@ export class CreateTokenService {
       activityId: payload.activityId as unknown as ObjectId,
       workerId: payload.workerId as unknown as ObjectId,
       type: payload.type,
-      validated: false
+      validated: false,
     };
 
     return this.tokenRepository.create(newToken);

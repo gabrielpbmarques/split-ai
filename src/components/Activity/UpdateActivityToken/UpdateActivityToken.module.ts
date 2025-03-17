@@ -7,10 +7,10 @@ import { Activity, ActivitySchema } from 'src/schemas/Activity.schema';
 @Module({
   imports: [
     MongooseModule.forFeature([
-      { name: Activity.name, schema: ActivitySchema }
-    ])
+      { name: Activity.name, schema: ActivitySchema },
+    ]),
   ],
   providers: [UpdateActivityTokenService, ActivityRepository],
-  exports: [UpdateActivityTokenService]
+  exports: [UpdateActivityTokenService],
 })
 export class UpdateActivityTokenModule {}
