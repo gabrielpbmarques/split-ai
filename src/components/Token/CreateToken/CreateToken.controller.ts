@@ -1,9 +1,13 @@
-import { Body, Controller, Post, Res } from '@nestjs/common';
+import { Body, Controller, Post, Res, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '../../../auth/auth.guard';
+import { Roles } from '../../../decorators/roles.decorator';
 import type { FastifyReply } from 'fastify';
 import { CreateTokenService } from './CreateToken.service';
 import { CreateTokenDTO } from './CreateToken.dto';
 
 @Controller('token')
+@UseGuards(AuthGuard)
+@Roles('establishment', 'company')
 export class CreateTokenController {
   constructor(private readonly createTokenService: CreateTokenService) {}
 

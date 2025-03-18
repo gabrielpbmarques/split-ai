@@ -1,6 +1,4 @@
 import { Module } from '@nestjs/common';
-import { AuthGuard } from './auth/auth.guard';
-import { APP_GUARD } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { CreateTokenModule } from './components/Token/CreateToken/CreateToken.module';
 import { DatabaseModule } from './database/database.module';
@@ -15,12 +13,6 @@ import { HealthModule } from './health/health.module';
     HealthModule,
   ],
   controllers: [],
-  providers: [
-    JwtService,
-    {
-      provide: APP_GUARD,
-      useClass: AuthGuard,
-    },
-  ],
+  providers: [JwtService],
 })
 export class AppModule {}

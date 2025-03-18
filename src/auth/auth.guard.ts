@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
+import { ROLES_KEY, UserType } from '../decorators/roles.decorator';
 
 export const IS_PUBLIC_KEY = 'isPublic';
 export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
@@ -37,20 +38,20 @@ export class AuthGuard implements CanActivate {
     const payload = parseJwt(token);
     request.user = payload;
 
-    const url = request.url;
-    const userType = payload.userType;
+    const requiredRoles = this.reflector.getAllAndOverride<UserType[]>(
+      ROLES_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
-    if (url.startsWith('/validate-token') && userType !== 'worker') {
-      throw new ForbiddenException('Only workers can access this endpoint');
+    if (!requiredRoles) {
+      return true;
     }
 
-    if (
-      url.startsWith('/token') &&
-      userType !== 'establishment' &&
-      userType !== 'company'
-    ) {
+    const userType = payload.type as UserType;
+
+    if (!requiredRoles.includes(userType)) {
       throw new ForbiddenException(
-        'Only establishments and companies can access this endpoint',
+        `Access denied. Required roles: ${requiredRoles.join(', ')}`,
       );
     }
 

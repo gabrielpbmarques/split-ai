@@ -48,8 +48,8 @@ async function bootstrap() {
 
   app.enableCors();
 
-  // Use PORT environment variable provided by Cloud Run, fallback to 80 for local development
-  const port = process.env.PORT || 80;
+  // Use PORT environment variable provided by Cloud Run, fallback to 3000 for local development
+  const port = process.env.PORT || 3000;
   await app.listen(port, '0.0.0.0');
 
   console.log(`Application is running on port ${port}`);
