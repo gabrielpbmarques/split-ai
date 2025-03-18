@@ -11,8 +11,8 @@ RUN apt-get update && apt-get install -y curl unzip && \
 COPY package.json ./
 COPY bun.lockb ./
 
-# Install dependencies using Bun (disable husky for Docker builds)
-RUN HUSKY=0 bun install
+# Install dependencies using Bun
+RUN bun install --ignore-scripts
 
 # Copy the rest of the application
 COPY . .
