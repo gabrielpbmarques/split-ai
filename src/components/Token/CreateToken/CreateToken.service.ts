@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { Token } from 'src/models/Token.model';
 import { TokenRepository } from 'src/repositories/Token.repository';
+import { ActivityRepository } from 'src/repositories/Activity.repository';
 import { CreateTokenDTO } from './CreateToken.dto';
 import { CalculateCheckDigitService } from '../CalculateCheckDigit/CalculateCheckDigit.service';
 import { config } from 'src/config';
@@ -10,12 +11,24 @@ import { ObjectId } from 'mongoose';
 export class CreateTokenService {
   constructor(
     private readonly tokenRepository: TokenRepository,
+    private readonly activityRepository: ActivityRepository,
     private readonly calculateCheckDigitService: CalculateCheckDigitService,
   ) {}
 
   async execute(
     payload: CreateTokenDTO,
   ): Promise<Pick<Token, 'token' | 'expiresAt'>> {
+    const hasAccess =
+      await this.activityRepository.checkEstablishmentTokenAccess(
+        payload.activityId,
+      );
+
+    if (!hasAccess) {
+      throw new UnauthorizedException(
+        'Establishment does not have token generation access',
+      );
+    }
+
     if (payload.type !== 'checkIn') {
       const hasCheckIn = await this.tokenRepository.findByWorkerAndActivity(
         payload.workerId,

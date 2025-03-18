@@ -6,6 +6,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Activity, ActivitySchema } from 'src/schemas/Activity.schema';
 import { Token, TokenSchema } from 'src/schemas/Token.schema';
 import { TokenRepository } from 'src/repositories/Token.repository';
+import { ActivityRepository } from 'src/repositories/Activity.repository';
 import { CalculateCheckDigitService } from '../CalculateCheckDigit/CalculateCheckDigit.service';
 
 @Module({
@@ -16,7 +17,12 @@ import { CalculateCheckDigitService } from '../CalculateCheckDigit/CalculateChec
       { name: Token.name, schema: TokenSchema },
     ]),
   ],
-  providers: [CreateTokenService, TokenRepository, CalculateCheckDigitService],
+  providers: [
+    CreateTokenService,
+    TokenRepository,
+    ActivityRepository,
+    CalculateCheckDigitService,
+  ],
   controllers: [CreateTokenController],
 })
 export class CreateTokenModule {}

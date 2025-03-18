@@ -10,6 +10,7 @@ import {
 export interface IActivityRepository {
   findById(id: string): Promise<Activity | null>;
   update(id: string, payload: Partial<Activity>): Promise<Activity | null>;
+  checkEstablishmentTokenAccess(activityId: string): Promise<boolean>;
 }
 
 @Injectable()
@@ -32,5 +33,39 @@ export class ActivityRepository implements IActivityRepository {
       .findByIdAndUpdate(id, payload, { new: true })
       .exec();
     return updatedActivity as unknown as Activity | null;
+  }
+
+  async checkEstablishmentTokenAccess(activityId: string): Promise<boolean> {
+    const result = await this.activityModel
+      .aggregate([
+        {
+          $match: {
+            _id: new (this.activityModel as any).mongoose.Types.ObjectId(
+              activityId,
+            ),
+          },
+        },
+        {
+          $lookup: {
+            from: 'establishments',
+            localField: 'establishmentId',
+            foreignField: '_id',
+            as: 'establishment',
+          },
+        },
+        {
+          $unwind: { path: '$establishment', preserveNullAndEmptyArrays: true },
+        },
+        {
+          $project: {
+            hasAccess: {
+              $ifNull: ['$establishment.hasTokenGenerationAccess', false],
+            },
+          },
+        },
+      ])
+      .exec();
+
+    return result.length > 0 ? result[0].hasAccess : false;
   }
 }
