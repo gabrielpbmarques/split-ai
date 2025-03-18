@@ -36,9 +36,16 @@ export class ValidateTokenService {
       throw new Error('Token expirado');
     }
 
-    const [baseToken, checkDigit] = payload.token.split('-');
+    // Extract the base token and check digit without assuming a hyphen separator
+    const tokenString = payload.token;
 
-    if (!baseToken || !checkDigit) return false;
+    // Check if token is malformed (too short or non-numeric)
+    if (tokenString.length < 2 || !/^\d+$/.test(tokenString)) {
+      return false;
+    }
+
+    const baseToken = tokenString.slice(0, -1); // All characters except the last one
+    const checkDigit = tokenString.slice(-1); // Last character
 
     const isValid =
       this.calculateCheckDigitService.execute(baseToken) ===

@@ -70,14 +70,14 @@ describe('ValidateTokenService', () => {
     beforeEach(() => {
       validateTokenDto = {
         activityId: '6507f6d52c5ee7243c7b987a',
-        token: '555555-7',
+        token: '5555557',
         type: 'checkIn',
       };
       workerId = '6507f6d52c5ee7243c7b987b';
 
       mockToken = {
         _id: tokenId,
-        token: '555555-7',
+        token: '5555557',
         activityId: '6507f6d52c5ee7243c7b987a' as unknown as ObjectId,
         workerId: '6507f6d52c5ee7243c7b987b' as unknown as ObjectId,
         type: 'checkIn',

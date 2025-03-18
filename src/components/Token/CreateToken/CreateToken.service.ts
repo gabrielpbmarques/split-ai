@@ -37,7 +37,7 @@ export class CreateTokenService {
       new Date(new Date().getTime() + config.tokenExpirationTime);
 
     const newToken: Omit<Token, '_id' | 'createdAt' | 'updatedAt'> = {
-      token: `${baseToken}-${checkDigit}`,
+      token: `${baseToken}${checkDigit}`,
       expiresAt,
       activityId: payload.activityId as unknown as ObjectId,
       workerId: payload.workerId as unknown as ObjectId,

@@ -65,7 +65,7 @@ describe('CreateTokenService', () => {
 
       // Mock the token creation
       mockTokenRepository.create.mockResolvedValue({
-        token: '555555-7',
+        token: '5555557',
         expiresAt: expect.any(Date),
       });
     });
@@ -81,7 +81,7 @@ describe('CreateTokenService', () => {
       expect(calculateCheckDigitService.execute).toHaveBeenCalledWith('555555');
       expect(tokenRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          token: '555555-7',
+          token: '5555557',
           activityId: expect.stringMatching('6507f6d52c5ee7243c7b987a'),
           workerId: expect.stringMatching('6507f6d52c5ee7243c7b987b'),
           type: 'checkIn',
@@ -89,7 +89,7 @@ describe('CreateTokenService', () => {
         }),
       );
       expect(result).toEqual({
-        token: '555555-7',
+        token: '5555557',
         expiresAt: expect.any(Date),
       });
     });
@@ -109,7 +109,7 @@ describe('CreateTokenService', () => {
       );
       expect(tokenRepository.create).toHaveBeenCalled();
       expect(result).toEqual({
-        token: '555555-7',
+        token: '5555557',
         expiresAt: expect.any(Date),
       });
     });
