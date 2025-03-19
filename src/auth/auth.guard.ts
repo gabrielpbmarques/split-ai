@@ -38,6 +38,8 @@ export class AuthGuard implements CanActivate {
     const payload = parseJwt(token);
     request.user = payload;
 
+    console.log(payload);
+
     const requiredRoles = this.reflector.getAllAndOverride<UserType[]>(
       ROLES_KEY,
       [context.getHandler(), context.getClass()],
