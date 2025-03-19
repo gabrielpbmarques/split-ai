@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Req, Res } from '@nestjs/common';
+import { Controller, Get, Query, Res } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
 import { CheckActivityTokenNeedService } from './check-activity-token-need.service';
 
