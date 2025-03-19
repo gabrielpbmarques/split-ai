@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import mongoose, { Model } from 'mongoose';
 import { Activity } from 'src/models/Activity.model';
 import {
   Activity as ActivitySchema,
@@ -40,9 +40,7 @@ export class ActivityRepository implements IActivityRepository {
       .aggregate([
         {
           $match: {
-            _id: new (this.activityModel as any).mongoose.Types.ObjectId(
-              activityId,
-            ),
+            _id: new mongoose.Types.ObjectId(activityId),
           },
         },
         {
