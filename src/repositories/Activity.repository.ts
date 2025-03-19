@@ -40,7 +40,9 @@ export class ActivityRepository implements IActivityRepository {
       .aggregate([
         {
           $match: {
-            _id: new mongoose.Types.ObjectId(activityId),
+            _id: new (this.activityModel as any).mongoose.Types.ObjectId(
+              activityId,
+            ),
           },
         },
         {
