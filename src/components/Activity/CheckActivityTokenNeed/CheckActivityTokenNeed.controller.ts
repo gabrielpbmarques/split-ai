@@ -1,6 +1,6 @@
 import { Controller, Get, Query, Res } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
-import { CheckActivityTokenNeedService } from './check-activity-token-need.service';
+import { CheckActivityTokenNeedService } from './CheckActivityTokenNeed.service';
 
 @Controller('check-activity-token-need')
 export class CheckActivityTokenNeedController {

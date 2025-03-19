@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CheckActivityTokenNeedService } from './check-activity-token-need.service';
+import { CheckActivityTokenNeedService } from './CheckActivityTokenNeed.service';
 
 describe('CheckActivityTokenNeedService', () => {
   let service: CheckActivityTokenNeedService;
