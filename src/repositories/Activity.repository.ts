@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { Model } from 'mongoose';
 import { Activity } from 'src/models/Activity.model';
+import { Establishment } from 'src/models/Establishment.model';
 import {
   Activity as ActivitySchema,
   ActivityDocument,
@@ -36,36 +37,30 @@ export class ActivityRepository implements IActivityRepository {
   }
 
   async checkEstablishmentTokenAccess(activityId: string): Promise<boolean> {
-    const result = await this.activityModel
-      .aggregate([
-        {
-          $match: {
-            _id: new (this.activityModel as any).mongoose.Types.ObjectId(
-              activityId,
-            ),
-          },
-        },
-        {
-          $lookup: {
-            from: 'establishments',
-            localField: 'establishmentId',
-            foreignField: '_id',
-            as: 'establishment',
-          },
-        },
-        {
-          $unwind: { path: '$establishment', preserveNullAndEmptyArrays: true },
-        },
-        {
-          $project: {
-            hasAccess: {
-              $ifNull: ['$establishment.hasTokenGenerationAccess', false],
-            },
-          },
-        },
-      ])
-      .exec();
+    // First get the activity document
+    const activity = await this.findById(activityId);
+    if (!activity) {
+      throw new Error('Activity not found');
+    }
 
-    return result.length > 0 ? result[0].hasAccess : false;
+    // Use direct MongoDB lookup which we know works from our logs
+    const establishmentId = activity.establishmentId.toString();
+    const establishment = (await this.activityModel.db
+      .collection('establishments')
+      .findOne({
+        _id: new mongoose.Types.ObjectId(establishmentId),
+      })) as unknown as Establishment | null;
+
+    // If we couldn't find the establishment, return false
+    if (!establishment) {
+      throw new Error('Establishment not found');
+    }
+
+    // Check if the establishment has the hasTokenGenerationAccess property
+    if ('hasTokenGenerationAccess' in establishment) {
+      return !!establishment.hasTokenGenerationAccess;
+    }
+
+    return false;
   }
 }
