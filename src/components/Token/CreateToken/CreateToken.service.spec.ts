@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CreateTokenService } from './CreateToken.service';
 import { TokenRepository } from 'src/repositories/Token.repository';
+import { ActivityRepository } from 'src/repositories/Activity.repository';
 import { CalculateCheckDigitService } from '../CalculateCheckDigit/CalculateCheckDigit.service';
 import { CreateTokenDTO } from './CreateToken.dto';
 import { config } from 'src/config';
@@ -8,11 +9,16 @@ import { config } from 'src/config';
 describe('CreateTokenService', () => {
   let service: CreateTokenService;
   let tokenRepository: TokenRepository;
+  let activityRepository: ActivityRepository;
   let calculateCheckDigitService: CalculateCheckDigitService;
 
   const mockTokenRepository = {
     create: jest.fn(),
     findByWorkerAndActivity: jest.fn(),
+  };
+
+  const mockActivityRepository = {
+    checkEstablishmentTokenAccess: jest.fn(),
   };
 
   const mockCalculateCheckDigitService = {
@@ -30,6 +36,10 @@ describe('CreateTokenService', () => {
           useValue: mockTokenRepository,
         },
         {
+          provide: ActivityRepository,
+          useValue: mockActivityRepository,
+        },
+        {
           provide: CalculateCheckDigitService,
           useValue: mockCalculateCheckDigitService,
         },
@@ -38,6 +48,7 @@ describe('CreateTokenService', () => {
 
     service = module.get<CreateTokenService>(CreateTokenService);
     tokenRepository = module.get<TokenRepository>(TokenRepository);
+    activityRepository = module.get<ActivityRepository>(ActivityRepository);
     calculateCheckDigitService = module.get<CalculateCheckDigitService>(
       CalculateCheckDigitService,
     );
@@ -68,6 +79,11 @@ describe('CreateTokenService', () => {
         token: '5555557',
         expiresAt: expect.any(Date),
       });
+
+      // Mock the establishment token access check
+      mockActivityRepository.checkEstablishmentTokenAccess.mockResolvedValue(
+        true,
+      );
     });
 
     afterEach(() => {
