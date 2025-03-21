@@ -1,12 +1,20 @@
 import { Injectable } from '@nestjs/common';
-import { TokenRepository } from 'src/repositories/Token.repository';
+import { ActivityRepository } from 'src/repositories/Activity.repository';
+import { EstablishmentRepository } from 'src/repositories/Establishment.repository';
 
 @Injectable()
 export class CheckActivityTokenNeedService {
-  constructor(private readonly tokenRepository: TokenRepository) {}
+  constructor(
+    private readonly activityRepository: ActivityRepository,
+    private readonly establishmentRepository: EstablishmentRepository,
+  ) {}
 
   async execute(activityId: string): Promise<boolean> {
-    const hasToken = await this.tokenRepository.findOne({ activityId });
-    return !!hasToken;
+    const activity = await this.activityRepository.findById(activityId);
+    const establishment = await this.establishmentRepository.findById(
+      activity.establishmentId,
+    );
+
+    return establishment.hasTokenGenerationAccess;
   }
 }
