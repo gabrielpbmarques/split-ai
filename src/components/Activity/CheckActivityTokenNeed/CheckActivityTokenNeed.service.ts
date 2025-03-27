@@ -11,6 +11,11 @@ export class CheckActivityTokenNeedService {
 
   async execute(activityId: string): Promise<boolean> {
     const activity = await this.activityRepository.findById(activityId);
+
+    if (!activity) {
+      throw new Error('Activity not found');
+    }
+
     const establishment = await this.establishmentRepository.findById(
       activity.establishmentId,
     );
