@@ -34,7 +34,7 @@ describe('CheckEstablishmentFeatureAccessService', () => {
   });
 
   describe('execute', () => {
-    const workerId = 'mock-worker-id';
+    const establishmentId = 'mock-establishment-id';
 
     it('should return true when establishment has token generation access', async () => {
       // Arrange
@@ -45,10 +45,12 @@ describe('CheckEstablishmentFeatureAccessService', () => {
       establishmentRepository.findById.mockResolvedValue(mockEstablishment);
 
       // Act
-      const result = await service.execute(workerId);
+      const result = await service.execute(establishmentId);
 
       // Assert
-      expect(establishmentRepository.findById).toHaveBeenCalledWith(workerId);
+      expect(establishmentRepository.findById).toHaveBeenCalledWith(
+        establishmentId,
+      );
       expect(result).toBe(true);
     });
 
@@ -61,10 +63,12 @@ describe('CheckEstablishmentFeatureAccessService', () => {
       establishmentRepository.findById.mockResolvedValue(mockEstablishment);
 
       // Act
-      const result = await service.execute(workerId);
+      const result = await service.execute(establishmentId);
 
       // Assert
-      expect(establishmentRepository.findById).toHaveBeenCalledWith(workerId);
+      expect(establishmentRepository.findById).toHaveBeenCalledWith(
+        establishmentId,
+      );
       expect(result).toBe(false);
     });
 
@@ -73,10 +77,12 @@ describe('CheckEstablishmentFeatureAccessService', () => {
       establishmentRepository.findById.mockResolvedValue(null);
 
       // Act
-      const result = await service.execute(workerId);
+      const result = await service.execute(establishmentId);
 
       // Assert
-      expect(establishmentRepository.findById).toHaveBeenCalledWith(workerId);
+      expect(establishmentRepository.findById).toHaveBeenCalledWith(
+        establishmentId,
+      );
       expect(result).toBe(false);
     });
 
@@ -89,10 +95,12 @@ describe('CheckEstablishmentFeatureAccessService', () => {
       establishmentRepository.findById.mockResolvedValue(mockEstablishment);
 
       // Act
-      const result = await service.execute(workerId);
+      const result = await service.execute(establishmentId);
 
       // Assert
-      expect(establishmentRepository.findById).toHaveBeenCalledWith(workerId);
+      expect(establishmentRepository.findById).toHaveBeenCalledWith(
+        establishmentId,
+      );
       expect(result).toBe(false);
     });
   });
