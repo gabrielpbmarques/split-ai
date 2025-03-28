@@ -7,8 +7,9 @@ export class CheckEstablishmentFeatureAccessService {
     private readonly establishmentRepository: EstablishmentRepository,
   ) {}
 
-  async execute(workerId: string): Promise<boolean> {
-    const establishment = await this.establishmentRepository.findById(workerId);
+  async execute(establishmentId: string): Promise<boolean> {
+    const establishment =
+      await this.establishmentRepository.findById(establishmentId);
     return establishment?.hasTokenGenerationAccess ?? false;
   }
 }

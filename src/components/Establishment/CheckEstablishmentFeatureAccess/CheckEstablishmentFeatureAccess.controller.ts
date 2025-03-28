@@ -15,9 +15,11 @@ export class CheckEstablishmentFeatureAccessController {
   @Get()
   async handle(@Req() request: FastifyRequest, @Res() reply: FastifyReply) {
     try {
-      const workerId = request.user.workerId;
+      const establishmentId = request.user.establishmentId;
       const isAccess =
-        await this.checkEstablishmentFeatureAccessService.execute(workerId);
+        await this.checkEstablishmentFeatureAccessService.execute(
+          establishmentId,
+        );
       reply.status(200).send(isAccess);
     } catch (error) {
       reply.status(400).send({
