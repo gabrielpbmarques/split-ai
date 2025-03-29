@@ -29,16 +29,16 @@ export class CreateTokenService {
       );
     }
 
-    if (payload.type !== 'checkIn') {
-      const hasCheckIn = await this.tokenRepository.findByWorkerAndActivity(
-        payload.workerId,
-        payload.activityId,
-        'checkIn',
-      );
+    // if (payload.type !== 'checkIn') {
+    //   const hasCheckIn = await this.tokenRepository.findByWorkerAndActivity(
+    //     payload.workerId,
+    //     payload.activityId,
+    //     'checkIn',
+    //   );
 
-      if (!hasCheckIn)
-        throw new Error('É necessário solicitar o checkIn antes');
-    }
+    //   if (!hasCheckIn)
+    //     throw new Error('É necessário solicitar o checkIn antes');
+    // }
 
     const baseToken = Array.from({ length: 6 }, () =>
       Math.floor(Math.random() * 10),
