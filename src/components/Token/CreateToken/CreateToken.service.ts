@@ -1,4 +1,5 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { UserType } from '../../../decorators/roles.decorator';
 import { Token } from 'src/models/Token.model';
 import { TokenRepository } from 'src/repositories/Token.repository';
 import { ActivityRepository } from 'src/repositories/Activity.repository';
@@ -17,28 +18,20 @@ export class CreateTokenService {
 
   async execute(
     payload: CreateTokenDTO,
+    userType?: UserType,
   ): Promise<Pick<Token, 'token' | 'expiresAt'>> {
-    const hasAccess =
-      await this.activityRepository.checkEstablishmentTokenAccess(
-        payload.activityId,
-      );
+    if (userType !== 'admin') {
+      const hasAccess =
+        await this.activityRepository.checkEstablishmentTokenAccess(
+          payload.activityId,
+        );
 
-    if (!hasAccess) {
-      throw new UnauthorizedException(
-        'Establishment does not have token generation access',
-      );
+      if (!hasAccess) {
+        throw new UnauthorizedException(
+          'Establishment does not have token generation access',
+        );
+      }
     }
-
-    // if (payload.type !== 'checkIn') {
-    //   const hasCheckIn = await this.tokenRepository.findByWorkerAndActivity(
-    //     payload.workerId,
-    //     payload.activityId,
-    //     'checkIn',
-    //   );
-
-    //   if (!hasCheckIn)
-    //     throw new Error('É necessário solicitar o checkIn antes');
-    // }
 
     const baseToken = Array.from({ length: 6 }, () =>
       Math.floor(Math.random() * 10),

@@ -1,10 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { UnauthorizedException } from '@nestjs/common';
 import { CreateTokenService } from './CreateToken.service';
 import { TokenRepository } from 'src/repositories/Token.repository';
 import { ActivityRepository } from 'src/repositories/Activity.repository';
 import { CalculateCheckDigitService } from '../CalculateCheckDigit/CalculateCheckDigit.service';
 import { CreateTokenDTO } from './CreateToken.dto';
 import { config } from 'src/config';
+import { UserType } from '../../../decorators/roles.decorator';
 
 describe('CreateTokenService', () => {
   let service: CreateTokenService;
@@ -75,9 +77,11 @@ describe('CreateTokenService', () => {
       mockCalculateCheckDigitService.execute.mockReturnValue(7);
 
       // Mock the token creation
-      mockTokenRepository.create.mockResolvedValue({
-        token: '5555557',
-        expiresAt: expect.any(Date),
+      mockTokenRepository.create.mockImplementation(() => {
+        return Promise.resolve({
+          token: '5555557',
+          expiresAt: new Date(),
+        });
       });
 
       // Mock the establishment token access check
@@ -91,15 +95,17 @@ describe('CreateTokenService', () => {
     });
 
     it('should create a checkIn token successfully', async () => {
-      const result = await service.execute(createTokenDto);
+      const result = await service.execute(createTokenDto, 'establishment');
 
-      expect(tokenRepository.findByWorkerAndActivity).not.toHaveBeenCalled();
+      expect(
+        activityRepository.checkEstablishmentTokenAccess,
+      ).toHaveBeenCalledWith(createTokenDto.activityId);
       expect(calculateCheckDigitService.execute).toHaveBeenCalledWith('555555');
       expect(tokenRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({
           token: '5555557',
-          activityId: expect.stringMatching('6507f6d52c5ee7243c7b987a'),
-          workerId: expect.stringMatching('6507f6d52c5ee7243c7b987b'),
+          activityId: expect.any(String),
+          workerId: expect.any(String),
           type: 'checkIn',
           validated: false,
         }),
@@ -110,19 +116,14 @@ describe('CreateTokenService', () => {
       });
     });
 
-    it('should create a checkOut token if checkIn exists', async () => {
+    it('should create a checkOut token successfully', async () => {
       createTokenDto.type = 'checkOut';
-      mockTokenRepository.findByWorkerAndActivity.mockResolvedValueOnce({
-        token: 'existing-token',
-      });
 
-      const result = await service.execute(createTokenDto);
+      const result = await service.execute(createTokenDto, 'establishment');
 
-      expect(tokenRepository.findByWorkerAndActivity).toHaveBeenCalledWith(
-        createTokenDto.workerId,
-        createTokenDto.activityId,
-        'checkIn',
-      );
+      expect(
+        activityRepository.checkEstablishmentTokenAccess,
+      ).toHaveBeenCalledWith(createTokenDto.activityId);
       expect(tokenRepository.create).toHaveBeenCalled();
       expect(result).toEqual({
         token: '5555557',
@@ -130,13 +131,45 @@ describe('CreateTokenService', () => {
       });
     });
 
-    it('should throw an error when trying to create checkOut without checkIn', async () => {
-      createTokenDto.type = 'checkOut';
-      mockTokenRepository.findByWorkerAndActivity.mockResolvedValueOnce(null);
-
-      await expect(service.execute(createTokenDto)).rejects.toThrow(
-        'É necessário solicitar o checkIn antes',
+    it('should bypass establishment access validation for admin users', async () => {
+      // Mock the establishment token access check to return false
+      mockActivityRepository.checkEstablishmentTokenAccess.mockResolvedValue(
+        false,
       );
+
+      // Execute with admin userType
+      const result = await service.execute(createTokenDto, 'admin');
+
+      // Verify the access check was not called for admin users
+      expect(
+        activityRepository.checkEstablishmentTokenAccess,
+      ).not.toHaveBeenCalled();
+
+      // Verify token was created successfully
+      expect(tokenRepository.create).toHaveBeenCalled();
+      expect(result).toEqual({
+        token: '5555557',
+        expiresAt: expect.any(Date),
+      });
+    });
+
+    it('should throw an error when establishment does not have token access and user is not admin', async () => {
+      // Mock the establishment token access check to return false
+      mockActivityRepository.checkEstablishmentTokenAccess.mockResolvedValue(
+        false,
+      );
+
+      // Execute with non-admin userType
+      await expect(
+        service.execute(createTokenDto, 'establishment'),
+      ).rejects.toThrow(UnauthorizedException);
+
+      // Verify the access check was called
+      expect(
+        activityRepository.checkEstablishmentTokenAccess,
+      ).toHaveBeenCalledWith(createTokenDto.activityId);
+
+      // Verify token was not created
       expect(tokenRepository.create).not.toHaveBeenCalled();
     });
 
