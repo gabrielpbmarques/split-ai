@@ -8,6 +8,7 @@ import { Token, TokenSchema } from 'src/schemas/Token.schema';
 import { TokenRepository } from 'src/repositories/Token.repository';
 import { ActivityRepository } from 'src/repositories/Activity.repository';
 import { CalculateCheckDigitService } from '../CalculateCheckDigit/CalculateCheckDigit.service';
+import { CheckActiveTokenService } from '../CheckActiveToken/CheckActiveToken.service';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { CalculateCheckDigitService } from '../CalculateCheckDigit/CalculateChec
     TokenRepository,
     ActivityRepository,
     CalculateCheckDigitService,
+    CheckActiveTokenService,
   ],
   controllers: [CreateTokenController],
 })

@@ -4,6 +4,7 @@ import { CreateTokenService } from './CreateToken.service';
 import { TokenRepository } from 'src/repositories/Token.repository';
 import { ActivityRepository } from 'src/repositories/Activity.repository';
 import { CalculateCheckDigitService } from '../CalculateCheckDigit/CalculateCheckDigit.service';
+import { CheckActiveTokenService } from '../CheckActiveToken/CheckActiveToken.service';
 import { CreateTokenDTO } from './CreateToken.dto';
 import { config } from 'src/config';
 import { UserType } from '../../../decorators/roles.decorator';
@@ -13,6 +14,7 @@ describe('CreateTokenService', () => {
   let tokenRepository: TokenRepository;
   let activityRepository: ActivityRepository;
   let calculateCheckDigitService: CalculateCheckDigitService;
+  let checkActiveTokenService: CheckActiveTokenService;
 
   const mockTokenRepository = {
     create: jest.fn(),
@@ -24,6 +26,10 @@ describe('CreateTokenService', () => {
   };
 
   const mockCalculateCheckDigitService = {
+    execute: jest.fn(),
+  };
+
+  const mockCheckActiveTokenService = {
     execute: jest.fn(),
   };
 
@@ -45,6 +51,10 @@ describe('CreateTokenService', () => {
           provide: CalculateCheckDigitService,
           useValue: mockCalculateCheckDigitService,
         },
+        {
+          provide: CheckActiveTokenService,
+          useValue: mockCheckActiveTokenService,
+        },
       ],
     }).compile();
 
@@ -53,6 +63,9 @@ describe('CreateTokenService', () => {
     activityRepository = module.get<ActivityRepository>(ActivityRepository);
     calculateCheckDigitService = module.get<CalculateCheckDigitService>(
       CalculateCheckDigitService,
+    );
+    checkActiveTokenService = module.get<CheckActiveTokenService>(
+      CheckActiveTokenService,
     );
   });
 
@@ -88,15 +101,22 @@ describe('CreateTokenService', () => {
       mockActivityRepository.checkEstablishmentTokenAccess.mockResolvedValue(
         true,
       );
+
+      // Mock check active token (default: no active token found)
+      mockCheckActiveTokenService.execute.mockResolvedValue(null);
     });
 
     afterEach(() => {
       jest.spyOn(global.Math, 'random').mockRestore();
     });
 
-    it('should create a checkIn token successfully', async () => {
+    it('should create a checkIn token successfully when no active token exists', async () => {
       const result = await service.execute(createTokenDto, 'establishment');
 
+      expect(checkActiveTokenService.execute).toHaveBeenCalledWith(
+        createTokenDto.activityId,
+        createTokenDto.type,
+      );
       expect(
         activityRepository.checkEstablishmentTokenAccess,
       ).toHaveBeenCalledWith(createTokenDto.activityId);
@@ -116,11 +136,35 @@ describe('CreateTokenService', () => {
       });
     });
 
-    it('should create a checkOut token successfully', async () => {
+    it('should return existing token when an active token is found', async () => {
+      // Mock an existing active token
+      const existingToken = {
+        token: 'existing123',
+        expiresAt: new Date(Date.now() + 3600000),
+      };
+      mockCheckActiveTokenService.execute.mockResolvedValue(existingToken);
+
+      const result = await service.execute(createTokenDto, 'establishment');
+
+      expect(checkActiveTokenService.execute).toHaveBeenCalledWith(
+        createTokenDto.activityId,
+        createTokenDto.type,
+      );
+      // Verify a new token was not created
+      expect(tokenRepository.create).not.toHaveBeenCalled();
+      // Verify the existing token was returned
+      expect(result).toEqual(existingToken);
+    });
+
+    it('should create a checkOut token successfully when no active token exists', async () => {
       createTokenDto.type = 'checkOut';
 
       const result = await service.execute(createTokenDto, 'establishment');
 
+      expect(checkActiveTokenService.execute).toHaveBeenCalledWith(
+        createTokenDto.activityId,
+        createTokenDto.type,
+      );
       expect(
         activityRepository.checkEstablishmentTokenAccess,
       ).toHaveBeenCalledWith(createTokenDto.activityId);
@@ -139,6 +183,12 @@ describe('CreateTokenService', () => {
 
       // Execute with admin userType
       const result = await service.execute(createTokenDto, 'admin');
+
+      // Verify active token check was performed
+      expect(checkActiveTokenService.execute).toHaveBeenCalledWith(
+        createTokenDto.activityId,
+        createTokenDto.type,
+      );
 
       // Verify the access check was not called for admin users
       expect(
@@ -171,6 +221,10 @@ describe('CreateTokenService', () => {
 
       // Verify token was not created
       expect(tokenRepository.create).not.toHaveBeenCalled();
+
+      // Verificamos que o serviço de checkActiveToken não é chamado neste caso
+      // pois a validação de acesso falha antes
+      expect(checkActiveTokenService.execute).not.toHaveBeenCalled();
     });
 
     it('should use provided expiresAt date if provided', async () => {
@@ -178,6 +232,12 @@ describe('CreateTokenService', () => {
       createTokenDto.expiresAt = customDate;
 
       await service.execute(createTokenDto);
+
+      // Verify active token check was performed
+      expect(checkActiveTokenService.execute).toHaveBeenCalledWith(
+        createTokenDto.activityId,
+        createTokenDto.type,
+      );
 
       expect(tokenRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({

@@ -7,6 +7,7 @@ import { CreateTokenDTO } from './CreateToken.dto';
 import { CalculateCheckDigitService } from '../CalculateCheckDigit/CalculateCheckDigit.service';
 import { config } from 'src/config';
 import { ObjectId } from 'mongoose';
+import { CheckActiveTokenService } from '../CheckActiveToken/CheckActiveToken.service';
 
 @Injectable()
 export class CreateTokenService {
@@ -14,6 +15,7 @@ export class CreateTokenService {
     private readonly tokenRepository: TokenRepository,
     private readonly activityRepository: ActivityRepository,
     private readonly calculateCheckDigitService: CalculateCheckDigitService,
+    private readonly checkActiveTokenService: CheckActiveTokenService,
   ) {}
 
   async execute(
@@ -32,6 +34,13 @@ export class CreateTokenService {
         );
       }
     }
+
+    const activeToken = await this.checkActiveTokenService.execute(
+      payload.activityId,
+      payload.type,
+    );
+
+    if (activeToken) return activeToken;
 
     const baseToken = Array.from({ length: 6 }, () =>
       Math.floor(Math.random() * 10),
