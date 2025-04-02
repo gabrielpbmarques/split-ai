@@ -111,7 +111,11 @@ describe('CreateTokenService', () => {
     });
 
     it('should create a checkIn token successfully when no active token exists', async () => {
-      const result = await service.execute(createTokenDto, 'establishment');
+      const result = await service.execute(
+        createTokenDto,
+        'establishment',
+        '67b34b58e8d3b0692b348e88',
+      );
 
       expect(checkActiveTokenService.execute).toHaveBeenCalledWith(
         createTokenDto.activityId,
@@ -128,6 +132,7 @@ describe('CreateTokenService', () => {
           workerId: expect.any(String),
           type: 'checkIn',
           validated: false,
+          createdBy: expect.any(String),
         }),
       );
       expect(result).toEqual({
