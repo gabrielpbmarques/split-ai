@@ -21,6 +21,7 @@ export class CreateTokenService {
   async execute(
     payload: CreateTokenDTO,
     userType?: UserType,
+    userId?: string,
   ): Promise<Pick<Token, 'token' | 'expiresAt'>> {
     if (userType !== 'admin') {
       const hasAccess =
@@ -56,6 +57,7 @@ export class CreateTokenService {
       expiresAt,
       activityId: payload.activityId as unknown as ObjectId,
       workerId: payload.workerId as unknown as ObjectId,
+      createdBy: userId as unknown as ObjectId,
       type: payload.type,
       validated: false,
     };

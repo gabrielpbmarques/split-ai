@@ -7,6 +7,7 @@ export interface Token {
   expiresAt: Date;
   activityId: ObjectId;
   workerId: ObjectId;
+  createdBy: ObjectId;
   type: TokenType;
   validated: boolean;
   validatedAt?: Date;

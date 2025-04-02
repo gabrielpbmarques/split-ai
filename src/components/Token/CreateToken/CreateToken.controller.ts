@@ -19,9 +19,11 @@ export class CreateTokenController {
   ): Promise<void> {
     try {
       const userType = request.user.type;
+      const userId = request.user.id;
       const token = await this.createTokenService.execute(
         createTokenDTO,
         userType,
+        userId,
       );
       reply.status(200).send(token);
     } catch (error) {

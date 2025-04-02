@@ -18,6 +18,9 @@ export class Token {
   @Prop({ required: true, type: MongooseSchema.Types.ObjectId })
   workerId: ObjectId;
 
+  @Prop({ required: true, type: MongooseSchema.Types.ObjectId })
+  createdBy: ObjectId;
+
   @Prop({ type: Boolean, default: false })
   validated: boolean;
 
