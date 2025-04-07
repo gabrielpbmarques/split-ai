@@ -1,4 +1,5 @@
 import { FastifyRequest } from 'fastify';
+import { UserType } from '../models/user.model';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -6,7 +7,7 @@ declare module 'fastify' {
       workerId?: string;
       establishmentId?: string;
       companyId?: string;
-      type: 'worker' | 'establishment' | 'company';
+      type: UserType;
     };
   }
 }
