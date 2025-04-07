@@ -1,11 +1,11 @@
 version: '3.8'
 
 services:
-  token-service:
+  anthor-agi:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: token-service
+    container_name: anthor-agi
     restart: unless-stopped
     ports:
       - '8080:80'
@@ -14,7 +14,7 @@ services:
     environment:
       - BUN_ENV=development
     networks:
-      - token-network
+      - anthor-agi
 
 networks:
   token-network:

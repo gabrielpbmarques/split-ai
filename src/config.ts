@@ -6,12 +6,10 @@ interface IConfig {
   env: string;
   mongoUri: string;
   sentryDsn: string;
-  tokenExpirationTime: number;
 }
 
 export const config: IConfig = {
   env: process.env.ENV || process.env.NODE_ENV,
-  mongoUri: process.env.MONGO_URI || 'mongodb://localhost:27017/token-service',
+  mongoUri: process.env.MONGO_URI || 'mongodb://localhost:27017/anthor-agi',
   sentryDsn: process.env.SENTRY_DSN,
-  tokenExpirationTime: Number(process.env.TOKEN_EXPIRATION_TIME),
 };

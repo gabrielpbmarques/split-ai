@@ -1,7 +1,7 @@
 name: CI/CD for Token Service
 
 concurrency:
-  group: ci-cd-token-service-${{ github.ref }}
+  group: ci-cd-anthor-agi-${{ github.ref }}
   cancel-in-progress: true
 
 on:
@@ -72,25 +72,25 @@ jobs:
       - name: Build Prod Docker Image
         env:
           ENV: production
-          GCP_DOCKER_IMAGE: us-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/gcr.io/token-service
+          GCP_DOCKER_IMAGE: us-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/gcr.io/anthor-agi
           GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
         run: docker build -t $GCP_DOCKER_IMAGE:${GITHUB_SHA::8} .
 
       - name: Publish Prod
         run: |-
-          docker push "us-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/gcr.io/token-service:${GITHUB_SHA::8}"
+          docker push "us-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/gcr.io/anthor-agi:${GITHUB_SHA::8}"
 
       - name: Deploy Prod
         env:
           ENV: production
-          GCP_DOCKER_IMAGE: us-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/gcr.io/token-service
+          GCP_DOCKER_IMAGE: us-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/gcr.io/anthor-agi
           CLOUDSDK_CORE_PROJECT: ${{ secrets.GCP_PROJECT }}
           CLOUDSDK_COMPUTE_REGION: southamerica-east1
           MONGO_URI: ${{ secrets.MONGO_URI }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           TOKEN_EXPIRATION_TIME: ${{ secrets.TOKEN_EXPIRATION_TIME }}
         run: |-
-          gcloud run deploy token-service --region $CLOUDSDK_COMPUTE_REGION \
+          gcloud run deploy anthor-agi --region $CLOUDSDK_COMPUTE_REGION \
           --image $GCP_DOCKER_IMAGE:${GITHUB_SHA::8} \
           --min-instances 1 \
           --max-instances 100 \
