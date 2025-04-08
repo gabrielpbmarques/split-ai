@@ -2,15 +2,15 @@ import { Module } from '@nestjs/common';
 import {
   SupabaseProvider,
   SUPABASE_CLIENT,
-} from './providers/supabase.provider';
+} from 'src/infrastructure/providers/supabase.provider';
 import {
   VertexAIProvider,
   VERTEX_AI_EMBEDDINGS,
   VERTEX_AI_CHAT,
-} from './providers/vertex-ai.provider';
+} from 'src/infrastructure/providers/vertex-ai.provider';
 
 @Module({
-  providers: [SupabaseProvider, VertexAIProvider],
-  exports: [SupabaseProvider, VertexAIProvider],
+  providers: [SupabaseProvider, ...VertexAIProvider],
+  exports: [SUPABASE_CLIENT, VERTEX_AI_EMBEDDINGS, VERTEX_AI_CHAT],
 })
 export class InfrastructureModule {}

@@ -22,6 +22,6 @@ export const config: IConfig = {
   sentryDsn: process.env.SENTRY_DSN,
   redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
   supabaseUrl: process.env.SUPABASE_URL,
-  supabaseKey: process.env.SUPABASE_KEY,
+  supabaseKey: process.env.SUPABASE_API_KEY,
   registerChatInstructions: registerChatInstructions,
 };

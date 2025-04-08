@@ -1,14 +1,16 @@
 import { SupabaseVectorStore } from '@langchain/community/vectorstores/supabase';
 import { VertexAIEmbeddings } from '@langchain/google-vertexai';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { CustomMetadata } from 'src/types/CustomMetadata';
+import { VERTEX_AI_EMBEDDINGS } from 'src/infrastructure/providers/vertex-ai.provider';
+import { SUPABASE_CLIENT } from 'src/infrastructure/providers/supabase.provider';
 
 @Injectable()
 export class LoadVectorStoreService {
   constructor(
-    private embeddings: VertexAIEmbeddings,
-    private supabaseClient: SupabaseClient,
+    @Inject(VERTEX_AI_EMBEDDINGS) private embeddings: VertexAIEmbeddings,
+    @Inject(SUPABASE_CLIENT) private supabaseClient: SupabaseClient,
   ) {}
 
   async execute(filter: CustomMetadata): Promise<SupabaseVectorStore> {
