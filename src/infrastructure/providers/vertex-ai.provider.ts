@@ -9,12 +9,12 @@ export const VertexAIProvider: Provider[] = [
   {
     provide: VERTEX_AI_EMBEDDINGS,
     useFactory: (): VertexAIEmbeddings => {
-      if (!config.aiModel) {
-        throw new Error('AI model must be provided');
+      if (!config.embeddingModel) {
+        throw new Error('Embedding model must be provided');
       }
 
       return new VertexAIEmbeddings({
-        model: config.aiModel,
+        model: config.embeddingModel,
       });
     },
   },
