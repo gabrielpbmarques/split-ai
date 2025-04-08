@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
 import { BuildSystemPromptService } from './build-system-prompt.service';
-import { NormalizePromptInstructionsService } from '../NormalizePromptInstructions/normalize-prompt-instructions.service';
+import { NormalizePromptInstructionsModule } from '../NormalizePromptInstructions/normalize-prompt-instructions.module';
 
 @Module({
-  providers: [BuildSystemPromptService, NormalizePromptInstructionsService],
+  imports: [NormalizePromptInstructionsModule],
+  providers: [BuildSystemPromptService],
+  exports: [BuildSystemPromptService],
 })
 export class BuildSystemPromptModule {}

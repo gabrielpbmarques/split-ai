@@ -3,5 +3,6 @@ import { NormalizePromptInstructionsService } from './normalize-prompt-instructi
 
 @Module({
   providers: [NormalizePromptInstructionsService],
+  exports: [NormalizePromptInstructionsService],
 })
 export class NormalizePromptInstructionsModule {}

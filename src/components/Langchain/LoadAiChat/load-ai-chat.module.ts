@@ -1,17 +1,18 @@
 import { Module } from '@nestjs/common';
 import { LoadAiChatService } from './load-ai-chat.service';
-import { FillPromptService } from 'src/components/Prompt/FillPrompt/fill-prompt.service';
-import { ExecuteSimilaritySearchService } from '../ExecuteSimilaritySearch/execute-similarity-search.service';
-import { GetRunnableChatService } from '../GetRunnableChat/get-runnable-chat.service';
-import { LoadVectorStoreService } from '../LoadVectorStore/load-vector-store.service';
+import { FillPromptModule } from 'src/components/Prompt/FillPrompt/fill-prompt.module';
+import { ExecuteSimilaritySearchModule } from '../ExecuteSimilaritySearch/execute-similarity-search.module';
+import { GetRunnableChatModule } from '../GetRunnableChat/get-runnable-chat.module';
+import { LoadVectorStoreModule } from '../LoadVectorStore/load-vector-store.module';
 
 @Module({
-  providers: [
-    LoadAiChatService,
-    FillPromptService,
-    GetRunnableChatService,
-    LoadVectorStoreService,
-    ExecuteSimilaritySearchService,
+  imports: [
+    FillPromptModule,
+    ExecuteSimilaritySearchModule,
+    GetRunnableChatModule,
+    LoadVectorStoreModule,
   ],
+  providers: [LoadAiChatService],
+  exports: [LoadAiChatService],
 })
 export class LoadAiChatModule {}

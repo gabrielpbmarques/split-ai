@@ -3,5 +3,6 @@ import { ExecuteSimilaritySearchService } from './execute-similarity-search.serv
 
 @Module({
   providers: [ExecuteSimilaritySearchService],
+  exports: [ExecuteSimilaritySearchService],
 })
 export class ExecuteSimilaritySearchModule {}

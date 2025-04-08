@@ -1,1 +1,1 @@
-export type AISourceType = 'legislation' | 'jurisprudence' | 'doctrine';
+export type AISourceType = 'registration_guide' | 'user_data' | 'faq';

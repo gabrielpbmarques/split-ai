@@ -10,6 +10,8 @@ interface IConfig {
   mongoUri: string;
   sentryDsn: string;
   redisUrl: string;
+  supabaseUrl: string;
+  supabaseKey: string;
   registerChatInstructions: AIInstructions;
 }
 
@@ -19,5 +21,7 @@ export const config: IConfig = {
   mongoUri: process.env.MONGO_URI || 'mongodb://localhost:27017/anthor-agi',
   sentryDsn: process.env.SENTRY_DSN,
   redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
+  supabaseUrl: process.env.SUPABASE_URL,
+  supabaseKey: process.env.SUPABASE_KEY,
   registerChatInstructions: registerChatInstructions,
 };

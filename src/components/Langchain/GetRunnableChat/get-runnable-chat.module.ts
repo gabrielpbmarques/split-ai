@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
 import { GetRunnableChatService } from './get-runnable-chat.service';
-import { CreateHistoryService } from '../CreateHistory/create-history.service';
+import { CreateHistoryModule } from '../CreateHistory/create-history.module';
 
 @Module({
-  providers: [GetRunnableChatService, CreateHistoryService],
+  imports: [CreateHistoryModule],
+  providers: [GetRunnableChatService],
+  exports: [GetRunnableChatService],
 })
 export class GetRunnableChatModule {}

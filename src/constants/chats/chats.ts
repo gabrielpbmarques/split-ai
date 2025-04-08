@@ -23,7 +23,7 @@ const agents: AgentType = {
       temperature: 0.4,
     }),
     runnableOpts: {
-      withHistory: false,
+      withHistory: true,
     },
   },
 };

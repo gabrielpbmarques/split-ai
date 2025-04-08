@@ -20,7 +20,7 @@ export class BuildSystemPromptService {
     const source = context.map((doc: any) => doc.pageContent).join(' ');
 
     if (!sources)
-      return `${textPrompt}\nFonte: ${source}`
+      return `${textPrompt}\nContexto: ${source}`
         .replace(/{/g, '{{')
         .replace(/}/g, '}}');
 
@@ -39,7 +39,7 @@ export class BuildSystemPromptService {
       sourceSection += `\n${type.toUpperCase()}:\n- ${content.join('\n- ')}\n`;
     }
 
-    return `${textPrompt}\nFontes:\n${sourceSection}`
+    return `${textPrompt}\nInformações de Referência:\n${sourceSection}`
       .replace(/{/g, '{{')
       .replace(/}/g, '}}');
   }
