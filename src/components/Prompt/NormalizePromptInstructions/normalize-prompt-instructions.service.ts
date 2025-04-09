@@ -5,7 +5,7 @@ import { AIInstructions } from 'src/types/AIInstructions';
 export class NormalizePromptInstructionsService {
   constructor() {}
 
-  async execute(instructions: AIInstructions): Promise<string> {
+  execute(instructions: AIInstructions): string {
     let text = `${instructions.context}\n\nDiretrizes:\n\n`;
 
     for (const key in instructions.diretrizes) {

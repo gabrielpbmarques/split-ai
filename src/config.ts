@@ -2,6 +2,7 @@ import * as dotenv from 'dotenv';
 import { AIInstructions } from './types/AIInstructions';
 import { registerChatInstructions } from './constants/prompts/registerChatInstructions';
 import { whatsappRegisterInstructions } from './constants/prompts/whatsappRegisterInstructions';
+import { messageDataParser } from './constants/prompts/messageDataParser';
 
 dotenv.config();
 
@@ -16,6 +17,7 @@ interface IConfig {
   supabaseKey: string;
   registerChatInstructions: AIInstructions;
   whatsappRegisterInstructions: AIInstructions;
+  messageDataParser: AIInstructions;
 }
 
 export const config: IConfig = {
@@ -29,4 +31,5 @@ export const config: IConfig = {
   supabaseKey: process.env.SUPABASE_API_KEY,
   registerChatInstructions: registerChatInstructions,
   whatsappRegisterInstructions: whatsappRegisterInstructions,
+  messageDataParser: messageDataParser,
 };

@@ -9,7 +9,10 @@ interface Agent {
   runnableOpts: RunnableChatOpts;
 }
 
-type ValidAgentKeys = 'register_chat' | 'whatsapp_register';
+type ValidAgentKeys =
+  | 'register_chat'
+  | 'whatsapp_register'
+  | 'message_data_parser';
 
 type AgentType = {
   [key in ValidAgentKeys]: Agent;
@@ -31,6 +34,16 @@ const agents: AgentType = {
     chat: new ChatVertexAI({
       model: config.aiModel,
       temperature: 0.7, // Um pouco mais de criatividade para o WhatsApp
+    }),
+    runnableOpts: {
+      withHistory: true,
+    },
+  },
+  message_data_parser: {
+    instructions: config.messageDataParser,
+    chat: new ChatVertexAI({
+      model: config.aiModel,
+      temperature: 0.4,
     }),
     runnableOpts: {
       withHistory: true,

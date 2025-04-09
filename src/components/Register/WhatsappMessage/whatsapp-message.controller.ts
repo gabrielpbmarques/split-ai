@@ -1,6 +1,9 @@
 import { Body, Controller, Post } from '@nestjs/common';
-import { WhatsappMessageService } from 'src/components/Register/WhatsappMessage/whatsapp-message.service';
-import { WhatsappMessageDto } from 'src/components/Register/WhatsappMessage/whatsapp-message.dto';
+import {
+  WhatsappMessageService,
+  WhatsappMessageResponse,
+} from './whatsapp-message.service';
+import { WhatsappMessageDto } from './whatsapp-message.dto';
 
 @Controller('whatsapp')
 export class WhatsappMessageController {
@@ -9,7 +12,9 @@ export class WhatsappMessageController {
   ) {}
 
   @Post('message')
-  async execute(@Body() whatsappMessageDto: WhatsappMessageDto) {
+  async execute(
+    @Body() whatsappMessageDto: WhatsappMessageDto,
+  ): Promise<WhatsappMessageResponse> {
     return this.whatsappMessageService.execute(whatsappMessageDto);
   }
 }

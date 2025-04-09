@@ -8,6 +8,7 @@ import {
 } from 'src/schemas/Worker.schema';
 
 export interface IWorkerRepository {
+  findOne(query: Partial<Worker>): Promise<Worker>;
   findById(id: string): Promise<Worker | null>;
   findByUserId(userId: string): Promise<Worker | null>;
   findByCPF(cpf: string): Promise<Worker | null>;
@@ -21,6 +22,11 @@ export class WorkerRepository implements IWorkerRepository {
     @InjectModel(WorkerSchema.name)
     private workerModel: Model<WorkerDocument>,
   ) {}
+
+  async findOne(query: Partial<Worker>): Promise<Worker> {
+    const worker = await this.workerModel.findOne(query).exec();
+    return worker as unknown as Worker;
+  }
 
   async findById(id: string): Promise<Worker | null> {
     const worker = await this.workerModel.findById(id).exec();

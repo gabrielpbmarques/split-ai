@@ -38,7 +38,7 @@ class DocumentsObject {
 
 @Schema({ timestamps: false })
 class GeoPoint {
-  @Prop({ type: String, required: true, default: 'Point' })
+  @Prop({ type: String, default: 'Point' })
   type: string;
 
   @Prop({ type: Boolean, default: false })
@@ -47,7 +47,7 @@ class GeoPoint {
   @Prop({ type: Date, default: null })
   removedAt: Date | null;
 
-  @Prop({ type: [Number], required: true })
+  @Prop({ type: [Number] })
   coordinates: number[];
 }
 
@@ -80,16 +80,16 @@ class CommunicationObject {
   @Prop({ type: Date, default: null })
   removedAt: Date | null;
 
-  @Prop({ type: Date, required: true })
+  @Prop({ type: Date })
   agreeDate: Date;
 }
 
 @Schema({ timestamps: false })
 class PixObject {
-  @Prop({ type: String, required: true })
+  @Prop({ type: String })
   type: string;
 
-  @Prop({ type: String, required: true })
+  @Prop({ type: String })
   key: string;
 
   @Prop({ type: Boolean, default: false })
@@ -179,31 +179,31 @@ export class Worker {
   @Prop({ type: Date, default: null })
   removedAt: Date | null;
 
-  @Prop({ type: Date, required: true })
+  @Prop({ type: Date })
   birthDate: Date;
 
-  @Prop({ type: String, required: true })
+  @Prop({ type: String })
   cpf: string;
 
-  @Prop({ type: String, required: true })
+  @Prop({ type: String })
   email: string;
 
-  @Prop({ type: String, required: true })
+  @Prop({ type: String })
   name: string;
 
   @Prop({ type: String })
   nickname: string;
 
-  @Prop({ type: String, required: true })
+  @Prop({ type: String })
   phoneId: string;
 
   @Prop({ type: String, default: 'end' })
   signupStage: string;
 
-  @Prop({ type: String, required: true })
+  @Prop({ type: String })
   userId: string;
 
-  @Prop({ type: String, required: true })
+  @Prop({ type: String })
   hashCpf: string;
 
   @Prop({ type: [String], default: [] })
