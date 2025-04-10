@@ -14,15 +14,24 @@ export class ProcessMessageDataService {
       message,
       sessionId,
       agentId = 'message_data_parser',
+      lastAiResponse,
     } = processMessageDataDto;
 
     // Tipando corretamente o agentId para corresponder às chaves válidas de agents
     const typedAgentId = 'message_data_parser' as keyof typeof agents;
 
     try {
+      // Prepara a mensagem com contexto da última resposta da IA, se disponível
+      let messageWithContext = message;
+
+      // Se temos a última resposta da IA, adicionamos como contexto
+      if (lastAiResponse) {
+        messageWithContext = `[CONTEXTO: A última pergunta da IA foi: "${lastAiResponse}"] \n\nResposta do usuário: "${message}"`;
+      }
+
       // Utiliza o agente de IA para extrair dados estruturados da mensagem
       const parserAiResponse = await this.generateAiResponseService.execute(
-        message,
+        messageWithContext,
         sessionId,
         {
           agent_id: agentId,

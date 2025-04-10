@@ -14,6 +14,9 @@ export class Session {
   @Prop({ type: Object, default: {} })
   workerData: any;
 
+  @Prop({ type: String })
+  lastAiResponse: string;
+
   @Prop({ type: Date, default: Date.now })
   lastInteraction: Date;
 

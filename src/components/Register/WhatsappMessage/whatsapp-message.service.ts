@@ -5,6 +5,7 @@ import { FindOrCreateSessionService } from '../FindOrCreateSession/find-or-creat
 import { ProcessMessageDataService } from '../ProcessMessageData/process-message-data.service';
 import { UpdateWorkerService } from '../UpdateWorker/update-worker.service';
 import { GenerateResponseService } from '../GenerateResponse/generate-response.service';
+import { SessionRepository } from '../../../repositories/Session.repository';
 
 export interface WhatsappMessageResponse {
   sessionId: string;
@@ -20,6 +21,7 @@ export class WhatsappMessageService {
     private readonly processMessageDataService: ProcessMessageDataService,
     private readonly updateWorkerService: UpdateWorkerService,
     private readonly generateResponseService: GenerateResponseService,
+    private readonly sessionRepository: SessionRepository,
   ) {}
 
   /**
@@ -36,7 +38,7 @@ export class WhatsappMessageService {
     } = whatsappMessageDto;
 
     // 1. Recuperar ou criar sessão usando o caso de uso dedicado
-    const { sessionId, worker, isNewUser } =
+    const { sessionId, worker, isNewUser, lastAiResponse } =
       await this.findOrCreateSessionService.execute({
         sessionId: existingSessionId,
         phoneNumber,
@@ -46,6 +48,7 @@ export class WhatsappMessageService {
     const parsedData = await this.processMessageDataService.execute({
       message,
       sessionId,
+      lastAiResponse, // Passando a última resposta da IA como contexto
     });
 
     // 3. Atualizar o worker com os dados processados
@@ -65,11 +68,39 @@ export class WhatsappMessageService {
       isNewUser,
     });
 
-    // 5. Retornar resposta
+    // 5. Atualizar a sessão com a última resposta da IA
+    await this.updateLastAiResponse(sessionId, aiResponse);
+
+    // 6. Retornar resposta
     return {
       sessionId,
       message: aiResponse,
       currentStage: updatedWorker.signupStage,
     };
+  }
+
+  /**
+   * Atualiza a última resposta da IA na sessão
+   * @param sessionId ID da sessão
+   * @param aiResponse Resposta da IA
+   */
+  private async updateLastAiResponse(
+    sessionId: string,
+    aiResponse: string,
+  ): Promise<void> {
+    try {
+      // Busca a sessão pelo ID
+      const session = await this.sessionRepository.findBySessionId(sessionId);
+
+      if (session) {
+        // Atualiza a última resposta da IA e a data da última interação
+        await this.sessionRepository.update(session._id.toString(), {
+          lastAiResponse: aiResponse,
+          lastInteraction: new Date(),
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar a última resposta da IA:', error);
+    }
   }
 }

@@ -150,6 +150,21 @@ const whatsappRegisterInstructions: AIInstructions = {
       detalhes:
         'Use linguagem clara, direta e amigável. Seja paciente e prestativo, especialmente com usuários que possam ter dificuldades. Evite gírias ou linguagem muito informal, mantendo um tom amigável mas profissional.',
     },
+    formato_resposta: {
+      descricao: 'Formato específico para respostas.',
+      detalhes: `
+        IMPORTANTE: Suas respostas NUNCA devem conter código JSON ou qualquer outro formato estruturado de dados. 
+        
+        Você deve responder APENAS com texto natural, como se estivesse conversando diretamente com o usuário via WhatsApp.
+        
+        Exemplos do que NÃO fazer:
+        - Não inclua objetos JSON no início ou em qualquer parte da sua resposta
+        - Não use formatação de código como \`\`\`json ou \`\`\`
+        - Não inclua dados estruturados mesmo que você ache que seria útil para o sistema
+        
+        O sistema já possui mecanismos para processar e estruturar os dados do usuário. Sua função é APENAS fornecer respostas em linguagem natural para o usuário final.
+      `,
+    },
     privacidade_e_seguranca: {
       descricao: 'Respeite a privacidade do usuário.',
       detalhes:

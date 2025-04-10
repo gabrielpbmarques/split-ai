@@ -7,6 +7,7 @@ interface SessionResponse {
   sessionId: string;
   worker: any;
   isNewUser: boolean;
+  lastAiResponse?: string; // Última resposta da IA conversacional
 }
 
 @Injectable()
@@ -37,10 +38,12 @@ export class FindOrCreateSessionService {
       }
     }
 
-    // Se encontrou uma sessão, recupera os dados do worker
+    // Se encontrou uma sessão, recupera os dados do worker e a última resposta da IA
+    let lastAiResponse;
     if (session) {
       worker = session.workerData;
       isNewUser = !worker.userId;
+      lastAiResponse = session.lastAiResponse;
     } else {
       // Se não encontrou sessão, cria um worker temporário
       sessionId = uuidv4();
@@ -53,7 +56,7 @@ export class FindOrCreateSessionService {
       await this.saveSession(sessionId, phoneNumber, worker);
     }
 
-    return { sessionId, worker, isNewUser };
+    return { sessionId, worker, isNewUser, lastAiResponse };
   }
 
   private async saveSession(
