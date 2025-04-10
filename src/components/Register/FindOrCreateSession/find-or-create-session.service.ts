@@ -63,12 +63,14 @@ export class FindOrCreateSessionService {
     sessionId: string,
     phoneNumber: string,
     workerData: any,
+    lastAiResponse?: string,
   ): Promise<void> {
     try {
       await this.sessionRepository.create({
         sessionId,
         phoneNumber,
         workerData,
+        lastAiResponse: lastAiResponse || '',
         lastInteraction: new Date(),
         createdAt: new Date(),
       });

@@ -146,7 +146,7 @@ export class Worker {
   @Prop({ type: RgObject })
   rg: RgObject;
 
-  @Prop({ type: String, default: 'active' })
+  @Prop({ type: String, default: 'pending' })
   status: string;
 
   @Prop({ type: Boolean, default: true })
@@ -155,8 +155,20 @@ export class Worker {
   @Prop({ type: String })
   gender: string;
 
-  @Prop({ type: CommunicationObject })
+  @Prop({
+    type: CommunicationObject,
+    default: { agree: false, agreeDate: null },
+  })
   comunication: CommunicationObject;
+
+  @Prop({
+    type: CommunicationObject,
+    default: { agree: false, agreeDate: null },
+  })
+  terms: CommunicationObject;
+
+  @Prop({ type: Boolean, default: false })
+  hasLegalAge: boolean;
 
   @Prop({ type: Boolean, default: false })
   hasPassport: boolean;

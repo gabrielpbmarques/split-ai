@@ -39,6 +39,9 @@ const messageDataParser: AIInstructions = {
                     "cpf": "12345678901",
                     "gender": "female",
                     "comunication": { "agree": true },
+                    "terms": { "agree": true },
+                    "hasLegalAge": true,
+                    "status": "pending",
                     "signupStage": "personal_info",
                     "address": {
                         "cep": "12345678",
@@ -72,6 +75,45 @@ const messageDataParser: AIInstructions = {
       descricao: 'Tratamento para ausência de dados.',
       detalhes:
         'Se nenhum dado relevante for identificado nas mensagens, retorne um JSON vazio: {}.',
+    },
+    gerenciamento_status: {
+      descricao: 'Gerenciamento do status do worker durante o cadastro.',
+      detalhes: `
+                O status do worker deve ser gerenciado da seguinte forma:
+                
+                1. Durante todo o processo de cadastro, o status deve ser "pending".
+                   - Sempre inclua "status": "pending" no JSON quando estiver processando qualquer etapa do cadastro.
+                
+                2. Somente quando o cadastro estiver completo (todas as etapas concluídas), o status deve ser atualizado para "inAnalysis".
+                   - Quando signupStage for "end", defina "status": "inAnalysis".
+                
+                3. NUNCA defina o status como "active" durante o processo de cadastro via WhatsApp.
+                   - O status "active" só deve ser definido por administradores após análise manual.
+                
+                Esta regra é PRIORITÁRIA e deve ser aplicada em todas as respostas JSON, independentemente da etapa do cadastro.
+            `,
+    },
+    interpretar_contexto: {
+      descricao: 'Interpretação do contexto da última pergunta da IA.',
+      detalhes: `
+                Você receberá mensagens que podem incluir o contexto da última pergunta feita pela IA ao usuário, no formato:
+                
+                [CONTEXTO: A última pergunta da IA foi: "Texto da pergunta"] \n\nResposta do usuário: "Resposta"
+                
+                Use este contexto para interpretar corretamente respostas curtas como "Sim", "Não", "Ok", etc. Por exemplo:
+                
+                1. Se a última pergunta foi sobre concordar com os termos de uso e a resposta foi "Sim", isso indica que o campo terms.agree deve ser true.
+                
+                2. Se a última pergunta foi sobre ser maior de idade e a resposta foi "Sim", isso indica que o campo hasLegalAge deve ser true.
+                
+                3. Se a última pergunta foi sobre receber comunicações e a resposta foi "Sim", isso indica que o campo comunication.agree deve ser true.
+                
+                4. Se a última pergunta foi sobre o gênero e a resposta foi "Homem", isso indica que o campo gender deve ser "male".
+                
+                Analise cuidadosamente o contexto da pergunta para determinar qual campo do JSON deve ser preenchido com a resposta do usuário, mesmo quando a resposta é curta ou ambígua.
+                
+                Lembre-se de sempre manter o campo "status" como "pending" durante todo o processo, independentemente da etapa ou resposta do usuário.
+            `,
     },
     etapas_e_campos: {
       descricao: 'Campos necessários por etapa de cadastro.',
@@ -142,9 +184,11 @@ const messageDataParser: AIInstructions = {
                 
                 8. Se todos os campos obrigatórios de todas as etapas estiverem preenchidos, defina signupStage como "chains".
                 
-                9. Se o cadastro estiver completamente finalizado e confirmado, defina signupStage como "end".
+                9. Se o cadastro estiver completamente finalizado e confirmado, defina signupStage como "end" e status como "inAnalysis".
                 
                 Importante: Para o cadastro via WhatsApp, normalmente apenas as etapas "personal_info" e "address" serão coletadas. As demais etapas serão completadas pelo usuário no site ou aplicativo.
+                
+                Regra de status: Durante todo o processo, mantenha status como "pending". Somente quando signupStage for "end", defina status como "inAnalysis".
             `,
     },
     validacao_dados: {

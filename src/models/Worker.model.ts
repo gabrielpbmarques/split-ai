@@ -68,6 +68,8 @@ export interface Worker {
   isGigWorker: boolean;
   gender: string;
   comunication: CommunicationObject;
+  terms: CommunicationObject;
+  hasLegalAge: boolean;
   hasPassport: boolean;
   migrated: boolean;
   paymentProvider: string;
