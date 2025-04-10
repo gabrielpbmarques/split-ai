@@ -5,7 +5,7 @@ import { FindOrCreateSessionService } from '../FindOrCreateSession/find-or-creat
 import { ProcessMessageDataService } from '../ProcessMessageData/process-message-data.service';
 import { UpdateWorkerService } from '../UpdateWorker/update-worker.service';
 import { GenerateResponseService } from '../GenerateResponse/generate-response.service';
-import { SessionRepository } from '../../../repositories/Session.repository';
+import { UpdateLastAiResponseService } from '../UpdateLastAiResponse/update-last-ai-response.service';
 
 export interface WhatsappMessageResponse {
   sessionId: string;
@@ -21,7 +21,7 @@ export class WhatsappMessageService {
     private readonly processMessageDataService: ProcessMessageDataService,
     private readonly updateWorkerService: UpdateWorkerService,
     private readonly generateResponseService: GenerateResponseService,
-    private readonly sessionRepository: SessionRepository,
+    private readonly updateLastAiResponseService: UpdateLastAiResponseService,
   ) {}
 
   /**
@@ -69,7 +69,7 @@ export class WhatsappMessageService {
     });
 
     // 5. Atualizar a sessão com a última resposta da IA
-    await this.updateLastAiResponse(sessionId, aiResponse);
+    await this.updateLastAiResponseService.execute(sessionId, aiResponse);
 
     // 6. Retornar resposta
     return {
@@ -77,30 +77,5 @@ export class WhatsappMessageService {
       message: aiResponse,
       currentStage: updatedWorker.signupStage,
     };
-  }
-
-  /**
-   * Atualiza a última resposta da IA na sessão
-   * @param sessionId ID da sessão
-   * @param aiResponse Resposta da IA
-   */
-  private async updateLastAiResponse(
-    sessionId: string,
-    aiResponse: string,
-  ): Promise<void> {
-    try {
-      // Busca a sessão pelo ID
-      const session = await this.sessionRepository.findBySessionId(sessionId);
-
-      if (session) {
-        // Atualiza a última resposta da IA e a data da última interação
-        await this.sessionRepository.update(session._id.toString(), {
-          lastAiResponse: aiResponse,
-          lastInteraction: new Date(),
-        });
-      }
-    } catch (error) {
-      console.error('Erro ao atualizar a última resposta da IA:', error);
-    }
   }
 }
