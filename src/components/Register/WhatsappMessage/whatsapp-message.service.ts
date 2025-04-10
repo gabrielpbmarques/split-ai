@@ -51,8 +51,6 @@ export class WhatsappMessageService {
       lastAiResponse, // Passando a última resposta da IA como contexto
     });
 
-    console.log('parsedData', parsedData);
-
     // 3. Atualizar o worker com os dados processados
     const updatedWorker = await this.updateWorkerService.execute({
       worker,
