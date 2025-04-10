@@ -78,8 +78,6 @@ export class UpdateWorkerService {
 
       if (!existingUser) return worker;
 
-      console.log('Usuário existente encontrado:', existingUser.id);
-
       // Verifica se existe um worker associado a este usuário
       const existingWorker = await this.workerRepository.findOne({
         userId: existingUser.id,
@@ -98,8 +96,6 @@ export class UpdateWorkerService {
           userId: existingUser.id,
           name: worker.name || existingUser.name,
           email: worker.email || existingUser.email,
-          cpf: worker.cpf || existingUser.cpf,
-          signupStage: existingUser.signupStage || worker.signupStage,
         };
       }
     } catch (error) {
@@ -110,22 +106,31 @@ export class UpdateWorkerService {
 
   private async createUser(worker: any): Promise<any> {
     try {
-      if (!worker.email || !worker.cpf || !worker.name || !worker.password) {
-        console.log('Dados insuficientes para criar usuário');
+      if (!worker.email || !worker.name || !worker.password) {
         return worker;
       }
 
-      // Cria o usuário
+      // Primeiro verifica se o worker já existe no banco (tem _id)
+      let workerId = worker._id ? worker._id.toString() : null;
+
+      // Se o worker não existe ainda, cria-o primeiro
+      if (!workerId) {
+        const createdWorker = await this.workerRepository.create(worker);
+        workerId = createdWorker._id.toString();
+        worker._id = createdWorker._id;
+      }
+
+      // Cria o usuário conforme a estrutura real do banco
       const newUser = await this.userRepository.create({
         name: worker.name,
         email: worker.email,
-        cpf: worker.cpf,
         password: worker.password,
-        signupStage: worker.signupStage,
+        type: 'worker',
+        permissions: [],
+        isRemoved: false,
+        workerId: workerId, // Importante: adiciona a referência ao worker
         createdAt: new Date(),
       });
-
-      console.log('Novo usuário criado:', newUser.id);
 
       // Atualiza o worker com o userId e remove a senha
       const updatedWorker = {
@@ -134,18 +139,14 @@ export class UpdateWorkerService {
         password: undefined,
       };
 
-      // Se o worker já existe, atualiza com o userId
-      if (updatedWorker._id) {
-        await this.workerRepository.update(
-          updatedWorker._id.toString(),
-          updatedWorker,
-        );
-        console.log('Worker atualizado com userId:', updatedWorker._id);
-      }
+      // Sempre atualiza o worker com o userId
+      await this.workerRepository.update(
+        updatedWorker._id.toString(),
+        updatedWorker,
+      );
 
       return updatedWorker;
     } catch (error) {
-      console.error('Erro ao criar usuário:', error);
       return worker;
     }
   }
@@ -155,12 +156,10 @@ export class UpdateWorkerService {
       // Se já tem _id, atualiza
       if (worker._id) {
         await this.workerRepository.update(worker._id.toString(), worker);
-        console.log('Worker atualizado no banco:', worker._id);
       }
       // Se tem dados pessoais completos, cria novo worker
       else if (this.hasPersonalInfoComplete(worker)) {
         const createdWorker = await this.workerRepository.create(worker);
-        console.log('Novo worker criado no banco:', createdWorker._id);
         worker._id = createdWorker._id;
       }
       // Caso contrário, mantém em memória

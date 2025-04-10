@@ -20,10 +20,6 @@ export class BuildSystemPromptService {
     const textPrompt =
       this.normalizePromptInstructionsService.execute(instructions);
 
-    console.log('Text Prompt:', textPrompt);
-
-    console.log('Context metadata:', contextMetadata);
-
     const source = context.map((doc: any) => doc.pageContent).join(' ');
 
     if (!sources)

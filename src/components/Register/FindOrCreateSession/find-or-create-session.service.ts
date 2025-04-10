@@ -40,7 +40,6 @@ export class FindOrCreateSessionService {
     // Se encontrou uma sessão, recupera os dados do worker
     if (session) {
       worker = session.workerData;
-      console.log('Sessão existente encontrada:', sessionId);
       isNewUser = !worker.userId;
     } else {
       // Se não encontrou sessão, cria um worker temporário
@@ -49,7 +48,6 @@ export class FindOrCreateSessionService {
         signupStage: 'personal_info',
         createdAt: new Date(),
       };
-      console.log('Nova sessão criada:', sessionId);
 
       // Cria a sessão no banco
       await this.saveSession(sessionId, phoneNumber, worker);

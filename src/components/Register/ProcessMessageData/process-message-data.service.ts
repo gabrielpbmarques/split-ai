@@ -30,8 +30,6 @@ export class ProcessMessageDataService {
         typedAgentId,
       );
 
-      console.log('Parser AI Response:', parserAiResponse);
-
       // Limpa a resposta e converte para JSON
       const cleanedResponse = parserAiResponse
         .replace(/```json\s*/, '') // remove ```json e espaços
@@ -39,7 +37,6 @@ export class ProcessMessageDataService {
         .trim();
 
       const parsedData = JSON.parse(cleanedResponse);
-      console.log('Parsed Data:', parsedData);
 
       return parsedData;
     } catch (error) {

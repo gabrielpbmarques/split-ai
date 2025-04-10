@@ -41,7 +41,6 @@ export class WhatsappMessageService {
         sessionId: existingSessionId,
         phoneNumber,
       });
-    console.log('Session ID:', sessionId);
 
     // 2. Processar a mensagem para extrair dados estruturados
     const parsedData = await this.processMessageDataService.execute({
