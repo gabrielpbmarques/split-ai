@@ -10,13 +10,22 @@ export class UpdateAddressService {
     private readonly workerRepository: WorkerRepository,
   ) {}
 
-  async execute(address: Partial<Address>, workerId: string): Promise<Address> {
-    const newAddress = await this.addressRepository.create(address);
+  async execute(
+    address: Partial<Address>,
+    workerId: string,
+    addressId?: string,
+  ): Promise<Address> {
+    let updatedAddress: Address;
 
-    await this.workerRepository.update(workerId, {
-      addressId: newAddress._id.toString(),
-    });
+    if (addressId) {
+      updatedAddress = await this.addressRepository.update(addressId, address);
+    } else {
+      updatedAddress = await this.addressRepository.create(address);
+      await this.workerRepository.update(workerId, {
+        addressId: updatedAddress._id.toString(),
+      });
+    }
 
-    return newAddress;
+    return updatedAddress;
   }
 }

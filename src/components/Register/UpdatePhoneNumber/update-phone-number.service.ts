@@ -14,10 +14,16 @@ export class UpdatePhoneNumberService {
   async execute(
     payload: Pick<PhoneSchema, 'countryCode' | 'areaCode' | 'number'>,
     workerId: string,
+    phoneId?: string,
   ): Promise<Phone> {
-    const phone = await this.phoneRepository.create(payload);
+    let phone: Phone;
 
-    await this.workerRepository.update(workerId, { phoneId: phone._id });
+    if (phoneId) {
+      phone = await this.phoneRepository.update(phoneId, payload);
+    } else {
+      phone = await this.phoneRepository.create(payload);
+      await this.workerRepository.update(workerId, { phoneId: phone._id });
+    }
 
     return phone;
   }

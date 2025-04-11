@@ -15,13 +15,22 @@ export class UpdateBankAccountService {
   async execute(
     bankAccount: Partial<BankAccountSchema>,
     workerId: string,
+    bankAccountId?: string,
   ): Promise<BankAccount> {
-    const newBankAccount = await this.bankAccountRepository.create(bankAccount);
+    let account: BankAccount;
 
-    await this.workerRepository.update(workerId, {
-      bankAccount: newBankAccount._id as unknown as ObjectId,
-    });
+    if (bankAccountId) {
+      account = await this.bankAccountRepository.update(
+        bankAccountId,
+        bankAccount,
+      );
+    } else {
+      account = await this.bankAccountRepository.create(bankAccount);
+      await this.workerRepository.update(workerId, {
+        bankAccount: account._id as unknown as ObjectId,
+      });
+    }
 
-    return newBankAccount;
+    return account;
   }
 }
