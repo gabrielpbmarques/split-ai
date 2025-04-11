@@ -28,12 +28,20 @@ const messageDataParser: AIInstructions = {
                 7. Remova pontuação e espaços do telefone, deixando apenas os dígitos numéricos
                 8. Para documentos, normalize os tipos para: "rg" ou "cnh"
                 9. Para contas bancárias, normalize os tipos para: "checking" (corrente) ou "savings" (poupança)
+                10. Para o telefone, use o formato: { countryCode: "55", areaCode: "11", number: "999999999" }
+                11. O countryCode deve ser "55" para o Brasil
+                12. Analise a última pergunta feita pela IA ao usuário e determine quais campos do worker devem ser atualizados com base na resposta do usuário.
+                13. Retorne um campo adicional no JSON chamado "fieldsToUpdate" que contém um array de strings com os nomes dos campos que devem ser atualizados, somente se o dado tiver sido fornecido.
                 
                 Exemplo de JSON estruturado completo (todas as etapas):
                 {
                     "name": "MARIA SILVA",
                     "nickname": "Mari",
-                    "phoneNumber": "11999999999",
+                    "phone": {
+                        "countryCode": "55",
+                        "areaCode": "11",
+                        "number": "999999999"
+                    },
                     "email": "maria.silva@gmail.com",
                     "birthDate": "1990-05-15",
                     "cpf": "12345678901",
@@ -43,6 +51,36 @@ const messageDataParser: AIInstructions = {
                     "hasLegalAge": true,
                     "status": "pending",
                     "signupStage": "personal_info",
+                    "fieldsToUpdate": [
+                        "name",
+                        "nickname",
+                        "phone",
+                        "email",
+                        "birthDate",
+                        "cpf",
+                        "gender",
+                        "comunication",
+                        "terms",
+                        "hasLegalAge",
+                        "address.cep",
+                        "address.street",
+                        "address.number",
+                        "address.complement",
+                        "address.neighborhood",
+                        "address.city",
+                        "address.state",
+                        "document.type",
+                        "document.number",
+                        "document.frontImage",
+                        "document.backImage",
+                        "document.selfieImage",
+                        "bankAccount.bank",
+                        "bankAccount.agency",
+                        "bankAccount.accountNumber",
+                        "bankAccount.accountType",
+                        "bankAccount.pixKey",
+                        "chains"
+                     ],
                     "address": {
                         "cep": "12345678",
                         "street": "Rua das Flores",

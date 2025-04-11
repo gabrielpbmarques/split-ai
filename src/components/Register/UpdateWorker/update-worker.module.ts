@@ -8,6 +8,7 @@ import { WorkerRepository } from '../../../repositories/Worker.repository';
 import { UserRepository } from '../../../repositories/User.repository';
 import { SessionRepository } from '../../../repositories/Session.repository';
 import { DatabaseModule } from '../../../database/database.module';
+import { UpdatePhoneNumberModule } from '../UpdatePhoneNumber/update-phone-number.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { DatabaseModule } from '../../../database/database.module';
       { name: User.name, schema: UserSchema },
       { name: Session.name, schema: SessionSchema },
     ]),
+    UpdatePhoneNumberModule,
   ],
   providers: [
     UpdateWorkerService,

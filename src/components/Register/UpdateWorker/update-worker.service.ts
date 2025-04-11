@@ -3,6 +3,7 @@ import { UpdateWorkerDto } from './update-worker.dto';
 import { WorkerRepository } from '../../../repositories/Worker.repository';
 import { UserRepository } from '../../../repositories/User.repository';
 import { SessionRepository } from '../../../repositories/Session.repository';
+import { UpdatePhoneNumberService } from '../UpdatePhoneNumber/update-phone-number.service';
 
 @Injectable()
 export class UpdateWorkerService {
@@ -10,6 +11,7 @@ export class UpdateWorkerService {
     private readonly workerRepository: WorkerRepository,
     private readonly userRepository: UserRepository,
     private readonly sessionRepository: SessionRepository,
+    private readonly updatePhoneNumberService: UpdatePhoneNumberService,
   ) {}
 
   async execute(updateWorkerDto: UpdateWorkerDto): Promise<any> {
@@ -35,9 +37,6 @@ export class UpdateWorkerService {
       );
     }
 
-    // Atualiza o estágio do cadastro
-    updatedWorker = this.updateSignupStage(updatedWorker);
-
     // Verifica se temos senha e estamos no estágio de endereço com dados completos
     if (
       updatedWorker.signupStage === 'address' &&
@@ -50,9 +49,13 @@ export class UpdateWorkerService {
     ) {
       // Cria o usuário e atualiza o worker
       updatedWorker = await this.createUser(updatedWorker);
-      // Atualiza o estágio novamente
-      updatedWorker = this.updateSignupStage(updatedWorker);
     }
+
+    if (parsedData.fieldsToUpdate.includes('phone') && worker._id)
+      await this.updatePhoneNumberService.execute(
+        parsedData.phone,
+        worker._id.toString(),
+      );
 
     // Persiste o worker e a sessão
     await this.saveWorker(updatedWorker);
@@ -203,62 +206,6 @@ export class UpdateWorkerService {
     }
   }
 
-  /**
-   * Atualiza o estágio de cadastro com base nos dados disponíveis
-   */
-  private updateSignupStage(worker: any): any {
-    // Se não tem estágio definido, começa pelo personal_info
-    if (!worker.signupStage) {
-      worker.signupStage = 'personal_info';
-      return worker;
-    }
-
-    // Lógica de progressão dos estágios
-    switch (worker.signupStage) {
-      case 'personal_info':
-        if (this.hasPersonalInfoComplete(worker)) {
-          worker.signupStage = 'address';
-        }
-        break;
-
-      case 'address':
-        if (this.hasAddressComplete(worker)) {
-          // No fluxo da Anthor, aqui solicitamos a senha para criar a conta
-          // Se tiver userId, podemos avançar
-          if (worker.userId) {
-            worker.signupStage = 'profile_picture';
-          }
-        }
-        break;
-
-      case 'profile_picture':
-        if (worker.profilePicture) {
-          worker.signupStage = 'document';
-        }
-        break;
-
-      case 'document':
-        if (this.hasDocumentsComplete(worker)) {
-          worker.signupStage = 'bank_account';
-        }
-        break;
-
-      case 'bank_account':
-        if (this.hasBankAccountComplete(worker)) {
-          worker.signupStage = 'chains';
-        }
-        break;
-
-      case 'chains':
-        if (worker.chains && worker.chains.length > 0) {
-          worker.signupStage = 'complete';
-        }
-        break;
-    }
-
-    return worker;
-  }
-
   // Métodos auxiliares para validar a completude dos dados
   private hasPersonalInfoComplete(worker: any): boolean {
     return !!(
@@ -279,24 +226,6 @@ export class UpdateWorkerService {
       address.city &&
       address.state &&
       address.zipCode
-    );
-  }
-
-  private hasDocumentsComplete(worker: any): boolean {
-    return !!(
-      worker.documentFront &&
-      worker.documentBack &&
-      worker.documentSelfie
-    );
-  }
-
-  private hasBankAccountComplete(worker: any): boolean {
-    const bankAccount = worker.bankAccount || {};
-    return !!(
-      bankAccount.bankCode &&
-      bankAccount.agency &&
-      bankAccount.accountNumber &&
-      bankAccount.accountType
     );
   }
 }
