@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { SessionRepository } from '../../../repositories/Session.repository';
 import { FindOrCreateSessionDto } from './find-or-create-session.dto';
 import { v4 as uuidv4 } from 'uuid';
+import { SaveSessionService } from '../SaveSession/save-session.service';
 
 interface SessionResponse {
   sessionId: string;
@@ -12,7 +13,10 @@ interface SessionResponse {
 
 @Injectable()
 export class FindOrCreateSessionService {
-  constructor(private readonly sessionRepository: SessionRepository) {}
+  constructor(
+    private readonly sessionRepository: SessionRepository,
+    private readonly saveSessionService: SaveSessionService,
+  ) {}
 
   async execute(
     findOrCreateSessionDto: FindOrCreateSessionDto,
@@ -53,29 +57,14 @@ export class FindOrCreateSessionService {
       };
 
       // Cria a sessão no banco
-      await this.saveSession(sessionId, phoneNumber, worker);
+      await this.saveSessionService.execute(
+        sessionId,
+        phoneNumber,
+        worker,
+        lastAiResponse,
+      );
     }
 
     return { sessionId, worker, isNewUser, lastAiResponse };
-  }
-
-  private async saveSession(
-    sessionId: string,
-    phoneNumber: string,
-    workerData: any,
-    lastAiResponse?: string,
-  ): Promise<void> {
-    try {
-      await this.sessionRepository.create({
-        sessionId,
-        phoneNumber,
-        workerData,
-        lastAiResponse: lastAiResponse || '',
-        lastInteraction: new Date(),
-        createdAt: new Date(),
-      });
-    } catch (error) {
-      console.error('Erro ao criar sessão:', error);
-    }
   }
 }

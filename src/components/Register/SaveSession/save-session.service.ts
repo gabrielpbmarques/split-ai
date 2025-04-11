@@ -9,6 +9,7 @@ export class SaveSessionService {
     sessionId: string,
     phoneNumber: string,
     workerData: any,
+    lastAiResponse?: string,
   ): Promise<void> {
     try {
       const existingSession =
@@ -19,6 +20,7 @@ export class SaveSessionService {
         await this.sessionRepository.update(sessionId, {
           workerData,
           lastInteraction: new Date(),
+          lastAiResponse,
         });
       } else {
         // Cria a sessão
@@ -27,6 +29,7 @@ export class SaveSessionService {
           phoneNumber,
           workerData,
           lastInteraction: new Date(),
+          lastAiResponse,
           createdAt: new Date(),
         });
       }
