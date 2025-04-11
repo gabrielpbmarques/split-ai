@@ -4,6 +4,7 @@ import { WorkerRepository } from '../../../repositories/Worker.repository';
 import { UserRepository } from '../../../repositories/User.repository';
 import { SessionRepository } from '../../../repositories/Session.repository';
 import { UpdatePhoneNumberService } from '../UpdatePhoneNumber/update-phone-number.service';
+import { UpdateAddressService } from '../UpdateAddress/update-address.service';
 
 @Injectable()
 export class UpdateWorkerService {
@@ -12,6 +13,7 @@ export class UpdateWorkerService {
     private readonly userRepository: UserRepository,
     private readonly sessionRepository: SessionRepository,
     private readonly updatePhoneNumberService: UpdatePhoneNumberService,
+    private readonly updateAddressService: UpdateAddressService,
   ) {}
 
   async execute(updateWorkerDto: UpdateWorkerDto): Promise<any> {
@@ -54,6 +56,12 @@ export class UpdateWorkerService {
     if (parsedData.fieldsToUpdate.includes('phone') && worker._id)
       await this.updatePhoneNumberService.execute(
         parsedData.phone,
+        worker._id.toString(),
+      );
+
+    if (parsedData.fieldsToUpdate.includes('address') && worker._id)
+      await this.updateAddressService.execute(
+        parsedData.address,
         worker._id.toString(),
       );
 
