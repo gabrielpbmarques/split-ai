@@ -4,13 +4,18 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Session, SessionSchema } from '../../../schemas/Session.schema';
 import { SessionRepository } from '../../../repositories/Session.repository';
 import { DatabaseModule } from '../../../database/database.module';
+import { SaveSessionService } from '../SaveSession/save-session.service';
 
 @Module({
   imports: [
     DatabaseModule,
     MongooseModule.forFeature([{ name: Session.name, schema: SessionSchema }]),
   ],
-  providers: [FindOrCreateSessionService, SessionRepository],
+  providers: [
+    FindOrCreateSessionService,
+    SessionRepository,
+    SaveSessionService,
+  ],
   exports: [FindOrCreateSessionService],
 })
 export class FindOrCreateSessionModule {}

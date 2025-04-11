@@ -45,15 +45,8 @@ const whatsappRegisterInstructions: AIInstructions = {
            - Solicite que o usuário envie uma foto de perfil via WhatsApp
            - Explique que a foto deve mostrar claramente o rosto do usuário
            - Confirme o recebimento da foto e verifique se está adequada
-        
-        6. DOCUMENTO (ETAPA 4/6):
-           - Solicite que o usuário envie fotos do documento de identificação (RG ou CNH)
-           - Peça a foto da frente do documento
-           - Peça a foto do verso do documento (se necessário)
-           - Peça uma selfie do usuário segurando o documento
-           - Confirme o recebimento das fotos e verifique se estão adequadas
-        
-        7. DADOS BANCÁRIOS (ETAPA 5/6):
+
+        6. DADOS BANCÁRIOS (ETAPA 5/6):
            - Solicite as informações bancárias do usuário:
              * Nome do banco ou código do banco
              * Tipo de conta (corrente ou poupança)
@@ -61,6 +54,13 @@ const whatsappRegisterInstructions: AIInstructions = {
              * Número da conta
              * Chave PIX (opcional)
            - Confirme os dados fornecidos
+        
+        7. DOCUMENTO (ETAPA 4/6):
+           - Solicite que o usuário envie fotos do documento de identificação (RG ou CNH)
+           - Peça a foto da frente do documento
+           - Peça a foto do verso do documento (se necessário)
+           - Peça uma selfie do usuário segurando o documento
+           - Confirme o recebimento das fotos e verifique se estão adequadas
         
         8. CADEIAS (ETAPA 6/6):
            - Explique o que são as cadeias de interesse na plataforma Anthor
@@ -84,8 +84,8 @@ const whatsappRegisterInstructions: AIInstructions = {
           * personal_info: Etapa de dados pessoais (incompleta ou completa)
           * address: Etapa de endereço (incompleta ou completa)
           * profile_picture: Etapa de foto de perfil
-          * document: Etapa de documentação
           * bank_account: Etapa de dados bancários
+          * document: Etapa de documentação
           * chains: Etapa de seleção de cadeias
           * end: Cadastro finalizado
         
@@ -126,17 +126,17 @@ const whatsappRegisterInstructions: AIInstructions = {
         - A foto deve mostrar claramente o rosto do usuário
         - A imagem deve estar nítida e bem iluminada
         - Não deve conter outras pessoas além do usuário
-        
-        Etapa 4 - DOCUMENT (Documento):
-        - Tipo de documento: Deve ser RG ou CNH
-        - Fotos do documento: Devem estar nítidas, com todas as informações legíveis
-        - Selfie com documento: O rosto do usuário e o documento devem estar claramente visíveis
-        
-        Etapa 5 - BANK_ACCOUNT (Dados Bancários):
+
+        Etapa 4 - BANK_ACCOUNT (Dados Bancários):
         - Código do banco: Deve ser um código válido de banco brasileiro
         - Agência: Deve conter apenas números, sem caracteres especiais (exceto hífen para dígito verificador)
         - Número da conta: Deve conter apenas números, sem caracteres especiais (exceto hífen para dígito verificador)
         - Tipo de conta: Deve ser "corrente" ou "poupança"
+        
+        Etapa 5 - DOCUMENT (Documento):
+        - Tipo de documento: Deve ser RG ou CNH
+        - Fotos do documento: Devem estar nítidas, com todas as informações legíveis
+        - Selfie com documento: O rosto do usuário e o documento devem estar claramente visíveis
         
         Etapa 6 - CHAINS (Cadeias):
         - O usuário deve selecionar pelo menos uma cadeia de interesse
@@ -184,8 +184,8 @@ const whatsappRegisterInstructions: AIInstructions = {
         1. PERSONAL_INFO (Dados Pessoais): Informações básicas do usuário
         2. ADDRESS (Endereço): Informações de endereço do usuário
         3. PROFILE_PICTURE: Envio de foto de perfil via WhatsApp
-        4. DOCUMENT: Envio de fotos de documentos de identificação via WhatsApp
-        5. BANK_ACCOUNT: Informações de dados bancários para recebimentos
+        4. BANK_ACCOUNT: Informações de dados bancários para recebimentos
+        5. DOCUMENT: Envio de fotos de documentos de identificação via WhatsApp
         6. CHAINS: Seleção de cadeias de interesse para atuação profissional
         
         Fluxo de integração:

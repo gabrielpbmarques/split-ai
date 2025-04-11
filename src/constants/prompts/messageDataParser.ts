@@ -24,14 +24,16 @@ const messageDataParser: AIInstructions = {
                 3. Normalize nomes para maiúsculas
                 4. Formate o gênero como: "female" (mulher), "male" (homem) ou "uninformed" (outro)
                 5. Remova pontuação do CEP, deixando apenas os 8 dígitos numéricos
-                6. Formate a data de nascimento como YYYY-MM-DD
-                7. Remova pontuação e espaços do telefone, deixando apenas os dígitos numéricos
-                8. Para documentos, normalize os tipos para: "rg" ou "cnh"
-                9. Para contas bancárias, normalize os tipos para: "checking" (corrente) ou "savings" (poupança)
-                10. Para o telefone, use o formato: { countryCode: "55", areaCode: "11", number: "999999999" }
-                11. O countryCode deve ser "55" para o Brasil
-                12. Analise a última pergunta feita pela IA ao usuário e determine quais campos do worker devem ser atualizados com base na resposta do usuário.
-                13. Retorne um campo adicional no JSON chamado "fieldsToUpdate" que contém um array de strings com os nomes dos campos que devem ser atualizados, somente se o dado tiver sido fornecido.
+                6. Quando o usuário informar a cidade, busque o código do IBGE da cidade informada e preencha o campo address.cityCode
+                7. Preencha o campo address.country automaticamente, de acordo com o CEP informado
+                8. Formate a data de nascimento como YYYY-MM-DD
+                9. Remova pontuação e espaços do telefone, deixando apenas os dígitos numéricos
+                10. Para documentos, normalize os tipos para: "rg" ou "cnh"
+                11. Para contas bancárias, normalize os tipos para: "checking" (corrente) ou "savings" (poupança)
+                12. Para o telefone, use o formato: { countryCode: "55", areaCode: "11", number: "999999999" }
+                13. O countryCode deve ser "55" para o Brasil
+                14. Analise a última pergunta feita pela IA ao usuário e determine quais campos do worker devem ser atualizados com base na resposta do usuário.
+                15. Retorne um campo adicional no JSON chamado "fieldsToUpdate" que contém um array de strings com os nomes dos campos que devem ser atualizados, somente se o dado tiver sido fornecido.
                 
                 Exemplo de JSON estruturado completo (todas as etapas):
                 {
@@ -80,30 +82,32 @@ const messageDataParser: AIInstructions = {
                         "bankAccount.accountType",
                         "bankAccount.pixKey",
                         "chains"
-                     ],
+                    ],
                     "address": {
-                        "cep": "12345678",
+                        "zipCode": "12345678",
                         "street": "Rua das Flores",
                         "number": "123",
                         "complement": "Apto 45",
                         "neighborhood": "Jardim Europa",
                         "city": "São Paulo",
-                        "state": "SP"
+                        "state": "SP",
+                        "cityCode": 12345678,
+                        "country": "BR"
                     },
                     "profilePicture": "https://example.com/profile.jpg",
+                    "bankInfo": {
+                        "bank": "341",
+                        "agency": "1234",
+                        "accountNumber": "12345678",
+                        "accountType": "checking",
+                        "pixKey": "maria.silva@gmail.com"
+                    },
                     "document": {
                         "type": "rg",
                         "number": "123456789",
                         "frontImage": "https://example.com/front.jpg",
                         "backImage": "https://example.com/back.jpg",
                         "selfieImage": "https://example.com/selfie.jpg"
-                    },
-                    "bankAccount": {
-                        "bank": "341",
-                        "agency": "1234",
-                        "accountNumber": "12345678",
-                        "accountType": "checking",
-                        "pixKey": "maria.silva@gmail.com"
                     },
                     "chains": ["chain1", "chain2", "chain3"]
                 }
@@ -138,7 +142,7 @@ const messageDataParser: AIInstructions = {
                 
                 [CONTEXTO: A última pergunta da IA foi: "Texto da pergunta"] \n\nResposta do usuário: "Resposta"
                 
-                Use este contexto para interpretar corretamente respostas curtas como "Sim", "Não", "Ok", etc. Por exemplo:
+              Use este contexto para interpretar corretamente respostas curtas como "Sim", "Não", "Ok", etc. Por exemplo:
                 
                 1. Se a última pergunta foi sobre concordar com os termos de uso e a resposta foi "Sim", isso indica que o campo terms.agree deve ser true.
                 
@@ -176,23 +180,24 @@ const messageDataParser: AIInstructions = {
                    - address.neighborhood (obrigatório): Bairro
                    - address.city (obrigatório): Cidade
                    - address.state (obrigatório): Estado
+
+                3. BANK_ACCOUNT (Dados Bancários):
+                  - bankAccount.bank (obrigatório): Código do banco
+                  - bankAccount.agency (obrigatório): Agência
+                  - bankAccount.accountNumber (obrigatório): Número da conta
+                  - bankAccount.accountType (obrigatório): Tipo de conta (corrente, poupança)
+                  - bankAccount.pixKey (opcional): Chave PIX
                 
-                3. PROFILE_PICTURE (Foto de Perfil):
+                4. PROFILE_PICTURE (Foto de Perfil):
                    - profilePicture (obrigatório): URL ou identificador da foto de perfil
-                   
-                4. DOCUMENT (Documento):
+
+                5. DOCUMENT (Documento):
                    - document.type (obrigatório): Tipo de documento (RG, CNH)
                    - document.number (obrigatório): Número do documento
                    - document.frontImage (obrigatório): URL ou identificador da imagem frontal do documento
                    - document.backImage (opcional): URL ou identificador da imagem traseira do documento
                    - document.selfieImage (obrigatório): URL ou identificador da selfie com documento
                 
-                5. BANK_ACCOUNT (Dados Bancários):
-                   - bankAccount.bank (obrigatório): Código do banco
-                   - bankAccount.agency (obrigatório): Agência
-                   - bankAccount.accountNumber (obrigatório): Número da conta
-                   - bankAccount.accountType (obrigatório): Tipo de conta (corrente, poupança)
-                   - bankAccount.pixKey (opcional): Chave PIX
                 
                 6. CHAINS (Cadeias de Interesse):
                    - chains (obrigatório): Array de identificadores das cadeias de interesse
@@ -247,19 +252,19 @@ const messageDataParser: AIInstructions = {
                 8. Rua, Bairro, Cidade: Não devem estar vazios
                 9. Número: Deve ser um valor numérico ou alfanumérico válido
                 10. Estado: Deve ser uma sigla de estado brasileiro válida (2 letras)
+
+                Etapa BANK_ACCOUNT:
+                11. Código do banco: Deve ser um número válido de banco brasileiro
+                12. Agência e número da conta: Devem conter apenas dígitos e hífen para dígito verificador
+                13. Tipo de conta: Deve ser "checking" ou "savings"
                 
                 Etapa PROFILE_PICTURE:
-                11. URL da foto de perfil: Deve ser uma URL válida
-                
+                14. URL da foto de perfil: Deve ser uma URL válida
+
                 Etapa DOCUMENT:
-                12. Tipo de documento: Deve ser "rg" ou "cnh"
-                13. Número do documento: Deve conter apenas caracteres alfanuméricos
-                14. URLs das imagens: Devem ser URLs válidas
-                
-                Etapa BANK_ACCOUNT:
-                15. Código do banco: Deve ser um número válido de banco brasileiro
-                16. Agência e número da conta: Devem conter apenas dígitos e hífen para dígito verificador
-                17. Tipo de conta: Deve ser "checking" ou "savings"
+                15. Tipo de documento: Deve ser "rg" ou "cnh"
+                16. Número do documento: Deve conter apenas caracteres alfanuméricos
+                17. URLs das imagens: Devem ser URLs válidas
                 
                 Etapa CHAINS:
                 18. Array de cadeias: Deve ser um array não vazio
