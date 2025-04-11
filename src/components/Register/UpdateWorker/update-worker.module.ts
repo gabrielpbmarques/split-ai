@@ -10,6 +10,7 @@ import { SessionRepository } from '../../../repositories/Session.repository';
 import { DatabaseModule } from '../../../database/database.module';
 import { UpdatePhoneNumberModule } from '../UpdatePhoneNumber/update-phone-number.module';
 import { UpdateAddressModule } from '../UpdateAddress/update-address.module';
+import { UpdateBankAccountModule } from '../UpdateBankAccount/update-bank-account.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { UpdateAddressModule } from '../UpdateAddress/update-address.module';
     ]),
     UpdatePhoneNumberModule,
     UpdateAddressModule,
+    UpdateBankAccountModule,
   ],
   providers: [
     UpdateWorkerService,
