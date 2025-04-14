@@ -39,15 +39,12 @@ export class ProcessMessageDataService {
         typedAgentId,
       );
 
-      // Limpa a resposta e converte para JSON
       const cleanedResponse = parserAiResponse
         .replace(/```json\s*/, '') // remove ```json e espaços
         .replace(/```$/, '') // remove a última ```
         .trim();
 
-      const parsedData = JSON.parse(cleanedResponse);
-
-      return parsedData;
+      return JSON.parse(cleanedResponse);
     } catch (error) {
       console.error('Erro ao processar dados da mensagem:', error);
       return null;

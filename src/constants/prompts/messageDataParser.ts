@@ -34,14 +34,14 @@ const messageDataParser: AIInstructions = {
                    - Aceite formatos como: 12345-678, 12345678, 12.345-678
                 
                 6. Endereço completo:
-                   - Quando o usuário informar APENAS o CEP, busque e preencha automaticamente todos os campos possíveis:
-                     * address.street (rua)
-                     * address.neighborhood (bairro)
-                     * address.city (cidade)
-                     * address.state (estado)
-                     * address.cityCode (código IBGE da cidade)
-                     * address.country ("Brasil")
-                   - O usuário deverá fornecer apenas o número e complemento.
+                  - Quando o usuário informar um CEP válido, SEMPRE preencha no JSON todos os campos de endereço que conseguir inferir, mesmo que o usuário só tenha enviado o CEP:
+                    * address.street (rua)
+                    * address.neighborhood (bairro)
+                    * address.city (cidade)
+                    * address.state (estado)
+                    * address.cityCode (código IBGE da cidade, se possível)
+                    * address.country ("Brasil")
+                  - O usuário deverá fornecer apenas o número e complemento.
                 
                 7. Data de nascimento: Transforme para formato ISO YYYY-MM-DD
                    - Aceite formatos como: 31/12/1990, 31.12.1990, 31-12-1990, 31 12 1990

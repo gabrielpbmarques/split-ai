@@ -26,7 +26,7 @@ export class Address {
   @Prop({ type: String, required: true })
   country: string;
 
-  @Prop({ type: String, required: true })
+  @Prop({ type: String })
   cityCode: string;
 }
 

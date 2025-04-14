@@ -42,6 +42,7 @@ export class SaveWorkerService {
     try {
       const { phone, bankInfo, address, document, fieldsToUpdate, ...rest } =
         worker;
+      console.log('rest', rest);
       // Se já tem _id, atualiza
       if (rest._id) {
         await this.workerRepository.update(rest._id.toString(), rest);
@@ -55,6 +56,10 @@ export class SaveWorkerService {
         const shouldUpdateAddress =
           fieldsToUpdate?.some((f) => f.includes('address')) &&
           this.hasAddress(address);
+
+        console.log('shouldUpdatePhone', shouldUpdatePhone);
+        console.log('shouldUpdateBankInfo', shouldUpdateBankInfo);
+        console.log('shouldUpdateAddress', shouldUpdateAddress);
 
         if (shouldUpdatePhone) {
           await this.updatePhoneNumberService.execute(
@@ -90,6 +95,8 @@ export class SaveWorkerService {
             bankInfo,
             worker._id.toString(),
           );
+
+        console.log('has address', this.hasAddress(address));
 
         if (this.hasAddress(address))
           await this.updateAddressService.execute(

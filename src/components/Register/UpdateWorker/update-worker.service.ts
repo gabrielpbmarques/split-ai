@@ -24,7 +24,13 @@ export class UpdateWorkerService {
     let updatedWorker = {
       ...worker,
       ...parsedData,
+      // Faz merge profundo do address para não sobrescrever dados anteriores
+      address: parsedData.address
+        ? { ...worker.address, ...parsedData.address }
+        : worker.address,
     };
+
+    console.log('updatedWorker', updatedWorker);
 
     // Verifica se existem usuários pelo email ou CPF
     if (parsedData.email || parsedData.cpf) {
