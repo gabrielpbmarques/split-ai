@@ -6,6 +6,8 @@ import { ProcessMessageDataService } from '../ProcessMessageData/process-message
 import { UpdateWorkerService } from '../UpdateWorker/update-worker.service';
 import { GenerateResponseService } from '../GenerateResponse/generate-response.service';
 import { UpdateLastAiResponseService } from '../UpdateLastAiResponse/update-last-ai-response.service';
+import { ProcessImageMessageService } from '../ProcessImageMessage/process-image-message.service';
+import { UpdateDocumentService } from '../UpdateDocument/update-document.service';
 
 export interface WhatsappMessageResponse {
   sessionId: string;
@@ -23,6 +25,8 @@ export class WhatsappMessageService {
     private readonly updateWorkerService: UpdateWorkerService,
     private readonly generateResponseService: GenerateResponseService,
     private readonly updateLastAiResponseService: UpdateLastAiResponseService,
+    private readonly processImageMessageService: ProcessImageMessageService,
+    private readonly updateDocumentService: UpdateDocumentService,
   ) {}
 
   /**
@@ -40,6 +44,7 @@ export class WhatsappMessageService {
         phoneNumber,
         message,
         sessionId: existingSessionId,
+        mediaUrl, // URL da imagem, se existir
       } = whatsappMessageDto;
 
       // 1. Recuperar ou criar sessão usando o caso de uso dedicado
@@ -62,7 +67,41 @@ export class WhatsappMessageService {
         `Sessão ${sessionId} recuperada/criada para o número: ${phoneNumber}. Usuário novo: ${isNewUser}`,
       );
 
-      // 2. Processar a mensagem para extrair dados estruturados
+      // 2. Verificar se é uma mensagem de imagem
+      if (mediaUrl) {
+        this.logger.debug(`Detectada imagem na mensagem: ${mediaUrl}`);
+
+        // Determinar o tipo de imagem esperado com base no estágio atual do cadastro
+        const imageType = this.determineImageType(worker);
+        this.logger.debug(`Tipo de imagem determinado: ${imageType}`);
+
+        try {
+          // Processar a imagem
+          const imageUrl = await this.processImageMessageService.execute({
+            imageUrl: mediaUrl,
+            sessionId,
+            imageType,
+          });
+
+          // Atualizar o documento do worker
+          if (worker._id) {
+            await this.updateDocumentService.execute({
+              workerId: worker._id.toString(),
+              documentType: imageType,
+              imageUrl,
+            });
+            this.logger.debug(`Documento ${imageType} atualizado com sucesso`);
+          }
+        } catch (error) {
+          this.logger.error(
+            `Erro ao processar imagem: ${error.message}`,
+            error.stack,
+          );
+          // Não lançamos o erro para não interromper o fluxo principal
+        }
+      }
+
+      // 3. Processar a mensagem para extrair dados estruturados
       this.logger.debug(
         'Processando mensagem para extrair dados estruturados...',
       );
@@ -149,5 +188,36 @@ export class WhatsappMessageService {
       );
       throw error;
     }
+  }
+
+  /**
+   * Determina o tipo de imagem esperado com base no estágio atual do cadastro e nos documentos existentes
+   * @param worker Dados do worker
+   * @returns Tipo de imagem esperado
+   */
+  private determineImageType(
+    worker: any,
+  ): 'profile' | 'document_front' | 'document_back' | 'selfie' {
+    // Verifica se já tem foto de perfil
+    if (!worker.profilePicture) {
+      return 'profile';
+    }
+
+    // Verifica se já tem documentos
+    if (!worker.documents) {
+      return 'document_front';
+    }
+
+    // Verifica qual documento está faltando
+    if (!worker.documents.rgFrontId) {
+      return 'document_front';
+    } else if (!worker.documents.rgBackId) {
+      return 'document_back';
+    } else if (!worker.documents.tShirtSelfieId) {
+      return 'selfie';
+    }
+
+    // Se todos os documentos já existirem, assume que é uma atualização da foto de perfil
+    return 'profile';
   }
 }

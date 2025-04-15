@@ -18,6 +18,10 @@ interface IConfig {
   registerChatInstructions: AIInstructions;
   whatsappRegisterInstructions: AIInstructions;
   messageDataParser: AIInstructions;
+  awsRegion: string;
+  awsAccessKeyId: string;
+  awsSecretAccessKey: string;
+  awsS3BucketName: string;
 }
 
 export const config: IConfig = {
@@ -32,4 +36,9 @@ export const config: IConfig = {
   registerChatInstructions: registerChatInstructions,
   whatsappRegisterInstructions: whatsappRegisterInstructions,
   messageDataParser: messageDataParser,
+  // Configurações do AWS S3
+  awsRegion: process.env.AWS_REGION || 'us-east-1',
+  awsAccessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+  awsSecretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+  awsS3BucketName: process.env.AWS_S3_BUCKET_NAME || 'anthor-documents',
 };

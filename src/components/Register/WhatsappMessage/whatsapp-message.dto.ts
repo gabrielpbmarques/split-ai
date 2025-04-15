@@ -12,4 +12,8 @@ export class WhatsappMessageDto {
   @IsString()
   @IsOptional()
   sessionId?: string;
+
+  @IsString()
+  @IsOptional()
+  mediaUrl?: string;
 }
