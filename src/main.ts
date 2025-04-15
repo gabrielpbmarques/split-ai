@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { Logger } from '@nestjs/common';
 import { AppModule } from './app.module';
 import {
   FastifyAdapter,
@@ -10,6 +11,7 @@ import { initSentryIo } from './observability/sentry.provider';
 
 async function bootstrap() {
   let sentry: any;
+  const appLogger = new Logger('AppModule');
 
   const fastifyAdapter = new FastifyAdapter({
     logger: true,
@@ -52,6 +54,6 @@ async function bootstrap() {
   const port = process.env.PORT || 3000;
   await app.listen(port, '0.0.0.0');
 
-  console.log(`Application is running on port ${port}`);
+  appLogger.log(`Application is running on port ${port}`);
 }
 bootstrap();

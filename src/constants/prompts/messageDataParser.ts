@@ -55,9 +55,21 @@ const messageDataParser: AIInstructions = {
                 9. Tipo de documento: Normalize para "rg" ou "cnh"
                    - Aceite variações como: RG, r.g., identidade, CNH, carteira de motorista
                 
-                10. Tipo de conta bancária: Normalize para "checking" ou "savings"
-                    - "checking" para: corrente, conta corrente, c/c
-                    - "savings" para: poupança, conta poupança
+                10. Tipo de conta bancária: Normalize para "CHECKING" ou "SAVINGS" em MAIÚSCULAS
+                    - "CHECKING" para: corrente, conta corrente, c/c
+                    - "SAVINGS" para: poupança, conta poupança
+                11. Número da conta bancária:
+                    - Sempre que o usuário informar o número da conta com dígito (ex: "1234567-8"), separe em dois campos:
+                      * "account": "1234567"
+                      * "accountDigit": "8"
+                    - Se o usuário informar apenas o número (ex: "1234567"), preencha apenas o campo "account".
+                    - Nunca coloque o dígito junto ao número da conta.
+                12. Nome dos campos bancários: SEMPRE use exatamente estes nomes de campos:
+                    - "bankCode" (não "bank" ou "código")
+                    - "agency" (não "agência" ou "agencia")
+                    - "account" (não "accountNumber" ou "número")
+                    - "accountDigit" (não "digit" ou "dígito")
+                    - "type" (não "accountType")
                 # DETECÇÃO E VALIDAÇÃO DE DADOS:
                 
                 11. Detecção inteligente de dados:
@@ -131,7 +143,7 @@ const messageDataParser: AIInstructions = {
                 1. PERSONAL_INFO (Dados Pessoais):
                    - name (obrigatório): Nome completo
                    - nickname (opcional): Como gostaria de ser chamado
-                   - phoneNumber (obrigatório): Telefone/WhatsApp
+                   - phone (obrigatório): Telefone/WhatsApp
                    - email (obrigatório): E-mail
                    - birthDate (obrigatório): Data de nascimento
                    - cpf (obrigatório): CPF
@@ -139,7 +151,7 @@ const messageDataParser: AIInstructions = {
                    - comunication (opcional): { agree: boolean } - Concordância em receber comunicações
                 
                 2. ADDRESS (Endereço):
-                   - address.cep (obrigatório): CEP
+                   - address.zipCode (obrigatório): CEP
                    - address.street (obrigatório): Rua
                    - address.number (obrigatório): Número
                    - address.complement (opcional): Complemento
@@ -148,11 +160,13 @@ const messageDataParser: AIInstructions = {
                    - address.state (obrigatório): Estado
 
                 3. BANK_ACCOUNT (Dados Bancários):
-                  - bankAccount.bank (obrigatório): Código do banco
-                  - bankAccount.agency (obrigatório): Agência
-                  - bankAccount.accountNumber (obrigatório): Número da conta
-                  - bankAccount.accountType (obrigatório): Tipo de conta (corrente, poupança)
-                  - bankAccount.pixKey (opcional): Chave PIX
+                  - bankInfo.bankCode (obrigatório): Código do banco
+                  - bankInfo.agency (obrigatório): Agência
+                  - bankInfo.account (obrigatório): Número da conta
+                  - bankInfo.accountDigit (obrigatório): Dígito verificador da conta
+                  - bankInfo.type (obrigatório): Tipo de conta (CHECKING para corrente, SAVINGS para poupança)
+                  - bankInfo.name (preenchido automaticamente): Nome do titular igual ao nome do worker
+                  - bankInfo.cpf (preenchido automaticamente): CPF do titular igual ao CPF do worker
                 
                 4. PROFILE_PICTURE (Foto de Perfil):
                    - profilePicture (obrigatório): URL ou identificador da foto de perfil
@@ -163,7 +177,6 @@ const messageDataParser: AIInstructions = {
                    - document.frontImage (obrigatório): URL ou identificador da imagem frontal do documento
                    - document.backImage (opcional): URL ou identificador da imagem traseira do documento
                    - document.selfieImage (obrigatório): URL ou identificador da selfie com documento
-                
                 
                 6. CHAINS (Cadeias de Interesse):
                    - chains (obrigatório): Array de identificadores das cadeias de interesse
@@ -220,9 +233,10 @@ const messageDataParser: AIInstructions = {
                 10. Estado: Deve ser uma sigla de estado brasileiro válida (2 letras)
 
                 Etapa BANK_ACCOUNT:
-                11. Código do banco: Deve ser um número válido de banco brasileiro
-                12. Agência e número da conta: Devem conter apenas dígitos e hífen para dígito verificador
-                13. Tipo de conta: Deve ser "checking" ou "savings"
+                11. bankCode: Deve ser um número válido de banco brasileiro
+                12. agency e account: Devem conter apenas dígitos
+                13. accountDigit: Deve conter apenas dígitos ou letras (no caso de dígito X)
+                14. type: Deve ser "CHECKING" ou "SAVINGS" em maiúsculas
                 
                 Etapa PROFILE_PICTURE:
                 14. URL da foto de perfil: Deve ser uma URL válida

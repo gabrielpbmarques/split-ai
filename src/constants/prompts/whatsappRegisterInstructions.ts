@@ -41,20 +41,20 @@ const whatsappRegisterInstructions: AIInstructions = {
              * Estado (state)
            - Confirme os dados do endereço que foram preenchidos automaticamente
            - Solicite apenas o número (number) e complemento (complement) caso deseje
-        
-        5. FOTO DE PERFIL (ETAPA: profile_picture):
+
+        5. DADOS BANCÁRIOS (ETAPA: bank_account):
+           - Solicite as informações bancárias do usuário:
+             * Código do banco (bankAccount.bankCode) - use sempre o código numérico
+             * Tipo de conta: corrente [CHECKING] ou poupança [SAVINGS] (bankAccount.type) - use sempre maiúsculas
+             * Agência (bankAccount.agency)
+             * Número da conta (bankAccount.account)
+             * Dígito verificador da conta (bankAccount.accountDigit) - sempre separado da conta
+           - Confirme os dados fornecidos
+
+        6. FOTO DE PERFIL (ETAPA: profile_picture):
            - Solicite que o usuário envie uma foto de perfil via WhatsApp
            - Explique que a foto deve mostrar claramente o rosto do usuário
            - Confirme o recebimento da foto e verifique se está adequada
-
-        6. DADOS BANCÁRIOS (ETAPA: bank_account):
-           - Solicite as informações bancárias do usuário:
-             * Nome do banco ou código do banco (bankAccount.bank)
-             * Tipo de conta: corrente [checking] ou poupança [savings] (bankAccount.accountType)
-             * Agência (bankAccount.agency)
-             * Número da conta (bankAccount.accountNumber)
-             * Chave PIX (opcional) (bankAccount.pixKey)
-           - Confirme os dados fornecidos
         
         7. DOCUMENTO (ETAPA: document):
            - Solicite que o usuário envie fotos do documento de identificação (RG [rg] ou CNH [cnh]) (document.type)
@@ -150,6 +150,12 @@ const whatsappRegisterInstructions: AIInstructions = {
         - Número: Valor numérico ou alfanumérico válido
         - Estado: Sigla válida de estado brasileiro (2 letras)
 
+        Etapa: bank_account
+        - Código do banco (bankCode): Número válido de banco brasileiro
+        - Tipo de conta (type): "Corrente" ou "Poupança" (será convertido para "CHECKING" ou "SAVINGS" em maiúsculas)
+        - Número da conta (account): Deve conter apenas números
+        - Dígito verificador (accountDigit): Deve estar separado do número da conta
+
         Etapa: profile_picture
         - A imagem deve mostrar claramente o rosto do usuário
         - Não deve conter conteúdo inadequado
@@ -159,12 +165,6 @@ const whatsappRegisterInstructions: AIInstructions = {
         - Número: Caracteres alfanuméricos válidos sem pontuação
         - Fotos: Legíveis, claras, mostrando todas as informações do documento
         - Na selfie: Rosto do usuário e documento visíveis
-
-        Etapa: bank_account
-        - Código do banco: Código válido de banco brasileiro
-        - Tipo de conta: "Corrente" ou "Poupança" (será convertido para "checking" ou "savings")
-        - Número da conta: Deve conter apenas números, sem caracteres especiais (exceto hífen para dígito verificador)
-        - Tipo de conta: Deve ser "corrente" ou "poupança"
         
         Etapa: chains
         - As cadeias selecionadas devem estar entre as opções disponíveis
@@ -309,9 +309,9 @@ const whatsappRegisterInstructions: AIInstructions = {
         
         1. personal_info: Dados pessoais (nome, email, CPF, telefone, etc)
         2. address: Endereço completo do usuário
-        3. profile_picture: Foto de perfil enviada via WhatsApp
-        4. document: Documentos de identificação (RG ou CNH)
-        5. bank_account: Informações bancárias para recebimentos
+        3. bank_account: Informações bancárias para recebimentos
+        4. profile_picture: Foto de perfil enviada via WhatsApp
+        5. document: Documentos de identificação (RG ou CNH)
         6. chains: Seleção de cadeias de interesse para atuação profissional
         7. end: Finalização e confirmação do cadastro
         

@@ -17,8 +17,6 @@ export class UpdateAddressService {
   ): Promise<Address> {
     let updatedAddress: Address;
 
-    console.log('address', address);
-
     if (addressId) {
       updatedAddress = await this.addressRepository.update(addressId, address);
     } else {

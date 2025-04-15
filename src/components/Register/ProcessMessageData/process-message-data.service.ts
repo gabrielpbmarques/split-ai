@@ -1,15 +1,19 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ProcessMessageDataDto } from './process-message-data.dto';
 import { GenerateAiResponseService } from '../Common/generate-ai-response.service';
 import { agents } from '../../../constants/chats/chats';
 
 @Injectable()
 export class ProcessMessageDataService {
+  private readonly logger = new Logger(ProcessMessageDataService.name);
   constructor(
     private readonly generateAiResponseService: GenerateAiResponseService,
   ) {}
 
   async execute(processMessageDataDto: ProcessMessageDataDto): Promise<any> {
+    this.logger.log(
+      `Iniciando processamento de dados da mensagem para a sessão: ${processMessageDataDto.sessionId}`,
+    );
     const {
       message,
       sessionId,
@@ -27,6 +31,9 @@ export class ProcessMessageDataService {
       // Se temos a última resposta da IA, adicionamos como contexto
       if (lastAiResponse) {
         messageWithContext = `[CONTEXTO: A última pergunta da IA foi: "${lastAiResponse}"] \n\nResposta do usuário: "${message}"`;
+        this.logger.debug(
+          'Contexto da última resposta da IA adicionado à mensagem.',
+        );
       }
 
       // Utiliza o agente de IA para extrair dados estruturados da mensagem
@@ -39,14 +46,23 @@ export class ProcessMessageDataService {
         typedAgentId,
       );
 
+      this.logger.verbose(
+        `Resposta bruta do agente de parsing: ${parserAiResponse}`,
+      );
+
       const cleanedResponse = parserAiResponse
         .replace(/```json\s*/, '') // remove ```json e espaços
         .replace(/```$/, '') // remove a última ```
         .trim();
 
-      return JSON.parse(cleanedResponse);
+      const parsed = JSON.parse(cleanedResponse);
+      this.logger.debug('Dados estruturados extraídos com sucesso.');
+      return parsed;
     } catch (error) {
-      console.error('Erro ao processar dados da mensagem:', error);
+      this.logger.error(
+        `Erro ao processar dados da mensagem para a sessão: ${processMessageDataDto.sessionId}. Erro: ${error.message}`,
+        error.stack,
+      );
       return null;
     }
   }
