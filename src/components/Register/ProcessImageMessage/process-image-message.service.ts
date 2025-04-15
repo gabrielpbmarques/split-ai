@@ -4,6 +4,8 @@ import {
   S3_SERVICE,
 } from 'src/infrastructure/providers/s3.provider';
 import axios from 'axios';
+import { PictureRepository } from 'src/repositories/Picture.repository';
+import { ImageType } from 'src/models/Picture.model';
 
 export interface ProcessImageMessageDto {
   imageUrl: string;
@@ -11,18 +13,26 @@ export interface ProcessImageMessageDto {
   imageType: 'profile' | 'document_front' | 'document_back' | 'selfie';
 }
 
+export interface ProcessedImageResult {
+  url: string;
+  pictureId: string;
+}
+
 @Injectable()
 export class ProcessImageMessageService {
   private readonly logger = new Logger(ProcessImageMessageService.name);
 
-  constructor(@Inject(S3_SERVICE) private readonly s3Service: IS3Service) {}
+  constructor(
+    @Inject(S3_SERVICE) private readonly s3Service: IS3Service,
+    private readonly pictureRepository: PictureRepository,
+  ) {}
 
   /**
    * Processa uma imagem recebida via WhatsApp
    * @param dto Dados da imagem a ser processada
-   * @returns URL da imagem no S3
+   * @returns Objeto contendo a URL da imagem no S3 e o ID do registro na collection de pictures
    */
-  async execute(dto: ProcessImageMessageDto): Promise<string> {
+  async execute(dto: ProcessImageMessageDto): Promise<ProcessedImageResult> {
     this.logger.log(
       `Processando imagem do tipo ${dto.imageType} para a sessão ${dto.sessionId}`,
     );
@@ -54,8 +64,23 @@ export class ProcessImageMessageService {
         contentType,
       );
 
-      this.logger.log(`Imagem do WhatsApp processada com sucesso: ${s3Url}`);
-      return s3Url;
+      // Mapeia o tipo de imagem do WhatsApp para o tipo de imagem do modelo Picture
+      const pictureType = this.mapImageTypeToModelType(dto.imageType);
+
+      // Cria um registro na collection de pictures
+      const picture = await this.pictureRepository.create({
+        key: s3Url.split('/').pop() || `${Date.now()}.${extension}`, // Extrai o nome do arquivo da URL
+        image: s3Url,
+        type: pictureType,
+      });
+
+      this.logger.log(
+        `Imagem do WhatsApp processada com sucesso: ${s3Url}, ID: ${picture._id}`,
+      );
+      return {
+        url: s3Url,
+        pictureId: picture._id.toString(),
+      };
     } catch (error) {
       this.logger.error(
         `Erro ao processar imagem do WhatsApp: ${error.message}`,
@@ -102,5 +127,25 @@ export class ProcessImageMessageService {
     };
 
     return contentTypeToExt[contentType] || 'jpg';
+  }
+
+  /**
+   * Mapeia o tipo de imagem do WhatsApp para o tipo de imagem do modelo Picture
+   * @param whatsappImageType Tipo de imagem do WhatsApp
+   * @returns Tipo de imagem do modelo Picture
+   */
+  private mapImageTypeToModelType(whatsappImageType: string): ImageType {
+    switch (whatsappImageType) {
+      case 'profile':
+        return ImageType.PROFILE;
+      case 'document_front':
+        return ImageType.DOCUMENT_FRONT;
+      case 'document_back':
+        return ImageType.DOCUMENT_BACK;
+      case 'selfie':
+        return ImageType.T_SHIRT_SELFIE;
+      default:
+        return ImageType.PROFILE; // Valor padrão
+    }
   }
 }

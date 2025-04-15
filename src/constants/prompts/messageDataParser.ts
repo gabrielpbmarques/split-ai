@@ -178,10 +178,7 @@ const messageDataParser: AIInstructions = {
                    - document.backImage (opcional): URL ou identificador da imagem traseira do documento
                    - document.selfieImage (obrigatório): URL ou identificador da selfie com documento
                 
-                6. CHAINS (Cadeias de Interesse):
-                   - chains (obrigatório): Array de identificadores das cadeias de interesse
-                
-                7. END (Finalização):
+                6. END (Finalização):
                    - Indica que o cadastro foi concluído com sucesso
             `,
     },
@@ -202,13 +199,11 @@ const messageDataParser: AIInstructions = {
                 
                 6. Se todos os campos obrigatórios até DOCUMENT estiverem preenchidos, mas nenhum ou apenas alguns campos de BANK_ACCOUNT, defina signupStage como "document".
                 
-                7. Se todos os campos obrigatórios até BANK_ACCOUNT estiverem preenchidos, mas não há chains, defina signupStage como "bank_account".
+                7. Se todos os campos obrigatórios até BANK_ACCOUNT estiverem preenchidos, defina signupStage como "end".
                 
-                8. Se todos os campos obrigatórios de todas as etapas estiverem preenchidos, defina signupStage como "chains".
+                8. Se o cadastro estiver completamente finalizado e confirmado, defina signupStage como "end" e status como "inAnalysis".
                 
-                9. Se o cadastro estiver completamente finalizado e confirmado, defina signupStage como "end" e status como "inAnalysis".
-                
-                Importante: Para o cadastro via WhatsApp, normalmente apenas as etapas "personal_info" e "address" serão coletadas. As demais etapas serão completadas pelo usuário no site ou aplicativo.
+                Importante: Para o cadastro via WhatsApp, todas as etapas serão coletadas, desde dados pessoais até documentos e informações bancárias.
                 
                 Regra de status: Durante todo o processo, mantenha status como "pending". Somente quando signupStage for "end", defina status como "inAnalysis".
             `,

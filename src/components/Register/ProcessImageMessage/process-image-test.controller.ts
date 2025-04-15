@@ -2,6 +2,7 @@ import { Body, Controller, Post } from '@nestjs/common';
 import {
   ProcessImageMessageService,
   ProcessImageMessageDto,
+  ProcessedImageResult,
 } from './process-image-message.service';
 
 interface TestImageDto {
@@ -16,14 +17,20 @@ export class ProcessImageTestController {
   ) {}
 
   @Post('process-image')
-  async processImage(@Body() dto: TestImageDto): Promise<{ s3Url: string }> {
+  async processImage(
+    @Body() dto: TestImageDto,
+  ): Promise<{ s3Url: string; pictureId: string }> {
     const processDto: ProcessImageMessageDto = {
       imageUrl: dto.imageUrl,
       sessionId: 'test-session-' + Date.now(),
       imageType: dto.imageType || 'profile',
     };
 
-    const s3Url = await this.processImageMessageService.execute(processDto);
-    return { s3Url };
+    const processedImage =
+      await this.processImageMessageService.execute(processDto);
+    return {
+      s3Url: processedImage.url,
+      pictureId: processedImage.pictureId,
+    };
   }
 }

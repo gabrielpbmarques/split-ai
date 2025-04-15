@@ -68,6 +68,7 @@ export class WhatsappMessageService {
       );
 
       // 2. Verificar se é uma mensagem de imagem
+      let processedImageInfo = null;
       if (mediaUrl) {
         this.logger.debug(`Detectada imagem na mensagem: ${mediaUrl}`);
 
@@ -77,7 +78,7 @@ export class WhatsappMessageService {
 
         try {
           // Processar a imagem
-          const imageUrl = await this.processImageMessageService.execute({
+          const processedImage = await this.processImageMessageService.execute({
             imageUrl: mediaUrl,
             sessionId,
             imageType,
@@ -88,15 +89,34 @@ export class WhatsappMessageService {
             await this.updateDocumentService.execute({
               workerId: worker._id.toString(),
               documentType: imageType,
-              imageUrl,
+              imageUrl: processedImage.url,
+              pictureId: processedImage.pictureId, // Adicionando o ID da imagem
             });
-            this.logger.debug(`Documento ${imageType} atualizado com sucesso`);
+            this.logger.debug(
+              `Documento ${imageType} atualizado com sucesso com ID: ${processedImage.pictureId}`,
+            );
+
+            // Guardar informações da imagem processada para contexto da IA
+            processedImageInfo = {
+              type: imageType,
+              url: processedImage.url,
+              pictureId: processedImage.pictureId,
+              success: true,
+              message: `Imagem do tipo ${imageType} processada com sucesso`,
+            };
           }
         } catch (error) {
           this.logger.error(
             `Erro ao processar imagem: ${error.message}`,
             error.stack,
           );
+          // Guardar informações do erro para contexto da IA
+          processedImageInfo = {
+            type: imageType,
+            success: false,
+            error: error.message,
+            message: `Houve um problema ao processar sua imagem: ${error.message}`,
+          };
           // Não lançamos o erro para não interromper o fluxo principal
         }
       }
@@ -119,37 +139,67 @@ export class WhatsappMessageService {
         `Dados extraídos da mensagem: ${JSON.stringify(parsedData)}`,
       );
 
-      // 3. Atualizar o worker com os dados processados
-      this.logger.debug('Atualizando worker com os dados processados...');
+      // Declarar a variável updatedWorker no escopo correto
       let updatedWorker;
-      try {
-        updatedWorker = await this.updateWorkerService.execute({
-          worker,
-          parsedData,
-          sessionId,
-          phoneNumber,
-        });
-        this.logger.verbose(
-          `Worker atualizado: ${JSON.stringify({ id: updatedWorker.id, signupStage: updatedWorker.signupStage })}`,
+
+      // Variável para armazenar campos inválidos para passar para a IA
+      let invalidFields = null;
+
+      // Verificar se há campos inválidos antes de atualizar o worker
+      if (
+        parsedData?.invalidFields &&
+        Object.keys(parsedData.invalidFields).length > 0
+      ) {
+        this.logger.warn(
+          `Campos inválidos detectados: ${JSON.stringify(parsedData.invalidFields)}. Não atualizando o worker.`,
         );
-      } catch (error) {
-        this.logger.error(
-          `Erro ao atualizar worker para o número: ${phoneNumber}. Erro: ${error.message}`,
-          error.stack,
-        );
-        throw error;
+
+        // Armazena os campos inválidos para passar para a IA
+        invalidFields = parsedData.invalidFields;
+
+        // Não atualiza o worker, apenas passa o contexto para a IA
+        // A IA será responsável por informar ao usuário sobre os campos inválidos
+        updatedWorker = worker;
+      } else {
+        // 3. Atualizar o worker com os dados processados (apenas se não houver campos inválidos)
+        this.logger.debug('Atualizando worker com os dados processados...');
+        try {
+          updatedWorker = await this.updateWorkerService.execute({
+            worker,
+            parsedData,
+            sessionId,
+            phoneNumber,
+          });
+          this.logger.verbose(
+            `Worker atualizado: ${JSON.stringify({ signupStage: updatedWorker.signupStage })}`,
+          );
+        } catch (error) {
+          this.logger.error(
+            `Erro ao atualizar worker para o número: ${phoneNumber}. Erro: ${error.message}`,
+            error.stack,
+          );
+          throw error;
+        }
       }
 
       // 4. Gerar resposta da IA (a IA é a orquestradora principal do processo)
       this.logger.debug('Gerando resposta da IA...');
       let aiResponse;
       try {
+        // Se recebemos apenas imagem (sem texto), criamos um texto padrão para evitar problemas com a API
+        const messageText =
+          mediaUrl && !message
+            ? `[Imagem enviada pelo usuário - ${this.determineImageType(worker)}]`
+            : message;
+
         aiResponse = await this.generateResponseService.execute({
-          message,
+          message: messageText,
           sessionId,
           phoneNumber,
           worker: updatedWorker,
           isNewUser,
+          processedImage: processedImageInfo, // Adicionando informações da imagem processada para contexto
+          invalidFields, // Adicionando campos inválidos para contexto
         });
         this.logger.verbose(`Resposta da IA gerada: ${aiResponse}`);
       } catch (error) {

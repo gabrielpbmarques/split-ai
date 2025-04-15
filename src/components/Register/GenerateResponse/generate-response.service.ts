@@ -16,8 +16,15 @@ export class GenerateResponseService {
       `Iniciando geração de resposta para o telefone: ${generateResponseDto.phoneNumber}, sessão: ${generateResponseDto.sessionId}`,
     );
     try {
-      const { message, sessionId, phoneNumber, worker, isNewUser } =
-        generateResponseDto;
+      const {
+        message,
+        sessionId,
+        phoneNumber,
+        worker,
+        isNewUser,
+        processedImage,
+        invalidFields,
+      } = generateResponseDto;
 
       // Prepara os metadados para o agente de comunicação
       // Fornecendo todo o contexto necessário para a IA orquestrar o processo
@@ -26,6 +33,8 @@ export class GenerateResponseService {
         registration_stage: worker.signupStage,
         is_new_user: isNewUser,
         user_data: worker,
+        processed_image: processedImage || null,
+        invalid_fields: invalidFields || null,
       };
       this.logger.debug(
         `Metadata para IA: ${JSON.stringify(registerMetadata)}`,

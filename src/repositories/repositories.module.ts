@@ -12,6 +12,8 @@ import { Phone, PhoneSchema } from 'src/schemas/Phone.schema';
 import { PhoneRepository } from './Phone.repository';
 import { User, UserSchema } from 'src/schemas/User.schema';
 import { UserRepository } from './User.repository';
+import { Picture, PictureSchema } from 'src/schemas/Picture.schema';
+import { PictureRepository } from './Picture.repository';
 
 @Module({
   imports: [
@@ -22,6 +24,7 @@ import { UserRepository } from './User.repository';
       { name: Address.name, schema: AddressSchema },
       { name: Phone.name, schema: PhoneSchema },
       { name: User.name, schema: UserSchema },
+      { name: Picture.name, schema: PictureSchema },
     ]),
   ],
   providers: [
@@ -31,6 +34,7 @@ import { UserRepository } from './User.repository';
     AddressRepository,
     PhoneRepository,
     UserRepository,
+    PictureRepository,
   ],
   exports: [
     WorkerRepository,
@@ -39,6 +43,7 @@ import { UserRepository } from './User.repository';
     AddressRepository,
     PhoneRepository,
     UserRepository,
+    PictureRepository,
   ],
 })
 export class RepositoriesModule {}

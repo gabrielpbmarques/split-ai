@@ -6,6 +6,7 @@ export interface UpdateDocumentDto {
   workerId: string;
   documentType: 'profile' | 'document_front' | 'document_back' | 'selfie';
   imageUrl: string;
+  pictureId?: string; // ID da imagem na collection de pictures
 }
 
 @Injectable()
@@ -50,15 +51,31 @@ export class UpdateDocumentService {
       switch (dto.documentType) {
         case 'profile':
           updateData['profilePicture'] = dto.imageUrl;
+          // Se tiver o ID da imagem, atualiza o campo profilePictureId
+          if (dto.pictureId) {
+            updateData['profilePictureId'] = dto.pictureId;
+          }
           break;
         case 'document_front':
-          updateData['documents.rgFrontId'] = dto.imageUrl;
+          // Atualiza apenas se tiver o ID da imagem
+          if (dto.pictureId) {
+            updateData['documents.rgFrontId'] = dto.pictureId;
+          }
+          updateData['documents.rgFrontUrl'] = dto.imageUrl;
           break;
         case 'document_back':
-          updateData['documents.rgBackId'] = dto.imageUrl;
+          // Atualiza apenas se tiver o ID da imagem
+          if (dto.pictureId) {
+            updateData['documents.rgBackId'] = dto.pictureId;
+          }
+          updateData['documents.rgBackUrl'] = dto.imageUrl;
           break;
         case 'selfie':
-          updateData['documents.tShirtSelfieId'] = dto.imageUrl;
+          // Atualiza apenas se tiver o ID da imagem
+          if (dto.pictureId) {
+            updateData['documents.tShirtSelfieId'] = dto.pictureId;
+          }
+          updateData['documents.tShirtSelfieUrl'] = dto.imageUrl;
           break;
       }
 

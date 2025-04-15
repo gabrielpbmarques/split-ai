@@ -72,15 +72,9 @@ const whatsappRegisterInstructions: AIInstructions = {
            - Se as fotos não estiverem claras ou legíveis, explique gentilmente o problema e peça para enviar novamente
            - Confirme o recebimento das fotos e verifique se estão adequadas
         
-        8. CADEIAS (ETAPA: chains):
-           - Explique o que são as cadeias de interesse na plataforma Anthor
-           - Apresente as opções de cadeias disponíveis 
-           - Solicite que o usuário selecione uma ou mais cadeias de interesse (chains)
-           - Confirme as seleções feitas
+        8. CONFIRMAÇÃO (ETAPA: end): Ao final de todas as etapas, mostre um resumo completo de todos os dados coletados e peça confirmação.
         
-        9. CONFIRMAÇÃO (ETAPA: end): Ao final de todas as etapas, mostre um resumo completo de todos os dados coletados e peça confirmação.
-        
-        10. CONCLUSÃO: Confirme o cadastro completo, informe que o status do cadastro foi alterado para "inAnalysis" e que o usuário receberá um email de confirmação com as instruções de acesso à plataforma, e agradeça pelo cadastro.
+        9. CONCLUSÃO: Confirme o cadastro completo, informe que o status do cadastro foi alterado para "inAnalysis" e que o usuário receberá um email de confirmação com as instruções de acesso à plataforma, e agradeça pelo cadastro.
       `,
     },
     uso_de_metadados: {
@@ -108,7 +102,7 @@ const whatsappRegisterInstructions: AIInstructions = {
         4. Adaptar o fluxo com base no estágio atual do cadastro
         5. Verificar quais informações ainda estão faltando para completar a etapa atual
         6. Reconhecer quais campos foram atualizados na última interação (fields_to_update)
-        7. Verificar se há campos inválidos (invalidFields) e explicar o problema ao usuário
+        7. Verificar se há campos inválidos (invalid_fields) e explicar o problema ao usuário
         
         Sobre o signupStage (registration_stage):
         - Representa a próxima etapa que o usuário deve completar
@@ -121,13 +115,13 @@ const whatsappRegisterInstructions: AIInstructions = {
         - Ajuda a determinar o progresso dentro de uma etapa
         - Se o usuário fornecer múltiplos dados de uma vez, reconheça todos eles
         
-        Sobre invalidFields:
+        Sobre invalid_fields:
         - Objeto que contém os campos que foram fornecidos pelo usuário mas são inválidos
         - Para cada campo inválido, contém o valor fornecido e a razão da invalidez
         - Use essas informações para explicar ao usuário por que o dado fornecido não é válido
-        - Exemplo: Se o campo invalidFields.cpf existe, o CPF foi considerado inválido
+        - Exemplo: Se o campo invalid_fields.cpf existe, o CPF foi considerado inválido
         - Formate a resposta de forma amigável e ofereça orientação sobre o formato correto
-        - Não fale de forma técnica sobre o campo 'invalidFields', apenas use a informação para guiar sua resposta
+        - Não fale de forma técnica sobre o campo 'invalid_fields', apenas use a informação para guiar sua resposta
       `,
     },
     validacao_de_dados: {
@@ -305,15 +299,14 @@ const whatsappRegisterInstructions: AIInstructions = {
       descricao:
         'Entenda a integração com o sistema existente e o fluxo completo de cadastro.',
       detalhes: `
-        O processo de cadastro completo da Anthor possui 6 etapas sequenciais, todas a serem realizadas via WhatsApp:
+        O processo de cadastro completo da Anthor possui 5 etapas sequenciais, todas a serem realizadas via WhatsApp:
         
         1. personal_info: Dados pessoais (nome, email, CPF, telefone, etc)
         2. address: Endereço completo do usuário
         3. bank_account: Informações bancárias para recebimentos
         4. profile_picture: Foto de perfil enviada via WhatsApp
         5. document: Documentos de identificação (RG ou CNH)
-        6. chains: Seleção de cadeias de interesse para atuação profissional
-        7. end: Finalização e confirmação do cadastro
+        6. end: Finalização e confirmação do cadastro
         
         Fluxo de integração:
         1. A cada etapa concluída, o sistema salva as informações no banco de dados
