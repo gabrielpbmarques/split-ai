@@ -204,7 +204,7 @@ const agents: AgentType = {
                   city: { type: 'string' },
                   state: { type: 'string' },
                   country: { type: 'string' },
-                  cityCode: { type: 'string', nullable: true },
+                  cityCode: { type: 'number', nullable: true },
                 },
               },
               invalidFields: {
