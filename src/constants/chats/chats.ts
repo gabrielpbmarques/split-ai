@@ -190,8 +190,6 @@ const agents: AgentType = {
                     'address.country',
                     'address.cityCode',
                     'profilePicture',
-                    'document.type',
-                    'document.number',
                     'document.frontImage',
                     'document.backImage',
                     'document.selfieImage',

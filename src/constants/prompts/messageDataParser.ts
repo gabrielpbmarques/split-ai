@@ -51,24 +51,27 @@ const messageDataParser: AIInstructions = {
                    - Extraia e separe: código do país (sempre 55), DDD e número
                    - Aceite formatos como: (11) 98765-4321, 11987654321, +55 11 98765 4321
                    - Use o formato: { countryCode: "55", areaCode: "11", number: "987654321" }
+
+                9. Imagem do documento:
+                   - Com base na última pergunta da IA, extraia o tipo de documento (document_front, document_back)
+
+                10. Imagem de perfil:
+                    - Extraia o tipo de imagem (profile)
                 
-                9. Tipo de documento: Normalize para "rg" ou "cnh"
-                   - Aceite variações como: RG, r.g., identidade, CNH, carteira de motorista
-                
-                10. Senha: Preserve a senha exatamente como digitada pelo usuário
+                11. Senha: Preserve a senha exatamente como digitada pelo usuário
                     - Não faça nenhuma normalização ou transformação na senha fornecida
                     - A senha deve ser armazenada no campo "password"
                 
-                11. Tipo de conta bancária: Normalize para "CHECKING" ou "SAVINGS" em MAIÚSCULAS
+                12. Tipo de conta bancária: Normalize para "CHECKING" ou "SAVINGS" em MAIÚSCULAS
                     - "CHECKING" para: corrente, conta corrente, c/c
                     - "SAVINGS" para: poupança, conta poupança
-                12. Número da conta bancária:
+                13. Número da conta bancária:
                     - Sempre que o usuário informar o número da conta com dígito (ex: "1234567-8"), separe em dois campos:
                       * "account": "1234567"
                       * "accountDigit": "8"
                     - Se o usuário informar apenas o número (ex: "1234567"), preencha apenas o campo "account".
                     - Nunca coloque o dígito junto ao número da conta.
-                13. Lidar com campos ausentes ou nulos: SEMPRE use exatamente estes nomes de campos:
+                14. Lidar com campos ausentes ou nulos: SEMPRE use exatamente estes nomes de campos:
                     - "bankCode" (não "bank" ou "código")
                     - "agency" (não "agência" ou "agencia")
                     - "account" (não "accountNumber" ou "número")
@@ -76,27 +79,23 @@ const messageDataParser: AIInstructions = {
                     - "type" (não "accountType")
                 # DETECÇÃO E VALIDAÇÃO DE DADOS:
                 
-                14. Detecção inteligente de dados:
+                15. Detecção inteligente de dados:
                     - Identifique o tipo de dado mesmo quando o usuário não responde diretamente à pergunta
                     - Extraia múltiplos dados de uma mensagem única quando disponíveis
                     - Exemplo: Da mensagem "Me chamo Maria Silva, tenho 30 anos e meu CPF é 123.456.789-00", extraia nome, idade aproximada e CPF.
                 
-                15. Tratamento de dados inválidos:
+                16. Tratamento de dados inválidos:
                     - Se um dado for inválido após tentar normalizá-lo, NÃO o inclua no JSON.
                     - Adicione um novo campo no JSON chamado "invalidFields" que contém um objeto com:
                       * Nome do campo inválido como chave
                       * Um objeto com: { "value": "valor fornecido", "reason": "motivo da invalidez" }
                     - Exemplo: {"invalidFields": {"cpf": {"value": "123", "reason": "CPF deve conter 11 dígitos"}}}
 
-                16. Analise a última pergunta feita pela IA ao usuário e determine quais campos do worker devem ser atualizados com base na resposta do usuário.
+                17. Analise a última pergunta feita pela IA ao usuário e determine quais campos do worker devem ser atualizados com base na resposta do usuário.
                 
-                19. Retorne um campo adicional no JSON chamado "fieldsToUpdate" que contém um array de strings com os nomes dos campos que devem ser atualizados, somente se o dado tiver sido fornecido.
+                18. Retorne um campo adicional no JSON chamado "fieldsToUpdate" que contém um array de strings com os nomes dos campos que devem ser atualizados, somente se o dado tiver sido fornecido.
                 
-                20. Todos os nomes de campos em "fieldsToUpdate" devem seguir exatamente o formato definido no esquema, por exemplo: "address.zipCode" (não "address.cep").
-
-                19. Na etapa de selfie e fotos de frente e verso do documento, o campo "image.type" deve ser preenchido com o tipo de documento correspondente, use a última pergunta da IA como base para definir esta informação.
-                
-                21. Identifique também a url da imagem e preencha o campo "image.url".
+                19. Todos os nomes de campos em "fieldsToUpdate" devem seguir exatamente o formato definido no esquema, por exemplo: "address.zipCode" (não "address.cep").
             `,
     },
     nenhum_dado_informado: {

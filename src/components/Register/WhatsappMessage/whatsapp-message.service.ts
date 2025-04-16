@@ -50,6 +50,8 @@ export class WhatsappMessageService {
       lastAiResponse,
     });
 
+    console.log('parsedData', parsedData);
+
     let processedImageInfo = null;
 
     if (mediaUrl) {
@@ -61,7 +63,7 @@ export class WhatsappMessageService {
       );
     }
 
-    let updatedWorker;
+    let updatedWorker: Worker | null;
 
     if (
       !parsedData?.invalidFields ||
