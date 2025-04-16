@@ -83,12 +83,16 @@ const messageDataParser: AIInstructions = {
                       * Nome do campo inválido como chave
                       * Um objeto com: { "value": "valor fornecido", "reason": "motivo da invalidez" }
                     - Exemplo: {"invalidFields": {"cpf": {"value": "123", "reason": "CPF deve conter 11 dígitos"}}}
-                
+
                 13. Analise a última pergunta feita pela IA ao usuário e determine quais campos do worker devem ser atualizados com base na resposta do usuário.
                 
                 14. Retorne um campo adicional no JSON chamado "fieldsToUpdate" que contém um array de strings com os nomes dos campos que devem ser atualizados, somente se o dado tiver sido fornecido.
                 
                 15. Todos os nomes de campos em "fieldsToUpdate" devem seguir exatamente o formato definido no esquema, por exemplo: "address.zipCode" (não "address.cep").
+
+                16. Na etapa de selfie e fotos de frente e verso do documento, o campo "image.type" deve ser preenchido com o tipo de documento correspondente, use a última pergunta da IA como base para definir esta informação.
+                
+                17. Identifique também a url da imagem e preencha o campo "image.url".
             `,
     },
     nenhum_dado_informado: {

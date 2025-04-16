@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { WhatsappMessageController } from './whatsapp-message.controller';
 import { WhatsappMessageService } from './whatsapp-message.service';
-import { WhatsappTestController } from './whatsapp-test.controller';
 import { RepositoriesModule } from 'src/repositories/repositories.module';
 import { FindOrCreateSessionModule } from '../FindOrCreateSession/find-or-create-session.module';
 import { ProcessMessageDataModule } from '../ProcessMessageData/process-message-data.module';
@@ -23,7 +22,7 @@ import { UpdateLastAiResponseModule } from '../UpdateLastAiResponse/update-last-
     UpdateDocumentModule,
   ],
   providers: [WhatsappMessageService],
-  controllers: [WhatsappMessageController, WhatsappTestController],
+  controllers: [WhatsappMessageController],
   exports: [WhatsappMessageService],
 })
 export class WhatsappMessageModule {}

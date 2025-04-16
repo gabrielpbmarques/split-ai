@@ -137,6 +137,17 @@ const agents: AgentType = {
                 },
                 required: ['agree'],
               },
+              image: {
+                type: 'object',
+                nullable: true,
+                properties: {
+                  type: {
+                    type: 'string',
+                    enum: ['document_front', 'document_back', 'profile'],
+                  },
+                  url: { type: 'string' },
+                },
+              },
               hasLegalAge: { type: 'boolean', nullable: true },
               status: { type: 'string', enum: ['pending', 'inAnalysis'] },
               signupStage: {

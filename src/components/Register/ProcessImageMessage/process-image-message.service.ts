@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import {
   IS3Service,
   S3_SERVICE,
@@ -20,8 +20,6 @@ export interface ProcessedImageResult {
 
 @Injectable()
 export class ProcessImageMessageService {
-  private readonly logger = new Logger(ProcessImageMessageService.name);
-
   constructor(
     @Inject(S3_SERVICE) private readonly s3Service: IS3Service,
     private readonly pictureRepository: PictureRepository,
@@ -33,61 +31,39 @@ export class ProcessImageMessageService {
    * @returns Objeto contendo a URL da imagem no S3 e o ID do registro na collection de pictures
    */
   async execute(dto: ProcessImageMessageDto): Promise<ProcessedImageResult> {
-    this.logger.log(
-      `Processando imagem do tipo ${dto.imageType} para a sessão ${dto.sessionId}`,
+    const folder = this.getFolderByImageType(dto.imageType);
+
+    const headers = {
+      'User-Agent': 'Mozilla/5.0 (compatible; WhatsAppBot/1.0)',
+    };
+
+    const response = await axios.get(dto.imageUrl, {
+      responseType: 'arraybuffer',
+      headers,
+    });
+
+    const contentType = response.headers['content-type'] || 'image/jpeg';
+    const extension = this.getExtensionFromContentType(contentType);
+
+    const s3Url = await this.s3Service.uploadBuffer(
+      Buffer.from(response.data),
+      folder,
+      extension,
+      contentType,
     );
 
-    try {
-      // Define a pasta com base no tipo de imagem
-      const folder = this.getFolderByImageType(dto.imageType);
+    const pictureType = this.mapImageTypeToModelType(dto.imageType);
 
-      // Adiciona cabeçalhos específicos para acessar URLs do WhatsApp, se necessário
-      const headers = {
-        'User-Agent': 'Mozilla/5.0 (compatible; WhatsAppBot/1.0)',
-      };
+    const picture = await this.pictureRepository.create({
+      key: s3Url.split('/').pop() || `${Date.now()}.${extension}`, // Extrai o nome do arquivo da URL
+      image: s3Url,
+      type: pictureType,
+    });
 
-      // Faz download da imagem da URL do WhatsApp antes que expire
-      const response = await axios.get(dto.imageUrl, {
-        responseType: 'arraybuffer',
-        headers,
-      });
-
-      // Verifica o tipo de conteúdo para determinar a extensão correta
-      const contentType = response.headers['content-type'] || 'image/jpeg';
-      const extension = this.getExtensionFromContentType(contentType);
-
-      // Faz upload da imagem para o S3
-      const s3Url = await this.s3Service.uploadBuffer(
-        Buffer.from(response.data),
-        folder,
-        extension,
-        contentType,
-      );
-
-      // Mapeia o tipo de imagem do WhatsApp para o tipo de imagem do modelo Picture
-      const pictureType = this.mapImageTypeToModelType(dto.imageType);
-
-      // Cria um registro na collection de pictures
-      const picture = await this.pictureRepository.create({
-        key: s3Url.split('/').pop() || `${Date.now()}.${extension}`, // Extrai o nome do arquivo da URL
-        image: s3Url,
-        type: pictureType,
-      });
-
-      this.logger.log(
-        `Imagem do WhatsApp processada com sucesso: ${s3Url}, ID: ${picture._id}`,
-      );
-      return {
-        url: s3Url,
-        pictureId: picture._id.toString(),
-      };
-    } catch (error) {
-      this.logger.error(
-        `Erro ao processar imagem do WhatsApp: ${error.message}`,
-        error.stack,
-      );
-      throw error;
-    }
+    return {
+      url: s3Url,
+      pictureId: picture._id.toString(),
+    };
   }
 
   /**

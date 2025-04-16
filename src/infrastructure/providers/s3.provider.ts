@@ -1,12 +1,10 @@
-import { Logger, Provider } from '@nestjs/common';
+import { Provider } from '@nestjs/common';
 import { S3 } from 'aws-sdk';
 import { config } from 'src/config';
 import { v4 as uuidv4 } from 'uuid';
 
-// Token para injeção do cliente S3
 export const S3_CLIENT = 'S3_CLIENT';
 
-// Interface para o serviço S3
 export interface IS3Service {
   uploadBuffer(
     buffer: Buffer,
@@ -17,10 +15,8 @@ export interface IS3Service {
   uploadBase64Image(base64Image: string, folder?: string): Promise<string>;
 }
 
-// Token para injeção do serviço S3
 export const S3_SERVICE = 'S3_SERVICE';
 
-// Provider do cliente S3
 export const S3ClientProvider: Provider = {
   provide: S3_CLIENT,
   useFactory: (): S3 => {
@@ -44,7 +40,6 @@ export const S3ClientProvider: Provider = {
 export const S3ServiceProvider: Provider = {
   provide: S3_SERVICE,
   useFactory: (s3: S3): IS3Service => {
-    const logger = new Logger('S3Service');
     const bucketName = config.awsS3BucketName;
 
     return {
@@ -74,16 +69,9 @@ export const S3ServiceProvider: Provider = {
           };
 
           const uploadResult = await s3.upload(params).promise();
-          logger.log(
-            `Buffer enviado com sucesso para: ${uploadResult.Location}`,
-          );
 
           return uploadResult.Location;
         } catch (error) {
-          logger.error(
-            `Erro ao fazer upload do buffer: ${error.message}`,
-            error.stack,
-          );
           throw error;
         }
       },
@@ -120,10 +108,6 @@ export const S3ServiceProvider: Provider = {
 
           return this.uploadBuffer(buffer, folder, extension, contentType);
         } catch (error) {
-          logger.error(
-            `Erro ao fazer upload da imagem base64: ${error.message}`,
-            error.stack,
-          );
           throw error;
         }
       },
