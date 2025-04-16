@@ -40,7 +40,7 @@ export class CreateUserService {
       // Atualiza o worker com o userId e remove a senha
       const updatedWorker = {
         ...worker,
-        userId: newUser.id,
+        userId: newUser._id,
         password: undefined,
       };
 

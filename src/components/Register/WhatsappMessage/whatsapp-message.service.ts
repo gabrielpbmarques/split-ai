@@ -7,6 +7,7 @@ import { GenerateResponseService } from '../GenerateResponse/generate-response.s
 import { UpdateLastAiResponseService } from '../UpdateLastAiResponse/update-last-ai-response.service';
 import { ProcessImageMessageService } from '../ProcessImageMessage/process-image-message.service';
 import { UpdateDocumentService } from '../UpdateDocument/update-document.service';
+import { Worker } from 'src/models/Worker.model';
 
 export interface WhatsappMessageResponse {
   sessionId: string;
@@ -35,70 +36,51 @@ export class WhatsappMessageService {
       sessionId: existingSessionId,
       mediaUrl,
     } = whatsappMessageDto;
-
     const { sessionId, worker, isNewUser, lastAiResponse } =
       await this.findOrCreateSessionService.execute({
         sessionId: existingSessionId,
         phoneNumber,
       });
 
-    let processedImageInfo = null;
-
-    if (mediaUrl) {
-      const imageType = this.determineImageType(worker);
-
-      const processedImage = await this.processImageMessageService.execute({
-        imageUrl: mediaUrl,
-        sessionId,
-        imageType,
-      });
-
-      if (worker._id) {
-        await this.updateDocumentService.execute({
-          workerId: worker._id.toString(),
-          documentType: imageType,
-          imageUrl: processedImage.url,
-          pictureId: processedImage.pictureId,
-        });
-
-        processedImageInfo = {
-          type: imageType,
-          url: processedImage.url,
-          pictureId: processedImage.pictureId,
-          success: true,
-          message: `Imagem do tipo ${imageType} processada com sucesso`,
-        };
-      }
-    }
+    console.log('Message:', message);
 
     const parsedData = await this.processMessageDataService.execute({
-      message,
+      message: mediaUrl ? `${message}\n[Url da Imagem]: ${mediaUrl}` : message,
       sessionId,
       lastAiResponse,
     });
 
+    let processedImageInfo = null;
+
+    if (mediaUrl) {
+      processedImageInfo = await this.handleImageMessage(
+        worker,
+        mediaUrl,
+        sessionId,
+        parsedData.imageType,
+      );
+    }
+
     let updatedWorker;
-    let invalidFields = null;
 
     if (
-      parsedData?.invalidFields &&
-      Object.keys(parsedData.invalidFields).length > 0
+      !parsedData?.invalidFields ||
+      Object.keys(parsedData.invalidFields).length === 0
     ) {
-      invalidFields = parsedData.invalidFields;
-
-      updatedWorker = worker;
-    } else {
       updatedWorker = await this.updateWorkerService.execute({
         worker,
         parsedData,
         sessionId,
         phoneNumber,
       });
+    } else {
+      // Se houver campos inválidos, mantém o worker original
+      updatedWorker = worker;
     }
 
     const messageText =
       mediaUrl && !message
-        ? `[Imagem enviada pelo usuário - ${this.determineImageType(worker)}]`
+        ? `[Imagem enviada pelo usuário - ${parsedData.imageType}]`
         : message;
 
     const aiResponse = await this.generateResponseService.execute({
@@ -108,7 +90,7 @@ export class WhatsappMessageService {
       worker: updatedWorker,
       isNewUser,
       processedImage: processedImageInfo,
-      invalidFields,
+      invalidFields: parsedData.invalidFields,
     });
 
     await this.updateLastAiResponseService.execute(sessionId, aiResponse);
@@ -116,38 +98,37 @@ export class WhatsappMessageService {
     return {
       sessionId,
       message: aiResponse,
-      currentStage: updatedWorker.signupStage,
+      currentStage: updatedWorker?.signupStage || 'personal_info',
     };
   }
 
-  /**
-   * Determina o tipo de imagem esperado com base no estágio atual do cadastro e nos documentos existentes
-   * @param worker Dados do worker
-   * @returns Tipo de imagem esperado
-   */
-  private determineImageType(
-    worker: any,
-  ): 'profile' | 'document_front' | 'document_back' | 'selfie' {
-    // Verifica se já tem foto de perfil
-    if (!worker.profilePicture) {
-      return 'profile';
-    }
+  private async handleImageMessage(
+    worker: Worker,
+    mediaUrl: string,
+    sessionId: string,
+    imageType: 'profile' | 'document_front' | 'document_back' | 'selfie',
+  ) {
+    const processedImage = await this.processImageMessageService.execute({
+      imageUrl: mediaUrl,
+      sessionId,
+      imageType,
+    });
 
-    // Verifica se já tem documentos
-    if (!worker.documents) {
-      return 'document_front';
-    }
+    if (worker._id) {
+      await this.updateDocumentService.execute({
+        workerId: worker._id.toString(),
+        documentType: imageType,
+        imageUrl: processedImage.url,
+        pictureId: processedImage.pictureId,
+      });
 
-    // Verifica qual documento está faltando
-    if (!worker.documents.rgFrontId) {
-      return 'document_front';
-    } else if (!worker.documents.rgBackId) {
-      return 'document_back';
-    } else if (!worker.documents.tShirtSelfieId) {
-      return 'selfie';
+      return {
+        type: imageType,
+        url: processedImage.url,
+        pictureId: processedImage.pictureId,
+        success: true,
+        message: `Imagem do tipo ${imageType} processada com sucesso`,
+      };
     }
-
-    // Se todos os documentos já existirem, assume que é uma atualização da foto de perfil
-    return 'profile';
   }
 }

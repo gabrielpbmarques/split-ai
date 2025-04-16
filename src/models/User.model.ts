@@ -1,5 +1,7 @@
+import { ObjectId } from 'mongoose';
+
 export interface User {
-  id: string;
+  _id?: string;
   name: string;
   email: string;
   password?: string;
@@ -9,7 +11,7 @@ export interface User {
   isRemoved?: boolean;
   removedAt?: Date | null;
   workerId?: string;
-  profilePictureId?: string;
+  profilePictureId?: ObjectId;
   createdAt?: Date;
   updatedAt?: Date;
 }

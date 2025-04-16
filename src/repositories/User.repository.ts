@@ -47,6 +47,16 @@ export class UserRepository implements IUserRepository {
     return updatedUser as unknown as User | null;
   }
 
+  async updateByWorkerId(
+    workerId: string,
+    payload: Partial<User>,
+  ): Promise<User | null> {
+    const updatedUser = await this.userModel
+      .findOneAndUpdate({ workerId }, payload, { new: true })
+      .exec();
+    return updatedUser as unknown as User | null;
+  }
+
   async create(user: Partial<User>): Promise<User> {
     const newUser = new this.userModel(user);
     const savedUser = await newUser.save();

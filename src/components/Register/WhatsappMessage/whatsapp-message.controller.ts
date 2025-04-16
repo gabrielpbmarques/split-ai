@@ -1,8 +1,5 @@
 import { Body, Controller, Post, Res } from '@nestjs/common';
-import {
-  WhatsappMessageService,
-  WhatsappMessageResponse,
-} from './whatsapp-message.service';
+import { WhatsappMessageService } from './whatsapp-message.service';
 import { WhatsappMessageDto } from './whatsapp-message.dto';
 import { FastifyReply } from 'fastify';
 
@@ -16,11 +13,14 @@ export class WhatsappMessageController {
   async execute(
     @Body() whatsappMessageDto: WhatsappMessageDto,
     @Res() res: FastifyReply,
-  ): Promise<WhatsappMessageResponse> {
+  ): Promise<FastifyReply> {
     try {
-      return await this.whatsappMessageService.execute(whatsappMessageDto);
+      const result =
+        await this.whatsappMessageService.execute(whatsappMessageDto);
+
+      return res.status(200).send(result);
     } catch (error) {
-      res.status(error.status || 500).send(error);
+      return res.status(error.status || 500).send(error.message);
     }
   }
 }

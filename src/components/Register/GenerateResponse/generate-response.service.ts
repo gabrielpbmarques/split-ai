@@ -23,7 +23,7 @@ export class GenerateResponseService {
 
     const registerMetadata: RegisterContextMetadata = {
       phone_number: phoneNumber,
-      registration_stage: worker.signupStage,
+      registration_stage: worker?.signupStage || 'personal_info',
       is_new_user: isNewUser,
       user_data: worker,
       processed_image: processedImage || null,

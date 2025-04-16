@@ -9,10 +9,12 @@ export class UpdateLastAiResponseService {
     const session = await this.sessionRepository.findBySessionId(sessionId);
 
     if (session) {
-      await this.sessionRepository.update(session._id.toString(), {
+      await this.sessionRepository.update(sessionId, {
         lastAiResponse: lastAiResponse,
         lastInteraction: new Date(),
       });
+    } else {
+      console.error('Sessão não encontrada para o sessionId:', sessionId);
     }
   }
 }

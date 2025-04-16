@@ -3,6 +3,7 @@ import { SessionRepository } from '../../../repositories/Session.repository';
 import { FindOrCreateSessionDto } from './find-or-create-session.dto';
 import { v4 as uuidv4 } from 'uuid';
 import { SaveSessionService } from '../SaveSession/save-session.service';
+import { Session } from 'src/models/Session.model';
 
 interface SessionResponse {
   sessionId: string;
@@ -25,7 +26,7 @@ export class FindOrCreateSessionService {
       findOrCreateSessionDto;
 
     let sessionId = existingSessionId;
-    let session;
+    let session: Session | null;
     let worker: any;
     let isNewUser = true;
 

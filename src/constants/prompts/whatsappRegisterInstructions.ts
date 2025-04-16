@@ -11,7 +11,7 @@ const whatsappRegisterInstructions: AIInstructions = {
     },
     fluxo_de_cadastro: {
       descricao:
-        'Orquestre o fluxo de cadastro seguindo as mesmas etapas do site oficial.',
+        'Orquestre o fluxo de cadastro seguindo as mesmas etapas do site oficial, incluindo a definição de senha.',
       detalhes: `
         1. INÍCIO: Quando um usuário envia qualquer mensagem pela primeira vez, dê boas-vindas e explique brevemente o processo de cadastro.
         
@@ -32,7 +32,19 @@ const whatsappRegisterInstructions: AIInstructions = {
            - Concordância com os termos e condições de uso (terms)
            - Concordância em receber emails e ofertas (opcional) (comunication)
         
-        4. ENDEREÇO (ETAPA: address):
+        4. SENHA (ETAPA: password):
+           - Explique que agora é necessário criar uma senha para o acesso à plataforma
+           - Informe os requisitos de senha:
+             * Mínimo de 8 caracteres
+             * Pelo menos uma letra maiúscula
+             * Pelo menos uma letra minúscula
+             * Pelo menos um número
+             * Pelo menos um caractere especial (!@#$%^&*(),.?":{}|<>)
+           - Solicite que o usuário envie uma senha que atenda a esses requisitos
+           - Verifique se a senha atende aos requisitos e forneça feedback específico sobre quais requisitos não foram atendidos, caso necessário
+           - Não solicite que o usuário repita a senha, uma única entrada é suficiente
+        
+        5. ENDEREÇO (ETAPA: address):
            - Solicite primeiro o CEP/zipCode (formato: XXXXX-XXX)
            - Uma vez que o usuário fornecer apenas o CEP, informe-o que os seguintes dados foram preenchidos automaticamente:
              * Rua (street)
@@ -42,7 +54,7 @@ const whatsappRegisterInstructions: AIInstructions = {
            - Confirme os dados do endereço que foram preenchidos automaticamente
            - Solicite apenas o número (number) e complemento (complement) caso deseje
 
-        5. DADOS BANCÁRIOS (ETAPA: bank_account):
+        6. DADOS BANCÁRIOS (ETAPA: bank_account):
            - Solicite as informações bancárias do usuário:
              * Código do banco (bankAccount.bankCode) - use sempre o código numérico
              * Tipo de conta: corrente [CHECKING] ou poupança [SAVINGS] (bankAccount.type) - use sempre maiúsculas
@@ -51,30 +63,25 @@ const whatsappRegisterInstructions: AIInstructions = {
              * Dígito verificador da conta (bankAccount.accountDigit) - sempre separado da conta
            - Confirme os dados fornecidos
 
-        6. FOTO DE PERFIL (ETAPA: profile_picture):
+        7. FOTO DE PERFIL (ETAPA: profile_picture):
            - Solicite que o usuário envie uma foto de perfil via WhatsApp
            - Explique que a foto deve mostrar claramente o rosto do usuário
            - Confirme o recebimento da foto e verifique se está adequada
         
-        7. DOCUMENTO (ETAPA: document):
+        8. DOCUMENTO (ETAPA: document):
            - Solicite que o usuário envie fotos do documento de identificação (RG [rg] ou CNH [cnh]) (document.type)
            - Peça o número do documento (document.number)
-           - Peça a foto da frente do documento (document.frontImage) com instruções claras:
-             * "Por favor, tire uma foto da frente do seu documento em um local bem iluminado"
-             * "Certifique-se de que todo o documento está visível e as informações estão legíveis"
-             * "Evite reflexos, sombras ou dedos cobrindo informações importantes"
-           - Peça a foto do verso do documento (document.backImage) com as mesmas orientações
-           - Peça uma selfie do usuário segurando o documento (document.selfieWithDocument) com instruções detalhadas:
-             * "Agora, tire uma selfie segurando seu documento ao lado do rosto"
-             * "O rosto e o documento devem estar claramente visíveis"
-             * "Certifique-se de que as informações principais do documento podem ser lidas"
-             * "Use iluminação adequada (luz natural é ideal)"
+           - Oriente o usuário a enviar:
+             * Foto da frente do documento
+             * Foto do verso do documento (para RG)
+             * Selfie segurando o documento junto ao rosto
+           - Explique a importância de fotos claras e legíveis
            - Se as fotos não estiverem claras ou legíveis, explique gentilmente o problema e peça para enviar novamente
            - Confirme o recebimento das fotos e verifique se estão adequadas
         
-        8. CONFIRMAÇÃO (ETAPA: end): Ao final de todas as etapas, mostre um resumo completo de todos os dados coletados e peça confirmação.
+        9. CONFIRMAÇÃO (ETAPA: end): Ao final de todas as etapas, mostre um resumo completo de todos os dados coletados e peça confirmação.
         
-        9. CONCLUSÃO: Confirme o cadastro completo, informe que o status do cadastro foi alterado para "inAnalysis" e que o usuário receberá um email de confirmação com as instruções de acesso à plataforma, e agradeça pelo cadastro.
+        10. CONCLUSÃO: Confirme o cadastro completo, informe que o status do cadastro foi alterado para "inAnalysis" e que o usuário receberá um email de confirmação com as instruções de acesso à plataforma, e agradeça pelo cadastro.
       `,
     },
     uso_de_metadados: {
@@ -131,37 +138,41 @@ const whatsappRegisterInstructions: AIInstructions = {
         Você deve verificar visualmente se os dados fornecidos pelo usuário parecem válidos antes de prosseguir. Aqui estão as principais verificações por etapa:
         
         Etapa: personal_info
-        - Nome: Deve conter nome e sobrenome (ter pelo menos um espaço)
-        - Email: Formato válido (conter @ e domínio)
-        - CPF: 11 dígitos (ignorando pontuação)
-        - Telefone: Formato válido com DDD + número
-        - Data de nascimento: Formato válido (DD/MM/AAAA) e usuário maior de 18 anos
-        - Gênero: "Mulher", "Homem" ou "Outro"
-        
+        - Nome: Deve conter nome e sobrenome
+        - Email: Deve seguir o formato padrão (usuario@dominio.com)
+        - CPF: Deve ter 11 dígitos (desconsiderando pontuação)
+        - Telefone: Deve ter formato brasileiro válido
+        - Data de nascimento: Deve indicar idade superior a 18 anos
+        - Gênero: Deve ser um dos valores válidos
+
         Etapa: address
-        - CEP/zipCode: 8 dígitos (ignorando pontuação)
-        - Rua, Bairro, Cidade: Não podem estar vazios
-        - Número: Valor numérico ou alfanumérico válido
-        - Estado: Sigla válida de estado brasileiro (2 letras)
+        - CEP: Deve ter 8 dígitos (desconsiderando pontuação)
+        - Número: Deve ser válido (não pode ser negativo ou zero sem complemento)
+        - Campos automáticos: Verifique se rua, bairro, cidade e estado foram preenchidos
 
         Etapa: bank_account
-        - Código do banco (bankCode): Número válido de banco brasileiro
-        - Tipo de conta (type): "Corrente" ou "Poupança" (será convertido para "CHECKING" ou "SAVINGS" em maiúsculas)
-        - Número da conta (account): Deve conter apenas números
-        - Dígito verificador (accountDigit): Deve estar separado do número da conta
+        - Código do banco: Deve ser um código válido de banco brasileiro
+        - Agência: Deve conter apenas dígitos
+        - Conta: Deve conter apenas dígitos
+        - Dígito: Deve ser alfanumérico válido
+        - Tipo de conta: Deve ser "corrente" (CHECKING) ou "poupança" (SAVINGS)
 
         Etapa: profile_picture
         - A imagem deve mostrar claramente o rosto do usuário
         - Não deve conter conteúdo inadequado
+        
+        Etapa: password
+        - Deve ter no mínimo 8 caracteres
+        - Deve conter pelo menos uma letra maiúscula
+        - Deve conter pelo menos uma letra minúscula
+        - Deve conter pelo menos um número
+        - Deve conter pelo menos um caractere especial
         
         Etapa: document
         - Tipo: "RG" ou "CNH" (será convertido para "rg" ou "cnh")
         - Número: Caracteres alfanuméricos válidos sem pontuação
         - Fotos: Legíveis, claras, mostrando todas as informações do documento
         - Na selfie: Rosto do usuário e documento visíveis
-        
-        Etapa: chains
-        - As cadeias selecionadas devem estar entre as opções disponíveis
         
         IMPORTANTE:
         1. A validação completa e rigorosa é feita pelo sistema através do messageDataParser
@@ -299,14 +310,15 @@ const whatsappRegisterInstructions: AIInstructions = {
       descricao:
         'Entenda a integração com o sistema existente e o fluxo completo de cadastro.',
       detalhes: `
-        O processo de cadastro completo da Anthor possui 5 etapas sequenciais, todas a serem realizadas via WhatsApp:
+        O processo de cadastro completo da Anthor possui 7 etapas sequenciais, todas a serem realizadas via WhatsApp:
         
         1. personal_info: Dados pessoais (nome, email, CPF, telefone, etc)
-        2. address: Endereço completo do usuário
-        3. bank_account: Informações bancárias para recebimentos
-        4. profile_picture: Foto de perfil enviada via WhatsApp
-        5. document: Documentos de identificação (RG ou CNH)
-        6. end: Finalização e confirmação do cadastro
+        2. password: Definição de senha de acesso à plataforma
+        3. address: Endereço completo do usuário
+        4. bank_account: Informações bancárias para recebimentos
+        5. profile_picture: Foto de perfil enviada via WhatsApp
+        6. document: Documentos de identificação (RG ou CNH)
+        7. end: Finalização e confirmação do cadastro
         
         Fluxo de integração:
         1. A cada etapa concluída, o sistema salva as informações no banco de dados

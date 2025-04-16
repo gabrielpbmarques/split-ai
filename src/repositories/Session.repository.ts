@@ -45,6 +45,7 @@ export class SessionRepository implements ISessionRepository {
         { new: true },
       )
       .exec();
+
     return updatedSession as unknown as Session | null;
   }
 

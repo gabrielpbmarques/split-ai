@@ -1,4 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import { ObjectId } from 'mongoose';
+import { UserRepository } from 'src/repositories/User.repository';
 import { WorkerRepository } from 'src/repositories/Worker.repository';
 
 export interface UpdateDocumentDto {
@@ -10,7 +12,10 @@ export interface UpdateDocumentDto {
 
 @Injectable()
 export class UpdateDocumentService {
-  constructor(private readonly workerRepository: WorkerRepository) {}
+  constructor(
+    private readonly workerRepository: WorkerRepository,
+    private readonly userRepository: UserRepository,
+  ) {}
 
   /**
    * Atualiza os documentos do worker com a URL da imagem
@@ -37,12 +42,6 @@ export class UpdateDocumentService {
     }
 
     switch (dto.documentType) {
-      case 'profile':
-        updateData['profilePicture'] = dto.imageUrl;
-        if (dto.pictureId) {
-          updateData['profilePictureId'] = dto.pictureId;
-        }
-        break;
       case 'document_front':
         if (dto.pictureId) {
           updateData['documents.rgFrontId'] = dto.pictureId;
@@ -61,26 +60,22 @@ export class UpdateDocumentService {
         }
         updateData['documents.tShirtSelfieUrl'] = dto.imageUrl;
         break;
+      case 'profile':
+        if (dto.pictureId) {
+          await this.updateProfilePicture(dto.pictureId, dto.workerId);
+        }
+        break;
     }
 
     await this.workerRepository.update(dto.workerId, updateData);
-
-    if (dto.documentType === 'profile') {
-      await this.updateSignupStage(dto.workerId, 'profile_picture');
-    } else if (dto.documentType === 'selfie') {
-      await this.updateSignupStage(dto.workerId, 'document');
-    }
   }
 
-  /**
-   * Atualiza o estágio de cadastro do worker
-   * @param workerId ID do worker
-   * @param stage Novo estágio de cadastro
-   */
-  private async updateSignupStage(
+  private async updateProfilePicture(
+    pictureId: string,
     workerId: string,
-    stage: string,
   ): Promise<void> {
-    await this.workerRepository.update(workerId, { signupStage: stage });
+    await this.userRepository.updateByWorkerId(workerId, {
+      profilePictureId: pictureId as unknown as ObjectId,
+    });
   }
 }
