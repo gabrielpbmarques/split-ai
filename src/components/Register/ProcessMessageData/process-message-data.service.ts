@@ -25,8 +25,6 @@ export class ProcessMessageDataService {
       messageWithContext = `[CONTEXTO: A última pergunta da IA foi: "${lastAiResponse.replace('{', '').replace('}', '')}"] \n\nResposta do usuário: "${message}"`;
     }
 
-    console.log('messageWithContext', messageWithContext);
-
     const parserAiResponse = await this.generateAiResponseService.execute(
       messageWithContext,
       sessionId,
@@ -35,8 +33,6 @@ export class ProcessMessageDataService {
       },
       typedAgentId,
     );
-
-    console.log('parserAiResponse', parserAiResponse);
 
     const cleanedResponse = parserAiResponse
       .replace(/```json\s*/, '') // remove ```json e espaços

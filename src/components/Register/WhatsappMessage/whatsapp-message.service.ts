@@ -42,15 +42,11 @@ export class WhatsappMessageService {
         phoneNumber,
       });
 
-    console.log('Message:', message);
-
     const parsedData = await this.processMessageDataService.execute({
       message: mediaUrl ? `${message}\n[Url da Imagem]: ${mediaUrl}` : message,
       sessionId,
       lastAiResponse,
     });
-
-    console.log('parsedData', parsedData);
 
     let processedImageInfo = null;
 
