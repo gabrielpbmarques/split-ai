@@ -55,7 +55,7 @@ export class WhatsappMessageService {
         worker,
         mediaUrl,
         sessionId,
-        parsedData.imageType,
+        parsedData.image?.type,
       );
     }
 
@@ -104,7 +104,11 @@ export class WhatsappMessageService {
     worker: Worker,
     mediaUrl: string,
     sessionId: string,
-    imageType: 'profile' | 'document_front' | 'document_back' | 'selfie',
+    imageType:
+      | 'profile'
+      | 'document_front'
+      | 'document_back'
+      | 't_shirt_selfie',
   ) {
     const processedImage = await this.processImageMessageService.execute({
       imageUrl: mediaUrl,

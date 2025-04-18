@@ -10,7 +10,7 @@ import { ImageType } from 'src/models/Picture.model';
 export interface ProcessImageMessageDto {
   imageUrl: string;
   sessionId: string;
-  imageType: 'profile' | 'document_front' | 'document_back' | 'selfie';
+  imageType: 'profile' | 'document_front' | 'document_back' | 't_shirt_selfie';
 }
 
 export interface ProcessedImageResult {
@@ -79,7 +79,7 @@ export class ProcessImageMessageService {
         return 'documents/front';
       case 'document_back':
         return 'documents/back';
-      case 'selfie':
+      case 't_shirt_selfie':
         return 'documents/selfie';
       default:
         return 'others';
@@ -118,7 +118,7 @@ export class ProcessImageMessageService {
         return ImageType.DOCUMENT_FRONT;
       case 'document_back':
         return ImageType.DOCUMENT_BACK;
-      case 'selfie':
+      case 't_shirt_selfie':
         return ImageType.T_SHIRT_SELFIE;
       default:
         return ImageType.PROFILE; // Valor padrão

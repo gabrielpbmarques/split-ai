@@ -144,11 +144,17 @@ const agents: AgentType = {
                 properties: {
                   type: {
                     type: 'string',
-                    enum: ['document_front', 'document_back', 'profile'],
+                    enum: [
+                      'document_front',
+                      'document_back',
+                      't_shirt_selfie',
+                      'profile',
+                    ],
                   },
                   url: { type: 'string' },
                 },
               },
+              hasPassport: { type: 'boolean', nullable: true },
               hasLegalAge: { type: 'boolean', nullable: true },
               status: { type: 'string', enum: ['pending', 'inAnalysis'] },
               signupStage: {
@@ -189,10 +195,10 @@ const agents: AgentType = {
                     'address.state',
                     'address.country',
                     'address.cityCode',
-                    'profilePicture',
-                    'document.frontImage',
-                    'document.backImage',
-                    'document.selfieImage',
+                    'profilePictureId',
+                    'document.rgBackId',
+                    'document.rgFrontId',
+                    'document.tShirtSelfieId',
                     'bankAccount.bankCode',
                     'bankAccount.agency',
                     'bankAccount.account',

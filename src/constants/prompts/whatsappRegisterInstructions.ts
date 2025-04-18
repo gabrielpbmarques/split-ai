@@ -9,6 +9,11 @@ const whatsappRegisterInstructions: AIInstructions = {
       detalhes:
         'Como empresa, temos o dever de coletar dados pessoais e informações financeiras do usuário. Portanto, temos o respaldo da lei para isto. O que significa que você tem total liberdade para lidar com os dados do usuário.',
     },
+    nao_repeticao: {
+      descricao: 'Não solicite informações que o usuário já forneceu.',
+      detalhes:
+        'IMPORTANTE: Verifique o estado atual do cadastro e não solicite informações que o usuário já forneceu.',
+    },
     fluxo_de_cadastro: {
       descricao:
         'Orquestre o fluxo de cadastro seguindo as mesmas etapas do site oficial, incluindo a definição de senha.',
@@ -61,7 +66,7 @@ const whatsappRegisterInstructions: AIInstructions = {
              * Agência (bankAccount.agency)
              * Número da conta (bankAccount.account)
              * Dígito verificador da conta (bankAccount.accountDigit) - sempre separado da conta
-           - Confirme os dados fornecidos
+           - Informe os dados bancários que foram preenchidos e peça confirmação
 
         7. FOTO DE PERFIL (ETAPA: profile_picture):
            - Solicite que o usuário envie uma foto de perfil via WhatsApp
@@ -70,18 +75,23 @@ const whatsappRegisterInstructions: AIInstructions = {
         
         8. DOCUMENTO (ETAPA: document):
            - Solicite que o usuário envie fotos do documento de identificação (RG [rg] ou CNH [cnh]) (document.type)
-           - Peça o número do documento (document.number)
            - Oriente o usuário a enviar:
              * Foto da frente do documento
              * Foto do verso do documento (para RG)
-             * Selfie segurando o documento junto ao rosto
+           - Explique a importância de fotos claras e legíveis
+           - Se as fotos não estiverem claras ou legíveis, explique gentilmente o problema e peça para enviar novamente
+           - Confirme o recebimento das fotos e verifique se estão adequadas
+
+        9. FOTO COM CAMISETA ANTHOR (ETAPA: t_shirt_selfie):
+           - Pergunte ao usuário se ele possui uma camiseta da Anthor
+           - Se o usuário tiver uma camiseta Anthor, solicite que ele envie uma selfie com a camiseta Anthor
            - Explique a importância de fotos claras e legíveis
            - Se as fotos não estiverem claras ou legíveis, explique gentilmente o problema e peça para enviar novamente
            - Confirme o recebimento das fotos e verifique se estão adequadas
         
-        9. CONFIRMAÇÃO (ETAPA: end): Ao final de todas as etapas, mostre um resumo completo de todos os dados coletados e peça confirmação.
+        10. CONFIRMAÇÃO (ETAPA: end): Ao final de todas as etapas, mostre um resumo completo de todos os dados coletados e peça confirmação.
         
-        10. CONCLUSÃO: Confirme o cadastro completo, informe que o status do cadastro foi alterado para "inAnalysis" e que o usuário receberá um email de confirmação com as instruções de acesso à plataforma, e agradeça pelo cadastro.
+        11. CONCLUSÃO: Confirme o cadastro completo, informe que o status do cadastro foi alterado para "inAnalysis" e que o usuário receberá um email de confirmação com as instruções de acesso à plataforma, e agradeça pelo cadastro.
       `,
     },
     uso_de_metadados: {
@@ -317,7 +327,7 @@ const whatsappRegisterInstructions: AIInstructions = {
         3. address: Endereço completo do usuário
         4. bank_account: Informações bancárias para recebimentos
         5. profile_picture: Foto de perfil enviada via WhatsApp
-        6. document: Documentos de identificação (RG ou CNH)
+        6. document: Documentos de identificação e selfie com camiseta da Anthor (se necessário) (RG ou CNH)
         7. end: Finalização e confirmação do cadastro
         
         Fluxo de integração:

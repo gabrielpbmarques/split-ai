@@ -39,7 +39,13 @@ export class ProcessMessageDataService {
       .replace(/```$/, '') // remove a última ```
       .trim();
 
-    const parsed = JSON.parse(cleanedResponse);
+    let parsed: Record<string, any>;
+
+    try {
+      parsed = JSON.parse(cleanedResponse);
+    } catch (error) {
+      parsed = {};
+    }
 
     return parsed;
   }

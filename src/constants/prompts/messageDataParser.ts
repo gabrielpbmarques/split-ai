@@ -39,7 +39,7 @@ const messageDataParser: AIInstructions = {
                     * address.neighborhood (bairro)
                     * address.city (cidade)
                     * address.state (estado)
-                    * address.cityCode (código IBGE da cidade, se possível)
+                    * address.cityCode (código IBGE da cidade)
                     * address.country ("Brasil")
                   - O usuário deverá fornecer apenas o número e complemento.
                 
@@ -53,10 +53,12 @@ const messageDataParser: AIInstructions = {
                    - Use o formato: { countryCode: "55", areaCode: "11", number: "987654321" }
 
                 9. Imagem do documento:
-                   - Com base na última pergunta da IA, extraia o tipo de documento (document_front, document_back)
+                   - Com base na última pergunta da IA, extraia o tipo de documento (document_front, document_back, t_shirt_selfie)
+                   - Use o formato: { type: "document_front", url: "https://example.com/image.jpg" }
 
                 10. Imagem de perfil:
                     - Extraia o tipo de imagem (profile)
+                    - Use o formato: { type: "profile", url: "https://example.com/image.jpg" }
                 
                 11. Senha: Preserve a senha exatamente como digitada pelo usuário
                     - Não faça nenhuma normalização ou transformação na senha fornecida
@@ -65,18 +67,21 @@ const messageDataParser: AIInstructions = {
                 12. Tipo de conta bancária: Normalize para "CHECKING" ou "SAVINGS" em MAIÚSCULAS
                     - "CHECKING" para: corrente, conta corrente, c/c
                     - "SAVINGS" para: poupança, conta poupança
+
                 13. Número da conta bancária:
                     - Sempre que o usuário informar o número da conta com dígito (ex: "1234567-8"), separe em dois campos:
                       * "account": "1234567"
                       * "accountDigit": "8"
                     - Se o usuário informar apenas o número (ex: "1234567"), preencha apenas o campo "account".
                     - Nunca coloque o dígito junto ao número da conta.
+
                 14. Lidar com campos ausentes ou nulos: SEMPRE use exatamente estes nomes de campos:
                     - "bankCode" (não "bank" ou "código")
                     - "agency" (não "agência" ou "agencia")
                     - "account" (não "accountNumber" ou "número")
                     - "accountDigit" (não "digit" ou "dígito")
                     - "type" (não "accountType")
+
                 # DETECÇÃO E VALIDAÇÃO DE DADOS:
                 
                 15. Detecção inteligente de dados:
@@ -113,10 +118,12 @@ const messageDataParser: AIInstructions = {
 
                 2. O signupStage deve ser gerenciado da seguinte forma:
                    - "personal_info" para etapas de dados pessoais (nome, email, cpf, etc.)
-                   - "bank_account" para etapas de dados bancários
-                   - "document" para etapas de documentos
                    - "password" para etapas de senha
                    - "address" para etapas de endereço
+                   - "bank_account" para etapas de dados bancários
+                   - "profile_picture" para etapas de imagem de perfil
+                   - "document" para etapas de documentos
+                   - "t_shirt_selfie" para etapas de selfie com a camiseta
                    - "end" para quando o cadastro estiver completo.
 
                 3. O valor inicial do signupStage deve ser "personal_info".
@@ -144,12 +151,12 @@ const messageDataParser: AIInstructions = {
                 2. Se a última pergunta foi sobre ser maior de idade e a resposta foi "Sim", isso indica que o campo hasLegalAge deve ser true.
                 
                 3. Se a última pergunta foi sobre receber comunicações e a resposta foi "Sim", isso indica que o campo comunication.agree deve ser true.
-                
+
                 4. Se a última pergunta foi sobre o gênero e a resposta foi "Homem", isso indica que o campo gender deve ser "male".
                 
+                5. Se a última pergunta foi perguntando se o usuário tem a camiseta da Anthor, isso indica que o campo hasPassport deve ser true.
+
                 Analise cuidadosamente o contexto da pergunta para determinar qual campo do JSON deve ser preenchido com a resposta do usuário, mesmo quando a resposta é curta ou ambígua.
-                
-                Lembre-se de sempre manter o campo "status" como "pending" durante todo o processo, independentemente da etapa ou resposta do usuário.
             `,
     },
     etapas_e_campos: {
@@ -189,16 +196,17 @@ const messageDataParser: AIInstructions = {
                   - bankInfo.type (obrigatório): Tipo de conta ("CHECKING" ou "SAVINGS")
                 
                 5. PROFILE_PICTURE (Foto de Perfil):
-                   - profilePicture (obrigatório): URL ou identificador da foto de perfil
+                   - image (obrigatório): URL ou identificador da foto de perfil
                 
                 6. DOCUMENT (Documentos):
-                   - document.type (obrigatório): Tipo de documento ("rg" ou "cnh")
-                   - document.number (obrigatório): Número do documento
-                   - document.frontImage (obrigatório): URL ou identificador da imagem frontal do documento
-                   - document.backImage (opcional): URL ou identificador da imagem traseira do documento
-                   - document.selfieImage (obrigatório): URL ou identificador da selfie com documento
+                   - image (obrigatório): URL ou identificador da imagem frontal do documento
+                   - image (obrigatório): URL ou identificador da imagem traseira do documento
+                   - image (obrigatório): URL ou identificador da selfie com documento
+
+                7. T_SHIRT_SELFIE (Foto com Camiseta Anthor):
+                   - image (obrigatório): URL ou identificador da selfie com a camiseta Anthor
                 
-                7. END (Finalização):
+                8. END (Finalização):
                    - Indica que o cadastro foi concluído com sucesso
             `,
     },
@@ -211,20 +219,23 @@ const messageDataParser: AIInstructions = {
                 
                 2. Se apenas alguns campos obrigatórios de PERSONAL_INFO estiverem preenchidos (incompletos), defina signupStage como "personal_info".
                 
-                3. Se todos os campos obrigatórios de PERSONAL_INFO estiverem preenchidos, mas não há password, defina signupStage como "personal_info".
+                3. Se todos os campos obrigatórios de PERSONAL_INFO estiverem preenchidos, mas não há password, defina signupStage como "password".
 
-                4. Se todos os campos obrigatórios de PERSONAL_INFO e PASSWORD estiverem preenchidos, mas nenhum ou apenas alguns campos de ADDRESS, defina signupStage como "password".
+                4. Se todos os campos obrigatórios de PERSONAL_INFO e PASSWORD estiverem preenchidos, mas nenhum ou apenas alguns campos de ADDRESS, defina signupStage como "address".
 
-                5. Se todos os campos obrigatórios até ADDRESS estiverem preenchidos, mas nenhum ou apenas alguns campos de BANK_ACCOUNT, defina signupStage como "address".
+                5. Se todos os campos obrigatórios até ADDRESS estiverem preenchidos, mas nenhum ou apenas alguns campos de BANK_ACCOUNT, defina signupStage como "bank_account".
 
-                6. Se todos os campos obrigatórios até BANK_ACCOUNT estiverem preenchidos, mas não há profilePicture, defina signupStage como "bank_account".
+                6. Se todos os campos obrigatórios até BANK_ACCOUNT estiverem preenchidos, mas não há profilePicture, defina signupStage como "profile_picture".
 
                 7. Se todos os campos obrigatórios até PROFILE_PICTURE estiverem preenchidos, mas nenhum ou apenas alguns campos de DOCUMENT, defina signupStage como "profile_picture".
 
-                8. Se todos os campos obrigatórios até DOCUMENT estiverem preenchidos, defina signupStage como "document".
+                8. Se todos os campos obrigatórios até DOCUMENT estiverem preenchidos, defina signupStage como "t_shirt_selfie".
 
-                9. Se todos os campos obrigatórios estiverem preenchidos e o usuário confirmar os dados, defina signupStage como "end".
-                18. Por padrão, mantenha o status como "pending" a menos que o cadastro esteja completamente finalizado. e confirmado, defina signupStage como "end" e status como "inAnalysis".
+                9. Se a última pergunta da IA foi sobre a posse da camiseta Anthor e a resposta foi negativa, defina signupStage como "end".
+
+                10. Se todos os campos obrigatórios estiverem preenchidos e o usuário confirmar os dados, defina signupStage como "end".
+
+                11. Por padrão, mantenha o status como "pending" a menos que o cadastro esteja completamente finalizado. e confirmado, defina signupStage como "end" e status como "inAnalysis".
                 
                 Importante: Para o cadastro via WhatsApp, todas as etapas serão coletadas, desde dados pessoais até documentos e informações bancárias.
                 
@@ -268,9 +279,10 @@ const messageDataParser: AIInstructions = {
                 21. URL da foto de perfil: Deve ser uma URL válida
 
                 Etapa DOCUMENT:
-                22. Tipo de documento: Deve ser "rg" ou "cnh"
-                23. Número do documento: Deve conter apenas caracteres alfanuméricos
-                24. URLs das imagens: Devem ser URLs válidas
+                22. URLs das imagens: Devem ser URLs válidas
+
+                Etapa T_SHIRT_SELFIE:
+                23. URL da selfie: Deve ser uma URL válida
                 
                 Se um dado não passar na validação, não o inclua no JSON.
             `,

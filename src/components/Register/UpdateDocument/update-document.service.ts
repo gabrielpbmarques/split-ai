@@ -5,7 +5,11 @@ import { WorkerRepository } from 'src/repositories/Worker.repository';
 
 export interface UpdateDocumentDto {
   workerId: string;
-  documentType: 'profile' | 'document_front' | 'document_back' | 'selfie';
+  documentType:
+    | 'profile'
+    | 'document_front'
+    | 'document_back'
+    | 't_shirt_selfie';
   imageUrl: string;
   pictureId?: string;
 }
@@ -22,60 +26,88 @@ export class UpdateDocumentService {
    * @param dto Dados do documento a ser atualizado
    */
   async execute(dto: UpdateDocumentDto): Promise<void> {
-    const worker = await this.workerRepository.findById(dto.workerId);
+    try {
+      const worker = await this.workerRepository.findById(dto.workerId);
 
-    if (!worker) {
-      throw new Error(`Worker não encontrado com ID: ${dto.workerId}`);
+      if (!worker) {
+        throw new Error(`Worker não encontrado com ID: ${dto.workerId}`);
+      }
+
+      let updateData: any = {};
+
+      if (!worker.documents) {
+        updateData.documents = {
+          isRemoved: false,
+          removedAt: null,
+          status: 'pending',
+          observations: [],
+          dateValidated: null,
+          validator: null,
+        };
+      }
+
+      const workerDocuments = worker.documents
+        ? JSON.parse(JSON.stringify(worker.documents))
+        : {};
+
+      switch (dto.documentType) {
+        case 'document_front':
+          if (dto.pictureId) {
+            updateData = {
+              documents: {
+                ...workerDocuments, // Preserva os dados existentes
+                rgFrontId: dto.pictureId,
+              },
+            };
+          }
+          break;
+        case 'document_back':
+          if (dto.pictureId) {
+            updateData = {
+              documents: {
+                ...workerDocuments, // Preserva os dados existentes
+                rgBackId: dto.pictureId,
+              },
+            };
+          }
+          break;
+        case 't_shirt_selfie':
+          if (dto.pictureId) {
+            updateData = {
+              documents: {
+                ...workerDocuments, // Preserva os dados existentes
+                tShirtSelfieId: dto.pictureId,
+              },
+            };
+          }
+          break;
+        case 'profile':
+          if (dto.pictureId) {
+            await this.updateProfilePicture(dto.pictureId, dto.workerId);
+          }
+          break;
+        default:
+          throw new Error(
+            `Tipo de documento desconhecido: ${dto.documentType}`,
+          );
+      }
+
+      await this.workerRepository.update(dto.workerId, updateData);
+    } catch (error) {
+      throw error;
     }
-
-    const updateData: any = {};
-
-    if (!worker.documents) {
-      updateData.documents = {
-        isRemoved: false,
-        removedAt: null,
-        status: 'pending',
-        observations: [],
-        dateValidated: null,
-        validator: null,
-      };
-    }
-
-    switch (dto.documentType) {
-      case 'document_front':
-        if (dto.pictureId) {
-          updateData['documents.rgFrontId'] = dto.pictureId;
-        }
-        updateData['documents.rgFrontUrl'] = dto.imageUrl;
-        break;
-      case 'document_back':
-        if (dto.pictureId) {
-          updateData['documents.rgBackId'] = dto.pictureId;
-        }
-        updateData['documents.rgBackUrl'] = dto.imageUrl;
-        break;
-      case 'selfie':
-        if (dto.pictureId) {
-          updateData['documents.tShirtSelfieId'] = dto.pictureId;
-        }
-        updateData['documents.tShirtSelfieUrl'] = dto.imageUrl;
-        break;
-      case 'profile':
-        if (dto.pictureId) {
-          await this.updateProfilePicture(dto.pictureId, dto.workerId);
-        }
-        break;
-    }
-
-    await this.workerRepository.update(dto.workerId, updateData);
   }
 
   private async updateProfilePicture(
     pictureId: string,
     workerId: string,
   ): Promise<void> {
-    await this.userRepository.updateByWorkerId(workerId, {
-      profilePictureId: pictureId as unknown as ObjectId,
-    });
+    try {
+      await this.userRepository.updateByWorkerId(workerId, {
+        profilePictureId: pictureId as unknown as ObjectId,
+      });
+    } catch (error) {
+      throw error;
+    }
   }
 }
