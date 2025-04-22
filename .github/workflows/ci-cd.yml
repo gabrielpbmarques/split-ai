@@ -86,10 +86,6 @@ jobs:
           cache-to: type=registry,ref=us-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/gcr.io/anthor-agi:cache,mode=max
           build-args: |
             ENV=production
-            HUSKY_SKIP_INSTALL=1
-            HUSKY=0
-            CI=true
-            DISABLE_HUSKY=true
 
       - name: Deploy Prod
         env:
