@@ -127,8 +127,6 @@ jobs:
           --set-env-vars EMBEDDING_MODEL=$EMBEDDING_MODEL \
           --set-env-vars AI_MODEL=$AI_MODEL \
           --set-env-vars REDIS_URL=$REDIS_URL \
-          --set-env-vars REDIS_HOST=$REDIS_HOST \
-          --set-env-vars REDIS_PORT=$REDIS_PORT \
           --set-env-vars SUPABASE_URL=$SUPABASE_URL \
           --set-env-vars SUPABASE_API_KEY=$SUPABASE_API_KEY \
           --set-env-vars AWS_REGION=$AWS_REGION \

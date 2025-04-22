@@ -6,19 +6,9 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - '${PORT:-4000}:${PORT:-4000}'
-    environment:
-      - PORT=${PORT:-4000}
-      - JWT_SECRET=${JWT_SECRET}
-      - EMBEDDING_MODEL=${EMBEDDING_MODEL}
-      - AI_MODEL=${AI_MODEL}
-      - GOOGLE_APPLICATION_CREDENTIALS=/usr/app/.gcloud/kms/google.json
-      - REDIS_URL=redis://redis:6379
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - SUPABASE_URL=${SUPABASE_URL}
-      - SUPABASE_API_KEY=${SUPABASE_API_KEY}
-      - MONGO_URI=${MONGO_URI}
+      - '8080:80'
+    env_file:
+      - .env
 
     volumes:
       - ./.gcloud:/usr/app/.gcloud
