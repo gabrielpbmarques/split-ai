@@ -14,16 +14,28 @@ import {
   S3_CLIENT,
   S3_SERVICE,
 } from 'src/infrastructure/providers/s3.provider';
+import {
+  SendGridProvider,
+  SENDGRID_CLIENT,
+  EMAIL_SERVICE,
+} from 'src/infrastructure/providers/sendgrid.provider';
 
 @Module({
   imports: [ConfigModule],
-  providers: [SupabaseProvider, ...VertexAIProvider, ...S3Provider],
+  providers: [
+    SupabaseProvider,
+    ...VertexAIProvider,
+    ...S3Provider,
+    ...SendGridProvider,
+  ],
   exports: [
     SUPABASE_CLIENT,
     VERTEX_AI_EMBEDDINGS,
     VERTEX_AI_CHAT,
     S3_CLIENT,
     S3_SERVICE,
+    SENDGRID_CLIENT,
+    EMAIL_SERVICE,
   ],
 })
 export class InfrastructureModule {}

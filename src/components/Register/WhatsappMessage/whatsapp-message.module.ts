@@ -9,6 +9,7 @@ import { GenerateResponseModule } from '../GenerateResponse/generate-response.mo
 import { ProcessImageMessageModule } from '../ProcessImageMessage/process-image-message.module';
 import { UpdateDocumentModule } from '../UpdateDocument/update-document.module';
 import { UpdateLastAiResponseModule } from '../UpdateLastAiResponse/update-last-ai-response.module';
+import { InfrastructureModule } from 'src/infrastructure/infrastructure.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { UpdateLastAiResponseModule } from '../UpdateLastAiResponse/update-last-
     UpdateLastAiResponseModule,
     ProcessImageMessageModule,
     UpdateDocumentModule,
+    InfrastructureModule,
   ],
   providers: [WhatsappMessageService],
   controllers: [WhatsappMessageController],

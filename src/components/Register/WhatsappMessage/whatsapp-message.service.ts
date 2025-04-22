@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { WhatsappMessageDto } from './whatsapp-message.dto';
 import { FindOrCreateSessionService } from '../FindOrCreateSession/find-or-create-session.service';
 import { ProcessMessageDataService } from '../ProcessMessageData/process-message-data.service';
@@ -8,6 +8,9 @@ import { UpdateLastAiResponseService } from '../UpdateLastAiResponse/update-last
 import { ProcessImageMessageService } from '../ProcessImageMessage/process-image-message.service';
 import { UpdateDocumentService } from '../UpdateDocument/update-document.service';
 import { Worker } from 'src/models/Worker.model';
+import { EmailService } from 'src/components/Email/email.service';
+import { config } from 'src/config';
+import { EMAIL_SERVICE } from 'src/infrastructure/providers/sendgrid.provider';
 
 export interface WhatsappMessageResponse {
   sessionId: string;
@@ -18,6 +21,7 @@ export interface WhatsappMessageResponse {
 @Injectable()
 export class WhatsappMessageService {
   constructor(
+    @Inject(EMAIL_SERVICE) private readonly emailService: EmailService,
     private readonly findOrCreateSessionService: FindOrCreateSessionService,
     private readonly processMessageDataService: ProcessMessageDataService,
     private readonly updateWorkerService: UpdateWorkerService,
@@ -92,6 +96,13 @@ export class WhatsappMessageService {
     });
 
     await this.updateLastAiResponseService.execute(sessionId, aiResponse);
+
+    if (updatedWorker?.signupStage === 'end')
+      await this.emailService.send({
+        to: updatedWorker.email,
+        subject: 'Cadastro Completo',
+        templateId: config.finishSignUpTemplateId,
+      });
 
     return {
       sessionId,
