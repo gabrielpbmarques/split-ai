@@ -112,7 +112,7 @@ jobs:
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
         run: |-
           gcloud run deploy anthor-agi --region $CLOUDSDK_COMPUTE_REGION \
-          --image $GCP_DOCKER_IMAGE:${GITHUB_SHA::8} \
+          --image $GCP_DOCKER_IMAGE:${{ github.sha }} \
           --min-instances 1 \
           --max-instances 100 \
           --memory 2Gi \
