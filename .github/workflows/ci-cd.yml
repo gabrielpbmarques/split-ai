@@ -1,4 +1,4 @@
-name: CI/CD for Anthor AGI
+name: CI/CD for Anthor
 
 concurrency:
   group: ci-cd-anthor-agi-${{ github.ref }}
@@ -69,16 +69,23 @@ jobs:
           username: 'oauth2accesstoken'
           password: '${{ steps.auth.outputs.access_token }}'
 
-      - name: Build Prod Docker Image
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build and Push Prod Docker Image
+        uses: docker/build-push-action@v4
         env:
           ENV: production
           GCP_DOCKER_IMAGE: us-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/gcr.io/anthor-agi
           GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
-        run: docker build -t $GCP_DOCKER_IMAGE:${GITHUB_SHA::8} .
-
-      - name: Publish Prod
-        run: |-
-          docker push "us-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/gcr.io/anthor-agi:${GITHUB_SHA::8}"
+        with:
+          context: .
+          push: true
+          tags: us-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/gcr.io/anthor-agi:${GITHUB_SHA::8}
+          cache-from: type=registry,ref=us-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/gcr.io/anthor-agi:cache
+          cache-to: type=registry,ref=us-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/gcr.io/anthor-agi:cache,mode=max
+          build-args: |
+            ENV=production
 
       - name: Deploy Prod
         env:
