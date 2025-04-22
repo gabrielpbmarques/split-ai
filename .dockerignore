@@ -5,8 +5,9 @@ yarn-debug.log
 yarn-error.log
 bun-debug.log
 .git
-.gitignore
 .github
+.husky
+.gitignore
 .vscode
 .idea
 .env
