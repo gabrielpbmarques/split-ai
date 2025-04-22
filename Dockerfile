@@ -11,8 +11,11 @@ RUN apt-get update && apt-get install -y curl unzip && \
 COPY package.json ./
 COPY bun.lockb ./
 
-# Install dependencies using Bun
-RUN bun install
+# Install dependencies using Bun - with Husky disabled
+ENV HUSKY=0
+ENV HUSKY_SKIP_INSTALL=1
+ENV CI=true
+RUN bun install --no-git-hooks
 
 # Copy the rest of the application
 COPY . .
