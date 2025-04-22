@@ -69,23 +69,16 @@ jobs:
           username: 'oauth2accesstoken'
           password: '${{ steps.auth.outputs.access_token }}'
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Build and Push Prod Docker Image
-        uses: docker/build-push-action@v4
+      - name: Build Prod Docker Image
         env:
           ENV: production
           GCP_DOCKER_IMAGE: us-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/gcr.io/anthor-agi
           GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
-        with:
-          context: .
-          push: true
-          tags: us-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/gcr.io/anthor-agi:${{ github.sha }}
-          cache-from: type=registry,ref=us-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/gcr.io/anthor-agi:cache
-          cache-to: type=registry,ref=us-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/gcr.io/anthor-agi:cache,mode=max
-          build-args: |
-            ENV=production
+        run: docker build -t $GCP_DOCKER_IMAGE:${GITHUB_SHA::8} .
+
+      - name: Publish Prod
+        run: |-
+          docker push "us-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/gcr.io/anthor-agi:${GITHUB_SHA::8}"
 
       - name: Deploy Prod
         env:
@@ -112,7 +105,7 @@ jobs:
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
         run: |-
           gcloud run deploy anthor-agi --region $CLOUDSDK_COMPUTE_REGION \
-          --image $GCP_DOCKER_IMAGE:${{ github.sha }} \
+          --image $GCP_DOCKER_IMAGE:${GITHUB_SHA::8} \
           --min-instances 1 \
           --max-instances 100 \
           --memory 2Gi \
@@ -127,6 +120,8 @@ jobs:
           --set-env-vars EMBEDDING_MODEL=$EMBEDDING_MODEL \
           --set-env-vars AI_MODEL=$AI_MODEL \
           --set-env-vars REDIS_URL=$REDIS_URL \
+          --set-env-vars REDIS_HOST=$REDIS_HOST \
+          --set-env-vars REDIS_PORT=$REDIS_PORT \
           --set-env-vars SUPABASE_URL=$SUPABASE_URL \
           --set-env-vars SUPABASE_API_KEY=$SUPABASE_API_KEY \
           --set-env-vars AWS_REGION=$AWS_REGION \
