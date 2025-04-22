@@ -89,15 +89,49 @@ jobs:
           MONGO_URI: ${{ secrets.MONGO_URI }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           TOKEN_EXPIRATION_TIME: ${{ secrets.TOKEN_EXPIRATION_TIME }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          EMBEDDING_MODEL: ${{ secrets.EMBEDDING_MODEL }}
+          AI_MODEL: ${{ secrets.AI_MODEL }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+          REDIS_HOST: ${{ secrets.REDIS_HOST }}
+          REDIS_PORT: ${{ secrets.REDIS_PORT }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_API_KEY: ${{ secrets.SUPABASE_API_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_S3_BUCKET_NAME: ${{ secrets.AWS_S3_BUCKET_NAME }}
+          WELCOME_EMAIL_TEMPLATE_ID: ${{ secrets.WELCOME_EMAIL_TEMPLATE_ID }}
+          APPROVED_EMAIL_TEMPLATE_ID: ${{ secrets.APPROVED_EMAIL_TEMPLATE_ID }}
+          FINISH_EMAIL_TEMPLATE_ID: ${{ secrets.FINISH_EMAIL_TEMPLATE_ID }}
+          SENDGRID_EMAIL: ${{ secrets.SENDGRID_EMAIL }}
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
         run: |-
           gcloud run deploy anthor-agi --region $CLOUDSDK_COMPUTE_REGION \
           --image $GCP_DOCKER_IMAGE:${GITHUB_SHA::8} \
           --min-instances 1 \
           --max-instances 100 \
-          --memory 4Gi \
-          --cpu 4 \
+          --memory 2Gi \
+          --cpu 2 \
           --set-env-vars NODE_ENV=$ENV \
           --set-env-vars MONGO_URI=$MONGO_URI \
           --set-env-vars SENTRY_DSN=$SENTRY_DSN \
           --set-env-vars TOKEN_EXPIRATION_TIME=$TOKEN_EXPIRATION_TIME \
-          --set-env-vars GCP_PROJECT_ID=$CLOUDSDK_CORE_PROJECT
+          --set-env-vars GCP_PROJECT_ID=$CLOUDSDK_CORE_PROJECT \
+          --set-env-vars JWT_SECRET=$JWT_SECRET \
+          --set-env-vars EMBEDDING_MODEL=$EMBEDDING_MODEL \
+          --set-env-vars AI_MODEL=$AI_MODEL \
+          --set-env-vars REDIS_URL=$REDIS_URL \
+          --set-env-vars REDIS_HOST=$REDIS_HOST \
+          --set-env-vars REDIS_PORT=$REDIS_PORT \
+          --set-env-vars SUPABASE_URL=$SUPABASE_URL \
+          --set-env-vars SUPABASE_API_KEY=$SUPABASE_API_KEY \
+          --set-env-vars AWS_REGION=$AWS_REGION \
+          --set-env-vars AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+          --set-env-vars AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+          --set-env-vars AWS_S3_BUCKET_NAME=$AWS_S3_BUCKET_NAME \
+          --set-env-vars WELCOME_EMAIL_TEMPLATE_ID=$WELCOME_EMAIL_TEMPLATE_ID \
+          --set-env-vars APPROVED_EMAIL_TEMPLATE_ID=$APPROVED_EMAIL_TEMPLATE_ID \
+          --set-env-vars FINISH_EMAIL_TEMPLATE_ID=$FINISH_EMAIL_TEMPLATE_ID \
+          --set-env-vars SENDGRID_EMAIL=$SENDGRID_EMAIL \
+          --set-env-vars SENDGRID_API_KEY=$SENDGRID_API_KEY

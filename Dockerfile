@@ -1,4 +1,4 @@
-FROM node:22-slim
+FROM node:23-slim
 
 WORKDIR /app
 
@@ -12,7 +12,7 @@ COPY package.json ./
 COPY bun.lockb ./
 
 # Install dependencies using Bun
-RUN bun install --ignore-scripts
+RUN bun install
 
 # Copy the rest of the application
 COPY . .
