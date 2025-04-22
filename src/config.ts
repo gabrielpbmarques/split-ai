@@ -30,9 +30,9 @@ interface IConfig {
 export const config: IConfig = {
   env: process.env.ENV || process.env.NODE_ENV,
   aiModel: process.env.AI_MODEL ?? process.env.AI_MODEL.replace(/"/g, ''),
-  embeddingModel: process.env.EMBEDDING_MODEL
-    ? process.env.EMBEDDING_MODEL.replace(/"/g, '')
-    : undefined,
+  embeddingModel:
+    process.env.EMBEDDING_MODEL ??
+    process.env.EMBEDDING_MODEL.replace(/"/g, ''),
   mongoUri: process.env.MONGO_URI || 'mongodb://localhost:27017/anthor-agi',
   sentryDsn: process.env.SENTRY_DSN,
   redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
