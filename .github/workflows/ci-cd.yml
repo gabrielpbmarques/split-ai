@@ -1,4 +1,4 @@
-name: CI/CD for Token Service
+name: CI/CD for Anthor AGI
 
 concurrency:
   group: ci-cd-anthor-agi-${{ github.ref }}
