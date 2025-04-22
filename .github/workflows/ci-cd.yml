@@ -107,7 +107,8 @@ jobs:
           gcloud run deploy anthor-agi --region $CLOUDSDK_COMPUTE_REGION \
           --image $GCP_DOCKER_IMAGE:${GITHUB_SHA::8} \
           --timeout 3600 \
-          --vpc-connector default \
+          --vpc-connector anthor-connector-sa \
+          --vpc-egress all \
           --min-instances 1 \
           --max-instances 100 \
           --memory 4Gi \
