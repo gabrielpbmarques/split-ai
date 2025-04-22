@@ -4,9 +4,17 @@ import { ExecuteSimilaritySearchService } from './execute-similarity-search.serv
 describe('ExecuteSimilaritySearchService', () => {
   let service: ExecuteSimilaritySearchService;
 
+  const mockVertexAiEmbeddings = {
+    embedQuery: jest.fn().mockResolvedValue([]),
+    embedDocuments: jest.fn().mockResolvedValue([]),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [ExecuteSimilaritySearchService],
+      providers: [
+        ExecuteSimilaritySearchService,
+        { provide: 'VERTEX_AI_EMBEDDINGS', useValue: mockVertexAiEmbeddings },
+      ],
     }).compile();
 
     service = module.get<ExecuteSimilaritySearchService>(
