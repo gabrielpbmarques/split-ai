@@ -9,6 +9,8 @@ import { CreateHistoryService } from '../CreateHistory/create-history.service';
 import { RunnableChatOpts } from 'src/types/RunnableChatOpts';
 import { RunnableChat } from 'src/types/RunnableChat';
 import { CustomRunnable } from 'src/types/CustomRunnable';
+import { DynamicStructuredTool } from 'langchain/dist/tools';
+import { z } from 'zod';
 
 @Injectable()
 export class GetRunnableChatService {
@@ -19,8 +21,9 @@ export class GetRunnableChatService {
     prompt: ChatPromptTemplate<any, any>,
     sessionId: string,
     opts: RunnableChatOpts,
+    parser?: DynamicStructuredTool<z.ZodObject<any>>,
   ): Promise<RunnableChat> {
-    const runnable = this.getRunnableByOpts(opts, prompt, chat);
+    const runnable = this.getRunnableByOpts(opts, prompt, chat, parser);
 
     const config: RunnableConfig = {
       configurable: {
@@ -35,11 +38,22 @@ export class GetRunnableChatService {
     opts: RunnableChatOpts,
     prompt: ChatPromptTemplate<any, any>,
     chat: ChatVertexAI,
+    parser?: DynamicStructuredTool<z.ZodObject<any>>,
   ): CustomRunnable {
-    if (!opts.withHistory) return prompt.pipe(chat);
+    if (!opts.withHistory) {
+      return parser ? prompt.pipe(chat.bindTools([parser])) : prompt.pipe(chat);
+    }
+
+    let runnable;
+    if (parser) {
+      const chatWithTools = chat.bindTools([parser]);
+      runnable = prompt.pipe(chatWithTools);
+    } else {
+      runnable = prompt.pipe(chat);
+    }
 
     return new RunnableWithMessageHistory({
-      runnable: prompt.pipe(chat),
+      runnable,
       getMessageHistory: (sessionId: string) =>
         this.createHistoryService.execute(sessionId),
       inputMessagesKey: 'input',

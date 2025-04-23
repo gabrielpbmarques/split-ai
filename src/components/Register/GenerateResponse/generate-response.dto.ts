@@ -15,4 +15,5 @@ export class GenerateResponseDto {
   isNewUser: boolean;
   processedImage?: ProcessedImageInfo | null;
   invalidFields?: Record<string, { value: string; reason: string }>;
+  fieldsToUpdate?: string[];
 }

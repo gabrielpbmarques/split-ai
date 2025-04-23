@@ -25,7 +25,7 @@ export class LoadAiChatService {
     agent: Agent,
     contextMetadata?: RegisterContextMetadata | any,
   ): Promise<RunnableMessageHistory | RunnableChat> {
-    const { chat, runnableOpts } = agent;
+    const { chat, runnableOpts, jsonParser } = agent;
 
     const vectorStore = await this.loadVectorStoreService.execute(metadata);
     const retrievedDocuments =
@@ -42,6 +42,7 @@ export class LoadAiChatService {
       prompt,
       sessionId,
       runnableOpts,
+      jsonParser,
     );
   }
 }

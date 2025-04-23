@@ -19,11 +19,16 @@ import {
   SENDGRID_CLIENT,
   EMAIL_SERVICE,
 } from 'src/infrastructure/providers/sendgrid.provider';
+import {
+  AnthorProvider,
+  ANTHOR_CLIENT,
+} from 'src/infrastructure/providers/anthor.provider';
 
 @Module({
   imports: [ConfigModule],
   providers: [
     SupabaseProvider,
+    AnthorProvider,
     ...VertexAIProvider,
     ...S3Provider,
     ...SendGridProvider,
@@ -36,6 +41,7 @@ import {
     S3_SERVICE,
     SENDGRID_CLIENT,
     EMAIL_SERVICE,
+    ANTHOR_CLIENT,
   ],
 })
 export class InfrastructureModule {}

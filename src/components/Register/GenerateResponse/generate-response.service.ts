@@ -28,7 +28,10 @@ export class GenerateResponseService {
       user_data: worker,
       processed_image: processedImage || null,
       invalid_fields: invalidFields || null,
+      fields_to_update: worker?.fieldsToUpdate || [],
     };
+
+    console.log('Register Metadata:', registerMetadata);
 
     const typedAgentId = 'whatsapp_register' as keyof typeof agents;
 
@@ -40,6 +43,9 @@ export class GenerateResponseService {
       },
       typedAgentId,
       registerMetadata,
+      {
+        link_loja: 'https://anthor.lojavirtualnuvem.com.br',
+      },
     );
 
     return aiResponse;

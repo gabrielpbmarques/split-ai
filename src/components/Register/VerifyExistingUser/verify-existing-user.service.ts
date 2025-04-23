@@ -1,6 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { WorkerRepository } from 'src/repositories/Worker.repository';
-import { UserRepository } from 'src/repositories/User.repository';
 
 @Injectable()
 export class VerifyExistingUserService {
@@ -20,8 +19,8 @@ export class VerifyExistingUserService {
 
     if (existingWorker) {
       return {
-        ...existingWorker,
         ...worker,
+        ...existingWorker,
       };
     } else {
       return worker;

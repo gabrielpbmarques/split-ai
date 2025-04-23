@@ -2,10 +2,14 @@ import { ChatVertexAI } from '@langchain/google-vertexai';
 import { config } from 'src/config';
 import { AIInstructions } from 'src/types/AIInstructions';
 import { RunnableChatOpts } from 'src/types/RunnableChatOpts';
+import { DynamicStructuredTool } from 'langchain/dist/tools';
+import { z } from 'zod';
+import { messageDataParserFormatter } from '../parsers/messageDataParser';
 
 interface Agent {
   instructions: AIInstructions;
   chat: ChatVertexAI;
+  jsonParser?: DynamicStructuredTool<z.ZodObject<any>>;
   runnableOpts: RunnableChatOpts;
 }
 
@@ -80,169 +84,8 @@ const agents: AgentType = {
           threshold: 'BLOCK_ONLY_HIGH',
         },
       ],
-      // Usando casting para contornar limitações de tipagem
-      // Isso permite usar recursos mais recentes da API que ainda não estão nas definições de tipo
-      ...({
-        generationConfig: {
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: 'object',
-            properties: {
-              name: { type: 'string', nullable: true },
-              nickname: { type: 'string', nullable: true },
-              phone: {
-                type: 'object',
-                nullable: true,
-                properties: {
-                  countryCode: { type: 'string' },
-                  areaCode: { type: 'string' },
-                  number: { type: 'string' },
-                },
-                required: ['countryCode', 'areaCode', 'number'],
-              },
-              bankInfo: {
-                type: 'object',
-                nullable: true,
-                properties: {
-                  bankCode: { type: 'string' },
-                  agency: { type: 'string' },
-                  account: { type: 'string' },
-                  accountDigit: { type: 'string' },
-                  type: { type: 'string' },
-                  name: { type: 'string' },
-                  cpf: { type: 'string' },
-                },
-              },
-              email: { type: 'string', nullable: true },
-              birthDate: { type: 'string', nullable: true },
-              cpf: { type: 'string', nullable: true },
-              password: { type: 'string', nullable: true },
-              gender: {
-                type: 'string',
-                enum: ['female', 'male', 'uninformed'],
-                nullable: true,
-              },
-              comunication: {
-                type: 'object',
-                nullable: true,
-                properties: {
-                  agree: { type: 'boolean' },
-                },
-                required: ['agree'],
-              },
-              terms: {
-                type: 'object',
-                nullable: true,
-                properties: {
-                  agree: { type: 'boolean' },
-                },
-                required: ['agree'],
-              },
-              image: {
-                type: 'object',
-                nullable: true,
-                properties: {
-                  type: {
-                    type: 'string',
-                    enum: [
-                      'document_front',
-                      'document_back',
-                      't_shirt_selfie',
-                      'profile',
-                    ],
-                  },
-                  url: { type: 'string' },
-                },
-              },
-              hasPassport: { type: 'boolean', nullable: true },
-              hasLegalAge: { type: 'boolean', nullable: true },
-              status: { type: 'string', enum: ['pending', 'inAnalysis'] },
-              signupStage: {
-                type: 'string',
-                enum: [
-                  'personal_info',
-                  'password',
-                  'address',
-                  'bank_account',
-                  'profile_picture',
-                  'document',
-                  'end',
-                ],
-                nullable: false,
-                default: 'personal_info',
-              },
-              fieldsToUpdate: {
-                type: 'array',
-                items: {
-                  type: 'string',
-                  enum: [
-                    'name',
-                    'nickname',
-                    'phone',
-                    'email',
-                    'birthDate',
-                    'cpf',
-                    'gender',
-                    'comunication',
-                    'terms',
-                    'hasLegalAge',
-                    'address.zipCode',
-                    'address.street',
-                    'address.number',
-                    'address.complement',
-                    'address.neighborhood',
-                    'address.city',
-                    'address.state',
-                    'address.country',
-                    'address.cityCode',
-                    'profilePictureId',
-                    'document.rgBackId',
-                    'document.rgFrontId',
-                    'document.tShirtSelfieId',
-                    'bankAccount.bankCode',
-                    'bankAccount.agency',
-                    'bankAccount.account',
-                    'bankAccount.accountDigit',
-                    'bankAccount.type',
-                    'bankAccount.pixKey',
-                    'password',
-                  ],
-                },
-                nullable: true,
-              },
-              address: {
-                type: 'object',
-                nullable: true,
-                properties: {
-                  zipCode: { type: 'string' },
-                  street: { type: 'string' },
-                  number: { type: 'string' },
-                  complement: { type: 'string', nullable: true },
-                  neighborhood: { type: 'string' },
-                  city: { type: 'string' },
-                  state: { type: 'string' },
-                  country: { type: 'string' },
-                  cityCode: { type: 'number', nullable: true },
-                },
-              },
-              invalidFields: {
-                type: 'object',
-                nullable: true,
-                additionalProperties: {
-                  type: 'object',
-                  properties: {
-                    value: { type: 'string' },
-                    reason: { type: 'string' },
-                  },
-                  required: ['value', 'reason'],
-                },
-              },
-              required: ['status', 'signupStage'],
-            },
-          },
-        },
-      } as any),
     }),
+    jsonParser: messageDataParserFormatter,
     runnableOpts: {
       withHistory: true,
     },

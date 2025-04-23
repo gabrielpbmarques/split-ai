@@ -9,4 +9,5 @@ export type RegisterContextMetadata = {
   user_data?: Partial<Worker>;
   processed_image?: ProcessedImageInfo | null;
   invalid_fields?: Record<string, { value: string; reason: string }>;
+  fields_to_update?: string[];
 };

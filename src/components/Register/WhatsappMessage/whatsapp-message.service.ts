@@ -10,7 +10,9 @@ import { UpdateDocumentService } from '../UpdateDocument/update-document.service
 import { Worker } from 'src/models/Worker.model';
 import { EmailService } from 'src/components/Email/email.service';
 import { config } from 'src/config';
+import { Anthor } from '@anthor/entities-sdk';
 import { EMAIL_SERVICE } from 'src/infrastructure/providers/sendgrid.provider';
+import { ANTHOR_CLIENT } from 'src/infrastructure/providers/anthor.provider';
 
 export interface WhatsappMessageResponse {
   sessionId: string;
@@ -22,6 +24,7 @@ export interface WhatsappMessageResponse {
 export class WhatsappMessageService {
   constructor(
     @Inject(EMAIL_SERVICE) private readonly emailService: EmailService,
+    @Inject(ANTHOR_CLIENT) private readonly anthorClient: Anthor,
     private readonly findOrCreateSessionService: FindOrCreateSessionService,
     private readonly processMessageDataService: ProcessMessageDataService,
     private readonly updateWorkerService: UpdateWorkerService,
@@ -52,7 +55,16 @@ export class WhatsappMessageService {
       lastAiResponse,
     });
 
+    console.log(parsedData);
+
     let processedImageInfo = null;
+
+    if (parsedData?.resetPassword) {
+      await this.anthorClient.users.forgotPassword({
+        email: worker.email,
+        type: 'worker',
+      });
+    }
 
     if (mediaUrl) {
       processedImageInfo = await this.handleImageMessage(
@@ -93,6 +105,7 @@ export class WhatsappMessageService {
       isNewUser,
       processedImage: processedImageInfo,
       invalidFields: parsedData.invalidFields,
+      fieldsToUpdate: parsedData.fieldsToUpdate,
     });
 
     await this.updateLastAiResponseService.execute(sessionId, aiResponse);

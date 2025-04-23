@@ -14,6 +14,7 @@ export class GenerateAiResponseService {
     metadata: CustomMetadata,
     agentId: keyof typeof agents,
     contextMetadata?: RegisterContextMetadata | any,
+    promptVariables?: any,
   ): Promise<string> {
     try {
       const agent = agents[agentId];
@@ -29,6 +30,7 @@ export class GenerateAiResponseService {
       const result = await runnable.runnable.invoke(
         {
           input: question,
+          ...promptVariables,
         },
         runnable.config,
       );
