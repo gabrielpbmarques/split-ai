@@ -22,7 +22,10 @@ export class UpdatePhoneNumberService {
       phone = await this.phoneRepository.update(phoneId, payload);
     } else {
       phone = await this.phoneRepository.create(payload);
-      await this.workerRepository.update(workerId, { phoneId: phone._id });
+      // Converte o ObjectId para string antes de atribuir ao phoneId
+      await this.workerRepository.update(workerId, {
+        phoneId: phone._id.toString(),
+      });
     }
 
     return phone;

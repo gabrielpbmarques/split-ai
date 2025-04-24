@@ -6,6 +6,7 @@ import {
   Session as SessionSchema,
   SessionDocument,
 } from '../schemas/Session.schema';
+import { removeMongooseFields } from '../utils/mongoose.utils';
 
 export interface ISessionRepository {
   findBySessionId(sessionId: string): Promise<Session | null>;
@@ -38,12 +39,17 @@ export class SessionRepository implements ISessionRepository {
     sessionId: string,
     payload: Partial<Session>,
   ): Promise<Session | null> {
+    // Remove campos imutáveis do MongoDB
+    const safePayload = removeMongooseFields(payload);
+
+    // Garante que lastInteraction seja sempre uma data válida
+    const updateData = {
+      ...safePayload,
+      lastInteraction: new Date(), // Sempre atualiza a data de última interação
+    };
+
     const updatedSession = await this.sessionModel
-      .findOneAndUpdate(
-        { sessionId },
-        { ...payload, lastInteraction: new Date() },
-        { new: true },
-      )
+      .findOneAndUpdate({ sessionId }, updateData, { new: true })
       .exec();
 
     return updatedSession as unknown as Session | null;

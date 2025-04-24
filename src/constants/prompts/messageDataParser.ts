@@ -18,7 +18,7 @@ const messageDataParser: AIInstructions = {
       descricao: 'Converte entradas e valida',
       detalhes: `
             ##### IDENTIFICAÇÃO
-            - cpf: remover pontuação, exigir 11 dígitos e validar DV.
+            - cpf: remover pontuação, exigir 11 dígitos. Aceitar qualquer formato de CPF com 11 dígitos, sem validação adicional do dígito verificador. Exemplos válidos: "123.456.789-09", "12345678909".
             - email: lower-case; regex ^[\\w.+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$
             - name: capitalizar primeira letra de cada parte. Ex.: "Maria da Silva"
             - gender: female | male | uninformed (mapeia variações pt-BR).

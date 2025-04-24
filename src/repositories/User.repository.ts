@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from 'src/models/User.model';
 import { User as UserSchema, UserDocument } from 'src/schemas/User.schema';
+import { removeMongooseFields } from 'src/utils/mongoose.utils';
 
 export interface IUserRepository {
   findOne(query: Partial<User>): Promise<User | null>;
@@ -41,8 +42,11 @@ export class UserRepository implements IUserRepository {
   }
 
   async update(id: string, payload: Partial<User>): Promise<User | null> {
+    // Remove campos imutáveis do MongoDB
+    const safePayload = removeMongooseFields(payload);
+
     const updatedUser = await this.userModel
-      .findByIdAndUpdate(id, payload, { new: true })
+      .findByIdAndUpdate(id, safePayload, { new: true })
       .exec();
     return updatedUser as unknown as User | null;
   }
