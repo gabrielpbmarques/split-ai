@@ -13,15 +13,10 @@ const messageDataParserSchema = z.object({
       number: z.string(),
     })
     .optional(),
-  bankInfo: z
+  pix: z
     .object({
-      bankCode: z.string(),
-      agency: z.string(),
-      account: z.string(),
-      accountDigit: z.string(),
       type: z.string(),
-      name: z.string(),
-      cpf: z.string(),
+      key: z.string(),
     })
     .optional(),
   email: z.string().optional(),
@@ -51,6 +46,7 @@ const messageDataParserSchema = z.object({
     })
     .optional(),
   sendWelcomeEmail: z.boolean().optional(),
+  isConfirmation: z.boolean().optional(),
   hasPassport: z.boolean().optional(),
   hasLegalAge: z.boolean().optional(),
   status: z.enum(['pending', 'inAnalysis']),
@@ -58,7 +54,7 @@ const messageDataParserSchema = z.object({
     'personal_info',
     'password',
     'address',
-    'bank_account',
+    'pix',
     'profile_picture',
     'document',
     't_shirt_selfie',
@@ -90,12 +86,8 @@ const messageDataParserSchema = z.object({
         'document.rgBackId',
         'document.rgFrontId',
         'document.tShirtSelfieId',
-        'bankAccount.bankCode',
-        'bankAccount.agency',
-        'bankAccount.account',
-        'bankAccount.accountDigit',
-        'bankAccount.type',
-        'bankAccount.pixKey',
+        'pix.type',
+        'pix.key',
         'password',
       ]),
     )

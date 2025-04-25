@@ -16,4 +16,5 @@ export class GenerateResponseDto {
   processedImage?: ProcessedImageInfo | null;
   invalidFields?: Record<string, { value: string; reason: string }>;
   fieldsToUpdate?: string[];
+  isConfirmation?: boolean;
 }

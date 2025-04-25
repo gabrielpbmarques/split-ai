@@ -10,4 +10,5 @@ export type RegisterContextMetadata = {
   processed_image?: ProcessedImageInfo | null;
   invalid_fields?: Record<string, { value: string; reason: string }>;
   fields_to_update?: string[];
+  is_confirmation?: boolean; // Flag para indicar que a mensagem é uma confirmação
 };

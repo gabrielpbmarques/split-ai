@@ -120,6 +120,7 @@ export class WhatsappMessageService {
       processedImage: processedImageInfo,
       invalidFields: parsedData.invalidFields,
       fieldsToUpdate: parsedData.fieldsToUpdate,
+      isConfirmation: parsedData?.isConfirmation || false,
     });
 
     await this.updateLastAiResponseService.execute(sessionId, aiResponse);

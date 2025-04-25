@@ -19,6 +19,7 @@ export class GenerateResponseService {
       isNewUser,
       processedImage,
       invalidFields,
+      isConfirmation,
     } = generateResponseDto;
 
     const registerMetadata: RegisterContextMetadata = {
@@ -29,6 +30,7 @@ export class GenerateResponseService {
       processed_image: processedImage || null,
       invalid_fields: invalidFields || null,
       fields_to_update: worker?.fieldsToUpdate || [],
+      is_confirmation: isConfirmation || false, // Adicionar flag de confirmação ao contexto
     };
 
     const typedAgentId = 'whatsapp_register' as keyof typeof agents;

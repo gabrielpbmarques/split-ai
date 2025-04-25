@@ -1,13 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { WorkerRepository } from 'src/repositories/Worker.repository';
-import { Worker } from 'src/models/Worker.model';
-import { BankAccount } from 'src/models/BankAccount.model';
-import { Address } from 'src/models/Address.model';
+import { Worker, PixObject } from 'src/models/Worker.model';
 import { UpdatePhoneNumberService } from '../UpdatePhoneNumber/update-phone-number.service';
-import { UpdateBankAccountService } from '../UpdateBankAccount/update-bank-account.service';
+import { UpdatePixService } from '../UpdatePix/update-pix.service';
 import { UpdateAddressService } from '../UpdateAddress/update-address.service';
 import { UpdateUserService } from '../UpdateUser/update-user.service';
-import { ObjectId } from 'mongoose';
+import { Address } from 'src/models/Address.model';
 
 interface WorkerExtras {
   phone?: {
@@ -15,8 +13,8 @@ interface WorkerExtras {
     areaCode: string;
     number: string;
   };
+  pix?: Partial<PixObject>;
   address?: Partial<Address>;
-  bankInfo?: Partial<BankAccount>;
   password?: string;
   profilePictureId?: string;
   document?: {
@@ -36,7 +34,7 @@ export class SaveWorkerService {
   constructor(
     private readonly workerRepository: WorkerRepository,
     private readonly updatePhoneNumberService: UpdatePhoneNumberService,
-    private readonly updateBankAccountService: UpdateBankAccountService,
+    private readonly updatePixService: UpdatePixService,
     private readonly updateAddressService: UpdateAddressService,
     private readonly updateUserService: UpdateUserService,
   ) {}
@@ -44,13 +42,12 @@ export class SaveWorkerService {
   async execute(worker: WorkerWithExtras): Promise<Worker> {
     const {
       phone,
-      bankInfo,
+      pix,
       address,
       document,
       fieldsToUpdate,
       password,
       profilePictureId,
-      bankAccount,
       addressId,
       phoneId,
       ...rest
@@ -68,9 +65,8 @@ export class SaveWorkerService {
           (f) => f.includes('password') || f.includes('profilePictureId'),
         ) && this.hasUserInfo({ ...rest, password });
 
-      const shouldUpdateBankInfo =
-        fieldsToUpdate?.some((f) => f.includes('bankAccount')) &&
-        this.hasBankInfo(bankInfo);
+      const shouldUpdatePix =
+        fieldsToUpdate?.some((f) => f.includes('pix')) && this.hasPixInfo(pix);
 
       const shouldUpdateAddress =
         fieldsToUpdate?.some((f) => f.includes('address')) &&
@@ -93,15 +89,8 @@ export class SaveWorkerService {
         worker.phoneId = updatedPhone._id.toString();
       }
 
-      if (shouldUpdateBankInfo) {
-        const updatedBankAccount = await this.updateBankAccountService.execute(
-          bankInfo,
-          rest._id.toString(),
-          worker.bankAccount?.toString() || undefined,
-        );
-
-        worker.bankAccount =
-          updatedBankAccount._id.toString() as unknown as ObjectId;
+      if (shouldUpdatePix) {
+        await this.updatePixService.execute(rest._id.toString(), pix);
       }
 
       if (shouldUpdateAddress) {
@@ -130,14 +119,8 @@ export class SaveWorkerService {
         worker.phoneId = updatedPhone._id.toString();
       }
 
-      if (this.hasBankInfo(bankInfo)) {
-        const updatedBankAccount = await this.updateBankAccountService.execute(
-          bankInfo,
-          worker._id.toString(),
-        );
-
-        worker.bankAccount =
-          updatedBankAccount._id.toString() as unknown as ObjectId;
+      if (this.hasPixInfo(pix)) {
+        await this.updatePixService.execute(worker._id.toString(), pix);
       }
 
       if (this.hasAddress(address)) {
@@ -170,14 +153,8 @@ export class SaveWorkerService {
     return !!(phone.countryCode && phone.areaCode && phone.number);
   }
 
-  private hasBankInfo(bankInfo: WorkerWithExtras['bankInfo']): boolean {
-    return !!(
-      bankInfo?.bankCode &&
-      bankInfo?.agency &&
-      bankInfo?.account &&
-      bankInfo?.type &&
-      bankInfo?.accountDigit
-    );
+  private hasPixInfo(pix: WorkerWithExtras['pix']): boolean {
+    return !!(pix?.type && pix?.key);
   }
 
   private hasAddress(address: WorkerWithExtras['address']): boolean {

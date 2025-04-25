@@ -34,11 +34,13 @@ const messageDataParser: AIInstructions = {
             ##### TELEFONE
             - countryCode sempre "55"; validar DDD real (11–99); número 8-9 dígitos.
 
-            ##### BANCO
-            - bankCode: tabela FEBRABAN.
-            - agency/account: só dígitos.
-            - accountDigit: dígito ou 'X'.
-            - type: CHECKING | SAVINGS.
+            ##### PIX
+            - type: tipo de chave PIX (CPF, EMAIL, PHONE, RANDOM)
+            - key: valor da chave PIX de acordo com o tipo selecionado
+            - Para CPF: apenas dígitos (11 caracteres)
+            - Para EMAIL: formato de email válido
+            - Para PHONE: formato +55DDNNNNNNNNN
+            - Para RANDOM: chave aleatória (UUID)
 
             ##### PASSWORD HANDLING  (Opção A – recomendada)
             - Campo retornado: "password" (sem alterações).
@@ -69,7 +71,7 @@ const messageDataParser: AIInstructions = {
             - status: "pending" durante o fluxo; "inAnalysis" somente quando
                signupStage == "end".
             - signupStage segue exatamente:
-               personal_info → password → address → bank_account →
+               personal_info → password → address → pix →
                profile_picture → document → t_shirt_selfie → end
          `,
     },
@@ -85,15 +87,45 @@ const messageDataParser: AIInstructions = {
       descricao: 'Entende respostas curtas',
       detalhes: `
             Recebe strings no formato:
-            [CONTEXTO: A última pergunta da IA foi: "Texto da pergunta"] \\n\\nResposta do usuário: "..."
+            [CONTEXTO: A última pergunta da IA foi: "Texto da pergunta"] \n\nResposta do usuário: "..."
             e decide qual campo preencher (terms, hasLegalAge, communication, resetPassword, etc.).
+            
+            IMPORTANTE: Detecte confirmações do usuário. Se a resposta do usuário for uma confirmação (ex: "sim", "ok", "correto", "tudo certo", etc.) e não houver dados específicos para extrair, adicione a propriedade "isConfirmation": true ao JSON de saída.
+            
+            Exemplos de confirmações:
+            - "Sim, está tudo certo"
+            - "Correto"
+            - "Ok"
+            - "Confirmo"
+            - "Pode prosseguir"
+            - "Tudo certo"
+            - "Está correto"
+            - "Sim"
+            - "S"
+            
+            Exemplo de saída para uma confirmação:
+            {
+              "status": "pending",
+              "signupStage": "address",
+              "isConfirmation": true
+            }
          `,
     },
     status_worker: {
       descricao: 'Use o status atual do worker para auxiliar',
       detalhes: `
             Recebe strings no formato:
-            [CONTEXTO: Status atual do worker: "JSON com dados do worker"] \\n\\nResposta do usuário: "..."
+            [CONTEXTO: Status atual do worker (base64): "STRING_BASE64"] \n\nResposta do usuário: "..."
+            
+            Para usar estes dados, você precisa:
+            1. Extrair a string base64 entre os colchetes
+            2. Decodificar a string base64 para obter o JSON
+            3. Analisar o JSON para obter os dados do worker
+            
+            Exemplo de como decodificar base64:
+            - Se você receber: "eyJuYW1lIjoiSm9obiIsImFnZSI6MzB9"
+            - Isso decodifica para: {"name":"John","age":30}
+            
             Se e somente se o atributo "isNewUser" for true e o signupStage for "end", o campo "sendWelcomeEmail" deve ser true.
             Porém, como esse campo define o envio ou não do email de boas-vindas, ele deve ser verdadeiro uma única vez, no final do cadastro.
          `,

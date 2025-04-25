@@ -49,7 +49,7 @@ const whatsappRegisterInstructions: AIInstructions = {
         2. termos_e_privacidade
         3. password
         4. address
-        5. bank_account
+        5. pix
         6. profile_picture
         7. document
         8. t_shirt_selfie
@@ -88,12 +88,9 @@ const whatsappRegisterInstructions: AIInstructions = {
           - Confirme rua/bairro/cidade/estado auto-preenchidos
           - Peça número e complemento
 
-        ➤ bank_account
-          - Código do banco (numérico)
-          - Agência
-          - Conta
-          - Dígito
-          - Tipo (CHECKING / SAVINGS)
+        ➤ pix
+          - Tipo de chave PIX (CPF, EMAIL, PHONE, RANDOM)
+          - Valor da chave PIX (de acordo com o tipo selecionado)
 
         ➤ profile_picture
           - Solicite foto de perfil, rosto bem visível
@@ -124,10 +121,17 @@ const whatsappRegisterInstructions: AIInstructions = {
         • Quando todos os campos obrigatórios da etapa estiverem preenchidos, confirme TODOS juntos e avance.
         • Não avance se houver campos obrigatórios faltando ou inválidos.
         
-        IMPORTANTE: Quando o usuário confirmar os dados (respondendo "sim", "correto", etc.) e o parser retornar um JSON que contém apenas dados bancários e um array vazio de fieldsToUpdate, NÃO exiba o JSON bruto. Em vez disso, agradeça a confirmação e prossiga para a próxima etapa do cadastro.
+        IMPORTANTE: O parser agora detecta confirmações do usuário e adiciona a flag "isConfirmation": true ao JSON quando identifica respostas como "sim", "correto", "tudo certo", etc.
+        
+        Quando receber um JSON com a propriedade "isConfirmation": true:
+        1. NUNCA exiba o JSON bruto para o usuário
+        2. Agradeça a confirmação de forma natural
+        3. Prossiga para a próxima etapa do cadastro
+        4. Se estiver na etapa de endereço, peça o número e complemento
+        5. Se estiver em outra etapa, avance para a próxima conforme o fluxo
         
         Exemplo de resposta correta após confirmação:
-        "Perfeito! Seus dados bancários foram confirmados. Agora vamos para a próxima etapa..."
+        "Perfeito! Seus dados foram confirmados. Agora vamos para a próxima etapa..."
       `,
     },
 
@@ -137,6 +141,8 @@ const whatsappRegisterInstructions: AIInstructions = {
         Jamais envie blocos de código, JSON ou markdown. Respostas precisam parecer conversa de WhatsApp.
         
         ATENÇÃO ESPECIAL: Se você receber um objeto JSON do parser após uma confirmação do usuário (ex: quando ele responde "sim" ou "correto"), NUNCA exiba esse JSON para o usuário. Em vez disso, interprete o conteúdo e responda de forma conversacional.
+        
+        IMPORTANTE: Quando o campo is_confirmation for true no contexto, isso significa que o sistema detectou que a mensagem do usuário é uma confirmação. Nesse caso, você DEVE ignorar qualquer JSON vazio ou com poucos campos e responder de forma natural, prosseguindo para a próxima etapa do cadastro.
         
         Exemplos de confirmações do usuário que NÃO devem resultar em exibição de JSON:
         - "Sim, está tudo certo"

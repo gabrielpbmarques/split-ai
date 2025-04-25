@@ -23,7 +23,7 @@ export class BuildSystemPromptService {
     const source = context.map((doc: any) => doc.pageContent).join(' ');
 
     if (!sources)
-      return `${textPrompt}\nMetadados do contexto:\n${JSON.stringify(contextMetadata)}\nContexto: ${source}`
+      return `${textPrompt}\nMetadados do contexto:\n${JSON.stringify(contextMetadata)}\nReferência de conhecimento:\n${source}`
         .replace(/{/g, '{{')
         .replace(/}/g, '}}');
 
@@ -42,7 +42,7 @@ export class BuildSystemPromptService {
       sourceSection += `\n${type.toUpperCase()}:\n- ${content.join('\n- ')}\n`;
     }
 
-    return `${textPrompt}\nMetadados do contexto:\n${JSON.stringify(contextMetadata)}\nInformações de Referência:\n${sourceSection}`
+    return `${textPrompt}\nMetadados do contexto:\n${JSON.stringify(contextMetadata)}\nReferência de conhecimento:\n${sourceSection}`
       .replace(/{/g, '{{')
       .replace(/}/g, '}}');
   }

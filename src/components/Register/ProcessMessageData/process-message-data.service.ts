@@ -23,7 +23,12 @@ export class ProcessMessageDataService {
     let messageWithContext: string = '';
 
     if (worker) {
-      messageWithContext += `[CONTEXTO: Status atual do worker: ${JSON.stringify(worker)}]`;
+      // Usar uma abordagem diferente para evitar problemas com o JSON
+      // Converter o worker para uma string base64 para evitar problemas com caracteres especiais
+      const workerBase64 = Buffer.from(JSON.stringify(worker)).toString(
+        'base64',
+      );
+      messageWithContext += `[CONTEXTO: Status atual do worker (base64): ${workerBase64}]`;
     }
 
     if (lastAiResponse) {
