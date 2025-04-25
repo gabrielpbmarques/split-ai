@@ -83,6 +83,7 @@ jobs:
       - name: Deploy Prod
         env:
           ENV: production
+          API_KEY: ${{ secrets.API_KEY }}
           GCP_DOCKER_IMAGE: us-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/gcr.io/anthor-agi
           CLOUDSDK_CORE_PROJECT: ${{ secrets.GCP_PROJECT }}
           CLOUDSDK_COMPUTE_REGION: southamerica-east1
@@ -115,6 +116,7 @@ jobs:
           --cpu 4 \
           --set-env-vars ENV=$ENV \
           --set-env-vars NODE_ENV=$ENV \
+          --set-env-vars API_KEY=$API_KEY \
           --set-env-vars MONGO_URI=$MONGO_URI \
           --set-env-vars SENTRY_DSN=$SENTRY_DSN \
           --set-env-vars TOKEN_EXPIRATION_TIME=$TOKEN_EXPIRATION_TIME \
