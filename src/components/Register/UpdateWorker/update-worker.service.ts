@@ -40,12 +40,11 @@ export class UpdateWorkerService {
 
     updatedWorker = await this.saveWorkerService.execute(updatedWorker);
 
-    // Garante que workerData não seja undefined
     if (updatedWorker) {
       await this.saveSessionService.execute(
         sessionId,
         phoneNumber,
-        updatedWorker, // Passando o worker atualizado completo
+        updatedWorker,
       );
     } else {
       console.error(

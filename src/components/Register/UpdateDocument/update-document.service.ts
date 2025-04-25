@@ -104,7 +104,7 @@ export class UpdateDocumentService {
   ): Promise<void> {
     try {
       await this.userRepository.updateByWorkerId(workerId, {
-        profilePictureId: pictureId as unknown as ObjectId,
+        profilePictureId: pictureId,
       });
     } catch (error) {
       throw error;

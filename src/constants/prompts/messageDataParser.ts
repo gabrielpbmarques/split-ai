@@ -48,8 +48,17 @@ const messageDataParser: AIInstructions = {
                e depois descarta password.
 
             ##### IMAGENS
-            - document_front | document_back | t_shirt_selfie | profile
-               ⇒ formato: { type, url }
+            - ATENÇÃO: Sempre que houver uma URL de imagem, você DEVE determinar o tipo correto!
+            - Você receberá instruções específicas no contexto sobre como determinar o tipo.
+            - Regras para determinar o tipo de imagem:
+              * Se estágio = "profile_picture" → tipo = "profile"
+              * Se estágio = "document" e não tem documento frente → tipo = "document_front"
+              * Se estágio = "document" e já tem documento frente → tipo = "document_back"
+              * Se estágio = "t_shirt_selfie" → tipo = "t_shirt_selfie"
+            - Retorne SEMPRE no formato exato: { "image": { "type": "[TIPO]", "url": "[URL]" } }
+            - NUNCA deixe o campo "type" vazio ou undefined
+            - NUNCA omita o campo "image" se houver uma URL de imagem
+            - Se não determinar o tipo corretamente, o sistema vai falhar com erro!
 
             ##### CAMPOS AUSENTES
             - Qualquer campo faltante simplesmente não aparece no JSON,

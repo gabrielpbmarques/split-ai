@@ -7,6 +7,7 @@ import { UpdatePhoneNumberService } from '../UpdatePhoneNumber/update-phone-numb
 import { UpdateBankAccountService } from '../UpdateBankAccount/update-bank-account.service';
 import { UpdateAddressService } from '../UpdateAddress/update-address.service';
 import { UpdateUserService } from '../UpdateUser/update-user.service';
+import { ObjectId } from 'mongoose';
 
 interface WorkerExtras {
   phone?: {
@@ -49,6 +50,9 @@ export class SaveWorkerService {
       fieldsToUpdate,
       password,
       profilePictureId,
+      bankAccount,
+      addressId,
+      phoneId,
       ...rest
     } = worker;
 
@@ -65,7 +69,7 @@ export class SaveWorkerService {
         ) && this.hasUserInfo({ ...rest, password });
 
       const shouldUpdateBankInfo =
-        fieldsToUpdate?.some((f) => f.includes('bankInfo')) &&
+        fieldsToUpdate?.some((f) => f.includes('bankAccount')) &&
         this.hasBankInfo(bankInfo);
 
       const shouldUpdateAddress =
@@ -80,27 +84,34 @@ export class SaveWorkerService {
       }
 
       if (shouldUpdatePhone) {
-        await this.updatePhoneNumberService.execute(
+        const updatedPhone = await this.updatePhoneNumberService.execute(
           phone,
           rest._id.toString(),
-          rest.phoneId,
+          worker.phoneId,
         );
+
+        worker.phoneId = updatedPhone._id.toString();
       }
 
       if (shouldUpdateBankInfo) {
-        await this.updateBankAccountService.execute(
+        const updatedBankAccount = await this.updateBankAccountService.execute(
           bankInfo,
           rest._id.toString(),
-          rest.bankAccount?.toString() || undefined,
+          worker.bankAccount?.toString() || undefined,
         );
+
+        worker.bankAccount =
+          updatedBankAccount._id.toString() as unknown as ObjectId;
       }
 
       if (shouldUpdateAddress) {
-        await this.updateAddressService.execute(
+        const updatedAddress = await this.updateAddressService.execute(
           address,
           rest._id.toString(),
-          rest.addressId,
+          worker.addressId,
         );
+
+        worker.addressId = updatedAddress._id.toString();
       }
 
       return worker;
@@ -111,21 +122,31 @@ export class SaveWorkerService {
       worker._id = createdWorker._id;
 
       if (this.hasPhone(phone)) {
-        await this.updatePhoneNumberService.execute(
+        const updatedPhone = await this.updatePhoneNumberService.execute(
           phone,
           worker._id.toString(),
         );
+
+        worker.phoneId = updatedPhone._id.toString();
       }
 
       if (this.hasBankInfo(bankInfo)) {
-        await this.updateBankAccountService.execute(
+        const updatedBankAccount = await this.updateBankAccountService.execute(
           bankInfo,
           worker._id.toString(),
         );
+
+        worker.bankAccount =
+          updatedBankAccount._id.toString() as unknown as ObjectId;
       }
 
       if (this.hasAddress(address)) {
-        await this.updateAddressService.execute(address, worker._id.toString());
+        const updatedAddress = await this.updateAddressService.execute(
+          address,
+          worker._id.toString(),
+        );
+
+        worker.addressId = updatedAddress._id.toString();
       }
 
       return worker;
@@ -154,7 +175,8 @@ export class SaveWorkerService {
       bankInfo?.bankCode &&
       bankInfo?.agency &&
       bankInfo?.account &&
-      bankInfo?.type
+      bankInfo?.type &&
+      bankInfo?.accountDigit
     );
   }
 

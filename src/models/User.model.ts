@@ -11,7 +11,7 @@ export interface User {
   isRemoved?: boolean;
   removedAt?: Date | null;
   workerId?: string;
-  profilePictureId?: ObjectId;
+  profilePictureId?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }

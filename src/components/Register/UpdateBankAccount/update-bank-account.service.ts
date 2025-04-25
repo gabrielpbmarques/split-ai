@@ -3,7 +3,7 @@ import { BankAccountRepository } from 'src/repositories/BankAccount.repository';
 import { WorkerRepository } from 'src/repositories/Worker.repository';
 import { BankAccount as BankAccountSchema } from 'src/schemas/BankAccount.schema';
 import { BankAccount } from 'src/models/BankAccount.model';
-import { ObjectId } from 'mongoose';
+import mongoose, { ObjectId } from 'mongoose';
 
 @Injectable()
 export class UpdateBankAccountService {
@@ -39,7 +39,7 @@ export class UpdateBankAccountService {
       account = await this.bankAccountRepository.create(formattedBankAccount);
 
       await this.workerRepository.update(workerId, {
-        bankAccount: account._id as unknown as ObjectId,
+        bankAccount: account._id.toString() as unknown as ObjectId,
       });
     }
 

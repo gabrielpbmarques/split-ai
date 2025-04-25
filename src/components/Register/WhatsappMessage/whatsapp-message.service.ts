@@ -49,13 +49,16 @@ export class WhatsappMessageService {
         phoneNumber,
       });
 
+    const messageText = mediaUrl
+      ? `${message}\n[Url da Imagem]: ${mediaUrl}`
+      : message;
+
     const parsedData = await this.processMessageDataService.execute({
-      message: mediaUrl ? `${message}\n[Url da Imagem]: ${mediaUrl}` : message,
+      message: messageText,
+      worker,
       sessionId,
       lastAiResponse,
     });
-
-    console.log(parsedData);
 
     let processedImageInfo = null;
 
@@ -88,14 +91,8 @@ export class WhatsappMessageService {
         phoneNumber,
       });
     } else {
-      // Se houver campos inválidos, mantém o worker original
       updatedWorker = worker;
     }
-
-    const messageText =
-      mediaUrl && !message
-        ? `[Imagem enviada pelo usuário - ${parsedData.imageType}]`
-        : message;
 
     const aiResponse = await this.generateResponseService.execute({
       message: messageText,

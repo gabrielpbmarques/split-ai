@@ -31,8 +31,6 @@ export class GenerateResponseService {
       fields_to_update: worker?.fieldsToUpdate || [],
     };
 
-    console.log('Register Metadata:', registerMetadata);
-
     const typedAgentId = 'whatsapp_register' as keyof typeof agents;
 
     const aiResponse = await this.generateAiResponseService.execute(

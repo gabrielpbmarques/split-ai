@@ -39,13 +39,14 @@ export class SessionRepository implements ISessionRepository {
     sessionId: string,
     payload: Partial<Session>,
   ): Promise<Session | null> {
-    // Remove campos imutáveis do MongoDB
+    const workerId = payload.workerData?._id;
     const safePayload = removeMongooseFields(payload);
-
-    // Garante que lastInteraction seja sempre uma data válida
+    if (workerId && safePayload.workerData) {
+      safePayload.workerData._id = workerId;
+    }
     const updateData = {
       ...safePayload,
-      lastInteraction: new Date(), // Sempre atualiza a data de última interação
+      lastInteraction: new Date(),
     };
 
     const updatedSession = await this.sessionModel
