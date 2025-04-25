@@ -50,6 +50,7 @@ const messageDataParserSchema = z.object({
       url: z.string(),
     })
     .optional(),
+  sendWelcomeEmail: z.boolean().optional(),
   hasPassport: z.boolean().optional(),
   hasLegalAge: z.boolean().optional(),
   status: z.enum(['pending', 'inAnalysis']),

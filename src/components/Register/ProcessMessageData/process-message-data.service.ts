@@ -15,15 +15,24 @@ export class ProcessMessageDataService {
       sessionId,
       agentId = 'message_data_parser',
       lastAiResponse,
+      worker,
     } = processMessageDataDto;
 
     const typedAgentId = 'message_data_parser' as keyof typeof agents;
 
-    let messageWithContext = message;
+    let messageWithContext: string = '';
+
+    if (worker) {
+      messageWithContext += `[CONTEXTO: Status atual do worker: ${JSON.stringify(worker)}]`;
+    }
 
     if (lastAiResponse) {
-      messageWithContext = `[CONTEXTO: A última pergunta da IA foi: "${lastAiResponse.replace('{', '').replace('}', '')}"] \n\nResposta do usuário: "${message}"`;
+      messageWithContext += `[CONTEXTO: A última pergunta da IA foi: "${lastAiResponse.replace('{', '').replace('}', '')}"]`;
     }
+
+    const alreadyHasContent = messageWithContext.length > 0;
+
+    messageWithContext += `${alreadyHasContent ? '\n\n' : ''}Resposta do usuário: "${message}"`;
 
     const parserAiResponse = await this.generateAiResponseService.execute(
       messageWithContext,

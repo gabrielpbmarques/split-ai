@@ -56,7 +56,10 @@ export class WhatsappMessageService {
 
     let parsedData = await this.processMessageDataService.execute({
       message: messageText,
-      worker,
+      worker: {
+        ...worker,
+        isNewUser,
+      },
       sessionId,
       lastAiResponse,
     });
@@ -121,7 +124,7 @@ export class WhatsappMessageService {
 
     await this.updateLastAiResponseService.execute(sessionId, aiResponse);
 
-    if (updatedWorker?.signupStage === 'end')
+    if (parsedData?.sendWelcomeEmail)
       await this.emailService.send({
         to: updatedWorker.email,
         subject: 'Cadastro Completo',

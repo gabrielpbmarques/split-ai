@@ -46,10 +46,6 @@ export class UpdateWorkerService {
         phoneNumber,
         updatedWorker,
       );
-    } else {
-      console.error(
-        'UpdateWorkerService - updatedWorker é null/undefined, não atualizando a sessão',
-      );
     }
 
     return updatedWorker;

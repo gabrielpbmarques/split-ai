@@ -85,8 +85,17 @@ const messageDataParser: AIInstructions = {
       descricao: 'Entende respostas curtas',
       detalhes: `
             Recebe strings no formato:
-            [CONTEXTO: "Texto da pergunta"] \\n\\nResposta do usuário: "..."
+            [CONTEXTO: A última pergunta da IA foi: "Texto da pergunta"] \\n\\nResposta do usuário: "..."
             e decide qual campo preencher (terms, hasLegalAge, communication, resetPassword, etc.).
+         `,
+    },
+    status_worker: {
+      descricao: 'Use o status atual do worker para auxiliar',
+      detalhes: `
+            Recebe strings no formato:
+            [CONTEXTO: Status atual do worker: "JSON com dados do worker"] \\n\\nResposta do usuário: "..."
+            Se e somente se o atributo "isNewUser" for true e o signupStage for "end", o campo "sendWelcomeEmail" deve ser true.
+            Porém, como esse campo define o envio ou não do email de boas-vindas, ele deve ser verdadeiro uma única vez, no final do cadastro.
          `,
     },
   },
