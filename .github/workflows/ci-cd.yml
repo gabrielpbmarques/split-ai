@@ -113,6 +113,7 @@ jobs:
           --max-instances 100 \
           --memory 4Gi \
           --cpu 4 \
+          --set-env-vars ENV=$ENV \
           --set-env-vars NODE_ENV=$ENV \
           --set-env-vars MONGO_URI=$MONGO_URI \
           --set-env-vars SENTRY_DSN=$SENTRY_DSN \
