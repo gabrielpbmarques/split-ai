@@ -13,6 +13,7 @@ import { config } from 'src/config';
 import { Anthor } from '@anthor/entities-sdk';
 import { EMAIL_SERVICE } from 'src/infrastructure/providers/sendgrid.provider';
 import { ANTHOR_CLIENT } from 'src/infrastructure/providers/anthor.provider';
+import { CepService } from 'src/services/cep.service';
 
 export interface WhatsappMessageResponse {
   sessionId: string;
@@ -53,7 +54,7 @@ export class WhatsappMessageService {
       ? `${message}\n[Url da Imagem]: ${mediaUrl}`
       : message;
 
-    const parsedData = await this.processMessageDataService.execute({
+    let parsedData = await this.processMessageDataService.execute({
       message: messageText,
       worker,
       sessionId,
@@ -61,6 +62,19 @@ export class WhatsappMessageService {
     });
 
     let processedImageInfo = null;
+
+    if (parsedData?.address?.zipCode) {
+      const addressInfo = await CepService.getAddressByCepWithFallback(
+        parsedData.address.zipCode,
+      );
+      parsedData = {
+        ...parsedData,
+        address: {
+          ...parsedData.address,
+          ...addressInfo,
+        },
+      };
+    }
 
     if (parsedData?.resetPassword) {
       await this.anthorClient.users.forgotPassword({

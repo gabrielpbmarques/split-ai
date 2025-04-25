@@ -42,7 +42,6 @@ export class UserRepository implements IUserRepository {
   }
 
   async update(id: string, payload: Partial<User>): Promise<User | null> {
-    // Remove campos imutáveis do MongoDB
     const safePayload = removeMongooseFields(payload);
 
     const updatedUser = await this.userModel
@@ -55,9 +54,22 @@ export class UserRepository implements IUserRepository {
     workerId: string,
     payload: Partial<User>,
   ): Promise<User | null> {
+    const existingUser = await this.userModel.findOne({ workerId }).exec();
+
+    if (!existingUser) {
+      return null;
+    }
+
+    const safePayload = { ...payload };
+
+    if ('_id' in safePayload) {
+      delete safePayload['_id'];
+    }
+
     const updatedUser = await this.userModel
-      .findOneAndUpdate({ workerId }, payload, { new: true })
+      .findOneAndUpdate({ workerId }, safePayload, { new: true })
       .exec();
+
     return updatedUser as unknown as User | null;
   }
 

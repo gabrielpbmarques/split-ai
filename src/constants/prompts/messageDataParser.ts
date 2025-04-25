@@ -25,8 +25,11 @@ const messageDataParser: AIInstructions = {
             - birthDate: ISO YYYY-MM-DD; confirmar idade ≥18.
 
             ##### ENDEREÇO
-            - zipCode: 8 dígitos; se API de CEP falhar, não preencher street|city.
-            - state: 2-letras BR.
+            - zipCode: 8 dígitos, apenas extrair o CEP informado pelo usuário.
+            - IMPORTANTE: NÃO tente adivinhar o endereço completo a partir do CEP. O sistema usará um serviço dedicado para consultar o endereço automaticamente.
+            - Extraia apenas o número (number) e complemento (complement) se informados pelo usuário.
+            - state: 2-letras BR (apenas se informado explicitamente pelo usuário).
+            - country: "BR" (sempre).
 
             ##### TELEFONE
             - countryCode sempre "55"; validar DDD real (11–99); número 8-9 dígitos.
@@ -36,11 +39,6 @@ const messageDataParser: AIInstructions = {
             - agency/account: só dígitos.
             - accountDigit: dígito ou 'X'.
             - type: CHECKING | SAVINGS.
-
-            ##### URLS
-            - Aceite apenas links que comecem por
-               https://storage.anthor.com/  ou https://cdn.anthor.com/
-               (caso contrário, marcar em invalidFields).
 
             ##### PASSWORD HANDLING  (Opção A – recomendada)
             - Campo retornado: "password" (sem alterações).

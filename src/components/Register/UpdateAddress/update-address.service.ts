@@ -10,6 +10,13 @@ export class UpdateAddressService {
     private readonly workerRepository: WorkerRepository,
   ) {}
 
+  /**
+   * Atualiza ou cria o endereço do worker
+   * @param address Dados do endereço
+   * @param workerId ID do worker
+   * @param addressId ID do endereço (opcional)
+   * @returns Endereço atualizado
+   */
   async execute(
     address: Partial<Address>,
     workerId: string,

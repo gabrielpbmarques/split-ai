@@ -41,9 +41,6 @@ export class GenerateResponseService {
       },
       typedAgentId,
       registerMetadata,
-      {
-        link_loja: 'https://anthor.lojavirtualnuvem.com.br',
-      },
     );
 
     return aiResponse;
