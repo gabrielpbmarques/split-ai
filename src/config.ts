@@ -1,8 +1,8 @@
 import * as dotenv from 'dotenv';
-import { AIInstructions } from './types/AIInstructions';
-import { registerChatInstructions } from './constants/prompts/registerChatInstructions';
-import { whatsappRegisterInstructions } from './constants/prompts/whatsappRegisterInstructions';
-import { messageDataParser } from './constants/prompts/messageDataParser';
+import { AIInstructions } from 'src/types/AIInstructions';
+import { registerChatInstructions } from 'src/constants/prompts/registerChatInstructions';
+import { whatsappRegisterInstructions } from 'src/constants/prompts/whatsappRegisterInstructions';
+import { messageDataParser } from 'src/constants/prompts/messageDataParser';
 
 dotenv.config();
 
@@ -25,6 +25,13 @@ interface IConfig {
   sendgridApiKey: string;
   emailDefaultFrom: string;
   finishSignUpTemplateId: string;
+  kafka?: {
+    brokers: string;
+    ssl: string;
+    sasl: string;
+    saslUsername: string;
+    saslPassword: string;
+  };
 }
 
 export const config: IConfig = {
@@ -46,4 +53,13 @@ export const config: IConfig = {
   sendgridApiKey: process.env.SENDGRID_API_KEY,
   emailDefaultFrom: process.env.SENDGRID_EMAIL,
   finishSignUpTemplateId: process.env.FINISH_EMAIL_TEMPLATE_ID,
+  kafka: process.env.KAFKA_BROKERS
+    ? {
+        brokers: process.env.KAFKA_BROKERS,
+        ssl: process.env.KAFKA_SSL,
+        sasl: process.env.KAFKA_SASL,
+        saslUsername: process.env.KAFKA_SASL_USERNAME,
+        saslPassword: process.env.KAFKA_SASL_PASSWORD,
+      }
+    : undefined,
 };

@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { WhatsappMessageDto } from './whatsapp-message.dto';
 import { FindOrCreateSessionService } from '../FindOrCreateSession/find-or-create-session.service';
 import { ProcessMessageDataService } from '../ProcessMessageData/process-message-data.service';
@@ -7,6 +7,7 @@ import { GenerateResponseService } from '../GenerateResponse/generate-response.s
 import { UpdateLastAiResponseService } from '../UpdateLastAiResponse/update-last-ai-response.service';
 import { ProcessImageMessageService } from '../ProcessImageMessage/process-image-message.service';
 import { UpdateDocumentService } from '../UpdateDocument/update-document.service';
+import { HandleRegisterCompletionService } from '../HandleRegisterCompletion/handle-register-completion.service';
 import { Worker } from 'src/models/Worker.model';
 import { EmailService } from 'src/components/Email/email.service';
 import { config } from 'src/config';
@@ -23,6 +24,8 @@ export interface WhatsappMessageResponse {
 
 @Injectable()
 export class WhatsappMessageService {
+  private readonly logger = new Logger(WhatsappMessageService.name);
+
   constructor(
     @Inject(EMAIL_SERVICE) private readonly emailService: EmailService,
     @Inject(ANTHOR_CLIENT) private readonly anthorClient: Anthor,
@@ -33,6 +36,7 @@ export class WhatsappMessageService {
     private readonly updateLastAiResponseService: UpdateLastAiResponseService,
     private readonly processImageMessageService: ProcessImageMessageService,
     private readonly updateDocumentService: UpdateDocumentService,
+    private readonly handleRegisterCompletionService: HandleRegisterCompletionService,
   ) {}
 
   async execute(
@@ -125,12 +129,24 @@ export class WhatsappMessageService {
 
     await this.updateLastAiResponseService.execute(sessionId, aiResponse);
 
-    if (parsedData?.sendWelcomeEmail)
+    if (parsedData?.sendWelcomeEmail) {
       await this.emailService.send({
         to: updatedWorker.email,
         subject: 'Cadastro Completo',
         templateId: config.finishSignUpTemplateId,
       });
+
+      // Se o cadastro foi concluído, publicar mensagem para validação de documentos
+      if (updatedWorker.signupStage === 'completed') {
+        this.logger.log(
+          `Iniciando validação de documentos para o worker: ${updatedWorker._id}`,
+        );
+        await this.handleRegisterCompletionService.execute({
+          workerId: updatedWorker._id?.toString(),
+          signupStage: updatedWorker.signupStage,
+        });
+      }
+    }
 
     return {
       sessionId,

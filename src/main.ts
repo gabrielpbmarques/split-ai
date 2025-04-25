@@ -1,13 +1,13 @@
 import { NestFactory } from '@nestjs/core';
 import { Logger } from '@nestjs/common';
-import { AppModule } from './app.module';
+import { AppModule } from 'src/app.module';
 import {
   FastifyAdapter,
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 // Using Fastify's built-in CORS support instead of the cors package
-import { config } from './config';
-import { initSentryIo } from './observability/sentry.provider';
+import { config } from 'src/config';
+import { initSentryIo } from 'src/observability/sentry.provider';
 
 async function bootstrap() {
   let sentry: any;

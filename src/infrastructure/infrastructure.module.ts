@@ -23,6 +23,11 @@ import {
   AnthorProvider,
   ANTHOR_CLIENT,
 } from 'src/infrastructure/providers/anthor.provider';
+import {
+  KafkaProvider,
+  KAFKA_CLIENT,
+  KAFKA_SERVICE,
+} from 'src/infrastructure/providers/kafka.provider';
 
 @Module({
   imports: [ConfigModule],
@@ -32,6 +37,7 @@ import {
     ...VertexAIProvider,
     ...S3Provider,
     ...SendGridProvider,
+    ...KafkaProvider,
   ],
   exports: [
     SUPABASE_CLIENT,
@@ -42,6 +48,8 @@ import {
     SENDGRID_CLIENT,
     EMAIL_SERVICE,
     ANTHOR_CLIENT,
+    KAFKA_CLIENT,
+    KAFKA_SERVICE,
   ],
 })
 export class InfrastructureModule {}

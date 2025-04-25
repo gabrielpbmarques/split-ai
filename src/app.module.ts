@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { DatabaseModule } from './database/database.module';
-import { HealthModule } from './health/health.module';
-import { ComponentsModule } from './components/components.module';
-import { InfrastructureModule } from './infrastructure/infrastructure.module';
+import { DatabaseModule } from 'src/database/database.module';
+import { HealthModule } from 'src/health/health.module';
+import { ComponentsModule } from 'src/components/components.module';
+import { InfrastructureModule } from 'src/infrastructure/infrastructure.module';
 @Module({
   imports: [
     DatabaseModule,

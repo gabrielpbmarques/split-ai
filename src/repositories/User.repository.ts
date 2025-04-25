@@ -10,6 +10,7 @@ export interface IUserRepository {
   findById(id: string): Promise<User | null>;
   findByEmail(email: string): Promise<User | null>;
   findByCPF(cpf: string): Promise<User | null>;
+  findByWorkerId(workerId: string): Promise<User | null>;
   update(id: string, payload: Partial<User>): Promise<User | null>;
   create(user: Partial<User>): Promise<User>;
 }
@@ -28,6 +29,11 @@ export class UserRepository implements IUserRepository {
 
   async findById(id: string): Promise<User | null> {
     const user = await this.userModel.findById(id).exec();
+    return user as unknown as User | null;
+  }
+
+  async findByWorkerId(workerId: string): Promise<User | null> {
+    const user = await this.userModel.findOne({ workerId }).exec();
     return user as unknown as User | null;
   }
 

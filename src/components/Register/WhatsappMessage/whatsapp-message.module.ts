@@ -10,6 +10,7 @@ import { ProcessImageMessageModule } from '../ProcessImageMessage/process-image-
 import { UpdateDocumentModule } from '../UpdateDocument/update-document.module';
 import { UpdateLastAiResponseModule } from '../UpdateLastAiResponse/update-last-ai-response.module';
 import { InfrastructureModule } from 'src/infrastructure/infrastructure.module';
+import { HandleRegisterCompletionModule } from '../HandleRegisterCompletion/handle-register-completion.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { InfrastructureModule } from 'src/infrastructure/infrastructure.module';
     ProcessImageMessageModule,
     UpdateDocumentModule,
     InfrastructureModule,
+    HandleRegisterCompletionModule,
   ],
   providers: [WhatsappMessageService],
   controllers: [WhatsappMessageController],

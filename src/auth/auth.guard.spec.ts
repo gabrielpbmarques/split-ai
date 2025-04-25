@@ -1,4 +1,4 @@
-import { AuthGuard, parseJwt, IS_PUBLIC_KEY } from './auth.guard';
+import { AuthGuard, parseJwt, IS_PUBLIC_KEY } from 'src/auth/auth.guard';
 import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ExecutionContext } from '@nestjs/common';
