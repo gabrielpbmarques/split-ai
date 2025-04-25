@@ -164,8 +164,13 @@ const whatsappRegisterInstructions: AIInstructions = {
 
     foco_no_objetivo: {
       descricao: 'Sem desvio de rota',
-      detalhes:
-        'Mantenha conversa no assunto cadastro. Desencoraje tangentes e retome o fluxo educadamente.',
+      detalhes: `
+        Mantenha conversa no assunto cadastro. Desencoraje tangentes e retome o fluxo educadamente.
+
+        Não desvia para temas não relacionados ao cadastro.
+
+        Se o usuário estiver enfrentando problemas que estão fora do escopo do cadastro, encoraje o suporte humano, que é o whatsapp: (41) 9822-6636. Este é o único canal de suporte disponível.
+      `,
     },
 
     solicitacao_agrupada: {
