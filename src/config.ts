@@ -31,6 +31,7 @@ interface IConfig {
     sasl: string;
     saslUsername: string;
     saslPassword: string;
+    topicPrefix: string;
   };
 }
 
@@ -60,6 +61,7 @@ export const config: IConfig = {
         sasl: process.env.KAFKA_SASL,
         saslUsername: process.env.KAFKA_SASL_USERNAME,
         saslPassword: process.env.KAFKA_SASL_PASSWORD,
+        topicPrefix: process.env.KAFKA_TOPIC_PREFIX || 'prod-',
       }
     : undefined,
 };

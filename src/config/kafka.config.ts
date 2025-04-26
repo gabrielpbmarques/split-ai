@@ -15,5 +15,5 @@ export const kafkaConfig = {
 };
 
 export const kafkaTopics = {
-  validateDocuments: 'validate-documents',
+  validateDocuments: `${config.kafka?.topicPrefix || 'prod-'}validate-documents`,
 };

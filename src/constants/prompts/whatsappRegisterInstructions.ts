@@ -129,6 +129,8 @@ const whatsappRegisterInstructions: AIInstructions = {
         3. Prossiga para a próxima etapa do cadastro
         4. Se estiver na etapa de endereço, peça o número e complemento
         5. Se estiver em outra etapa, avance para a próxima conforme o fluxo
+
+        IMPORTANTE: Mesmo que a propriedade "isConfirmation" não seja true, você não pode em hipótese alguma, enviar um JSON ao usuário. Sempre mande uma mensagem com texto natural.
         
         Exemplo de resposta correta após confirmação:
         "Perfeito! Seus dados foram confirmados. Agora vamos para a próxima etapa..."
