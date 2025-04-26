@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { SaveWorkerService } from './save-worker.service';
 import { WorkerRepository } from 'src/repositories/Worker.repository';
 import { UpdatePhoneNumberService } from '../UpdatePhoneNumber/update-phone-number.service';
+import { UpdatePixService } from '../UpdatePix/update-pix.service';
 import { UpdateBankAccountService } from '../UpdateBankAccount/update-bank-account.service';
 import { UpdateAddressService } from '../UpdateAddress/update-address.service';
 import { UpdateUserService } from '../UpdateUser/update-user.service';
@@ -31,6 +32,10 @@ describe('SaveWorkerService', () => {
     execute: jest.fn().mockResolvedValue({}),
   };
 
+  const mockUpdatePixService = {
+    execute: jest.fn().mockResolvedValue({}),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -43,6 +48,10 @@ describe('SaveWorkerService', () => {
         {
           provide: UpdateBankAccountService,
           useValue: mockUpdateBankAccountService,
+        },
+        {
+          provide: UpdatePixService,
+          useValue: mockUpdatePixService,
         },
         { provide: UpdateAddressService, useValue: mockUpdateAddressService },
         { provide: UpdateUserService, useValue: mockUpdateUserService },
