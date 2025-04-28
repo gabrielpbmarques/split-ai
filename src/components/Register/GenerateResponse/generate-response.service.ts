@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { GenerateResponseDto } from './generate-response.dto';
-import { GenerateAiResponseService } from '../Common/generate-ai-response.service';
-import { RegisterContextMetadata } from '../../../types/RegisterContextMetadata';
+import { GenerateAiResponseService } from '../../AIIntegration/Common/generate-ai-response.service';
 import { agents } from '../../../constants/chats/chats';
 
 @Injectable()

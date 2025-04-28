@@ -1,12 +1,13 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { WhatsappMessageDto } from './whatsapp-message.dto';
-import { FindOrCreateSessionService } from '../FindOrCreateSession/find-or-create-session.service';
-import { ProcessMessageDataService } from '../ProcessMessageData/process-message-data.service';
+// Imports dos componentes migrados
+import { FindOrCreateSessionService } from '../../SessionManagement/FindOrCreateSession/find-or-create-session.service';
+import { ProcessMessageDataService } from '../../MessageProcessing/ProcessMessageData/process-message-data.service';
 import { UpdateWorkerService } from '../UpdateWorker/update-worker.service';
 import { GenerateResponseService } from '../GenerateResponse/generate-response.service';
-import { UpdateLastAiResponseService } from '../UpdateLastAiResponse/update-last-ai-response.service';
-import { ProcessImageMessageService } from '../ProcessImageMessage/process-image-message.service';
-import { UpdateDocumentService } from '../UpdateDocument/update-document.service';
+import { UpdateLastAiResponseService } from '../../SessionManagement/UpdateLastAiResponse/update-last-ai-response.service';
+import { ProcessImageMessageService } from '../../MediaProcessing/ProcessImageMessage/process-image-message.service';
+import { UpdateDocumentService } from '../../MediaProcessing/UpdateDocument/update-document.service';
 import { HandleRegisterCompletionService } from '../HandleRegisterCompletion/handle-register-completion.service';
 import { Worker } from 'src/models/Worker.model';
 import { EmailService } from 'src/components/Email/email.service';

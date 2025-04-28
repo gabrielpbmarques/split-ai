@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { UpdateWorkerDto } from './update-worker.dto';
 import { SaveWorkerService } from '../SaveWorker/save-worker.service';
 import { SaveSessionService } from '../SaveSession/save-session.service';
-import { VerifyExistingUserService } from '../VerifyExistingUser/verify-existing-user.service';
+import { VerifyExistingUserService } from '../../UserManagement/VerifyExistingUser/verify-existing-user.service';
 
 @Injectable()
 export class UpdateWorkerService {

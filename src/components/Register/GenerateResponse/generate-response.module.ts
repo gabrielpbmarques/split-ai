@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { GenerateResponseService } from './generate-response.service';
-import { GenerateAiResponseModule } from '../Common/generate-ai-response.module';
+import { GenerateAiResponseModule } from '../../AIIntegration/Common/generate-ai-response.module';
 
 @Module({
   imports: [GenerateAiResponseModule],

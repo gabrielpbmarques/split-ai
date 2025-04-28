@@ -3,6 +3,14 @@ import { LangchainModule } from 'src/components/Langchain/langchain.module';
 import { PromptModule } from 'src/components/Prompt/prompt.module';
 import { RegisterModule } from 'src/components/Register/register.module';
 import { DocumentValidationModule } from 'src/components/Document/DocumentValidation/document-validation.module';
+import { MessageProcessingModule } from 'src/components/MessageProcessing/message-processing.module';
+import { SessionManagementModule } from 'src/components/SessionManagement/session-management.module';
+import { MediaProcessingModule } from 'src/components/MediaProcessing/media-processing.module';
+import { LocationServicesModule } from 'src/components/LocationServices/location-services.module';
+import { UserManagementModule } from 'src/components/UserManagement/user-management.module';
+import { ContactManagementModule } from 'src/components/ContactManagement/contact-management.module';
+import { FinancialManagementModule } from 'src/components/FinancialManagement/financial-management.module';
+import { AIIntegrationModule } from 'src/components/AIIntegration/ai-integration.module';
 
 @Module({
   imports: [
@@ -10,12 +18,28 @@ import { DocumentValidationModule } from 'src/components/Document/DocumentValida
     PromptModule,
     RegisterModule,
     DocumentValidationModule,
+    MessageProcessingModule,
+    SessionManagementModule,
+    MediaProcessingModule,
+    LocationServicesModule,
+    UserManagementModule,
+    ContactManagementModule,
+    FinancialManagementModule,
+    AIIntegrationModule,
   ],
   exports: [
     LangchainModule,
     PromptModule,
     RegisterModule,
     DocumentValidationModule,
+    MessageProcessingModule,
+    SessionManagementModule,
+    MediaProcessingModule,
+    LocationServicesModule,
+    UserManagementModule,
+    ContactManagementModule,
+    FinancialManagementModule,
+    AIIntegrationModule,
   ],
 })
 export class ComponentsModule {}

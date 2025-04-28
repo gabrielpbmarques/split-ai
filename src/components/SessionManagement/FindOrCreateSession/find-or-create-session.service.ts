@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { SessionRepository } from '../../../repositories/Session.repository';
 import { FindOrCreateSessionDto } from './find-or-create-session.dto';
 import { v4 as uuidv4 } from 'uuid';
-import { SaveSessionService } from '../SaveSession/save-session.service';
+import { SaveSessionService } from '../../Register/SaveSession/save-session.service';
 import { Session } from 'src/models/Session.model';
 
 interface SessionResponse {

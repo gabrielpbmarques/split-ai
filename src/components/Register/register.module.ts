@@ -1,30 +1,49 @@
 import { Module } from '@nestjs/common';
-import { GenerateAiResponseModule } from './Common/generate-ai-response.module';
 import { WhatsappMessageModule } from './WhatsappMessage/whatsapp-message.module';
-import { ProcessImageMessageModule } from './ProcessImageMessage/process-image-message.module';
-import { UpdateDocumentModule } from './UpdateDocument/update-document.module';
-import { CepLookupModule } from './CepLookup/cep-lookup.module';
+import { GenerateResponseModule } from './GenerateResponse/generate-response.module';
+import { UpdateWorkerModule } from './UpdateWorker/update-worker.module';
+import { SaveSessionModule } from './SaveSession/save-session.module';
+import { SaveWorkerModule } from './SaveWorker/save-worker.module';
 import { HandleRegisterCompletionModule } from './HandleRegisterCompletion/handle-register-completion.module';
-import { UpdatePixModule } from './UpdatePix/update-pix.module';
+
+// Importando módulos dos novos componentes
+import { MessageProcessingModule } from '../MessageProcessing/message-processing.module';
+import { SessionManagementModule } from '../SessionManagement/session-management.module';
+import { MediaProcessingModule } from '../MediaProcessing/media-processing.module';
+import { LocationServicesModule } from '../LocationServices/location-services.module';
+import { UserManagementModule } from '../UserManagement/user-management.module';
+import { ContactManagementModule } from '../ContactManagement/contact-management.module';
+import { FinancialManagementModule } from '../FinancialManagement/financial-management.module';
+import { AIIntegrationModule } from '../AIIntegration/ai-integration.module';
 
 @Module({
   imports: [
-    GenerateAiResponseModule,
+    // Módulos internos do Register
     WhatsappMessageModule,
-    ProcessImageMessageModule,
-    UpdateDocumentModule,
-    CepLookupModule,
+    GenerateResponseModule,
+    UpdateWorkerModule,
+    SaveSessionModule,
+    SaveWorkerModule,
     HandleRegisterCompletionModule,
-    UpdatePixModule,
+
+    // Módulos externos que foram migrados
+    MessageProcessingModule,
+    SessionManagementModule,
+    MediaProcessingModule,
+    LocationServicesModule,
+    UserManagementModule,
+    ContactManagementModule,
+    FinancialManagementModule,
+    AIIntegrationModule,
   ],
   exports: [
-    GenerateAiResponseModule,
+    // Módulos internos do Register
     WhatsappMessageModule,
-    ProcessImageMessageModule,
-    UpdateDocumentModule,
-    CepLookupModule,
+    GenerateResponseModule,
+    UpdateWorkerModule,
+    SaveSessionModule,
+    SaveWorkerModule,
     HandleRegisterCompletionModule,
-    UpdatePixModule,
   ],
 })
 export class RegisterModule {}
