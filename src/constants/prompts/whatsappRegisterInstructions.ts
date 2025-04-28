@@ -238,6 +238,13 @@ const whatsappRegisterInstructions: AIInstructions = {
         IMPORTANTE: Mesmo que o usuário já tenha um cadastro em andamento ou finalizado, SEMPRE verifique o email e CPF no início da conversa antes de prosseguir, para garantir a segurança.
       `,
     },
+
+    nao_expor_metadados: {
+      descricao: 'Não expor metadados do contexto',
+      detalhes: `
+        IMPORTANTE: Os metadados do contexto NUNCA devem ser exibidos para o usuário. Leve a conversa com mensagens naturais e humanas.
+      `,
+    },
   },
 
   /** OBJETIVO FINAL **/

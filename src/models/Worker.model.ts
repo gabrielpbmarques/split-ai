@@ -1,5 +1,16 @@
 import { ObjectId } from 'mongoose';
 
+export interface DocumentData {
+  _id?: ObjectId;
+  documentNumber: string;
+  cpf?: string;
+  name: string;
+  birthDate: string;
+  issueDate: string;
+  faceMatchScore: number;
+  errors: string[];
+}
+
 export interface DocumentsObject {
   _id?: ObjectId;
   isRemoved: boolean;
@@ -12,6 +23,7 @@ export interface DocumentsObject {
   observations: string[];
   dateValidated: Date | null;
   validator: string | null;
+  documentData: DocumentData;
 }
 
 export interface GeoPoint {

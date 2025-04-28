@@ -24,15 +24,7 @@ export class HandleRegisterCompletionService {
   ) {}
 
   async execute(dto: HandleRegisterCompletionDto): Promise<void> {
-    const { workerId, signupStage } = dto;
-
-    // Verificar se o trabalhador completou o cadastro
-    if (signupStage !== 'completed') {
-      this.logger.debug(
-        `Worker ${workerId} não completou o cadastro ainda. Stage: ${signupStage}`,
-      );
-      return;
-    }
+    const { workerId } = dto;
 
     try {
       // Buscar o trabalhador

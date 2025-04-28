@@ -137,15 +137,10 @@ export class WhatsappMessageService {
       });
 
       // Se o cadastro foi concluído, publicar mensagem para validação de documentos
-      if (updatedWorker.signupStage === 'completed') {
-        this.logger.log(
-          `Iniciando validação de documentos para o worker: ${updatedWorker._id}`,
-        );
-        await this.handleRegisterCompletionService.execute({
-          workerId: updatedWorker._id?.toString(),
-          signupStage: updatedWorker.signupStage,
-        });
-      }
+      await this.handleRegisterCompletionService.execute({
+        workerId: updatedWorker._id?.toString(),
+        signupStage: updatedWorker.signupStage,
+      });
     }
 
     return {

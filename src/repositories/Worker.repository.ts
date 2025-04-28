@@ -52,7 +52,6 @@ export class WorkerRepository implements IWorkerRepository {
    * @returns Worker atualizado
    */
   async update(id: string, payload: Partial<Worker>): Promise<Worker | null> {
-    // Remove campos imutáveis do MongoDB
     const safePayload = removeMongooseFields(payload);
 
     const updatedWorker = await this.workerModel
@@ -75,7 +74,6 @@ export class WorkerRepository implements IWorkerRepository {
   async findOneWithRelations(query: Partial<Worker>): Promise<any> {
     const pipeline = [
       { $match: query },
-      // Lookup para buscar o telefone
       {
         $lookup: {
           from: 'phones',
@@ -85,7 +83,6 @@ export class WorkerRepository implements IWorkerRepository {
         },
       },
       { $unwind: { path: '$phoneData', preserveNullAndEmptyArrays: true } },
-      // Lookup para buscar o endereço
       {
         $lookup: {
           from: 'addresses',
@@ -95,7 +92,6 @@ export class WorkerRepository implements IWorkerRepository {
         },
       },
       { $unwind: { path: '$addressData', preserveNullAndEmptyArrays: true } },
-      // Lookup para buscar a conta bancária
       {
         $lookup: {
           from: 'bankaccounts',

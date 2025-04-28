@@ -5,6 +5,30 @@ import { DocumentValidation } from './DocumentValidation.schema';
 export type WorkerDocument = HydratedDocument<Worker>;
 
 @Schema({ timestamps: false })
+class DocumentData {
+  @Prop({ type: String })
+  documentNumber: string;
+
+  @Prop({ type: String })
+  name: string;
+
+  @Prop({ type: String })
+  birthDate: string;
+
+  @Prop({ type: String })
+  issueDate: string;
+
+  @Prop({ type: Number })
+  faceMatchScore: number;
+
+  @Prop({ type: String })
+  cpf: string;
+
+  @Prop({ type: [String], default: [] })
+  errors: string[];
+}
+
+@Schema({ timestamps: false })
 class DocumentsObject {
   @Prop({ type: String })
   tShirtSelfieId: string;
@@ -23,6 +47,9 @@ class DocumentsObject {
 
   @Prop({ type: [String], default: [] })
   observations: string[];
+
+  @Prop({ type: DocumentData, default: {} })
+  documentData: DocumentData;
 
   @Prop({ type: Date, default: null })
   dateValidated: Date | null;
