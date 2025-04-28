@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { LoadAiChatService } from '../../Langchain/LoadAiChat/load-ai-chat.service';
+import { LoadAiChatService } from 'src/components/Langchain/LoadAiChat/load-ai-chat.service';
 import { agents } from 'src/constants/chats/chats';
 import { CustomMetadata } from 'src/types/CustomMetadata';
-import { RegisterContextMetadata } from 'src/types/RegisterContextMetadata';
 
 @Injectable()
 export class GenerateAiResponseService {
@@ -13,7 +12,6 @@ export class GenerateAiResponseService {
     sessionId: string,
     metadata: CustomMetadata,
     agentId: keyof typeof agents,
-    contextMetadata?: RegisterContextMetadata | any,
     promptVariables?: any,
   ): Promise<string> {
     try {
@@ -24,20 +22,23 @@ export class GenerateAiResponseService {
         metadata,
         sessionId,
         agent,
-        contextMetadata,
       );
 
+      // Preparar as variáveis para o template
+      // O input é a mensagem do usuário, promptVariables são outras variáveis
+      const templateVariables = {
+        input: question,
+        ...promptVariables, // Outras variáveis para o template, diferentes do input
+      };
+
+      // Invocar o runnable com as variáveis do template
       const result = await runnable.runnable.invoke(
-        {
-          input: question,
-          ...promptVariables,
-        },
+        templateVariables,
         runnable.config,
       );
 
       return result.content.toString();
     } catch (error) {
-      console.error('Erro ao gerar resposta da IA:', error);
       return 'Desculpe, tive um problema ao processar sua mensagem. Pode tentar novamente?';
     }
   }

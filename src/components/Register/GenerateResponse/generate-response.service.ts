@@ -22,15 +22,21 @@ export class GenerateResponseService {
       isConfirmation,
     } = generateResponseDto;
 
-    const registerMetadata: RegisterContextMetadata = {
+    // Criar o objeto de contexto de registro
+    const registerContext = {
       phone_number: phoneNumber,
       registration_stage: worker?.signupStage || 'personal_info',
       is_new_user: isNewUser,
       user_data: worker,
-      processed_image: processedImage || null,
-      invalid_fields: invalidFields || null,
+      processed_image: processedImage,
+      invalid_fields: invalidFields,
       fields_to_update: worker?.fieldsToUpdate || [],
-      is_confirmation: isConfirmation || false, // Adicionar flag de confirmação ao contexto
+      is_confirmation: isConfirmation || false,
+    };
+
+    // Passar o objeto de contexto como uma única variável
+    const promptVariables = {
+      registerContext,
     };
 
     const typedAgentId = 'whatsapp_register' as keyof typeof agents;
@@ -39,10 +45,10 @@ export class GenerateResponseService {
       message,
       sessionId,
       {
-        agent_id: 'whatsapp_register',
+        agent_id: typedAgentId,
       },
       typedAgentId,
-      registerMetadata,
+      promptVariables,
     );
 
     return aiResponse;

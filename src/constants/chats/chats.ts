@@ -5,6 +5,7 @@ import { RunnableChatOpts } from 'src/types/RunnableChatOpts';
 import { DynamicStructuredTool } from 'langchain/dist/tools';
 import { z } from 'zod';
 import { messageDataParserFormatter } from '../parsers/messageDataParser';
+import { extractDocumentDataParserFormatter } from '../parsers/extractDocumentDataParser';
 
 interface Agent {
   instructions: AIInstructions;
@@ -16,7 +17,8 @@ interface Agent {
 type ValidAgentKeys =
   | 'register_chat'
   | 'whatsapp_register'
-  | 'message_data_parser';
+  | 'message_data_parser'
+  | 'extract_document';
 
 type AgentType = {
   [key in ValidAgentKeys]: Agent;
@@ -86,6 +88,35 @@ const agents: AgentType = {
       ],
     }),
     jsonParser: messageDataParserFormatter,
+    runnableOpts: {
+      withHistory: true,
+    },
+  },
+  extract_document: {
+    instructions: config.extractDocumentInstructions,
+    chat: new ChatVertexAI({
+      model: config.aiModel,
+      temperature: 0.4,
+      safetySettings: [
+        {
+          category: 'HARM_CATEGORY_HARASSMENT',
+          threshold: 'BLOCK_ONLY_HIGH',
+        },
+        {
+          category: 'HARM_CATEGORY_HATE_SPEECH',
+          threshold: 'BLOCK_ONLY_HIGH',
+        },
+        {
+          category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+          threshold: 'BLOCK_ONLY_HIGH',
+        },
+        {
+          category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+          threshold: 'BLOCK_ONLY_HIGH',
+        },
+      ],
+    }),
+    jsonParser: extractDocumentDataParserFormatter,
     runnableOpts: {
       withHistory: true,
     },

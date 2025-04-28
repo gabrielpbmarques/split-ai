@@ -60,12 +60,14 @@ export class WhatsappMessageService {
 
     let parsedData = await this.processMessageDataService.execute({
       message: messageText,
-      worker: {
-        ...worker,
-        isNewUser,
-      },
       sessionId,
-      lastAiResponse,
+      promptVariables: {
+        worker: {
+          ...worker,
+          isNewUser,
+        },
+        lastAiResponse,
+      },
     });
 
     let processedImageInfo = null;

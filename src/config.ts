@@ -3,6 +3,7 @@ import { AIInstructions } from 'src/types/AIInstructions';
 import { registerChatInstructions } from 'src/constants/prompts/registerChatInstructions';
 import { whatsappRegisterInstructions } from 'src/constants/prompts/whatsappRegisterInstructions';
 import { messageDataParser } from 'src/constants/prompts/messageDataParser';
+import { extractDocumentInstructions } from 'src/constants/prompts/extractDocumentInstructions';
 
 dotenv.config();
 
@@ -18,6 +19,7 @@ interface IConfig {
   registerChatInstructions: AIInstructions;
   whatsappRegisterInstructions: AIInstructions;
   messageDataParser: AIInstructions;
+  extractDocumentInstructions: AIInstructions;
   awsRegion: string;
   awsAccessKeyId: string;
   awsSecretAccessKey: string;
@@ -47,6 +49,7 @@ export const config: IConfig = {
   registerChatInstructions: registerChatInstructions,
   whatsappRegisterInstructions: whatsappRegisterInstructions,
   messageDataParser: messageDataParser,
+  extractDocumentInstructions: extractDocumentInstructions,
   awsRegion: process.env.AWS_REGION || 'us-east-1',
   awsAccessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
   awsSecretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',

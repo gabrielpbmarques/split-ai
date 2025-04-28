@@ -7,7 +7,6 @@ import { LoadVectorStoreService } from '../LoadVectorStore/load-vector-store.ser
 import { ExecuteSimilaritySearchService } from '../ExecuteSimilaritySearch/execute-similarity-search.service';
 import { Agent } from 'src/constants/chats/chats';
 import { CustomMetadata } from 'src/types/CustomMetadata';
-import { RegisterContextMetadata } from 'src/types/RegisterContextMetadata';
 
 @Injectable()
 export class LoadAiChatService {
@@ -23,7 +22,6 @@ export class LoadAiChatService {
     metadata: CustomMetadata,
     sessionId: string,
     agent: Agent,
-    contextMetadata?: RegisterContextMetadata | any,
   ): Promise<RunnableMessageHistory | RunnableChat> {
     const { chat, runnableOpts, jsonParser } = agent;
 
@@ -32,9 +30,7 @@ export class LoadAiChatService {
       await this.executeSimilaritySearchService.execute(vectorStore, question);
     const prompt = await this.fillPromptService.execute(
       retrievedDocuments,
-      question,
       agent,
-      contextMetadata,
     );
 
     return this.getRunnableChatService.execute(

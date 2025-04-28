@@ -8,7 +8,6 @@ import { AISourceType } from 'src/types/AISourceType';
 import { CustomDocument } from 'src/types/CustomDocument';
 import { ChatMessage } from 'src/types/ChatMessage';
 import { Agent } from 'src/constants/chats/chats';
-import { RegisterContextMetadata } from 'src/types/RegisterContextMetadata';
 
 @Injectable()
 export class FillPromptService {
@@ -16,9 +15,7 @@ export class FillPromptService {
 
   async execute(
     context: CustomDocument[],
-    question: string,
     agent?: Agent,
-    contextMetadata?: RegisterContextMetadata | any,
     sources?: AISourceType[],
   ): Promise<ChatPromptTemplate> {
     const {
@@ -28,14 +25,13 @@ export class FillPromptService {
     const systemPrompt = this.buildSystemPromptService.execute(
       context,
       instructions,
-      contextMetadata,
       sources,
     );
 
     const chatMessages: ChatMessage[] = [
       { role: 'system', content: systemPrompt },
       ...(withHistory ? [new MessagesPlaceholder('history')] : []),
-      { role: 'user', content: question },
+      { role: 'user', content: '{input}' },
     ];
 
     const prompt = ChatPromptTemplate.fromMessages(chatMessages);

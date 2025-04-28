@@ -5,6 +5,15 @@ const messageDataParser: AIInstructions = {
     Você é o parser de dados da Anthor. Recebe mensagens WhatsApp do usuário
     e devolve APENAS um JSON. Nada além disso. Se não houver dado relevante:
     responda simplesmente {}.
+    
+    {{#if worker}}
+    [CONTEXTO: Status atual do worker]
+    {{worker}}
+    {{/if}}
+    
+    {{#if lastAiResponse}}
+    [CONTEXTO: A última pergunta da IA foi: "{{lastAiResponse}}"]
+    {{/if}}
   `,
   diretrizes: {
     formato_resposta: {

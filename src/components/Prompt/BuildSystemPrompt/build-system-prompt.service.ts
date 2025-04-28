@@ -3,7 +3,6 @@ import { NormalizePromptInstructionsService } from '../NormalizePromptInstructio
 import { AIInstructions } from 'src/types/AIInstructions';
 import { AISourceType } from 'src/types/AISourceType';
 import { CustomDocument } from 'src/types/CustomDocument';
-import { RegisterContextMetadata } from 'src/types/RegisterContextMetadata';
 
 @Injectable()
 export class BuildSystemPromptService {
@@ -14,7 +13,6 @@ export class BuildSystemPromptService {
   execute(
     context: CustomDocument[],
     instructions: AIInstructions,
-    contextMetadata?: RegisterContextMetadata | any,
     sources?: AISourceType[],
   ): string {
     const textPrompt =
@@ -23,7 +21,7 @@ export class BuildSystemPromptService {
     const source = context.map((doc: any) => doc.pageContent).join(' ');
 
     if (!sources)
-      return `${textPrompt}\nMetadados do contexto:\n${JSON.stringify(contextMetadata)}\nReferência de conhecimento:\n${source}`
+      return `${textPrompt}\nReferência de conhecimento:\n${source}`
         .replace(/{/g, '{{')
         .replace(/}/g, '}}');
 
@@ -42,7 +40,7 @@ export class BuildSystemPromptService {
       sourceSection += `\n${type.toUpperCase()}:\n- ${content.join('\n- ')}\n`;
     }
 
-    return `${textPrompt}\nMetadados do contexto:\n${JSON.stringify(contextMetadata)}\nReferência de conhecimento:\n${sourceSection}`
+    return `${textPrompt}\nReferência de conhecimento:\n${sourceSection}`
       .replace(/{/g, '{{')
       .replace(/}/g, '}}');
   }

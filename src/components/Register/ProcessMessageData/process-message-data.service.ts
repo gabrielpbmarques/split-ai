@@ -14,38 +14,27 @@ export class ProcessMessageDataService {
       message,
       sessionId,
       agentId = 'message_data_parser',
-      lastAiResponse,
-      worker,
+      promptVariables = {},
     } = processMessageDataDto;
 
-    const typedAgentId = 'message_data_parser' as keyof typeof agents;
+    // Usar o agentId passado como parâmetro
+    const typedAgentId = agentId as keyof typeof agents;
 
-    let messageWithContext: string = '';
+    // Garantir que a mensagem seja incluída nas variáveis do prompt
+    const allPromptVariables = {
+      message,
+      ...promptVariables,
+    };
 
-    if (worker) {
-      // Usar uma abordagem diferente para evitar problemas com o JSON
-      // Converter o worker para uma string base64 para evitar problemas com caracteres especiais
-      const workerBase64 = Buffer.from(JSON.stringify(worker)).toString(
-        'base64',
-      );
-      messageWithContext += `[CONTEXTO: Status atual do worker (base64): ${workerBase64}]`;
-    }
-
-    if (lastAiResponse) {
-      messageWithContext += `[CONTEXTO: A última pergunta da IA foi: "${lastAiResponse.replace('{', '').replace('}', '')}"]`;
-    }
-
-    const alreadyHasContent = messageWithContext.length > 0;
-
-    messageWithContext += `${alreadyHasContent ? '\n\n' : ''}Resposta do usuário: "${message}"`;
-
+    // Chamar o serviço de geração de resposta com as variáveis do prompt
     const parserAiResponse = await this.generateAiResponseService.execute(
-      messageWithContext,
+      message, // Passamos a mensagem original para compatibilidade
       sessionId,
       {
         agent_id: agentId,
       },
       typedAgentId,
+      allPromptVariables,
     );
 
     const cleanedResponse = parserAiResponse
