@@ -89,7 +89,7 @@ const agents: AgentType = {
     }),
     jsonParser: messageDataParserFormatter,
     runnableOpts: {
-      withHistory: true,
+      withHistory: false,
     },
   },
   extract_document: {
@@ -118,7 +118,7 @@ const agents: AgentType = {
     }),
     jsonParser: extractDocumentDataParserFormatter,
     runnableOpts: {
-      withHistory: true,
+      withHistory: false,
     },
   },
 };

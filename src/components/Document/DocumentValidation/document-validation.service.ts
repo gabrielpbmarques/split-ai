@@ -1,4 +1,4 @@
-import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { EachMessagePayload } from 'kafkajs';
 import { kafkaTopics } from 'src/config/kafka.config';
 import {
@@ -9,15 +9,20 @@ import {
   IKafkaService,
   KAFKA_SERVICE,
 } from 'src/infrastructure/providers/kafka.provider';
-import { ExtractOcrTextService } from 'src/components/Document/ExtractOcrText/extract-ocr-text.service';
+import {
+  ExtractOcrTextResponse,
+  ExtractOcrTextService,
+} from 'src/components/Document/ExtractOcrText/extract-ocr-text.service';
 import { getUrlBuffer } from 'src/utils/getUrlBuffer';
 import { FaceMatchService } from 'src/components/Document/FaceMatch/face-match.service';
 import { WorkerRepository } from 'src/repositories/Worker.repository';
 import { UserRepository } from 'src/repositories/User.repository';
 import { PictureRepository } from 'src/repositories/Picture.repository';
+import { DocumentData } from 'src/models/Worker.model';
 
 @Injectable()
 export class DocumentValidationService implements OnModuleInit {
+  private readonly logger = new Logger(DocumentValidationService.name);
   constructor(
     @Inject(KAFKA_SERVICE) private readonly kafkaService: IKafkaService,
     private readonly extractOcrTextService: ExtractOcrTextService,
@@ -79,14 +84,26 @@ export class DocumentValidationService implements OnModuleInit {
       selfieBuffer,
     );
 
-    return {
+    const validationErrors = await this.compareDocumentWithWorkerInfo(
+      extractionResult,
+      workerId,
+    );
+
+    const validationResult = {
       ...extractionResult,
       ...faceMatchResult,
       errors: [
         ...(extractionResult.errors || []),
         ...(faceMatchResult.errors || []),
+        ...validationErrors,
       ],
     };
+
+    this.logger.debug(validationResult);
+
+    await this.validateWorkerDocuments(workerId, validationResult);
+
+    return validationResult;
   }
 
   private async startConsumer() {
@@ -130,5 +147,58 @@ export class DocumentValidationService implements OnModuleInit {
       await this.pictureRepository.findById(profilePictureId);
 
     return { frontDocumentUrl, backDocumentUrl, selfieUrl };
+  }
+
+  private async compareDocumentWithWorkerInfo(
+    extractionResult: ExtractOcrTextResponse,
+    workerId: string,
+  ) {
+    const errors: string[] = [];
+    const { name, birthDate, cpf } = extractionResult;
+
+    const worker = await this.workerRepository.findById(workerId);
+
+    if (!worker) {
+      throw new Error(`Worker not found with ID: ${workerId}`);
+    }
+
+    const {
+      name: workerName,
+      birthDate: workerBirthDate,
+      cpf: workerCpf,
+    } = worker;
+
+    if (name !== workerName) {
+      errors.push('Names do not match');
+    }
+
+    if (new Date(birthDate) !== new Date(workerBirthDate)) {
+      errors.push('Birth dates do not match');
+    }
+
+    if (cpf !== workerCpf) {
+      errors.push('CPF numbers do not match');
+    }
+
+    return errors;
+  }
+
+  private async validateWorkerDocuments(
+    workerId: string,
+    validationResult: DocumentValidationResponse,
+  ) {
+    const worker = await this.workerRepository.findById(workerId);
+
+    if (!worker) {
+      throw new Error(`Worker not found with ID: ${workerId}`);
+    }
+
+    await this.workerRepository.update(workerId, {
+      documents: {
+        ...worker.documents,
+        status: validationResult.errors.length ? 'pending' : 'approved',
+        documentValidationResult: validationResult,
+      },
+    });
   }
 }

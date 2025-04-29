@@ -39,6 +39,7 @@ export class GenerateAiResponseService {
 
       return result.content.toString();
     } catch (error) {
+      console.error('Erro ao gerar resposta:', error);
       return 'Desculpe, tive um problema ao processar sua mensagem. Pode tentar novamente?';
     }
   }

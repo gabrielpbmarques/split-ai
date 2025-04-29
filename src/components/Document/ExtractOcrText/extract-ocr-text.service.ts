@@ -34,6 +34,8 @@ export class ExtractOcrTextService {
 
     const fullText = texts.join(' ');
 
+    console.log('Full Text:', fullText);
+
     const result = await this.extractDocumentData(fullText);
 
     return result;
@@ -42,6 +44,7 @@ export class ExtractOcrTextService {
   private extractDocumentData(text: string): Promise<ExtractOcrTextResponse> {
     return this.processMessageDataService.execute({
       message: text,
+      sessionId: '',
       agentId: 'extract_document',
     });
   }
