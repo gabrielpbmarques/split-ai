@@ -1,51 +1,92 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { EachMessagePayload } from 'kafkajs';
 import { kafkaTopics } from 'src/config/kafka.config';
-import { DocumentValidationMessage } from 'src/components/Document/DocumentValidation/document-validation.dto';
+import {
+  DocumentValidationMessage,
+  DocumentValidationResponse,
+} from 'src/components/Document/DocumentValidation/document-validation.dto';
 import {
   IKafkaService,
   KAFKA_SERVICE,
 } from 'src/infrastructure/providers/kafka.provider';
 import { ExtractOcrTextService } from 'src/components/Document/ExtractOcrText/extract-ocr-text.service';
 import { getUrlBuffer } from 'src/utils/getUrlBuffer';
+import { FaceMatchService } from 'src/components/Document/FaceMatch/face-match.service';
+import { WorkerRepository } from 'src/repositories/Worker.repository';
+import { UserRepository } from 'src/repositories/User.repository';
+import { PictureRepository } from 'src/repositories/Picture.repository';
 
 @Injectable()
 export class DocumentValidationService implements OnModuleInit {
   constructor(
     @Inject(KAFKA_SERVICE) private readonly kafkaService: IKafkaService,
     private readonly extractOcrTextService: ExtractOcrTextService,
+    private readonly faceMatchService: FaceMatchService,
+    private readonly workerRepository: WorkerRepository,
+    private readonly pictureRepository: PictureRepository,
+    private readonly userRepository: UserRepository,
   ) {}
 
   async onModuleInit() {
     await this.startConsumer();
   }
 
-  async execute(payload: DocumentValidationMessage): Promise<any> {
-    const { documentBackUrl, documentFrontUrl } = payload;
+  async execute(
+    payload: DocumentValidationMessage,
+  ): Promise<DocumentValidationResponse | { errors: string[] }> {
+    const workerId = payload.workerId;
+
+    let documentFrontUrl = payload.documentFrontUrl;
+    let documentBackUrl = payload.documentBackUrl;
+    let selfieUrl = payload.selfieUrl;
+    const errors: string[] = [];
+
+    if ((!documentFrontUrl || !documentBackUrl || !selfieUrl) && workerId) {
+      const documentUrls = await this.getDocumentsUrlByWorkerId(workerId);
+
+      documentFrontUrl = !documentFrontUrl
+        ? documentUrls.frontDocumentUrl
+        : documentFrontUrl;
+      documentBackUrl = !documentBackUrl
+        ? documentUrls.backDocumentUrl
+        : documentBackUrl;
+      selfieUrl = !selfieUrl ? documentUrls.selfieUrl : selfieUrl;
+    }
 
     if (!documentFrontUrl && !documentBackUrl) {
-      return { errors: ['Nenhuma imagem de documento fornecida'] };
+      errors.push('Nenhuma imagem de documento fornecida');
     }
 
-    const buffers: Buffer[] = [];
-
-    if (documentFrontUrl) {
-      const frontBuffer = await getUrlBuffer(documentFrontUrl);
-      buffers.push(frontBuffer);
+    if (!selfieUrl) {
+      errors.push('Nenhuma selfie fornecida');
     }
 
-    if (documentBackUrl) {
-      const backBuffer = await getUrlBuffer(documentBackUrl);
-      buffers.push(backBuffer);
+    if (errors.length) {
+      return { errors };
     }
 
-    if (!buffers.length) {
-      return { errors: ['Nenhuma imagem de documento fornecida'] };
-    }
+    const frontImageBuffer = await getUrlBuffer(documentFrontUrl);
+    const backImageBuffer = await getUrlBuffer(documentBackUrl);
+    const selfieBuffer = await getUrlBuffer(selfieUrl);
 
-    const extractionResult = await this.extractOcrTextService.execute(buffers);
+    const extractionResult = await this.extractOcrTextService.execute(
+      frontImageBuffer,
+      backImageBuffer,
+    );
 
-    return extractionResult;
+    const faceMatchResult = await this.faceMatchService.compareFaces(
+      frontImageBuffer,
+      selfieBuffer,
+    );
+
+    return {
+      ...extractionResult,
+      ...faceMatchResult,
+      errors: [
+        ...(extractionResult.errors || []),
+        ...(faceMatchResult.errors || []),
+      ],
+    };
   }
 
   private async startConsumer() {
@@ -67,6 +108,27 @@ export class DocumentValidationService implements OnModuleInit {
 
     const result = await this.execute(validationMessage);
 
-    console.log('Resultado da validação de documento:', result);
+    return result;
+  }
+
+  private async getDocumentsUrlByWorkerId(workerId: string): Promise<{
+    frontDocumentUrl: string;
+    backDocumentUrl: string;
+    selfieUrl: string;
+  }> {
+    const {
+      documents: { rgFrontId, rgBackId },
+    } = await this.workerRepository.findById(workerId);
+    const { profilePictureId } =
+      await this.userRepository.findByWorkerId(workerId);
+
+    const { image: frontDocumentUrl } =
+      await this.pictureRepository.findById(rgFrontId);
+    const { image: backDocumentUrl } =
+      await this.pictureRepository.findById(rgBackId);
+    const { image: selfieUrl } =
+      await this.pictureRepository.findById(profilePictureId);
+
+    return { frontDocumentUrl, backDocumentUrl, selfieUrl };
   }
 }

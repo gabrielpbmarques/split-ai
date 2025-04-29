@@ -21,6 +21,15 @@ class DocumentData {
   @Prop({ type: Number })
   faceMatchScore: number;
 
+  @Prop({ type: Boolean })
+  documentHasFace: boolean;
+
+  @Prop({ type: Boolean })
+  selfieHasFace: boolean;
+
+  @Prop({ type: Boolean })
+  isMatch: boolean;
+
   @Prop({ type: String })
   cpf: string;
 
@@ -49,7 +58,7 @@ class DocumentsObject {
   observations: string[];
 
   @Prop({ type: DocumentData, default: {} })
-  documentData: DocumentData;
+  documentValidationResult: DocumentData;
 
   @Prop({ type: Date, default: null })
   dateValidated: Date | null;

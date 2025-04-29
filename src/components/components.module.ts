@@ -11,6 +11,8 @@ import { UserManagementModule } from 'src/components/UserManagement/user-managem
 import { ContactManagementModule } from 'src/components/ContactManagement/contact-management.module';
 import { FinancialManagementModule } from 'src/components/FinancialManagement/financial-management.module';
 import { AIIntegrationModule } from 'src/components/AIIntegration/ai-integration.module';
+import { TestOcrModule } from 'src/components/Document/TestOcr/test-ocr.module';
+import { TestFaceMatchModule } from 'src/components/Document/TestFaceMatch/test-face-match.module';
 
 @Module({
   imports: [
@@ -26,6 +28,8 @@ import { AIIntegrationModule } from 'src/components/AIIntegration/ai-integration
     ContactManagementModule,
     FinancialManagementModule,
     AIIntegrationModule,
+    TestOcrModule,
+    TestFaceMatchModule,
   ],
   exports: [
     LangchainModule,
@@ -40,6 +44,8 @@ import { AIIntegrationModule } from 'src/components/AIIntegration/ai-integration
     ContactManagementModule,
     FinancialManagementModule,
     AIIntegrationModule,
+    TestOcrModule,
+    TestFaceMatchModule,
   ],
 })
 export class ComponentsModule {}

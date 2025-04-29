@@ -3,6 +3,12 @@ import { ImageAnnotatorClient } from '@google-cloud/vision';
 import { DocumentData } from 'src/models/Worker.model';
 import { ProcessMessageDataService } from 'src/components/MessageProcessing/ProcessMessageData/process-message-data.service';
 
+export interface ExtractOcrTextResponse
+  extends Pick<
+    DocumentData,
+    'documentNumber' | 'cpf' | 'name' | 'birthDate' | 'issueDate' | 'errors'
+  > {}
+
 @Injectable()
 export class ExtractOcrTextService {
   constructor(
@@ -10,8 +16,11 @@ export class ExtractOcrTextService {
     private processMessageDataService: ProcessMessageDataService,
   ) {}
 
-  async execute(buffers: Buffer[]): Promise<DocumentData> {
-    const requests: any = buffers.map((buffer) => ({
+  async execute(
+    frontImage: Buffer,
+    backImage: Buffer,
+  ): Promise<ExtractOcrTextResponse> {
+    const requests: any = [frontImage, backImage].map((buffer) => ({
       image: { content: buffer.toString('base64') },
       features: [{ type: 'DOCUMENT_TEXT_DETECTION' }],
     }));
@@ -25,16 +34,12 @@ export class ExtractOcrTextService {
 
     const fullText = texts.join(' ');
 
-    console.log('Full Text:', fullText);
-
     const result = await this.extractDocumentData(fullText);
-
-    console.log('Result:', result);
 
     return result;
   }
 
-  private extractDocumentData(text: string): Promise<DocumentData> {
+  private extractDocumentData(text: string): Promise<ExtractOcrTextResponse> {
     return this.processMessageDataService.execute({
       message: text,
       agentId: 'extract_document',

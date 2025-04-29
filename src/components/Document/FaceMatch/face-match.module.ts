@@ -3,5 +3,6 @@ import { FaceMatchService } from 'src/components/Document/FaceMatch/face-match.s
 
 @Module({
   providers: [FaceMatchService],
+  exports: [FaceMatchService],
 })
 export class FaceMatchModule {}

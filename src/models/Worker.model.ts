@@ -8,6 +8,9 @@ export interface DocumentData {
   birthDate: string;
   issueDate: string;
   faceMatchScore: number;
+  documentHasFace: boolean;
+  selfieHasFace: boolean;
+  isMatch: boolean;
   errors: string[];
 }
 
@@ -23,7 +26,7 @@ export interface DocumentsObject {
   observations: string[];
   dateValidated: Date | null;
   validator: string | null;
-  documentData: DocumentData;
+  documentValidationResult: DocumentData;
 }
 
 export interface GeoPoint {
