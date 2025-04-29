@@ -24,6 +24,9 @@ export class ExtractOcrTextService {
     });
 
     const fullText = texts.join(' ');
+
+    console.log('Full Text:', fullText);
+
     const result = await this.extractDocumentData(fullText);
 
     console.log('Result:', result);

@@ -119,24 +119,27 @@ const whatsappRegisterInstructions: AIInstructions = {
     },
 
     integracao_com_parser: {
-      descricao: 'Como usar fields_to_update e invalid_fields',
+      descricao: 'Como usar parsedData',
       detalhes: `
         • NÃO confirme cada campo individualmente após cada mensagem do usuário.
-        • Ao receber dados do parser, use fields_to_update para saber o que foi extraído com sucesso.
-        • Se houver invalid_fields, explique o problema e peça correção.
+        • Ao receber dados do parser, use parsedData.fieldsToUpdate para saber o que foi extraído com sucesso.
+        • Se houver parsedData.invalidFields, explique o problema e peça correção.
         • Quando todos os campos obrigatórios da etapa estiverem preenchidos, confirme TODOS juntos e avance.
         • Não avance se houver campos obrigatórios faltando ou inválidos.
+        • Use parsedData.isConfirmation para detectar confirmações do usuário.
+        • Use o parsedData.address para informar o endereço que foi encontrado.
+        • Use outros campos do parsedData se necessário
         
-        IMPORTANTE: O parser agora detecta confirmações do usuário e adiciona a flag "isConfirmation": true ao JSON quando identifica respostas como "sim", "correto", "tudo certo", etc.
+        IMPORTANTE: O parser agora detecta confirmações do usuário e adiciona a flag "parsedData.isConfirmation": true ao JSON quando identifica respostas como "sim", "correto", "tudo certo", etc.
         
-        Quando receber um JSON com a propriedade "isConfirmation": true:
+        Quando receber um JSON com a propriedade "parsedData.isConfirmation": true:
         1. NUNCA exiba o JSON bruto para o usuário
         2. Agradeça a confirmação de forma natural
         3. Prossiga para a próxima etapa do cadastro
         4. Se estiver na etapa de endereço, peça o número e complemento
         5. Se estiver em outra etapa, avance para a próxima conforme o fluxo
 
-        IMPORTANTE: Mesmo que a propriedade "isConfirmation" não seja true, você não pode em hipótese alguma, enviar um JSON ao usuário. Sempre mande uma mensagem com texto natural.
+        IMPORTANTE: Mesmo que a propriedade "parsedData.isConfirmation" não seja true, você não pode em hipótese alguma, enviar um JSON ao usuário. Sempre mande uma mensagem com texto natural.
         
         Exemplo de resposta correta após confirmação:
         "Perfeito! Seus dados foram confirmados. Agora vamos para a próxima etapa..."
@@ -150,7 +153,7 @@ const whatsappRegisterInstructions: AIInstructions = {
         
         ATENÇÃO ESPECIAL: Se você receber um objeto JSON do parser após uma confirmação do usuário (ex: quando ele responde "sim" ou "correto"), NUNCA exiba esse JSON para o usuário. Em vez disso, interprete o conteúdo e responda de forma conversacional.
         
-        IMPORTANTE: Quando o campo is_confirmation for true no contexto, isso significa que o sistema detectou que a mensagem do usuário é uma confirmação. Nesse caso, você DEVE ignorar qualquer JSON vazio ou com poucos campos e responder de forma natural, prosseguindo para a próxima etapa do cadastro.
+        IMPORTANTE: Quando o campo parsedData.isConfirmation for true no contexto, isso significa que o sistema detectou que a mensagem do usuário é uma confirmação. Nesse caso, você DEVE ignorar qualquer JSON vazio ou com poucos campos e responder de forma natural, prosseguindo para a próxima etapa do cadastro.
         
         Exemplos de confirmações do usuário que NÃO devem resultar em exibição de JSON:
         - "Sim, está tudo certo"

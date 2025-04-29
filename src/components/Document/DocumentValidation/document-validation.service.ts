@@ -24,7 +24,6 @@ export class DocumentValidationService implements OnModuleInit {
     const { documentBackUrl, documentFrontUrl } = payload;
 
     if (!documentFrontUrl && !documentBackUrl) {
-      console.log('Nenhuma imagem de documento fornecida');
       return { errors: ['Nenhuma imagem de documento fornecida'] };
     }
 
@@ -41,7 +40,6 @@ export class DocumentValidationService implements OnModuleInit {
     }
 
     if (!buffers.length) {
-      console.log('Nenhuma imagem de documento fornecida');
       return { errors: ['Nenhuma imagem de documento fornecida'] };
     }
 

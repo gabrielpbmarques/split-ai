@@ -11,7 +11,6 @@ export const extractDocumentInstructions: AIInstructions = {
       descricao: 'Sempre JSON puro',
       detalhes: `
             • Nenhum texto antes ou depois.  
-            • JSON vazio {} quando nenhuma informação valida para o cadastro for extraída.
          `,
     },
     interprete: {
@@ -22,6 +21,8 @@ export const extractDocumentInstructions: AIInstructions = {
             Esteja preparado para aceitar diversos tipos de documentos, como CPF, RG, título de eleitor, etc.
 
             Preencha todos os campos possíveis.
+
+            O texto estará desestruturado, sem formatação. Você deve ser capaz de analisar cuidadosamente e extrair as informações relevantes.
         `,
     },
   },

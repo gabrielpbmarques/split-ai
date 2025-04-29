@@ -125,14 +125,12 @@ export class WhatsappMessageService {
       worker: updatedWorker,
       isNewUser,
       processedImage: processedImageInfo,
-      invalidFields: parsedData.invalidFields,
-      fieldsToUpdate: parsedData.fieldsToUpdate,
-      isConfirmation: parsedData?.isConfirmation || false,
+      parsedData,
     });
 
     await this.updateLastAiResponseService.execute(sessionId, aiResponse);
 
-    if (parsedData?.sendWelcomeEmail) {
+    if (parsedData?.sendWelcomeEmail || true) {
       await this.emailService.send({
         to: updatedWorker.email,
         subject: 'Cadastro Completo',

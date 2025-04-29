@@ -20,12 +20,6 @@ export class ProcessMessageDataService {
     // Usar o agentId passado como parâmetro
     const typedAgentId = agentId as keyof typeof agents;
 
-    // Garantir que a mensagem seja incluída nas variáveis do prompt
-    const allPromptVariables = {
-      message,
-      ...promptVariables,
-    };
-
     // Chamar o serviço de geração de resposta com as variáveis do prompt
     const parserAiResponse = await this.generateAiResponseService.execute(
       message, // Passamos a mensagem original para compatibilidade
@@ -34,7 +28,7 @@ export class ProcessMessageDataService {
         agent_id: agentId,
       },
       typedAgentId,
-      allPromptVariables,
+      promptVariables,
     );
 
     const cleanedResponse = parserAiResponse

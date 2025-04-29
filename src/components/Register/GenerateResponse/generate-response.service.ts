@@ -17,8 +17,7 @@ export class GenerateResponseService {
       worker,
       isNewUser,
       processedImage,
-      invalidFields,
-      isConfirmation,
+      parsedData,
     } = generateResponseDto;
 
     // Criar o objeto de contexto de registro
@@ -28,9 +27,7 @@ export class GenerateResponseService {
       is_new_user: isNewUser,
       user_data: worker,
       processed_image: processedImage,
-      invalid_fields: invalidFields,
-      fields_to_update: worker?.fieldsToUpdate || [],
-      is_confirmation: isConfirmation || false,
+      parsed_data: parsedData,
     };
 
     // Passar o objeto de contexto como uma única variável
