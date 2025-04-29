@@ -130,16 +130,19 @@ export class WhatsappMessageService {
 
     await this.updateLastAiResponseService.execute(sessionId, aiResponse);
 
-    if (parsedData?.sendWelcomeEmail || true) {
+    // Verifica se temos um e-mail válido e se deve enviar o e-mail
+    if (parsedData?.sendWelcomeEmail) {
       await this.emailService.send({
         to: updatedWorker.email,
         subject: 'Cadastro Completo',
         templateId: config.finishSignUpTemplateId,
       });
+    }
 
-      // Se o cadastro foi concluído, publicar mensagem para validação de documentos
+    // Se o cadastro foi concluído, publicar mensagem para validação de documentos
+    if (updatedWorker._id) {
       await this.handleRegisterCompletionService.execute({
-        workerId: updatedWorker._id?.toString(),
+        workerId: updatedWorker._id.toString(),
         signupStage: updatedWorker.signupStage,
       });
     }
