@@ -137,10 +137,7 @@ export class WhatsappMessageService {
         subject: 'Cadastro Completo',
         templateId: config.finishSignUpTemplateId,
       });
-    }
 
-    // Se o cadastro foi concluído, publicar mensagem para validação de documentos
-    if (updatedWorker._id) {
       await this.handleRegisterCompletionService.execute({
         workerId: updatedWorker._id.toString(),
         signupStage: updatedWorker.signupStage,
