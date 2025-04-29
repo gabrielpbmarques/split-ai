@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { CreateHistoryService } from './create-history.service';
+import { CreateHistoryService } from 'src/components/Langchain/CreateHistory/create-history.service';
 
 @Module({
   providers: [CreateHistoryService],

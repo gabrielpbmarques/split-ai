@@ -1,12 +1,12 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { EachMessagePayload } from 'kafkajs';
 import { kafkaTopics } from 'src/config/kafka.config';
-import { DocumentValidationMessage } from './document-validation.dto';
+import { DocumentValidationMessage } from 'src/components/Document/DocumentValidation/document-validation.dto';
 import {
   IKafkaService,
   KAFKA_SERVICE,
 } from 'src/infrastructure/providers/kafka.provider';
-import { ExtractOcrTextService } from '../ExtractOcrText/extract-ocr-text.service';
+import { ExtractOcrTextService } from 'src/components/Document/ExtractOcrText/extract-ocr-text.service';
 import { getUrlBuffer } from 'src/utils/getUrlBuffer';
 
 @Injectable()

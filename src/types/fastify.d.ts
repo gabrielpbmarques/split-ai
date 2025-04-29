@@ -1,5 +1,5 @@
 import { FastifyRequest } from 'fastify';
-import { UserType } from '../models/user.model';
+import { UserType } from 'src/models/User.model';
 
 declare module 'fastify' {
   interface FastifyRequest {

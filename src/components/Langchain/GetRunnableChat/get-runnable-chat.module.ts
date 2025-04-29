@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { GetRunnableChatService } from './get-runnable-chat.service';
-import { CreateHistoryModule } from '../CreateHistory/create-history.module';
+import { GetRunnableChatService } from 'src/components/Langchain/GetRunnableChat/get-runnable-chat.service';
+import { CreateHistoryModule } from 'src/components/Langchain/CreateHistory/create-history.module';
 
 @Module({
   imports: [CreateHistoryModule],

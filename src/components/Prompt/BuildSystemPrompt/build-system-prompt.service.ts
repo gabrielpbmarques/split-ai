@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { NormalizePromptInstructionsService } from '../NormalizePromptInstructions/normalize-prompt-instructions.service';
+import { NormalizePromptInstructionsService } from 'src/components/Prompt/NormalizePromptInstructions/normalize-prompt-instructions.service';
 import { AIInstructions } from 'src/types/AIInstructions';
 import { AISourceType } from 'src/types/AISourceType';
 import { CustomDocument } from 'src/types/CustomDocument';

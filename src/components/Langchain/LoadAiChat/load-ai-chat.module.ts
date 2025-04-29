@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { LoadAiChatService } from './load-ai-chat.service';
+import { LoadAiChatService } from 'src/components/Langchain/LoadAiChat/load-ai-chat.service';
+import { ExecuteSimilaritySearchModule } from 'src/components/Langchain/ExecuteSimilaritySearch/execute-similarity-search.module';
+import { GetRunnableChatModule } from 'src/components/Langchain/GetRunnableChat/get-runnable-chat.module';
+import { LoadVectorStoreModule } from 'src/components/Langchain/LoadVectorStore/load-vector-store.module';
 import { FillPromptModule } from 'src/components/Prompt/FillPrompt/fill-prompt.module';
-import { ExecuteSimilaritySearchModule } from '../ExecuteSimilaritySearch/execute-similarity-search.module';
-import { GetRunnableChatModule } from '../GetRunnableChat/get-runnable-chat.module';
-import { LoadVectorStoreModule } from '../LoadVectorStore/load-vector-store.module';
 
 @Module({
   imports: [

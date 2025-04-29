@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { VerifyExistingUserService } from './verify-existing-user.service';
+import { VerifyExistingUserService } from 'src/components/UserManagement/VerifyExistingUser/verify-existing-user.service';
 import { WorkerRepository } from 'src/repositories/Worker.repository';
 
 describe('VerifyExistingUserService', () => {

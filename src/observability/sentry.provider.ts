@@ -1,5 +1,5 @@
 import * as Sentry from '@sentry/node';
-import { config } from '../config';
+import { config } from 'src/config';
 
 export function initSentryIo(): typeof Sentry {
   Sentry.init({

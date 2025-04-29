@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { CepLookupModule } from './CepLookup/cep-lookup.module';
+import { CepLookupModule } from 'src/components/LocationServices/CepLookup/cep-lookup.module';
 
 @Module({
   imports: [CepLookupModule],

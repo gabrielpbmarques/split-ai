@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { LoadVectorStoreService } from './load-vector-store.service';
+import { LoadVectorStoreService } from 'src/components/Langchain/LoadVectorStore/load-vector-store.service';
 import { InfrastructureModule } from 'src/infrastructure/infrastructure.module';
 
 @Module({

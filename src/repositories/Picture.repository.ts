@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Picture, PictureDocument } from 'src/models/Picture.model';
-import { removeMongooseFields } from '../utils/mongoose.utils';
+import { removeMongooseFields } from 'src/utils/mongoose.utils';
 
 @Injectable()
 export class PictureRepository {

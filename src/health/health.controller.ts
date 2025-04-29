@@ -1,5 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
-import { Public } from '../auth/auth.guard';
+import { Public } from 'src/auth/auth.guard';
 
 @Controller('health')
 export class HealthController {

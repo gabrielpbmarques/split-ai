@@ -3,7 +3,7 @@ import { kafkaTopics } from 'src/config/kafka.config';
 import {
   DocumentValidationMessage,
   HandleRegisterCompletionDto,
-} from './handle-register-completion.dto';
+} from 'src/components/Register/HandleRegisterCompletion/handle-register-completion.dto';
 import { WorkerRepository } from 'src/repositories/Worker.repository';
 import { PictureRepository } from 'src/repositories/Picture.repository';
 import { UserRepository } from 'src/repositories/User.repository';

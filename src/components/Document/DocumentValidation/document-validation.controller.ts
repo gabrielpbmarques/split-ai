@@ -1,6 +1,6 @@
 import { Controller, Post, Body } from '@nestjs/common';
-import { DocumentValidationService } from './document-validation.service';
-import { DocumentValidationMessage } from './document-validation.dto';
+import { DocumentValidationService } from 'src/components/Document/DocumentValidation/document-validation.service';
+import { DocumentValidationMessage } from 'src/components/Document/DocumentValidation/document-validation.dto';
 
 @Controller('document')
 export class DocumentValidationController {

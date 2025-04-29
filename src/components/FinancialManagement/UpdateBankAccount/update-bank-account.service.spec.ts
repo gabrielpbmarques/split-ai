@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UpdateBankAccountService } from './update-bank-account.service';
+import { UpdateBankAccountService } from 'src/components/FinancialManagement/UpdateBankAccount/update-bank-account.service';
 import { BankAccountRepository } from 'src/repositories/BankAccount.repository';
 import { WorkerRepository } from 'src/repositories/Worker.repository';
 

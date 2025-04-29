@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NormalizePromptInstructionsService } from './normalize-prompt-instructions.service';
+import { NormalizePromptInstructionsService } from 'src/components/Prompt/NormalizePromptInstructions/normalize-prompt-instructions.service';
 
 describe('NormalizePromptInstructionsService', () => {
   let service: NormalizePromptInstructionsService;

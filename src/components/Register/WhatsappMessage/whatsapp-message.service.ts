@@ -1,14 +1,14 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { WhatsappMessageDto } from './whatsapp-message.dto';
+import { WhatsappMessageDto } from 'src/components/Register/WhatsappMessage/whatsapp-message.dto';
 // Imports dos componentes migrados
-import { FindOrCreateSessionService } from '../../SessionManagement/FindOrCreateSession/find-or-create-session.service';
-import { ProcessMessageDataService } from '../../MessageProcessing/ProcessMessageData/process-message-data.service';
-import { UpdateWorkerService } from '../UpdateWorker/update-worker.service';
-import { GenerateResponseService } from '../GenerateResponse/generate-response.service';
-import { UpdateLastAiResponseService } from '../../SessionManagement/UpdateLastAiResponse/update-last-ai-response.service';
-import { ProcessImageMessageService } from '../../MediaProcessing/ProcessImageMessage/process-image-message.service';
-import { UpdateDocumentService } from '../../MediaProcessing/UpdateDocument/update-document.service';
-import { HandleRegisterCompletionService } from '../HandleRegisterCompletion/handle-register-completion.service';
+import { FindOrCreateSessionService } from 'src/components/SessionManagement/FindOrCreateSession/find-or-create-session.service';
+import { ProcessMessageDataService } from 'src/components/MessageProcessing/ProcessMessageData/process-message-data.service';
+import { UpdateWorkerService } from 'src/components/Register/UpdateWorker/update-worker.service';
+import { GenerateResponseService } from 'src/components/Register/GenerateResponse/generate-response.service';
+import { UpdateLastAiResponseService } from 'src/components/SessionManagement/UpdateLastAiResponse/update-last-ai-response.service';
+import { ProcessImageMessageService } from 'src/components/MediaProcessing/ProcessImageMessage/process-image-message.service';
+import { UpdateDocumentService } from 'src/components/MediaProcessing/UpdateDocument/update-document.service';
+import { HandleRegisterCompletionService } from 'src/components/Register/HandleRegisterCompletion/handle-register-completion.service';
 import { Worker } from 'src/models/Worker.model';
 import { EmailService } from 'src/components/Email/email.service';
 import { config } from 'src/config';

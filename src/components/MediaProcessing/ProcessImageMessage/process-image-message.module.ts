@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ProcessImageMessageService } from './process-image-message.service';
+import { ProcessImageMessageService } from 'src/components/MediaProcessing/ProcessImageMessage/process-image-message.service';
 import { InfrastructureModule } from 'src/infrastructure/infrastructure.module';
 import { RepositoriesModule } from 'src/repositories/repositories.module';
 

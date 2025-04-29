@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UpdateLastAiResponseService } from './update-last-ai-response.service';
+import { UpdateLastAiResponseService } from 'src/components/SessionManagement/UpdateLastAiResponse/update-last-ai-response.service';
 import { SessionRepository } from 'src/repositories/Session.repository';
 
 describe('UpdateLastAiResponseService', () => {

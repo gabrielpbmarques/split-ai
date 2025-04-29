@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { UpdateAddressModule } from './UpdateAddress/update-address.module';
-import { UpdatePhoneNumberModule } from './UpdatePhoneNumber/update-phone-number.module';
+import { UpdateAddressModule } from 'src/components/ContactManagement/UpdateAddress/update-address.module';
+import { UpdatePhoneNumberModule } from 'src/components/ContactManagement/UpdatePhoneNumber/update-phone-number.module';
 
 @Module({
   imports: [UpdateAddressModule, UpdatePhoneNumberModule],

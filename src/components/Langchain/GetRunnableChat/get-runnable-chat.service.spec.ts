@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { GetRunnableChatService } from './get-runnable-chat.service';
-import { CreateHistoryService } from '../CreateHistory/create-history.service';
+import { GetRunnableChatService } from 'src/components/Langchain/GetRunnableChat/get-runnable-chat.service';
+import { CreateHistoryService } from 'src/components/Langchain/CreateHistory/create-history.service';
 
 describe('GetRunnableChatService', () => {
   let service: GetRunnableChatService;

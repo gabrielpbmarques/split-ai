@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { FindOrCreateSessionModule } from './FindOrCreateSession/find-or-create-session.module';
-import { UpdateLastAiResponseModule } from './UpdateLastAiResponse/update-last-ai-response.module';
+import { FindOrCreateSessionModule } from 'src/components/SessionManagement/FindOrCreateSession/find-or-create-session.module';
+import { UpdateLastAiResponseModule } from 'src/components/SessionManagement/UpdateLastAiResponse/update-last-ai-response.module';
 
 @Module({
   imports: [FindOrCreateSessionModule, UpdateLastAiResponseModule],

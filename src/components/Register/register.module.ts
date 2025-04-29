@@ -1,20 +1,20 @@
 import { Module } from '@nestjs/common';
-import { WhatsappMessageModule } from './WhatsappMessage/whatsapp-message.module';
-import { GenerateResponseModule } from './GenerateResponse/generate-response.module';
-import { UpdateWorkerModule } from './UpdateWorker/update-worker.module';
-import { SaveSessionModule } from './SaveSession/save-session.module';
-import { SaveWorkerModule } from './SaveWorker/save-worker.module';
-import { HandleRegisterCompletionModule } from './HandleRegisterCompletion/handle-register-completion.module';
+import { WhatsappMessageModule } from 'src/components/Register/WhatsappMessage/whatsapp-message.module';
+import { GenerateResponseModule } from 'src/components/Register/GenerateResponse/generate-response.module';
+import { UpdateWorkerModule } from 'src/components/Register/UpdateWorker/update-worker.module';
+import { SaveSessionModule } from 'src/components/Register/SaveSession/save-session.module';
+import { SaveWorkerModule } from 'src/components/Register/SaveWorker/save-worker.module';
+import { HandleRegisterCompletionModule } from 'src/components/Register/HandleRegisterCompletion/handle-register-completion.module';
 
 // Importando módulos dos novos componentes
-import { MessageProcessingModule } from '../MessageProcessing/message-processing.module';
-import { SessionManagementModule } from '../SessionManagement/session-management.module';
-import { MediaProcessingModule } from '../MediaProcessing/media-processing.module';
-import { LocationServicesModule } from '../LocationServices/location-services.module';
-import { UserManagementModule } from '../UserManagement/user-management.module';
-import { ContactManagementModule } from '../ContactManagement/contact-management.module';
-import { FinancialManagementModule } from '../FinancialManagement/financial-management.module';
-import { AIIntegrationModule } from '../AIIntegration/ai-integration.module';
+import { MessageProcessingModule } from 'src/components/MessageProcessing/message-processing.module';
+import { SessionManagementModule } from 'src/components/SessionManagement/session-management.module';
+import { MediaProcessingModule } from 'src/components/MediaProcessing/media-processing.module';
+import { LocationServicesModule } from 'src/components/LocationServices/location-services.module';
+import { UserManagementModule } from 'src/components/UserManagement/user-management.module';
+import { ContactManagementModule } from 'src/components/ContactManagement/contact-management.module';
+import { FinancialManagementModule } from 'src/components/FinancialManagement/financial-management.module';
+import { AIIntegrationModule } from 'src/components/AIIntegration/ai-integration.module';
 
 @Module({
   imports: [

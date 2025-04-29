@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UpdatePhoneNumberService } from './update-phone-number.service';
+import { UpdatePhoneNumberService } from 'src/components/ContactManagement/UpdatePhoneNumber/update-phone-number.service';
 import { PhoneRepository } from 'src/repositories/Phone.repository';
 import { WorkerRepository } from 'src/repositories/Worker.repository';
 

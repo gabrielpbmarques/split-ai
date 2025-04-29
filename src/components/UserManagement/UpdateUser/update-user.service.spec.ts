@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UpdateUserService } from './update-user.service';
+import { UpdateUserService } from 'src/components/UserManagement/UpdateUser/update-user.service';
 import { UserRepository } from 'src/repositories/User.repository';
 
 describe('UpdateUserService', () => {

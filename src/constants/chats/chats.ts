@@ -4,8 +4,8 @@ import { AIInstructions } from 'src/types/AIInstructions';
 import { RunnableChatOpts } from 'src/types/RunnableChatOpts';
 import { DynamicStructuredTool } from 'langchain/dist/tools';
 import { z } from 'zod';
-import { messageDataParserFormatter } from '../parsers/messageDataParser';
-import { extractDocumentDataParserFormatter } from '../parsers/extractDocumentDataParser';
+import { messageDataParserFormatter } from 'src/constants/parsers/messageDataParser';
+import { extractDocumentDataParserFormatter } from 'src/constants/parsers/extractDocumentDataParser';
 
 interface Agent {
   instructions: AIInstructions;

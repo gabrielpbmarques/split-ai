@@ -5,7 +5,7 @@ import {
   RunnableConfig,
   RunnableWithMessageHistory,
 } from '@langchain/core/runnables';
-import { CreateHistoryService } from '../CreateHistory/create-history.service';
+import { CreateHistoryService } from 'src/components/Langchain/CreateHistory/create-history.service';
 import { RunnableChatOpts } from 'src/types/RunnableChatOpts';
 import { RunnableChat } from 'src/types/RunnableChat';
 import { CustomRunnable } from 'src/types/CustomRunnable';

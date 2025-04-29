@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { UpdatePixService } from './update-pix.service';
+import { UpdatePixService } from 'src/components/FinancialManagement/UpdatePix/update-pix.service';
 import { RepositoriesModule } from 'src/repositories/repositories.module';
 
 @Module({

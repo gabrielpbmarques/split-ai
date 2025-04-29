@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UpdateAddressService } from './update-address.service';
+import { UpdateAddressService } from 'src/components/ContactManagement/UpdateAddress/update-address.service';
 import { AddressRepository } from 'src/repositories/Address.repository';
 import { WorkerRepository } from 'src/repositories/Worker.repository';
 

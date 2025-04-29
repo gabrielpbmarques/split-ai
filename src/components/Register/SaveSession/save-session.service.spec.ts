@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { SaveSessionService } from './save-session.service';
+import { SaveSessionService } from 'src/components/Register/SaveSession/save-session.service';
 import { SessionRepository } from 'src/repositories/Session.repository';
 
 describe('SaveSessionService', () => {

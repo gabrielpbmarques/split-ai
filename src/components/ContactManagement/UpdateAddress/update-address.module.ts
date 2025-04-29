@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { UpdateAddressService } from './update-address.service';
+import { UpdateAddressService } from 'src/components/ContactManagement/UpdateAddress/update-address.service';
 import { RepositoriesModule } from 'src/repositories/repositories.module';
 
 @Module({

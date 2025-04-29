@@ -2,9 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { FillPromptService } from 'src/components/Prompt/FillPrompt/fill-prompt.service';
 import { RunnableChat } from 'src/types/RunnableChat';
 import { RunnableMessageHistory } from 'src/types/RunnableMessageHistory';
-import { GetRunnableChatService } from '../GetRunnableChat/get-runnable-chat.service';
-import { LoadVectorStoreService } from '../LoadVectorStore/load-vector-store.service';
-import { ExecuteSimilaritySearchService } from '../ExecuteSimilaritySearch/execute-similarity-search.service';
+import { GetRunnableChatService } from 'src/components/Langchain/GetRunnableChat/get-runnable-chat.service';
+import { LoadVectorStoreService } from 'src/components/Langchain/LoadVectorStore/load-vector-store.service';
+import { ExecuteSimilaritySearchService } from 'src/components/Langchain/ExecuteSimilaritySearch/execute-similarity-search.service';
 import { Agent } from 'src/constants/chats/chats';
 import { CustomMetadata } from 'src/types/CustomMetadata';
 

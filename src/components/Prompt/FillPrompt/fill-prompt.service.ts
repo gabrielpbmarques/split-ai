@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { BuildSystemPromptService } from '../BuildSystemPrompt/build-system-prompt.service';
+import { BuildSystemPromptService } from 'src/components/Prompt/BuildSystemPrompt/build-system-prompt.service';
 import {
   ChatPromptTemplate,
   MessagesPlaceholder,

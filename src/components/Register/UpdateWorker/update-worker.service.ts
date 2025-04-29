@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { UpdateWorkerDto } from './update-worker.dto';
-import { SaveWorkerService } from '../SaveWorker/save-worker.service';
-import { SaveSessionService } from '../SaveSession/save-session.service';
-import { VerifyExistingUserService } from '../../UserManagement/VerifyExistingUser/verify-existing-user.service';
+import { UpdateWorkerDto } from 'src/components/Register/UpdateWorker/update-worker.dto';
+import { SaveWorkerService } from 'src/components/Register/SaveWorker/save-worker.service';
+import { SaveSessionService } from 'src/components/Register/SaveSession/save-session.service';
+import { VerifyExistingUserService } from 'src/components/UserManagement/VerifyExistingUser/verify-existing-user.service';
 
 @Injectable()
 export class UpdateWorkerService {

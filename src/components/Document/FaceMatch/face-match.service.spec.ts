@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { FaceMatchService } from './face-match.service';
+import { FaceMatchService } from 'src/components/Document/FaceMatch/face-match.service';
 
 describe('FaceMatchService', () => {
   let service: FaceMatchService;

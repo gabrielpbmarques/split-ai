@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { NormalizePromptInstructionsService } from './normalize-prompt-instructions.service';
+import { NormalizePromptInstructionsService } from 'src/components/Prompt/NormalizePromptInstructions/normalize-prompt-instructions.service';
 
 @Module({
   providers: [NormalizePromptInstructionsService],

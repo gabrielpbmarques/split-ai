@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ExtractOcrTextService } from './extract-ocr-text.service';
+import { ExtractOcrTextService } from 'src/components/Document/ExtractOcrText/extract-ocr-text.service';
 
 describe('ExtractOcrTextService', () => {
   let service: ExtractOcrTextService;

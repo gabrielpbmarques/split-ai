@@ -1,6 +1,6 @@
 import { Body, Controller, Post, Res } from '@nestjs/common';
-import { WhatsappMessageService } from './whatsapp-message.service';
-import { WhatsappMessageDto } from './whatsapp-message.dto';
+import { WhatsappMessageService } from 'src/components/Register/WhatsappMessage/whatsapp-message.service';
+import { WhatsappMessageDto } from 'src/components/Register/WhatsappMessage/whatsapp-message.dto';
 import { FastifyReply } from 'fastify';
 
 @Controller('whatsapp')

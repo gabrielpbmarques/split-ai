@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ExecuteSimilaritySearchService } from './execute-similarity-search.service';
+import { ExecuteSimilaritySearchService } from 'src/components/Langchain/ExecuteSimilaritySearch/execute-similarity-search.service';
 
 describe('ExecuteSimilaritySearchService', () => {
   let service: ExecuteSimilaritySearchService;

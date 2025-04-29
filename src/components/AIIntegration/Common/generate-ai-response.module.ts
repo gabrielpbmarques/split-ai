@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { GenerateAiResponseService } from './generate-ai-response.service';
-import { LoadAiChatModule } from '../../Langchain/LoadAiChat/load-ai-chat.module';
+import { LoadAiChatModule } from 'src/components/Langchain/LoadAiChat/load-ai-chat.module';
+import { GenerateAiResponseService } from 'src/components/AIIntegration/Common/generate-ai-response.service';
 
 @Module({
   imports: [LoadAiChatModule],

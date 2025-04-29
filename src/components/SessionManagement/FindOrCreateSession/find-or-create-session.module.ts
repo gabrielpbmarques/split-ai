@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
-import { FindOrCreateSessionService } from './find-or-create-session.service';
+import { FindOrCreateSessionService } from 'src/components/SessionManagement/FindOrCreateSession/find-or-create-session.service';
 import { RepositoriesModule } from 'src/repositories/repositories.module';
-import { SaveSessionService } from '../../Register/SaveSession/save-session.service';
+import { SaveSessionService } from 'src/components/Register/SaveSession/save-session.service';
 
 @Module({
   imports: [RepositoriesModule],

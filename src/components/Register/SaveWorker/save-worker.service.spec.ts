@@ -1,11 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { SaveWorkerService } from './save-worker.service';
+import { SaveWorkerService } from 'src/components/Register/SaveWorker/save-worker.service';
 import { WorkerRepository } from 'src/repositories/Worker.repository';
-import { UpdatePhoneNumberService } from '../UpdatePhoneNumber/update-phone-number.service';
-import { UpdatePixService } from '../UpdatePix/update-pix.service';
-import { UpdateBankAccountService } from '../UpdateBankAccount/update-bank-account.service';
-import { UpdateAddressService } from '../UpdateAddress/update-address.service';
-import { UpdateUserService } from '../UpdateUser/update-user.service';
+import { UpdatePhoneNumberService } from 'src/components/ContactManagement/UpdatePhoneNumber/update-phone-number.service';
+import { UpdatePixService } from 'src/components/FinancialManagement/UpdatePix/update-pix.service';
+import { UpdateBankAccountService } from 'src/components/FinancialManagement/UpdateBankAccount/update-bank-account.service';
+import { UpdateAddressService } from 'src/components/ContactManagement/UpdateAddress/update-address.service';
+import { UpdateUserService } from 'src/components/UserManagement/UpdateUser/update-user.service';
 
 describe('SaveWorkerService', () => {
   let service: SaveWorkerService;

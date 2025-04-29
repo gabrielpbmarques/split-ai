@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { ProcessImageMessageModule } from './ProcessImageMessage/process-image-message.module';
-import { UpdateDocumentModule } from './UpdateDocument/update-document.module';
+import { ProcessImageMessageModule } from 'src/components/MediaProcessing/ProcessImageMessage/process-image-message.module';
+import { UpdateDocumentModule } from 'src/components/MediaProcessing/UpdateDocument/update-document.module';
 
 @Module({
   imports: [ProcessImageMessageModule, UpdateDocumentModule],

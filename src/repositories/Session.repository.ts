@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Session } from '../models/Session.model';
 import {
+  Session,
   Session as SessionSchema,
   SessionDocument,
-} from '../schemas/Session.schema';
-import { removeMongooseFields } from '../utils/mongoose.utils';
+} from 'src/schemas/Session.schema';
+import { removeMongooseFields } from 'src/utils/mongoose.utils';
 
 export interface ISessionRepository {
   findBySessionId(sessionId: string): Promise<Session | null>;

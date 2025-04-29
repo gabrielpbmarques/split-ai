@@ -1,5 +1,5 @@
 import { Controller, Get, Param } from '@nestjs/common';
-import { CepLookupService } from './cep-lookup.service';
+import { CepLookupService } from 'src/components/LocationServices/CepLookup/cep-lookup.service';
 import { NormalizedAddressData } from 'src/services/cep.service';
 
 @Controller('cep')

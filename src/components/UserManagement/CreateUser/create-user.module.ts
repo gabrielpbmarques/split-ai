@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { CreateUserService } from './create-user.service';
+import { CreateUserService } from 'src/components/UserManagement/CreateUser/create-user.service';
 import { RepositoriesModule } from 'src/repositories/repositories.module';
 
 @Module({

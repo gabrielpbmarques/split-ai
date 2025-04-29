@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { UpdateDocumentService } from './update-document.service';
+import { UpdateDocumentService } from 'src/components/MediaProcessing/UpdateDocument/update-document.service';
 import { RepositoriesModule } from 'src/repositories/repositories.module';
 
 @Module({

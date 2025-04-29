@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { config } from 'src/config';
-import * as AWS from 'aws-sdk';
+import AWS = require('aws-sdk');
 
 /**
  * Interface para resultado de comparação facial
@@ -32,7 +32,7 @@ export interface FaceMatchOptions {
 @Injectable()
 export class FaceMatchService {
   // Cliente Rekognition da AWS
-  private rekognition: AWS.Rekognition;
+  private rekognition: any;
 
   // Limite padrão de similaridade
   private readonly DEFAULT_SIMILARITY_THRESHOLD = 80;

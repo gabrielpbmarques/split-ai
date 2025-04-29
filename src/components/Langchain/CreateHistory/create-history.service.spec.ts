@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CreateHistoryService } from './create-history.service';
+import { CreateHistoryService } from 'src/components/Langchain/CreateHistory/create-history.service';
 
 describe('CreateHistoryService', () => {
   let service: CreateHistoryService;

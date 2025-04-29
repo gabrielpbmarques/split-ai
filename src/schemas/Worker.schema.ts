@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, ObjectId, Schema as MongooseSchema } from 'mongoose';
-import { DocumentValidation } from './DocumentValidation.schema';
+import { DocumentValidation } from 'src/schemas/DocumentValidation.schema';
 
 export type WorkerDocument = HydratedDocument<Worker>;
 

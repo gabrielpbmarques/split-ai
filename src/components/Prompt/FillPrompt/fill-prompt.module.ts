@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { FillPromptService } from './fill-prompt.service';
-import { BuildSystemPromptModule } from '../BuildSystemPrompt/build-system-prompt.module';
+import { FillPromptService } from 'src/components/Prompt/FillPrompt/fill-prompt.service';
+import { BuildSystemPromptModule } from 'src/components/Prompt/BuildSystemPrompt/build-system-prompt.module';
 
 @Module({
   imports: [BuildSystemPromptModule],

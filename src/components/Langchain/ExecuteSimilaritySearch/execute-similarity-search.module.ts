@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { ExecuteSimilaritySearchService } from './execute-similarity-search.service';
 import { InfrastructureModule } from 'src/infrastructure/infrastructure.module';
+import { ExecuteSimilaritySearchService } from 'src/components/Langchain/ExecuteSimilaritySearch/execute-similarity-search.service';
 
 @Module({
   imports: [InfrastructureModule],

@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { WorkerRepository } from 'src/repositories/Worker.repository';
 import { Worker, PixObject } from 'src/models/Worker.model';
-import { UpdatePhoneNumberService } from '../../ContactManagement/UpdatePhoneNumber/update-phone-number.service';
-import { UpdatePixService } from '../../FinancialManagement/UpdatePix/update-pix.service';
-import { UpdateAddressService } from '../../ContactManagement/UpdateAddress/update-address.service';
-import { UpdateUserService } from '../../UserManagement/UpdateUser/update-user.service';
+import { UpdatePhoneNumberService } from 'src/components/ContactManagement/UpdatePhoneNumber/update-phone-number.service';
+import { UpdatePixService } from 'src/components/FinancialManagement/UpdatePix/update-pix.service';
+import { UpdateAddressService } from 'src/components/ContactManagement/UpdateAddress/update-address.service';
+import { UpdateUserService } from 'src/components/UserManagement/UpdateUser/update-user.service';
 import { Address } from 'src/models/Address.model';
 
 interface WorkerExtras {
