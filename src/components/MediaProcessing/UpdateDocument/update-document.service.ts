@@ -35,27 +35,12 @@ export class UpdateDocumentService {
 
       let updateData: any = {};
 
-      if (!worker.documents) {
-        updateData.documents = {
-          isRemoved: false,
-          removedAt: null,
-          status: 'pending',
-          observations: [],
-          dateValidated: null,
-          validator: null,
-        };
-      }
-
-      const workerDocuments = worker.documents
-        ? JSON.parse(JSON.stringify(worker.documents))
-        : {};
-
       switch (dto.documentType) {
         case 'document_front':
           if (dto.pictureId) {
             updateData = {
               documents: {
-                ...workerDocuments, // Preserva os dados existentes
+                ...(worker.documents || {}),
                 rgFrontId: dto.pictureId,
               },
             };
@@ -65,7 +50,7 @@ export class UpdateDocumentService {
           if (dto.pictureId) {
             updateData = {
               documents: {
-                ...workerDocuments, // Preserva os dados existentes
+                ...(worker.documents || {}),
                 rgBackId: dto.pictureId,
               },
             };
@@ -75,7 +60,7 @@ export class UpdateDocumentService {
           if (dto.pictureId) {
             updateData = {
               documents: {
-                ...workerDocuments, // Preserva os dados existentes
+                ...(worker.documents || {}),
                 tShirtSelfieId: dto.pictureId,
               },
             };

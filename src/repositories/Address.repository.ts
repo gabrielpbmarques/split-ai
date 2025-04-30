@@ -3,12 +3,12 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Address as AddressSchema } from 'src/schemas/Address.schema';
 import { Address } from 'src/models/Address.model';
-import { removeMongooseFields } from 'src/utils/mongoose.utils';
+import { flatten } from 'src/utils/mongoose.utils';
 
 export interface IAddressRepository {
-  create(address: Partial<Address>): Promise<Address>;
-  findOne(query: Partial<Address>): Promise<Address>;
-  update(id: string, payload: Partial<Address>): Promise<Address>;
+  create(address: Partial<Address>): Promise<Address | null>;
+  findOne(query: Partial<Address>): Promise<Address | null>;
+  update(id: string, payload: Partial<Address>): Promise<Address | null>;
 }
 
 @Injectable()
@@ -18,21 +18,29 @@ export class AddressRepository implements IAddressRepository {
     private readonly addressModel: Model<Address>,
   ) {}
 
-  async create(address: Partial<Address>): Promise<Address> {
+  async create(address: Partial<Address>): Promise<Address | null> {
     const newAddress = new this.addressModel(address);
-    return newAddress.save();
+    const createdAddress = await newAddress.save();
+    return createdAddress
+      ? (createdAddress.toObject() as unknown as Address)
+      : null;
   }
 
-  async findOne(query: Partial<Address>): Promise<Address> {
-    return this.addressModel.findOne(query).exec();
+  async findOne(query: Partial<Address>): Promise<Address | null> {
+    const address = await this.addressModel.findOne(query).exec();
+    return address ? (address.toObject() as unknown as Address) : null;
   }
 
-  async update(id: string, payload: Partial<Address>): Promise<Address> {
-    // Remove campos imutáveis do MongoDB
-    const safePayload = removeMongooseFields(payload);
+  async update(id: string, payload: Partial<Address>): Promise<Address | null> {
+    // Remove campos imutáveis do MongoDB no nível raiz apenas
+    const { _id, __v, createdAt, updatedAt, ...safePayload } = payload as any;
 
-    return this.addressModel
-      .findByIdAndUpdate(id, safePayload, { new: true })
+    const updatedAddress = await this.addressModel
+      .findByIdAndUpdate(id, { $set: flatten(safePayload) }, { new: true })
       .exec();
+
+    return updatedAddress
+      ? (updatedAddress.toObject() as unknown as Address)
+      : null;
   }
 }

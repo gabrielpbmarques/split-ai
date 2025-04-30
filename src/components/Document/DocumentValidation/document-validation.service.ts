@@ -1,4 +1,4 @@
-import { Inject, Injectable, OnModuleInit, Logger } from '@nestjs/common';
+import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { EachMessagePayload } from 'kafkajs';
 import { kafkaTopics } from 'src/config/kafka.config';
 import {
@@ -18,11 +18,9 @@ import { FaceMatchService } from 'src/components/Document/FaceMatch/face-match.s
 import { WorkerRepository } from 'src/repositories/Worker.repository';
 import { UserRepository } from 'src/repositories/User.repository';
 import { PictureRepository } from 'src/repositories/Picture.repository';
-import { DocumentData } from 'src/models/Worker.model';
 
 @Injectable()
 export class DocumentValidationService implements OnModuleInit {
-  private readonly logger = new Logger(DocumentValidationService.name);
   constructor(
     @Inject(KAFKA_SERVICE) private readonly kafkaService: IKafkaService,
     private readonly extractOcrTextService: ExtractOcrTextService,
@@ -99,8 +97,6 @@ export class DocumentValidationService implements OnModuleInit {
       ],
     };
 
-    this.logger.debug(validationResult);
-
     await this.validateWorkerDocuments(workerId, validationResult);
 
     return validationResult;
@@ -168,7 +164,7 @@ export class DocumentValidationService implements OnModuleInit {
       cpf: workerCpf,
     } = worker;
 
-    if (name !== workerName) {
+    if (name?.trim().toUpperCase() !== workerName?.trim().toUpperCase()) {
       errors.push('Names do not match');
     }
 
@@ -176,7 +172,7 @@ export class DocumentValidationService implements OnModuleInit {
       errors.push('Birth dates do not match');
     }
 
-    if (cpf !== workerCpf) {
+    if (cpf?.trim().toUpperCase() !== workerCpf?.trim().toUpperCase()) {
       errors.push('CPF numbers do not match');
     }
 
@@ -195,7 +191,6 @@ export class DocumentValidationService implements OnModuleInit {
 
     await this.workerRepository.update(workerId, {
       documents: {
-        ...worker.documents,
         status: validationResult.errors.length ? 'pending' : 'approved',
         documentValidationResult: validationResult,
       },

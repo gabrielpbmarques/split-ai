@@ -1,6 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, ObjectId, Schema as MongooseSchema } from 'mongoose';
-import { DocumentValidation } from 'src/schemas/DocumentValidation.schema';
 
 export type WorkerDocument = HydratedDocument<Worker>;
 
@@ -278,9 +277,6 @@ export class Worker {
 
   @Prop({ type: Date, default: null })
   trialEndDateTime: Date | null;
-
-  @Prop({ type: DocumentValidation })
-  documentValidation: DocumentValidation;
 }
 
 export const WorkerSchema = SchemaFactory.createForClass(Worker);

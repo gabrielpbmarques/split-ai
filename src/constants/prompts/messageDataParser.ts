@@ -135,8 +135,26 @@ const messageDataParser: AIInstructions = {
             - Se você receber: "eyJuYW1lIjoiSm9obiIsImFnZSI6MzB9"
             - Isso decodifica para: {"name":"John","age":30}
             
-            Se e somente se o atributo "isNewUser" for true e o signupStage for "end", o campo "sendWelcomeEmail" deve ser true.
-            Porém, como esse campo define o envio ou não do email de boas-vindas, ele deve ser verdadeiro uma única vez, no final do cadastro.
+            ##### FINALIZAÇÃO DO CADASTRO
+            Você DEVE ativar o campo "finalizeRegistration" (true) quando TODAS estas condições forem atendidas:
+            1. O signupStage atual é "end" (última etapa do fluxo)
+            2. O usuário confirma explicitamente que finalizou o cadastro ou que todos os dados estão corretos
+            3. Não há nenhum campo invalidFields no payload
+            
+            IMPORTANTE: O campo "finalizeRegistration" é crítico pois aciona:
+            - O envio do email de boas-vindas ao usuário
+            - O processamento dos documentos enviados
+            - A confirmação final do cadastro no sistema
+            
+            ##### REENVIO DE DOCUMENTOS
+            Seu papel é APENAS EXTRAIR se o usuário está enviando uma imagem de documento novamente. Você NUNCA deve decidir sozinho se isso constitui um reenvio oficial de documentos, pois essa é uma decisão de negócio que o backend faz com base em vários fatores.
+            
+            Só adicione a flag "documentResending": true quando TODAS estas condições forem verdadeiras:
+            1. O usuário está explicitamente reenviando uma imagem de documento (RG frente/verso ou selfie com camiseta)
+            2. O contexto do worker indica explicitamente que houve problema na validação dos documentos anteriores (documentValidationResult.errors existe e tem conteúdo)
+            3. O usuário menciona explicitamente que está reenviando documentos ou respondendo a uma solicitação para corrigir problemas em documentos anteriores
+            
+            IMPORTANTE: Se você não tiver certeza, NÃO incluir a flag. O backend tem lógica adicional para identificá-la quando necessário.
          `,
     },
   },

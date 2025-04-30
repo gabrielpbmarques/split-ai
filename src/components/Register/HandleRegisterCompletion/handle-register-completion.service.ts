@@ -27,32 +27,28 @@ export class HandleRegisterCompletionService {
     const { workerId } = dto;
 
     try {
-      // Buscar o trabalhador
       const worker = await this.workerRepository.findById(workerId);
       if (!worker) {
         throw new Error(`Worker with ID ${workerId} not found`);
       }
 
-      // Buscar o usuário associado ao trabalhador para obter a selfie
       const user = await this.userRepository.findByWorkerId(workerId);
       if (!user) {
         throw new Error(`User for worker ID ${workerId} not found`);
       }
 
-      // Preparar a mensagem para validação de documentos
       const message: DocumentValidationMessage = {
         workerId,
         timestamp: new Date(),
       };
 
-      // Obter URLs das imagens de documento
       if (worker.documents) {
         if (worker.documents.rgFrontId) {
           const frontDoc = await this.pictureRepository.findById(
             worker.documents.rgFrontId,
           );
           if (frontDoc) {
-            message.documentFrontUrl = frontDoc.image; // Usando o campo image que contém a URL
+            message.documentFrontUrl = frontDoc.image;
           }
         }
 
@@ -61,28 +57,24 @@ export class HandleRegisterCompletionService {
             worker.documents.rgBackId,
           );
           if (backDoc) {
-            message.documentBackUrl = backDoc.image; // Usando o campo image que contém a URL
+            message.documentBackUrl = backDoc.image;
           }
         }
       }
-
-      // Obter URL da selfie do usuário
       if (user.profilePictureId) {
         const profilePic = await this.pictureRepository.findById(
           user.profilePictureId,
         );
         if (profilePic) {
-          message.selfieUrl = profilePic.image; // Usando o campo image que contém a URL
+          message.selfieUrl = profilePic.image;
         }
       }
 
-      // Verificar se temos as imagens necessárias para validação
       if (!message.documentFrontUrl || !message.selfieUrl) {
         this.logger.warn(`Missing required images for worker: ${workerId}`);
         return;
       }
 
-      // Publicar mensagem no tópico Kafka para validação de documentos
       await this.kafkaService.publish(kafkaTopics.validateDocuments, message);
       this.logger.log(
         `Published document validation message for worker: ${workerId}`,

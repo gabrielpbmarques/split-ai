@@ -28,8 +28,6 @@ export class FillPromptService {
       sources,
     );
 
-    console.log('System Prompt:', systemPrompt);
-
     const chatMessages: ChatMessage[] = [
       { role: 'system', content: systemPrompt },
       ...(withHistory ? [new MessagesPlaceholder('history')] : []),

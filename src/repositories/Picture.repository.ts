@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Picture, PictureDocument } from 'src/models/Picture.model';
-import { removeMongooseFields } from 'src/utils/mongoose.utils';
+import { flatten } from 'src/utils/mongoose.utils';
 
 @Injectable()
 export class PictureRepository {
@@ -16,20 +16,30 @@ export class PictureRepository {
   }
 
   async findById(id: string): Promise<PictureDocument | null> {
-    return this.pictureModel.findById(id).exec();
+    const picture = await this.pictureModel.findById(id).exec();
+    return picture ? (picture.toObject() as unknown as PictureDocument) : null;
   }
 
   async findByWorkerId(workerId: string): Promise<PictureDocument[]> {
-    return this.pictureModel.find({ workerId }).exec();
+    const pictures = await this.pictureModel.find({ workerId }).exec();
+    return pictures.map(
+      (picture) => picture.toObject() as unknown as PictureDocument,
+    );
   }
 
   async update(
     id: string,
     picture: Partial<Picture>,
   ): Promise<PictureDocument | null> {
-    const sanitizedPicture = removeMongooseFields(picture);
-    return this.pictureModel
-      .findByIdAndUpdate(id, sanitizedPicture, { new: true })
+    // Remove campos imutáveis do MongoDB
+    const { _id, __v, createdAt, updatedAt, ...safePayload } = picture as any;
+
+    const updatedPicture = await this.pictureModel
+      .findByIdAndUpdate(id, { $set: flatten(safePayload) }, { new: true })
       .exec();
+
+    return updatedPicture
+      ? (updatedPicture.toObject() as unknown as PictureDocument)
+      : null;
   }
 }

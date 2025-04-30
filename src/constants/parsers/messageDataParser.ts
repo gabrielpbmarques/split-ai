@@ -46,6 +46,8 @@ const messageDataParserSchema = z.object({
     })
     .optional(),
   sendWelcomeEmail: z.boolean().optional(),
+  finalizeRegistration: z.boolean().optional(),
+  documentResending: z.boolean().optional(),
   isConfirmation: z.boolean().optional(),
   hasPassport: z.boolean().optional(),
   hasLegalAge: z.boolean().optional(),

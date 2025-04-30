@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from 'src/models/User.model';
 import { User as UserSchema, UserDocument } from 'src/schemas/User.schema';
-import { removeMongooseFields } from 'src/utils/mongoose.utils';
+import { flatten } from 'src/utils/mongoose.utils';
 
 export interface IUserRepository {
   findOne(query: Partial<User>): Promise<User | null>;
@@ -24,36 +24,37 @@ export class UserRepository implements IUserRepository {
 
   async findOne(query: Partial<User>): Promise<User | null> {
     const user = await this.userModel.findOne(query).exec();
-    return user as unknown as User | null;
+    return user ? (user.toObject() as unknown as User) : null;
   }
 
   async findById(id: string): Promise<User | null> {
     const user = await this.userModel.findById(id).exec();
-    return user as unknown as User | null;
+    return user ? (user.toObject() as unknown as User) : null;
   }
 
   async findByWorkerId(workerId: string): Promise<User | null> {
     const user = await this.userModel.findOne({ workerId }).exec();
-    return user as unknown as User | null;
+    return user ? (user.toObject() as unknown as User) : null;
   }
 
   async findByEmail(email: string): Promise<User | null> {
     const user = await this.userModel.findOne({ email }).exec();
-    return user as unknown as User | null;
+    return user ? (user.toObject() as unknown as User) : null;
   }
 
   async findByCPF(cpf: string): Promise<User | null> {
     const user = await this.userModel.findOne({ cpf }).exec();
-    return user as unknown as User | null;
+    return user ? (user.toObject() as unknown as User) : null;
   }
 
   async update(id: string, payload: Partial<User>): Promise<User | null> {
-    const safePayload = removeMongooseFields(payload);
+    // Remove campos imutáveis do MongoDB no nível raiz apenas
+    const { _id, __v, createdAt, updatedAt, ...safePayload } = payload as any;
 
     const updatedUser = await this.userModel
-      .findByIdAndUpdate(id, safePayload, { new: true })
+      .findByIdAndUpdate(id, { $set: flatten(safePayload) }, { new: true })
       .exec();
-    return updatedUser as unknown as User | null;
+    return updatedUser ? (updatedUser.toObject() as unknown as User) : null;
   }
 
   async updateByWorkerId(
@@ -66,22 +67,19 @@ export class UserRepository implements IUserRepository {
       return null;
     }
 
-    const safePayload = { ...payload };
-
-    if ('_id' in safePayload) {
-      delete safePayload['_id'];
-    }
+    // Remove campos imutáveis do MongoDB no nível raiz apenas
+    const { _id, __v, createdAt, updatedAt, ...safePayload } = payload as any;
 
     const updatedUser = await this.userModel
-      .findOneAndUpdate({ workerId }, safePayload, { new: true })
+      .findOneAndUpdate({ workerId }, { $set: safePayload }, { new: true })
       .exec();
 
-    return updatedUser as unknown as User | null;
+    return updatedUser ? (updatedUser.toObject() as unknown as User) : null;
   }
 
-  async create(user: Partial<User>): Promise<User> {
+  async create(user: Partial<User>): Promise<User | null> {
     const newUser = new this.userModel(user);
     const savedUser = await newUser.save();
-    return savedUser as unknown as User;
+    return savedUser ? (savedUser.toObject() as unknown as User) : null;
   }
 }

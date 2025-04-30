@@ -1,22 +1,25 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
-import { SaveSessionService } from 'src/components/Register/SaveSession/save-session.service';
+import { FindOrCreateSessionDto } from 'src/components/SessionManagement/FindOrCreateSession/find-or-create-session.dto';
 import { Session } from 'src/models/Session.model';
 import { SessionRepository } from 'src/repositories/Session.repository';
-import { FindOrCreateSessionDto } from 'src/components/SessionManagement/FindOrCreateSession/find-or-create-session.dto';
+import { WorkerRepository } from 'src/repositories/Worker.repository';
+import { filterSessionWorkerData } from 'src/models/SessionWorkerData.model';
 
 interface SessionResponse {
   sessionId: string;
-  worker: any;
+  worker: any; // Mantendo como any para compatibilidade com o código existente
   isNewUser: boolean;
   lastAiResponse?: string;
 }
 
 @Injectable()
 export class FindOrCreateSessionService {
+  private readonly logger = new Logger(FindOrCreateSessionService.name);
+
   constructor(
     private readonly sessionRepository: SessionRepository,
-    private readonly saveSessionService: SaveSessionService,
+    private readonly workerRepository: WorkerRepository,
   ) {}
 
   async execute(
@@ -41,12 +44,32 @@ export class FindOrCreateSessionService {
       }
     }
 
-    let lastAiResponse;
+    let lastAiResponse: string | undefined;
 
     if (session) {
       worker = session.workerData;
-      isNewUser = !worker.userId;
+      isNewUser = !worker._id;
       lastAiResponse = session.lastAiResponse;
+
+      console.log('worker', worker);
+
+      if (worker._id) {
+        try {
+          const dbWorker = await this.workerRepository.findById(worker._id);
+          if (dbWorker) {
+            if (dbWorker.documents?.documentValidationResult) {
+              worker.documents = worker.documents || {};
+              worker.documents.documentValidationResult =
+                dbWorker.documents.documentValidationResult;
+              this.logger.log(
+                `Dados de validação de documentos adicionados para worker: ${worker._id}`,
+              );
+            }
+          }
+        } catch (error) {
+          this.logger.error(`Erro ao buscar dados do worker: ${error.message}`);
+        }
+      }
     } else {
       sessionId = uuidv4();
       worker = {
@@ -54,14 +77,19 @@ export class FindOrCreateSessionService {
         createdAt: new Date(),
       };
 
-      await this.saveSessionService.execute(
+      await this.sessionRepository.create({
         sessionId,
         phoneNumber,
-        worker,
-        lastAiResponse,
-      );
+        workerData: filterSessionWorkerData(worker),
+        lastInteraction: new Date(),
+      });
     }
 
-    return { sessionId, worker, isNewUser, lastAiResponse };
+    return {
+      sessionId,
+      worker,
+      isNewUser,
+      lastAiResponse,
+    };
   }
 }

@@ -6,7 +6,7 @@ import {
   Worker as WorkerSchema,
   WorkerDocument,
 } from 'src/schemas/Worker.schema';
-import { removeMongooseFields } from 'src/utils/mongoose.utils';
+import { flatten } from 'src/utils/mongoose.utils';
 
 export interface IWorkerRepository {
   findOne(query: Partial<Worker>): Promise<Worker>;
@@ -27,43 +27,58 @@ export class WorkerRepository implements IWorkerRepository {
 
   async findOne(query: Partial<Worker>): Promise<Worker> {
     const worker = await this.workerModel.findOne(query).exec();
-    return worker as unknown as Worker;
+    return worker ? (worker.toObject() as unknown as Worker) : null;
   }
 
   async findById(id: string): Promise<Worker | null> {
+    console.log('id', id);
     const worker = await this.workerModel.findById(id).exec();
-    return worker as unknown as Worker | null;
+    return worker ? (worker.toObject() as unknown as Worker) : null;
   }
 
   async findByUserId(userId: string): Promise<Worker | null> {
     const worker = await this.workerModel.findOne({ userId }).exec();
-    return worker as unknown as Worker | null;
+    return worker ? (worker.toObject() as unknown as Worker) : null;
   }
 
   async findByCPF(cpf: string): Promise<Worker | null> {
     const worker = await this.workerModel.findOne({ cpf }).exec();
-    return worker as unknown as Worker | null;
+    return worker ? (worker.toObject() as unknown as Worker) : null;
   }
 
   /**
-   * Atualiza um worker removendo campos imutáveis do MongoDB
+   * Atualiza um worker usando o operador $set do MongoDB
    * @param id ID do worker a ser atualizado
    * @param payload Dados para atualização
    * @returns Worker atualizado
    */
-  async update(id: string, payload: Partial<Worker>): Promise<Worker | null> {
-    const safePayload = removeMongooseFields(payload);
+  async update(
+    id: string,
+    payload: Partial<Worker> | any,
+  ): Promise<Worker | null> {
+    // Remove campos imutáveis do MongoDB
+    const { _id, __v, createdAt, updatedAt, ...safePayload } = payload as any;
+
+    console.log('safePayload', safePayload);
+
+    // Aplica o achatamento apenas para garantir compatibilidade com operações existentes
+    // Mas agora é mais seguro pois não há mais propriedades internas do Mongoose
+    const flatPayload = flatten(safePayload);
+    console.log('flatten(safePayload)', flatPayload);
 
     const updatedWorker = await this.workerModel
-      .findByIdAndUpdate(id, safePayload, { new: true })
+      .findByIdAndUpdate(id, { $set: flatPayload }, { new: true })
       .exec();
-    return updatedWorker as unknown as Worker | null;
+
+    return updatedWorker
+      ? (updatedWorker.toObject() as unknown as Worker)
+      : null;
   }
 
   async create(worker: Partial<Worker>): Promise<Worker> {
     const newWorker = new this.workerModel(worker);
     const savedWorker = await newWorker.save();
-    return savedWorker as unknown as Worker;
+    return savedWorker.toObject() as unknown as Worker;
   }
 
   /**

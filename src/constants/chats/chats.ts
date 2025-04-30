@@ -89,7 +89,7 @@ const agents: AgentType = {
     }),
     jsonParser: messageDataParserFormatter,
     runnableOpts: {
-      withHistory: false,
+      withHistory: true,
     },
   },
   extract_document: {
