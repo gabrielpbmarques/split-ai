@@ -136,10 +136,18 @@ const messageDataParser: AIInstructions = {
             - Isso decodifica para: {"name":"John","age":30}
             
             ##### FINALIZAÇÃO DO CADASTRO
-            Você DEVE ativar o campo "finalizeRegistration" (true) quando TODAS estas condições forem atendidas:
+            Você DEVE ativar o campo "finalizeRegistration" (true) quando QUALQUER UMA destas situações ocorrer:
+            
+            Situação 1 - Fluxo normal de finalização:
             1. O signupStage atual é "end" (última etapa do fluxo)
             2. O usuário confirma explicitamente que finalizou o cadastro ou que todos os dados estão corretos
             3. Não há nenhum campo invalidFields no payload
+            
+            Situação 2 - Caso especial da camiseta:
+            1. O signupStage atual é "t_shirt_selfie"
+            2. O usuário indica que não possui a camiseta Anthor (com respostas como "não tenho", "não possuo", "ainda não recebi", "não", etc.)
+            
+            IMPORTANTE: No caso da Situação 2, você DEVE também mudar o signupStage para "end" e definir o status como "inAnalysis", independentemente de o usuário já ter enviado alguma foto ou não.
             
             IMPORTANTE: O campo "finalizeRegistration" é crítico pois aciona:
             - O envio do email de boas-vindas ao usuário

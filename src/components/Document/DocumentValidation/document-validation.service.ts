@@ -18,6 +18,7 @@ import { FaceMatchService } from 'src/components/Document/FaceMatch/face-match.s
 import { WorkerRepository } from 'src/repositories/Worker.repository';
 import { UserRepository } from 'src/repositories/User.repository';
 import { PictureRepository } from 'src/repositories/Picture.repository';
+import moment from 'moment';
 
 @Injectable()
 export class DocumentValidationService implements OnModuleInit {
@@ -168,7 +169,7 @@ export class DocumentValidationService implements OnModuleInit {
       errors.push('Names do not match');
     }
 
-    if (new Date(birthDate) !== new Date(workerBirthDate)) {
+    if (!moment(birthDate).isSame(moment(workerBirthDate))) {
       errors.push('Birth dates do not match');
     }
 
