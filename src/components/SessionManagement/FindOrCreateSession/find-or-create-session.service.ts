@@ -51,8 +51,6 @@ export class FindOrCreateSessionService {
       isNewUser = !worker._id;
       lastAiResponse = session.lastAiResponse;
 
-      console.log('worker', worker);
-
       if (worker._id) {
         try {
           const dbWorker = await this.workerRepository.findById(worker._id);

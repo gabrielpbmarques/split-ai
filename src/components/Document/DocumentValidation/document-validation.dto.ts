@@ -7,7 +7,7 @@ export interface DocumentValidationMessage {
   documentBackUrl?: string;
   selfieUrl?: string;
   profilePictureUrl?: string;
-  timestamp: Date;
+  timestamp?: Date;
 }
 
 export interface DocumentValidationResponse

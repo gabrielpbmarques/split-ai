@@ -18,7 +18,7 @@ import { FaceMatchService } from 'src/components/Document/FaceMatch/face-match.s
 import { WorkerRepository } from 'src/repositories/Worker.repository';
 import { UserRepository } from 'src/repositories/User.repository';
 import { PictureRepository } from 'src/repositories/Picture.repository';
-import moment from 'moment';
+import momentTz from 'moment-timezone';
 
 @Injectable()
 export class DocumentValidationService implements OnModuleInit {
@@ -169,7 +169,37 @@ export class DocumentValidationService implements OnModuleInit {
       errors.push('Names do not match');
     }
 
-    if (!moment(birthDate).isSame(moment(workerBirthDate))) {
+    let docDay, docMonth, docYear;
+    if (typeof birthDate === 'string' && birthDate.includes('/')) {
+      const parts = birthDate.split('/');
+      if (parts.length === 3) {
+        docDay = parseInt(parts[0], 10);
+        docMonth = parseInt(parts[1], 10);
+        docYear = parseInt(parts[2], 10);
+      }
+    }
+
+    let workerDay, workerMonth, workerYear;
+    if (workerBirthDate) {
+      const m = momentTz(workerBirthDate).utc();
+      workerDay = m.date(); // Day of month
+      workerMonth = m.month() + 1; // Convert from 0-indexed to 1-indexed
+      workerYear = m.year();
+    }
+
+    const yearMatch = docYear === workerYear;
+    const monthMatch = docMonth === workerMonth;
+    const dayMatch = docDay === workerDay;
+
+    if (
+      docDay &&
+      docMonth &&
+      docYear &&
+      workerDay &&
+      workerMonth &&
+      workerYear &&
+      (!yearMatch || !monthMatch || !dayMatch)
+    ) {
       errors.push('Birth dates do not match');
     }
 

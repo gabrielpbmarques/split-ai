@@ -31,7 +31,6 @@ export class WorkerRepository implements IWorkerRepository {
   }
 
   async findById(id: string): Promise<Worker | null> {
-    console.log('id', id);
     const worker = await this.workerModel.findById(id).exec();
     return worker ? (worker.toObject() as unknown as Worker) : null;
   }
@@ -56,15 +55,9 @@ export class WorkerRepository implements IWorkerRepository {
     id: string,
     payload: Partial<Worker> | any,
   ): Promise<Worker | null> {
-    // Remove campos imutáveis do MongoDB
     const { _id, __v, createdAt, updatedAt, ...safePayload } = payload as any;
 
-    console.log('safePayload', safePayload);
-
-    // Aplica o achatamento apenas para garantir compatibilidade com operações existentes
-    // Mas agora é mais seguro pois não há mais propriedades internas do Mongoose
     const flatPayload = flatten(safePayload);
-    console.log('flatten(safePayload)', flatPayload);
 
     const updatedWorker = await this.workerModel
       .findByIdAndUpdate(id, { $set: flatPayload }, { new: true })
