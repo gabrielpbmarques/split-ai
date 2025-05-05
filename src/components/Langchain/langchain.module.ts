@@ -4,6 +4,7 @@ import { ExecuteSimilaritySearchModule } from 'src/components/Langchain/ExecuteS
 import { GetRunnableChatModule } from 'src/components/Langchain/GetRunnableChat/get-runnable-chat.module';
 import { LoadAiChatModule } from 'src/components/Langchain/LoadAiChat/load-ai-chat.module';
 import { LoadVectorStoreModule } from 'src/components/Langchain/LoadVectorStore/load-vector-store.module';
+import { GenerateAgentSourceModule } from 'src/components/Langchain/GenerateAgentSource/generate-agent-source.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { LoadVectorStoreModule } from 'src/components/Langchain/LoadVectorStore/
     GetRunnableChatModule,
     LoadAiChatModule,
     LoadVectorStoreModule,
+    GenerateAgentSourceModule,
   ],
   exports: [
     CreateHistoryModule,
@@ -19,6 +21,7 @@ import { LoadVectorStoreModule } from 'src/components/Langchain/LoadVectorStore/
     GetRunnableChatModule,
     LoadAiChatModule,
     LoadVectorStoreModule,
+    GenerateAgentSourceModule,
   ],
 })
 export class LangchainModule {}

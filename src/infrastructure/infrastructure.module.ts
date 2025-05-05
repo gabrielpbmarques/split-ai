@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import {
   SupabaseProvider,
   SUPABASE_CLIENT,
+  SUPABASE_SERVICE,
 } from 'src/infrastructure/providers/supabase.provider';
 import {
   VertexAIProvider,
@@ -32,8 +33,8 @@ import {
 @Module({
   imports: [ConfigModule],
   providers: [
-    SupabaseProvider,
     AnthorProvider,
+    ...SupabaseProvider,
     ...VertexAIProvider,
     ...S3Provider,
     ...SendGridProvider,
@@ -41,6 +42,7 @@ import {
   ],
   exports: [
     SUPABASE_CLIENT,
+    SUPABASE_SERVICE,
     VERTEX_AI_EMBEDDINGS,
     VERTEX_AI_CHAT,
     S3_CLIENT,
