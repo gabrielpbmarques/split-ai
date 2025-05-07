@@ -16,8 +16,14 @@ export class Picture {
   @Prop({ required: true })
   image: string;
 
+  @Prop({ required: true })
+  extension: string;
+
   @Prop({ required: true, enum: ImageType })
   type: ImageType;
+
+  @Prop({ required: true, enum: ImageType })
+  name: ImageType;
 }
 
 export type PictureDocument = Picture & Document;

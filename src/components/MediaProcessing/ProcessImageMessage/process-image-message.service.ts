@@ -58,6 +58,8 @@ export class ProcessImageMessageService {
       key: s3Url.split('/').pop() || `${Date.now()}.${extension}`, // Extrai o nome do arquivo da URL
       image: s3Url,
       type: pictureType,
+      extension,
+      name: pictureType,
     });
 
     return {

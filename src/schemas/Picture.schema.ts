@@ -10,8 +10,14 @@ export class Picture {
   @Prop({ required: true })
   image: string;
 
+  @Prop({ required: true })
+  extension: string;
+
   @Prop({ required: true, enum: Object.values(ImageType) })
   type: string;
+
+  @Prop({ required: true, enum: Object.values(ImageType) })
+  name: string;
 }
 
 export type PictureDocument = Picture & Document;
