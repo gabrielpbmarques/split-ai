@@ -40,7 +40,7 @@ describe('GetjobTemplatesService', () => {
     expect(callArgs[0].$match).toEqual({
       companyId,
       isTemplate: true,
-      status: 'active',
+      templateStatus: 'active',
     });
   });
 });

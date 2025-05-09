@@ -12,7 +12,7 @@ export class GetjobTemplatesService {
         $match: {
           companyId,
           isTemplate: true,
-          status: 'active',
+          templateStatus: 'active',
         },
       },
       {
@@ -98,18 +98,6 @@ export class GetjobTemplatesService {
     ];
 
     const jobs = await this.jobRepository.aggregate(pipeline);
-
-    if (jobs.length > 0) {
-      const jobExample = {
-        _id: jobs[0]._id,
-        templateTitle: jobs[0].templateTitle,
-        certificationGroupId: jobs[0].certificationGroupId,
-      };
-      const jobWithDetails = { ...jobExample };
-      if (jobs[0]['certificationGroup']) {
-        jobWithDetails['certificationGroup'] = jobs[0]['certificationGroup'];
-      }
-    }
 
     return jobs;
   }
