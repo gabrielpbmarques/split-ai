@@ -12,6 +12,7 @@ export class GetjobTemplatesService {
         $match: {
           companyId,
           isTemplate: true,
+          status: 'active',
         },
       },
       {
