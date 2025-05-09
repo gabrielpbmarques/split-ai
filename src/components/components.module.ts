@@ -13,6 +13,7 @@ import { FinancialManagementModule } from 'src/components/FinancialManagement/fi
 import { AIIntegrationModule } from 'src/components/AIIntegration/ai-integration.module';
 import { TestOcrModule } from 'src/components/Document/TestOcr/test-ocr.module';
 import { TestFaceMatchModule } from 'src/components/Document/TestFaceMatch/test-face-match.module';
+import { GetjobTemplatesModule } from 'src/components/Job/GetJobTemplates/getjob-templates.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { TestFaceMatchModule } from 'src/components/Document/TestFaceMatch/test-
     AIIntegrationModule,
     TestOcrModule,
     TestFaceMatchModule,
+    GetjobTemplatesModule,
   ],
   exports: [
     LangchainModule,
@@ -46,6 +48,7 @@ import { TestFaceMatchModule } from 'src/components/Document/TestFaceMatch/test-
     AIIntegrationModule,
     TestOcrModule,
     TestFaceMatchModule,
+    GetjobTemplatesModule,
   ],
 })
 export class ComponentsModule {}
