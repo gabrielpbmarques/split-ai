@@ -12,7 +12,7 @@ export class GetjobTemplatesService {
         $match: {
           companyId,
           isTemplate: true,
-          templateStatus: 'active',
+          templateActiveInPanel: true,
         },
       },
       {
