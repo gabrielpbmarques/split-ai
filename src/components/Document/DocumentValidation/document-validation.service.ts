@@ -18,7 +18,7 @@ import { FaceMatchService } from 'src/components/Document/FaceMatch/face-match.s
 import { WorkerRepository } from 'src/repositories/Worker.repository';
 import { UserRepository } from 'src/repositories/User.repository';
 import { PictureRepository } from 'src/repositories/Picture.repository';
-import moment from 'moment-timezone';
+import * as moment from 'moment-timezone';
 
 @Injectable()
 export class DocumentValidationService implements OnModuleInit {
@@ -181,6 +181,7 @@ export class DocumentValidationService implements OnModuleInit {
 
     let workerDay, workerMonth, workerYear;
     if (workerBirthDate) {
+      // eslint-disable-next-line import/namespace
       const m = moment.utc(workerBirthDate);
       workerDay = m.date(); // Day of month
       workerMonth = m.month() + 1; // Convert from 0-indexed to 1-indexed
