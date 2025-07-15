@@ -169,7 +169,7 @@ export class DocumentValidationService implements OnModuleInit {
       errors.push('Names do not match');
     }
 
-    let docDay, docMonth, docYear;
+    let docDay: number, docMonth: number, docYear: number;
     if (typeof birthDate === 'string' && birthDate.includes('/')) {
       const parts = birthDate.split('/');
       if (parts.length === 3) {
@@ -179,7 +179,7 @@ export class DocumentValidationService implements OnModuleInit {
       }
     }
 
-    let workerDay, workerMonth, workerYear;
+    let workerDay: number, workerMonth: number, workerYear: number;
     if (workerBirthDate) {
       // eslint-disable-next-line import/namespace
       const m = moment.utc(workerBirthDate);
@@ -215,12 +215,6 @@ export class DocumentValidationService implements OnModuleInit {
     workerId: string,
     validationResult: DocumentValidationResponse,
   ) {
-    const worker = await this.workerRepository.findById(workerId);
-
-    if (!worker) {
-      throw new Error(`Worker not found with ID: ${workerId}`);
-    }
-
     await this.workerRepository.update(workerId, {
       documents: {
         status: validationResult.errors.length ? 'pending' : 'approved',

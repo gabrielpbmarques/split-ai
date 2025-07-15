@@ -6,19 +6,13 @@ const messageDataParser: AIInstructions = {
     e devolve APENAS um JSON. Nada além disso. Se não houver dado relevante
     ou a mensagem for apenas conversacional, responda simplesmente {}.
     
-    {{#if worker}}
     [CONTEXTO: Status atual do worker]
     {{worker}}
-    {{/if}}
     
-    {{#if lastAiResponse}}
-    [CONTEXTO: A última pergunta da IA foi: "{{lastAiResponse}}"]
-    {{/if}}
+    [CONTEXTO: A última pergunta da IA foi: {{lastAiResponse}}]
     
-    {{#if knowledgeReference}}
     [CONTEXTO: Referência de conhecimento para suporte]
     {{knowledgeReference}}
-    {{/if}}
   `,
   diretrizes: {
     formato_resposta: {

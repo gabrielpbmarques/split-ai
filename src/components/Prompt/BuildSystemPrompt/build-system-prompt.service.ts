@@ -23,7 +23,9 @@ export class BuildSystemPromptService {
     if (!sources)
       return `${textPrompt}\nReferência de conhecimento:\n${source}`
         .replace(/{/g, '{{')
-        .replace(/}/g, '}}');
+        .replace(/}/g, '}}')
+        .replace(/}}}}/g, '}')
+        .replace(/{{{{/g, '{');
 
     const groupedSources = context.reduce(
       (acc, doc) => {
@@ -42,6 +44,8 @@ export class BuildSystemPromptService {
 
     return `${textPrompt}\nReferência de conhecimento:\n${sourceSection}`
       .replace(/{/g, '{{')
-      .replace(/}/g, '}}');
+      .replace(/}/g, '}}')
+      .replace(/}}}}/g, '}')
+      .replace(/{{{{/g, '{');
   }
 }

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { FilterQuery, Model, PipelineStage, ProjectionFields } from 'mongoose';
 import { Worker } from 'src/models/Worker.model';
 import {
   Worker as WorkerSchema,
@@ -9,6 +9,11 @@ import {
 import { flatten } from 'src/utils/mongoose.utils';
 
 export interface IWorkerRepository {
+  aggregate(pipeline: PipelineStage[]): Promise<any>;
+  find(
+    query: FilterQuery<Worker>,
+    projection?: ProjectionFields<Worker>,
+  ): Promise<Worker[]>;
   findOne(query: Partial<Worker>): Promise<Worker>;
   findById(id: string): Promise<Worker | null>;
   findByUserId(userId: string): Promise<Worker | null>;
@@ -24,6 +29,19 @@ export class WorkerRepository implements IWorkerRepository {
     @InjectModel(WorkerSchema.name)
     private workerModel: Model<WorkerDocument>,
   ) {}
+
+  async aggregate(pipeline: PipelineStage[]): Promise<any> {
+    const workers = await this.workerModel.aggregate(pipeline).exec();
+    return workers.map((worker) => worker.toObject() as unknown as Worker);
+  }
+
+  async find(
+    query: FilterQuery<Worker>,
+    projection?: ProjectionFields<Worker>,
+  ): Promise<Worker[]> {
+    const workers = await this.workerModel.find(query, projection).exec();
+    return workers.map((worker) => worker.toObject() as unknown as Worker);
+  }
 
   async findOne(query: Partial<Worker>): Promise<Worker> {
     const worker = await this.workerModel.findOne(query).exec();

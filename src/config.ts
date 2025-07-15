@@ -24,6 +24,7 @@ interface IConfig {
   awsAccessKeyId: string;
   awsSecretAccessKey: string;
   awsS3BucketName: string;
+  awsS3Url: string;
   sendgridApiKey: string;
   emailDefaultFrom: string;
   finishSignUpTemplateId: string;
@@ -54,6 +55,7 @@ export const config: IConfig = {
   awsAccessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
   awsSecretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
   awsS3BucketName: process.env.AWS_S3_BUCKET_NAME || 'anthor-documents',
+  awsS3Url: process.env.AWS_S3_URL || 'https://s3-sa-east-1.amazonaws.com',
   sendgridApiKey: process.env.SENDGRID_API_KEY,
   emailDefaultFrom: process.env.SENDGRID_EMAIL,
   finishSignUpTemplateId: process.env.FINISH_EMAIL_TEMPLATE_ID,

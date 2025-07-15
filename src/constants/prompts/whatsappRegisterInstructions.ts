@@ -11,7 +11,6 @@ const whatsappRegisterInstructions: AIInstructions = {
     - Você recebe os dados já processados pelo parser (parsed_data) e usa APENAS esses dados para suas decisões.
     - Você NUNCA modifica ou cria campos, flags ou dados que não foram gerados pelo parser messageDataParser.
     
-    {{#if registerContext}}
     CONTEXTO DO CADASTRO:
     O contexto abaixo contém TODOS os dados necessários para seu trabalho, incluindo:
     - phone_number: Número de telefone do usuário
@@ -22,14 +21,11 @@ const whatsappRegisterInstructions: AIInstructions = {
     - parsed_data: Dados extraídos da mensagem atual pelo parser (incluindo novos dados de endereço em parsed_data.address)
     
     {{registerContext}}
-    {{/if}}
     
-    {{#if knowledgeReference}}
     REFERÊNCIA DE CONHECIMENTO PARA SUPORTE:
     Use estas informações para responder perguntas relacionadas a suporte técnico ou atendimento ao cliente:
     
     {{knowledgeReference}}
-    {{/if}}
   `,
 
   /** DIRETRIZES **/
