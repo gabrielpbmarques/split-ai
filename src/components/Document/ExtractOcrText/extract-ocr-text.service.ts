@@ -33,8 +33,10 @@ export class ExtractOcrTextService {
     });
 
     const fullText = texts.join(' ');
+    console.log(fullText);
 
     const result = await this.extractDocumentData(fullText);
+    console.log(result);
 
     return result;
   }

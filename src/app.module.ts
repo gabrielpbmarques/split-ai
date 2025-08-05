@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ScheduleModule } from '@nestjs/schedule';
 import { JwtService } from '@nestjs/jwt';
 import { DatabaseModule } from 'src/database/database.module';
 import { HealthModule } from 'src/health/health.module';
@@ -10,6 +11,7 @@ import { InfrastructureModule } from 'src/infrastructure/infrastructure.module';
     HealthModule,
     ComponentsModule,
     InfrastructureModule,
+    ScheduleModule.forRoot(),
   ],
   controllers: [],
   providers: [JwtService],

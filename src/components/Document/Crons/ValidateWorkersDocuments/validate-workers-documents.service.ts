@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import * as moment from 'moment';
 import { DocumentValidationService } from 'src/components/Document/DocumentValidation/document-validation.service';
 import { DocumentValidationMessage } from 'src/components/Register/HandleRegisterCompletion/handle-register-completion.dto';
 import { config } from 'src/config';
@@ -6,25 +7,29 @@ import { WorkerRepository } from 'src/repositories/Worker.repository';
 
 @Injectable()
 export class ValidateWorkersDocumentsService {
+  private logger = new Logger(ValidateWorkersDocumentsService.name);
   constructor(
     private readonly workerRepository: WorkerRepository,
     private readonly documentValidationService: DocumentValidationService,
   ) {}
 
   async execute() {
+    this.logger.log('Validating workers documents...');
     const workers = await this.workerRepository.aggregate([
       {
         $match: {
           status: 'inAnalysis',
-          documents: {
-            rgFrontId: { $ne: null },
-            rgBackId: { $ne: null },
+          'documents.status': { $ne: 'approved' },
+          'documents.rgFrontId': { $ne: null },
+          'documents.rgBackId': { $ne: null },
+          createdAt: {
+            $gte: moment('2025-05-01').utc().startOf('day').toDate(),
           },
         },
       },
       {
         $addFields: {
-          $workerIdString: {
+          workerIdString: {
             $toString: '$_id',
           },
         },
@@ -32,7 +37,7 @@ export class ValidateWorkersDocumentsService {
       {
         $lookup: {
           from: 'users',
-          localField: '$workerIdString',
+          localField: 'workerIdString',
           foreignField: 'workerId',
           pipeline: [
             {
@@ -60,6 +65,8 @@ export class ValidateWorkersDocumentsService {
       },
     ]);
 
+    this.logger.log(`Encontrados ${workers.length} trabalhadores para validar`);
+
     for await (const worker of workers) {
       const documentValidationMessage: DocumentValidationMessage = {
         workerId: worker._id.toString(),
@@ -68,6 +75,10 @@ export class ValidateWorkersDocumentsService {
         selfieUrl: this.getDocumentUrl(worker.profilePictureId),
         timestamp: new Date(),
       };
+
+      this.logger.log(
+        `Validando documentos do trabalhador ${worker._id.toString()}`,
+      );
 
       await this.documentValidationService.execute(documentValidationMessage);
     }

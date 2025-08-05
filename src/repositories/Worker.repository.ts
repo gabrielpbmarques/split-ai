@@ -32,7 +32,7 @@ export class WorkerRepository implements IWorkerRepository {
 
   async aggregate(pipeline: PipelineStage[]): Promise<any> {
     const workers = await this.workerModel.aggregate(pipeline).exec();
-    return workers.map((worker) => worker.toObject() as unknown as Worker);
+    return workers as unknown as Worker[];
   }
 
   async find(

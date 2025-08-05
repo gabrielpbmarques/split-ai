@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { LangchainModule } from 'src/components/Langchain/langchain.module';
 import { PromptModule } from 'src/components/Prompt/prompt.module';
 import { RegisterModule } from 'src/components/Register/register.module';
-import { DocumentValidationModule } from 'src/components/Document/DocumentValidation/document-validation.module';
+import { DocumentModule } from 'src/components/Document/document.module';
 import { MessageProcessingModule } from 'src/components/MessageProcessing/message-processing.module';
 import { SessionManagementModule } from 'src/components/SessionManagement/session-management.module';
 import { MediaProcessingModule } from 'src/components/MediaProcessing/media-processing.module';
@@ -20,7 +20,7 @@ import { GetjobTemplatesModule } from 'src/components/Job/GetJobTemplates/getjob
     LangchainModule,
     PromptModule,
     RegisterModule,
-    DocumentValidationModule,
+    DocumentModule,
     MessageProcessingModule,
     SessionManagementModule,
     MediaProcessingModule,
@@ -37,7 +37,7 @@ import { GetjobTemplatesModule } from 'src/components/Job/GetJobTemplates/getjob
     LangchainModule,
     PromptModule,
     RegisterModule,
-    DocumentValidationModule,
+    DocumentModule,
     MessageProcessingModule,
     SessionManagementModule,
     MediaProcessingModule,

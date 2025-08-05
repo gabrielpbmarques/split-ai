@@ -10,7 +10,7 @@ export class ValidateWorkersDocumentsController {
     private readonly validateWorkersDocumentsService: ValidateWorkersDocumentsService,
   ) {}
 
-  @Cron('50 17 * * *')
+  @Cron('0 3 * * *')
   async execute() {
     try {
       await this.validateWorkersDocumentsService.execute();
