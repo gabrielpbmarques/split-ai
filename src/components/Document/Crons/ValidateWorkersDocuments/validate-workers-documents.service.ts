@@ -23,7 +23,7 @@ export class ValidateWorkersDocumentsService {
           'documents.rgFrontId': { $ne: null },
           'documents.rgBackId': { $ne: null },
           createdAt: {
-            $gte: moment('2025-05-01').utc().startOf('day').toDate(),
+            $gte: moment().utc().startOf('week').toDate(),
           },
         },
       },
