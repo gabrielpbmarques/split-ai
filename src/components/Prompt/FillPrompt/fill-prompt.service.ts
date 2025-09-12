@@ -13,6 +13,10 @@ import { Agent } from 'src/constants/chats/chats';
 export class FillPromptService {
   constructor(private buildSystemPromptService: BuildSystemPromptService) {}
 
+  private escapeBraces(text: string): string {
+    return text.replace(/[{]/g, '{{').replace(/[}]/g, '}}');
+  }
+
   async execute(
     context: CustomDocument[],
     agent?: Agent,
@@ -27,9 +31,10 @@ export class FillPromptService {
       instructions,
       sources,
     );
+    const safeSystemPrompt = this.escapeBraces(systemPrompt);
 
     const chatMessages: ChatMessage[] = [
-      { role: 'system', content: systemPrompt },
+      { role: 'system', content: safeSystemPrompt },
       ...(withHistory ? [new MessagesPlaceholder('history')] : []),
       { role: 'user', content: '{input}' },
     ];

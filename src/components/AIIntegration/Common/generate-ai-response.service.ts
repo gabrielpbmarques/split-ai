@@ -12,8 +12,8 @@ export class GenerateAiResponseService {
     sessionId: string,
     metadata: CustomMetadata,
     agentId: keyof typeof agents,
-    promptVariables?: any,
-  ): Promise<string> {
+    promptVariables?: Record<string, any>,
+  ): Promise<string | any> {
     try {
       const agent = agents[agentId];
 
@@ -24,18 +24,23 @@ export class GenerateAiResponseService {
         agent,
       );
 
-      // Preparar as variáveis para o template
-      // O input é a mensagem do usuário, promptVariables são outras variáveis
       const templateVariables = {
         input: question,
-        ...promptVariables, // Outras variáveis para o template, diferentes do input
+        ...promptVariables,
       };
 
-      // Invocar o runnable com as variáveis do template
       const result = await runnable.runnable.invoke(
         templateVariables,
         runnable.config,
       );
+
+      if (
+        agent.jsonParser &&
+        result.tool_calls &&
+        result.tool_calls.length > 0
+      ) {
+        return result.tool_calls[0].args;
+      }
 
       return result.content.toString();
     } catch (error) {

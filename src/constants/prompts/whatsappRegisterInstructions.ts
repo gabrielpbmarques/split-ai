@@ -20,12 +20,7 @@ const whatsappRegisterInstructions: AIInstructions = {
     - processed_image: Informações sobre imagens processadas
     - parsed_data: Dados extraídos da mensagem atual pelo parser (incluindo novos dados de endereço em parsed_data.address)
     
-    {{registerContext}}
-    
-    REFERÊNCIA DE CONHECIMENTO PARA SUPORTE:
-    Use estas informações para responder perguntas relacionadas a suporte técnico ou atendimento ao cliente:
-    
-    {{knowledgeReference}}
+    {registerContext}
   `,
 
   /** DIRETRIZES **/

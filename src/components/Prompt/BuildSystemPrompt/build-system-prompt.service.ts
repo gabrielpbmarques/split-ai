@@ -18,20 +18,18 @@ export class BuildSystemPromptService {
     const textPrompt =
       this.normalizePromptInstructionsService.execute(instructions);
 
-    const source = context.map((doc: any) => doc.pageContent).join(' ');
+    const source = context
+      .map((doc: CustomDocument) => doc.pageContent)
+      .join(' ');
 
     if (!sources)
-      return `${textPrompt}\nReferência de conhecimento:\n${source}`
-        .replace(/{/g, '{{')
-        .replace(/}/g, '}}')
-        .replace(/}}}}/g, '}')
-        .replace(/{{{{/g, '{');
+      return `${textPrompt}\nReferência de conhecimento:\n${source}`;
 
     const groupedSources = context.reduce(
       (acc, doc) => {
-        const type = (doc.metadata.source_type as AISourceType) || 'unknown';
+        const type = (doc.metadata?.source_type as AISourceType) || 'unknown';
         if (!acc[type]) acc[type] = [];
-        acc[type].push(doc.pageContent);
+        acc[type].push(doc.pageContent as string);
         return acc;
       },
       {} as Record<string, string[]>,
@@ -42,10 +40,6 @@ export class BuildSystemPromptService {
       sourceSection += `\n${type.toUpperCase()}:\n- ${content.join('\n- ')}\n`;
     }
 
-    return `${textPrompt}\nReferência de conhecimento:\n${sourceSection}`
-      .replace(/{/g, '{{')
-      .replace(/}/g, '}}')
-      .replace(/}}}}/g, '}')
-      .replace(/{{{{/g, '{');
+    return `${textPrompt}\nReferência de conhecimento:\n${sourceSection}`;
   }
 }

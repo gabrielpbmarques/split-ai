@@ -20,7 +20,6 @@ export class GenerateResponseService {
       parsedData,
     } = generateResponseDto;
 
-    // Criar o objeto de contexto de registro
     const registerContext = {
       phone_number: phoneNumber,
       registration_stage: worker?.signupStage || 'personal_info',
@@ -28,11 +27,6 @@ export class GenerateResponseService {
       user_data: worker,
       processed_image: processedImage,
       parsed_data: parsedData,
-    };
-
-    // Passar o objeto de contexto como uma única variável
-    const promptVariables = {
-      registerContext,
     };
 
     const typedAgentId = 'whatsapp_register' as keyof typeof agents;
@@ -44,7 +38,7 @@ export class GenerateResponseService {
         agent_id: typedAgentId,
       },
       typedAgentId,
-      promptVariables,
+      { registerContext },
     );
 
     return aiResponse;

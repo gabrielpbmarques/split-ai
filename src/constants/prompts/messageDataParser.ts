@@ -7,12 +7,9 @@ const messageDataParser: AIInstructions = {
     ou a mensagem for apenas conversacional, responda simplesmente {}.
     
     [CONTEXTO: Status atual do worker]
-    {{worker}}
+    {worker}
     
-    [CONTEXTO: A última pergunta da IA foi: {{lastAiResponse}}]
-    
-    [CONTEXTO: Referência de conhecimento para suporte]
-    {{knowledgeReference}}
+    [CONTEXTO: A última pergunta da IA foi: {lastAiResponse}]
   `,
   diretrizes: {
     formato_resposta: {
