@@ -4,12 +4,16 @@ import { QuestionController } from './question.controller';
 import { InfrastructureModule } from 'src/infrastructure/infrastructure.module';
 import { RepositoriesModule } from 'src/repositories/repositories.module';
 import { ArtificialIntelligenceModule } from 'src/components/ArtificialIntelligence/artificial-intelligence.module';
+import { SupabaseRepositoriesModule } from 'src/supabase-repositories/supabase-repositories.module';
+import { SessionModule } from 'src/components/Session/session.module';
 
 @Module({
   imports: [
     InfrastructureModule,
     RepositoriesModule,
     ArtificialIntelligenceModule,
+    SupabaseRepositoriesModule,
+    SessionModule,
   ],
   providers: [QuestionService],
   controllers: [QuestionController],

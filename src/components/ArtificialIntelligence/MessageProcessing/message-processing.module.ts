@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ProcessMessageDataModule } from 'src/components/MessageProcessing/ProcessMessageData/process-message-data.module';
+import { ProcessMessageDataModule } from 'src/components/ArtificialIntelligence/MessageProcessing/ProcessMessageData/process-message-data.module';
 
 @Module({
   imports: [ProcessMessageDataModule],

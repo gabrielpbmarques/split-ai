@@ -1,39 +1,28 @@
-import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
-import { EachMessagePayload } from 'kafkajs';
-import { kafkaTopics } from 'src/config/kafka.config';
+import { Injectable } from '@nestjs/common';
 import {
   DocumentValidationMessage,
   DocumentValidationResponse,
 } from 'src/components/Document/DocumentValidation/document-validation.dto';
 import {
-  IKafkaService,
-  KAFKA_SERVICE,
-} from 'src/infrastructure/providers/kafka.provider';
-import {
   ExtractOcrTextResponse,
   ExtractOcrTextService,
-} from 'src/components/Document/ExtractOcrText/extract-ocr-text.service';
+} from 'src/components/OCR/ExtractOcrText/extract-ocr-text.service';
 import { getUrlBuffer } from 'src/utils/getUrlBuffer';
-import { FaceMatchService } from 'src/components/Document/FaceMatch/face-match.service';
+import { FaceMatchService } from 'src/components/ComputerVision/FaceMatch/face-match.service';
 import { WorkerRepository } from 'src/repositories/Worker.repository';
 import { UserRepository } from 'src/repositories/User.repository';
 import { PictureRepository } from 'src/repositories/Picture.repository';
 import * as moment from 'moment-timezone';
 
 @Injectable()
-export class DocumentValidationService implements OnModuleInit {
+export class DocumentValidationService {
   constructor(
-    @Inject(KAFKA_SERVICE) private readonly kafkaService: IKafkaService,
     private readonly extractOcrTextService: ExtractOcrTextService,
     private readonly faceMatchService: FaceMatchService,
     private readonly workerRepository: WorkerRepository,
     private readonly pictureRepository: PictureRepository,
     private readonly userRepository: UserRepository,
   ) {}
-
-  async onModuleInit() {
-    await this.startConsumer();
-  }
 
   async execute(
     payload: DocumentValidationMessage,
@@ -101,28 +90,6 @@ export class DocumentValidationService implements OnModuleInit {
     await this.validateWorkerDocuments(workerId, validationResult);
 
     return validationResult;
-  }
-
-  private async startConsumer() {
-    await this.kafkaService.subscribe(
-      kafkaTopics.validateDocuments,
-      'document-validation-group',
-      this.handleMessage.bind(this),
-    );
-  }
-
-  private async handleMessage(payload: EachMessagePayload) {
-    const { message } = payload;
-    const messageContent = message.value?.toString();
-
-    if (!messageContent) return;
-
-    const validationMessage: DocumentValidationMessage =
-      JSON.parse(messageContent);
-
-    const result = await this.execute(validationMessage);
-
-    return result;
   }
 
   private async getDocumentsUrlByWorkerId(workerId: string): Promise<{

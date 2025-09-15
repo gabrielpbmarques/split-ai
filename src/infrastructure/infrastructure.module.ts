@@ -29,6 +29,14 @@ import {
   KAFKA_CLIENT,
   KAFKA_SERVICE,
 } from 'src/infrastructure/providers/kafka.provider';
+import {
+  GcpStorageProvider,
+  GCP_STORAGE_SERVICE,
+} from 'src/infrastructure/providers/gcp-storage.provider';
+import {
+  GoogleVoiceProvider,
+  GOOGLE_VOICE_SERVICE,
+} from 'src/infrastructure/providers/google-voice.provider';
 
 @Module({
   imports: [ConfigModule],
@@ -39,6 +47,8 @@ import {
     ...S3Provider,
     ...SendGridProvider,
     ...KafkaProvider,
+    ...GcpStorageProvider,
+    ...GoogleVoiceProvider,
   ],
   exports: [
     SUPABASE_CLIENT,
@@ -52,6 +62,8 @@ import {
     ANTHOR_CLIENT,
     KAFKA_CLIENT,
     KAFKA_SERVICE,
+    GCP_STORAGE_SERVICE,
+    GOOGLE_VOICE_SERVICE,
   ],
 })
 export class InfrastructureModule {}

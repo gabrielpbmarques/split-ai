@@ -1,5 +1,5 @@
-import { FaceMatchResult } from '../FaceMatch/face-match.service';
-import { ExtractOcrTextResponse } from '../ExtractOcrText/extract-ocr-text.service';
+import { ExtractOcrTextResponse } from 'src/components/OCR/ExtractOcrText/extract-ocr-text.service';
+import { FaceMatchResult } from 'src/components/ComputerVision/FaceMatch/face-match.service';
 
 export interface DocumentValidationMessage {
   workerId: string;

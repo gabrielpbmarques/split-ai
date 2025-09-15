@@ -17,12 +17,13 @@ export class GenerateAgentSourceService {
   ) {}
 
   async execute(dto: GenerateAgentSourceDto): Promise<void> {
-    const { url, sourceType } = dto;
+    const { url, sourceType, agentId } = dto;
 
     const chunks = await this.loadPdfService.execute(url);
 
     const metadata: CustomMetadata = {
       source_type: sourceType,
+      agent_id: agentId,
     };
 
     await this.supabaseService.createVectorStore(chunks, metadata);

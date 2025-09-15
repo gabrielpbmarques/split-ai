@@ -3,8 +3,8 @@ import { DocumentValidationService } from 'src/components/Document/DocumentValid
 import { RepositoriesModule } from 'src/repositories/repositories.module';
 import { InfrastructureModule } from 'src/infrastructure/infrastructure.module';
 import { DocumentValidationController } from 'src/components/Document/DocumentValidation/document-validation.controller';
-import { ExtractOcrTextModule } from 'src/components/Document/ExtractOcrText/extract-ocr-text.module';
-import { FaceMatchModule } from 'src/components/Document/FaceMatch/face-match.module';
+import { FaceMatchModule } from 'src/components/ComputerVision/FaceMatch/face-match.module';
+import { ExtractOcrTextModule } from 'src/components/OCR/ExtractOcrText/extract-ocr-text.module';
 
 @Module({
   imports: [

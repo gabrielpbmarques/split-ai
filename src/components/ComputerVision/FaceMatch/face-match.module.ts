@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { FaceMatchService } from 'src/components/Document/FaceMatch/face-match.service';
+import { FaceMatchService } from './face-match.service';
 
 @Module({
   providers: [FaceMatchService],

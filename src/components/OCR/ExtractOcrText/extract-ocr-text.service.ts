@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ImageAnnotatorClient } from '@google-cloud/vision';
 import { DocumentData } from 'src/models/Worker.model';
-import { ProcessMessageDataService } from 'src/components/MessageProcessing/ProcessMessageData/process-message-data.service';
+import { ProcessMessageDataService } from 'src/components/ArtificialIntelligence/MessageProcessing/ProcessMessageData/process-message-data.service';
 
 export interface ExtractOcrTextResponse
   extends Pick<

@@ -39,28 +39,37 @@ export class WorkerRepository implements IWorkerRepository {
     query: FilterQuery<Worker>,
     projection?: ProjectionFields<Worker>,
   ): Promise<Worker[]> {
-    const workers = await this.workerModel.find(query, projection).exec();
-    return workers.map((worker) => worker.toObject() as unknown as Worker);
+    const workers = await this.workerModel
+      .find(query, projection)
+      .lean()
+      .exec();
+    return workers.map((worker) => worker as unknown as Worker);
   }
 
-  async findOne(query: Partial<Worker>): Promise<Worker> {
-    const worker = await this.workerModel.findOne(query).exec();
-    return worker ? (worker.toObject() as unknown as Worker) : null;
+  async findOne(
+    query: FilterQuery<Worker>,
+    projection?: ProjectionFields<Worker>,
+  ): Promise<Worker> {
+    const worker = await this.workerModel
+      .findOne(query, projection)
+      .lean()
+      .exec();
+    return worker ? (worker as unknown as Worker) : null;
   }
 
   async findById(id: string): Promise<Worker | null> {
-    const worker = await this.workerModel.findById(id).exec();
-    return worker ? (worker.toObject() as unknown as Worker) : null;
+    const worker = await this.workerModel.findById(id).lean().exec();
+    return worker ? (worker as unknown as Worker) : null;
   }
 
   async findByUserId(userId: string): Promise<Worker | null> {
-    const worker = await this.workerModel.findOne({ userId }).exec();
-    return worker ? (worker.toObject() as unknown as Worker) : null;
+    const worker = await this.workerModel.findOne({ userId }).lean().exec();
+    return worker ? (worker as unknown as Worker) : null;
   }
 
   async findByCPF(cpf: string): Promise<Worker | null> {
-    const worker = await this.workerModel.findOne({ cpf }).exec();
-    return worker ? (worker.toObject() as unknown as Worker) : null;
+    const worker = await this.workerModel.findOne({ cpf }).lean().exec();
+    return worker ? (worker as unknown as Worker) : null;
   }
 
   /**
@@ -81,9 +90,7 @@ export class WorkerRepository implements IWorkerRepository {
       .findByIdAndUpdate(id, { $set: flatPayload }, { new: true })
       .exec();
 
-    return updatedWorker
-      ? (updatedWorker.toObject() as unknown as Worker)
-      : null;
+    return updatedWorker ? (updatedWorker as unknown as Worker) : null;
   }
 
   async create(worker: Partial<Worker>): Promise<Worker> {
