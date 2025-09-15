@@ -18,9 +18,9 @@ export class QuestionController {
     @AuthUser() user: User,
   ): Promise<FastifyReply> {
     try {
-      await this.questionService.execute(dto, user);
+      const result = await this.questionService.execute(dto, user);
 
-      return res.status(200).send();
+      return res.status(200).send(result);
     } catch (error) {
       return res.status(error.status || 500).send(error.message);
     }
