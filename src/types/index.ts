@@ -9,6 +9,5 @@ export * from './CustomRunnable';
 export * from './RunnableChatOpts';
 export * from './RunnableMessageHistory';
 export * from './RunnableChat';
-export * from './RegisterContextMetadata';
 export * from './SupabaseDocument';
 export * from './UserType';

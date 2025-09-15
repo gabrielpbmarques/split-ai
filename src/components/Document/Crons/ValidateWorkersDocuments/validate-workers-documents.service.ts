@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as moment from 'moment';
 import { DocumentValidationService } from 'src/components/Document/DocumentValidation/document-validation.service';
-import { DocumentValidationMessage } from 'src/components/Register/HandleRegisterCompletion/handle-register-completion.dto';
 import { config } from 'src/config';
 import { WorkerRepository } from 'src/repositories/Worker.repository';
+import { DocumentValidationMessage } from 'src/components/Document/DocumentValidation/document-validation.dto';
 
 @Injectable()
 export class ValidateWorkersDocumentsService {

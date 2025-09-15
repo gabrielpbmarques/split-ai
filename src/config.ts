@@ -32,6 +32,7 @@ interface IConfig {
     sasl: string;
     saslUsername: string;
     saslPassword: string;
+    saslMechanism: string;
     topicPrefix: string;
   };
 }
@@ -58,6 +59,7 @@ export const config: IConfig = {
   finishSignUpTemplateId: process.env.FINISH_EMAIL_TEMPLATE_ID,
   kafka: process.env.KAFKA_BROKERS
     ? {
+        saslMechanism: process.env.KAFKA_SASL_MECHANISM,
         brokers: process.env.KAFKA_BROKERS,
         ssl: process.env.KAFKA_SSL,
         sasl: process.env.KAFKA_SASL,

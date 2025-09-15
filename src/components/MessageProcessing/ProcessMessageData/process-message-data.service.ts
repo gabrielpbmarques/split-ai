@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import { GenerateAiResponseService } from 'src/components/ArtificialIntelligence/GenerateAIResponse/generate-ai-response.service';
 import { ProcessMessageDataDto } from 'src/components/MessageProcessing/ProcessMessageData/process-message-data.dto';
-import { GenerateAiResponseService } from 'src/components/AIIntegration/Common/generate-ai-response.service';
 import { agents } from 'src/constants/chats/chats';
 
 @Injectable()
