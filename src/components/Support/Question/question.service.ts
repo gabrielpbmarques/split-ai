@@ -25,7 +25,7 @@ export class QuestionService {
 
     const worker = await this.workerRepository.findOne(
       {
-        email: user.email,
+        _id: user.workerId,
       },
       {
         name: 1,

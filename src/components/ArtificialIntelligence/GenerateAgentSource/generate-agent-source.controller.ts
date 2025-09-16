@@ -1,5 +1,6 @@
 import { Body, Controller, Post, Res } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
+import { Roles } from 'src/decorators/roles.decorator';
 
 import { GenerateAgentSourceDto } from './generate-agent-source.dto';
 import { GenerateAgentSourceService } from './generate-agent-source.service';
@@ -11,6 +12,7 @@ export class GenerateAgentSourceController {
   ) {}
 
   @Post('generate-source')
+  @Roles('admin')
   async execute(
     @Body() generateAgentSourceDto: GenerateAgentSourceDto,
     @Res() res: FastifyReply,
