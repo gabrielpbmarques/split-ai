@@ -14,13 +14,17 @@ export class LoadVectorStoreService {
   ) {}
 
   async execute(filter: CustomMetadata): Promise<SupabaseVectorStore> {
+    const { source_type, agent_id } = filter;
     const vectorStore = await SupabaseVectorStore.fromExistingIndex(
       this.embeddings,
       {
         client: this.supabaseClient,
         tableName: 'documents',
         queryName: 'match_documents',
-        filter: filter,
+        filter: {
+          source_type,
+          agent_id,
+        },
       },
     );
 

@@ -25,11 +25,6 @@ import {
   ANTHOR_CLIENT,
 } from 'src/infrastructure/providers/anthor.provider';
 import {
-  KafkaProvider,
-  KAFKA_CLIENT,
-  KAFKA_SERVICE,
-} from 'src/infrastructure/providers/kafka.provider';
-import {
   GcpStorageProvider,
   GCP_STORAGE_SERVICE,
 } from 'src/infrastructure/providers/gcp-storage.provider';
@@ -46,7 +41,6 @@ import {
     ...VertexAIProvider,
     ...S3Provider,
     ...SendGridProvider,
-    ...KafkaProvider,
     ...GcpStorageProvider,
     ...GoogleVoiceProvider,
   ],
@@ -60,8 +54,6 @@ import {
     SENDGRID_CLIENT,
     EMAIL_SERVICE,
     ANTHOR_CLIENT,
-    KAFKA_CLIENT,
-    KAFKA_SERVICE,
     GCP_STORAGE_SERVICE,
     GOOGLE_VOICE_SERVICE,
   ],

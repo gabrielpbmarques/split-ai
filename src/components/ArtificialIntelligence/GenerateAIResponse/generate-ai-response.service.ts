@@ -13,25 +13,27 @@ export class GenerateAiResponseService {
 
   async execute(
     question: string,
-    sessionId: string,
     metadata: CustomMetadata,
-    agentId: keyof typeof agents,
+    stream: boolean = false,
     promptVariables?: Record<string, any>,
-    userId?: string,
   ): Promise<string | any> {
     try {
-      const agent = agents[agentId];
+      const agent = agents[metadata.agent_id];
+
+      console.log(agent);
 
       await this.messageRepository.create({
-        session_id: sessionId,
+        session_id: metadata.session_id,
         message: question,
         from: 'user',
       });
 
+      console.log(JSON.stringify(metadata, null, 2));
+
       const runnable = await this.loadAiChatService.execute(
         question,
         metadata,
-        sessionId,
+        metadata.session_id,
         agent,
       );
 
@@ -40,23 +42,23 @@ export class GenerateAiResponseService {
         ...promptVariables,
       };
 
+      if (stream) {
+        const iterator = await runnable.runnable.stream(
+          templateVariables,
+          runnable.config,
+        );
+        return iterator; // AsyncIterable
+      }
+
       const result = await runnable.runnable.invoke(
         templateVariables,
         runnable.config,
       );
 
-      if (
-        agent.jsonParser &&
-        result.tool_calls &&
-        result.tool_calls.length > 0
-      ) {
-        return result.tool_calls[0].args;
-      }
-
       const formattedResponse = result.content.toString();
 
       await this.messageRepository.create({
-        session_id: sessionId,
+        session_id: metadata.session_id,
         message: formattedResponse,
         from: 'agent',
       });

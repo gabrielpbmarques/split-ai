@@ -16,13 +16,34 @@ export class QuestionController {
     @Res() res: FastifyReply,
     @Body() dto: QuestionDto,
     @AuthUser() user: User,
-  ): Promise<FastifyReply> {
+  ): Promise<void> {
+    res.hijack();
     try {
-      const result = await this.questionService.execute(dto, user);
+      res.raw.writeHead(200, {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Transfer-Encoding': 'chunked',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers':
+          'Content-Type, Authorization, X-Requested-With, Accept, Origin',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Expose-Headers': 'Content-Type',
+      });
 
-      return res.status(200).send(result);
-    } catch (error) {
-      return res.status(error.status || 500).send(error.message);
+      await this.questionService.execute(dto, user, (chunk) => {
+        if (chunk?.content) {
+          res.raw.write(chunk.content);
+        }
+      });
+    } catch (error: any) {
+      try {
+        const message =
+          typeof error?.message === 'string'
+            ? `\n${error.message}\n`
+            : '\nUnexpected error\n';
+        res.raw.write(message);
+      } catch {}
+    } finally {
+      res.raw.end();
     }
   }
 }

@@ -4,6 +4,8 @@ import { QuestionDto } from './question.dto';
 import { User } from 'src/models/User.model';
 import { GenerateAiResponseService } from 'src/components/ArtificialIntelligence/GenerateAIResponse/generate-ai-response.service';
 import { CreateSessionIfNotExistsService } from 'src/components/Session/CreateSessionIfNotExists/create-session-if-not-exists.service';
+import { AIMessageChunk } from '@langchain/core/messages';
+import { MessageRepository } from 'src/supabase-repositories/message.repository';
 
 @Injectable()
 export class QuestionService {
@@ -11,9 +13,14 @@ export class QuestionService {
     private readonly workerRepository: WorkerRepository,
     private readonly generateAiResponseService: GenerateAiResponseService,
     private readonly createSessionIfNotExistsService: CreateSessionIfNotExistsService,
+    private readonly messageRepository: MessageRepository,
   ) {}
 
-  async execute(dto: QuestionDto, user: User): Promise<string> {
+  async execute(
+    dto: QuestionDto,
+    user: User,
+    onMessage: (chunk: AIMessageChunk) => void,
+  ): Promise<void> {
     const { question } = dto;
 
     const worker = await this.workerRepository.findOne(
@@ -47,14 +54,27 @@ export class QuestionService {
 
     const aiResponse = await this.generateAiResponseService.execute(
       question,
-      session.id,
       {
         agent_id: 'support',
+        session_id: session.id,
       },
-      'support',
+      true,
       { supportContext },
     );
 
-    return aiResponse;
+    let full = '';
+    for await (const chunk of aiResponse) {
+      if (chunk?.content) {
+        const text = chunk.content.toString();
+        full += text;
+        onMessage(chunk);
+      }
+    }
+
+    await this.messageRepository.create({
+      session_id: session.id,
+      message: full,
+      from: 'agent',
+    });
   }
 }
