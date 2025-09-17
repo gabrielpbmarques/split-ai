@@ -11,6 +11,8 @@ import { GetRunnableChatModule } from './GetRunnableChat/get-runnable-chat.modul
 import { LoadAiChatModule } from './LoadAiChat/load-ai-chat.module';
 import { LoadVectorStoreModule } from './LoadVectorStore/load-vector-store.module';
 import { NormalizePromptInstructionsModule } from './NormalizePromptInstructions/normalize-prompt-instructions.module';
+import { CreateAgentModule } from './CreateAgent/create-agent.module';
+import { ResolveAgentModule } from './ResolveAgent/resolve-agent.module';
 
 @Module({
   imports: [
@@ -25,6 +27,8 @@ import { NormalizePromptInstructionsModule } from './NormalizePromptInstructions
     FillPromptModule,
     NormalizePromptInstructionsModule,
     GenerateAiResponseModule,
+    CreateAgentModule,
+    ResolveAgentModule,
   ],
   exports: [
     ConvertTextToSpeechModule,
@@ -38,6 +42,8 @@ import { NormalizePromptInstructionsModule } from './NormalizePromptInstructions
     FillPromptModule,
     NormalizePromptInstructionsModule,
     GenerateAiResponseModule,
+    CreateAgentModule,
+    ResolveAgentModule,
   ],
 })
 export class ArtificialIntelligenceModule {}

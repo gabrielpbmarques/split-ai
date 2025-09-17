@@ -5,6 +5,7 @@ import {
   SupabaseService,
 } from 'src/infrastructure/providers/supabase.provider';
 import { CustomMetadata } from 'src/types';
+import { AgentRepository } from 'src/supabase-repositories/agent.repository';
 
 import { GenerateAgentSourceDto } from './generate-agent-source.dto';
 
@@ -14,10 +15,24 @@ export class GenerateAgentSourceService {
     @Inject(SUPABASE_SERVICE)
     private readonly supabaseService: SupabaseService,
     private readonly loadPdfService: LoadPdfService,
+    private readonly agentRepository: AgentRepository,
   ) {}
 
+  private isUuid(id: string): boolean {
+    return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(
+      id,
+    );
+  }
+
   async execute(dto: GenerateAgentSourceDto): Promise<void> {
-    const { url, sourceType, agentId } = dto;
+    const { url, sourceType } = dto;
+
+    let agentId = dto.agentId;
+    if (agentId && !this.isUuid(agentId)) {
+      const dbAgent = await this.agentRepository.findByIdentifier(agentId);
+      if (!dbAgent) throw new Error('Agente não encontrado pelo identifier');
+      agentId = dbAgent.id;
+    }
 
     const chunks = await this.loadPdfService.execute(url);
 

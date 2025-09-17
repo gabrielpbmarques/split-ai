@@ -1,14 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { LoadAiChatService } from 'src/components/ArtificialIntelligence/LoadAiChat/load-ai-chat.service';
-import { agents } from 'src/constants/chats/chats';
 import { CustomMetadata } from 'src/types';
 import { MessageRepository } from 'src/supabase-repositories/message.repository';
+import { ResolveAgentService } from 'src/components/ArtificialIntelligence/ResolveAgent/resolve-agent.service';
 
 @Injectable()
 export class GenerateAiResponseService {
   constructor(
     private loadAiChatService: LoadAiChatService,
     private messageRepository: MessageRepository,
+    private resolveAgentService: ResolveAgentService,
   ) {}
 
   async execute(
@@ -18,17 +19,14 @@ export class GenerateAiResponseService {
     promptVariables?: Record<string, any>,
   ): Promise<string | any> {
     try {
-      const agent = agents[metadata.agent_id];
-
-      console.log(agent);
+      const agentIdentifier = metadata.agent_id || 'support';
+      const agent = await this.resolveAgentService.resolve(agentIdentifier);
 
       await this.messageRepository.create({
         session_id: metadata.session_id,
         message: question,
         from: 'user',
       });
-
-      console.log(JSON.stringify(metadata, null, 2));
 
       const runnable = await this.loadAiChatService.execute(
         question,

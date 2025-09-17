@@ -1,4 +1,3 @@
-export * from './AIAgent';
 export * from './AIInstructions';
 export * from './AISourceType';
 export * from './ChatMessage';
@@ -11,3 +10,4 @@ export * from './RunnableMessageHistory';
 export * from './RunnableChat';
 export * from './SupabaseDocument';
 export * from './UserType';
+export * from './ResolvedAgent';

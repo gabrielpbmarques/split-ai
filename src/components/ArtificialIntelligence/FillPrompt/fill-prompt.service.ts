@@ -4,8 +4,12 @@ import {
 } from '@langchain/core/prompts';
 import { Injectable } from '@nestjs/common';
 import { BuildSystemPromptService } from 'src/components/ArtificialIntelligence/BuildSystemPrompt/build-system-prompt.service';
-import { Agent } from 'src/constants/chats/chats';
-import { AISourceType, CustomDocument, ChatMessage } from 'src/types';
+import {
+  AISourceType,
+  CustomDocument,
+  ChatMessage,
+  ResolvedAgent,
+} from 'src/types';
 
 @Injectable()
 export class FillPromptService {
@@ -13,7 +17,7 @@ export class FillPromptService {
 
   async execute(
     context: CustomDocument[],
-    agent?: Agent,
+    agent?: ResolvedAgent,
     sources?: AISourceType[],
   ): Promise<ChatPromptTemplate> {
     const {

@@ -3,11 +3,11 @@ import { ExecuteSimilaritySearchService } from 'src/components/ArtificialIntelli
 import { FillPromptService } from 'src/components/ArtificialIntelligence/FillPrompt/fill-prompt.service';
 import { GetRunnableChatService } from 'src/components/ArtificialIntelligence/GetRunnableChat/get-runnable-chat.service';
 import { LoadVectorStoreService } from 'src/components/ArtificialIntelligence/LoadVectorStore/load-vector-store.service';
-import { Agent } from 'src/constants/chats/chats';
 import {
   RunnableChat,
   RunnableMessageHistory,
   CustomMetadata,
+  ResolvedAgent,
 } from 'src/types';
 
 @Injectable()
@@ -23,7 +23,7 @@ export class LoadAiChatService {
     question: string,
     metadata: CustomMetadata,
     sessionId: string,
-    agent: Agent,
+    agent: ResolvedAgent,
   ): Promise<RunnableMessageHistory | RunnableChat> {
     const { chat, runnableOpts, jsonParser } = agent;
 
