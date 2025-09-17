@@ -13,6 +13,7 @@ import { LoadVectorStoreModule } from './LoadVectorStore/load-vector-store.modul
 import { NormalizePromptInstructionsModule } from './NormalizePromptInstructions/normalize-prompt-instructions.module';
 import { CreateAgentModule } from './CreateAgent/create-agent.module';
 import { ResolveAgentModule } from './ResolveAgent/resolve-agent.module';
+import { UpdateAgentModule } from './UpdateAgent/update-agent.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { ResolveAgentModule } from './ResolveAgent/resolve-agent.module';
     GenerateAiResponseModule,
     CreateAgentModule,
     ResolveAgentModule,
+    UpdateAgentModule,
   ],
   exports: [
     ConvertTextToSpeechModule,
@@ -44,6 +46,7 @@ import { ResolveAgentModule } from './ResolveAgent/resolve-agent.module';
     GenerateAiResponseModule,
     CreateAgentModule,
     ResolveAgentModule,
+    UpdateAgentModule,
   ],
 })
 export class ArtificialIntelligenceModule {}

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOneOptions, Repository } from 'typeorm';
+import { FindManyOptions, FindOneOptions, Repository } from 'typeorm';
 import { AgentEntity } from 'src/entities/agent.entity';
 
 @Injectable()
@@ -33,5 +33,9 @@ export class AgentRepository {
     return await this.repository.findOne({
       where: { agent_identifier: identifier },
     });
+  }
+
+  async find(options?: FindManyOptions<AgentEntity>): Promise<AgentEntity[]> {
+    return await this.repository.find(options);
   }
 }

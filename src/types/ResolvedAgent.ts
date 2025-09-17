@@ -5,6 +5,7 @@ import { AIInstructions } from './AIInstructions';
 import { RunnableChatOpts } from './RunnableChatOpts';
 
 export interface ResolvedAgent {
+  id?: string;
   instructions: AIInstructions;
   chat: ChatVertexAI;
   jsonParser?: DynamicStructuredTool<z.ZodObject<any>>;

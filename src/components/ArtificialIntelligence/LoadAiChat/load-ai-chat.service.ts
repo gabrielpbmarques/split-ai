@@ -31,6 +31,8 @@ export class LoadAiChatService {
     const retrievedDocuments =
       await this.executeSimilaritySearchService.execute(vectorStore, question);
 
+    console.log(retrievedDocuments);
+
     const prompt = await this.fillPromptService.execute(
       retrievedDocuments,
       agent,

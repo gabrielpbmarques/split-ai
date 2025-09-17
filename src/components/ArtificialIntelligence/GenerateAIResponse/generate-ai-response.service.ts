@@ -30,7 +30,10 @@ export class GenerateAiResponseService {
 
       const runnable = await this.loadAiChatService.execute(
         question,
-        metadata,
+        {
+          ...metadata,
+          agent_id: agent.id,
+        },
         metadata.session_id,
         agent,
       );
