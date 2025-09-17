@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BuildSystemPromptService } from 'src/components/Prompt/BuildSystemPrompt/build-system-prompt.service';
-import { NormalizePromptInstructionsService } from 'src/components/Prompt/NormalizePromptInstructions/normalize-prompt-instructions.service';
+import { BuildSystemPromptService } from './build-system-prompt.service';
+import { NormalizePromptInstructionsService } from '../NormalizePromptInstructions/normalize-prompt-instructions.service';
 
 describe('BuildSystemPromptService', () => {
   let service: BuildSystemPromptService;

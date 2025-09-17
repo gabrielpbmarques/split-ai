@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ExecuteSimilaritySearchService } from 'src/components/Langchain/ExecuteSimilaritySearch/execute-similarity-search.service';
-import { GetRunnableChatService } from 'src/components/Langchain/GetRunnableChat/get-runnable-chat.service';
-import { LoadAiChatService } from 'src/components/Langchain/LoadAiChat/load-ai-chat.service';
-import { LoadVectorStoreService } from 'src/components/Langchain/LoadVectorStore/load-vector-store.service';
-import { FillPromptService } from 'src/components/Prompt/FillPrompt/fill-prompt.service';
+import { ExecuteSimilaritySearchService } from '../ExecuteSimilaritySearch/execute-similarity-search.service';
+import { GetRunnableChatService } from '../GetRunnableChat/get-runnable-chat.service';
+import { LoadAiChatService } from './load-ai-chat.service';
+import { LoadVectorStoreService } from '../LoadVectorStore/load-vector-store.service';
+import { FillPromptService } from '../FillPrompt/fill-prompt.service';
 
 describe('LoadAiChatService', () => {
   let service: LoadAiChatService;

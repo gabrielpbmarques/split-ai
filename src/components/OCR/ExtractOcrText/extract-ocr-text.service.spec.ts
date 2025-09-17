@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ExtractOcrTextService } from 'src/components/Document/ExtractOcrText/extract-ocr-text.service';
+import { ExtractOcrTextService } from './extract-ocr-text.service';
 import { ImageAnnotatorClient } from '@google-cloud/vision';
 import { ProcessMessageDataService } from 'src/components/ArtificialIntelligence/MessageProcessing/ProcessMessageData/process-message-data.service';
 

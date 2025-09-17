@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { LoadVectorStoreService } from 'src/components/Langchain/LoadVectorStore/load-vector-store.service';
+import { LoadVectorStoreService } from './load-vector-store.service';
 
 describe('LoadVectorStoreService', () => {
   let service: LoadVectorStoreService;
