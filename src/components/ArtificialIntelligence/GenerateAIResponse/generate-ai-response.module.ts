@@ -1,12 +1,11 @@
 import { Module } from '@nestjs/common';
-import { LoadAiChatModule } from 'src/components/ArtificialIntelligence/LoadAiChat/load-ai-chat.module';
 import { SupabaseRepositoriesModule } from 'src/supabase-repositories/supabase-repositories.module';
-import { ResolveAgentModule } from 'src/components/ArtificialIntelligence/ResolveAgent/resolve-agent.module';
 
 import { GenerateAiResponseService } from './generate-ai-response.service';
+import { LoadAiChatModule } from '../LoadAiChat/load-ai-chat.module';
 
 @Module({
-  imports: [LoadAiChatModule, SupabaseRepositoriesModule, ResolveAgentModule],
+  imports: [SupabaseRepositoriesModule, LoadAiChatModule],
   providers: [GenerateAiResponseService],
   exports: [GenerateAiResponseService],
 })

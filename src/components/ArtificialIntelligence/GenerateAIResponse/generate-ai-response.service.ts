@@ -1,73 +1,107 @@
 import { Injectable } from '@nestjs/common';
 import { LoadAiChatService } from 'src/components/ArtificialIntelligence/LoadAiChat/load-ai-chat.service';
-import { CustomMetadata } from 'src/types';
+import { CustomMetadata, ResolvedAgent } from 'src/types';
 import { MessageRepository } from 'src/supabase-repositories/message.repository';
-import { ResolveAgentService } from 'src/components/ArtificialIntelligence/ResolveAgent/resolve-agent.service';
+import { IterableReadableStream } from '@langchain/core/dist/utils/stream';
+import { AIMessageChunk } from '@langchain/core/messages';
 
 @Injectable()
 export class GenerateAiResponseService {
   constructor(
-    private loadAiChatService: LoadAiChatService,
-    private messageRepository: MessageRepository,
-    private resolveAgentService: ResolveAgentService,
+    private readonly loadAiChatService: LoadAiChatService,
+    private readonly messageRepository: MessageRepository,
   ) {}
 
   async execute(
     question: string,
     metadata: CustomMetadata,
+    agent: ResolvedAgent,
     stream: boolean = false,
     promptVariables?: Record<string, any>,
-  ): Promise<string | any> {
+  ): Promise<string | IterableReadableStream<AIMessageChunk> | any> {
     try {
-      const agentIdentifier = metadata.agent_id || 'support';
-      const agent = await this.resolveAgentService.resolve(agentIdentifier);
+      const isParser = !!agent.jsonParser;
 
-      await this.messageRepository.create({
-        session_id: metadata.session_id,
-        message: question,
-        from: 'user',
-      });
-
-      const runnable = await this.loadAiChatService.execute(
+      const response = await this.generateResponse(
         question,
-        {
-          ...metadata,
-          agent_id: agent.id,
-        },
-        metadata.session_id,
+        metadata,
         agent,
+        stream,
+        promptVariables,
       );
 
-      const templateVariables = {
-        input: question,
-        ...promptVariables,
-      };
+      if (isParser) {
+        const cleanedResponse = (response as string)
+          .replace(/```json\s*/, '')
+          .replace(/```$/, '')
+          .trim();
 
-      if (stream) {
-        const iterator = await runnable.runnable.stream(
-          templateVariables,
-          runnable.config,
-        );
-        return iterator; // AsyncIterable
+        let parsed: Record<string, any>;
+
+        try {
+          parsed = JSON.parse(cleanedResponse);
+        } catch (error) {
+          parsed = {};
+        }
+
+        return parsed;
       }
 
-      const result = await runnable.runnable.invoke(
+      return response;
+    } catch (error) {
+      return 'Desculpe, tive um problema ao processar sua mensagem. Pode tentar novamente?';
+    }
+  }
+
+  private async generateResponse(
+    question: string,
+    metadata: CustomMetadata,
+    agent: ResolvedAgent,
+    stream: boolean = false,
+    promptVariables?: Record<string, any>,
+  ): Promise<string | IterableReadableStream<AIMessageChunk>> {
+    await this.messageRepository.create({
+      session_id: metadata.session_id,
+      message: question,
+      from: 'user',
+    });
+
+    const runnable = await this.loadAiChatService.execute(
+      question,
+      {
+        ...metadata,
+        agent_id: agent.id,
+      },
+      metadata.session_id,
+      agent,
+    );
+
+    const templateVariables = {
+      input: question,
+      ...promptVariables,
+    };
+
+    if (stream) {
+      const iterator = await runnable.runnable.stream(
         templateVariables,
         runnable.config,
       );
-
-      const formattedResponse = result.content.toString();
-
-      await this.messageRepository.create({
-        session_id: metadata.session_id,
-        message: formattedResponse,
-        from: 'agent',
-      });
-
-      return formattedResponse;
-    } catch (error) {
-      console.error('Erro ao gerar resposta:', error);
-      return 'Desculpe, tive um problema ao processar sua mensagem. Pode tentar novamente?';
+      return iterator;
     }
+
+    const result = await runnable.runnable.invoke(
+      templateVariables,
+      runnable.config,
+    );
+
+    const formattedResponse = result.content.toString();
+
+    await this.messageRepository.create({
+      session_id: metadata.session_id,
+      message: formattedResponse,
+      from: 'agent',
+    });
+
+    return formattedResponse;
   }
 }

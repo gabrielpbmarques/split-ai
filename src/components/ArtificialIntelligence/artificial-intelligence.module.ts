@@ -14,6 +14,7 @@ import { NormalizePromptInstructionsModule } from './NormalizePromptInstructions
 import { CreateAgentModule } from './CreateAgent/create-agent.module';
 import { ResolveAgentModule } from './ResolveAgent/resolve-agent.module';
 import { UpdateAgentModule } from './UpdateAgent/update-agent.module';
+import { ListAgentsModule } from './ListAgents/list-agents.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { UpdateAgentModule } from './UpdateAgent/update-agent.module';
     CreateAgentModule,
     ResolveAgentModule,
     UpdateAgentModule,
+    ListAgentsModule,
   ],
   exports: [
     ConvertTextToSpeechModule,
@@ -47,6 +49,7 @@ import { UpdateAgentModule } from './UpdateAgent/update-agent.module';
     CreateAgentModule,
     ResolveAgentModule,
     UpdateAgentModule,
+    ListAgentsModule,
   ],
 })
 export class ArtificialIntelligenceModule {}

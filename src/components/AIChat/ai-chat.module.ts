@@ -5,4 +5,4 @@ import { QuestionModule } from './Question/question.module';
   imports: [QuestionModule],
   exports: [QuestionModule],
 })
-export class SupportModule {}
+export class AIChatModule {}

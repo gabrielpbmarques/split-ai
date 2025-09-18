@@ -21,7 +21,7 @@ export class BuildSystemPromptService {
       .join(' ');
 
     if (!sources)
-      return `${textPrompt}\nReferência de conhecimento:\n${source}`;
+      return `${textPrompt}\nData de hoje: ${new Date().toLocaleDateString()}\nReferência de conhecimento:\n${source}`;
 
     const groupedSources = context.reduce(
       (acc, doc) => {
@@ -38,6 +38,6 @@ export class BuildSystemPromptService {
       sourceSection += `\n${type.toUpperCase()}:\n- ${content.join('\n- ')}\n`;
     }
 
-    return `${textPrompt}\nReferência de conhecimento:\n${sourceSection}`;
+    return `${textPrompt}\nData de hoje: ${new Date().toLocaleDateString()}\nReferência de conhecimento:\n${sourceSection}`;
   }
 }

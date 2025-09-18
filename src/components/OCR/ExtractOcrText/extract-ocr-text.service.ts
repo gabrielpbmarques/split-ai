@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { ImageAnnotatorClient } from '@google-cloud/vision';
 import { DocumentData } from 'src/models/Worker.model';
-import { ProcessMessageDataService } from 'src/components/ArtificialIntelligence/MessageProcessing/ProcessMessageData/process-message-data.service';
+import { GenerateAiResponseService } from 'src/components/ArtificialIntelligence/GenerateAIResponse/generate-ai-response.service';
+import { ResolveAgentService } from 'src/components/ArtificialIntelligence/ResolveAgent/resolve-agent.service';
 
 export interface ExtractOcrTextResponse
   extends Pick<
@@ -13,7 +14,8 @@ export interface ExtractOcrTextResponse
 export class ExtractOcrTextService {
   constructor(
     private client: ImageAnnotatorClient,
-    private processMessageDataService: ProcessMessageDataService,
+    private generateAiResponseService: GenerateAiResponseService,
+    private resolveAgentService: ResolveAgentService,
   ) {}
 
   async execute(
@@ -33,19 +35,22 @@ export class ExtractOcrTextService {
     });
 
     const fullText = texts.join(' ');
-    console.log(fullText);
-
     const result = await this.extractDocumentData(fullText);
-    console.log(result);
 
     return result;
   }
 
-  private extractDocumentData(text: string): Promise<ExtractOcrTextResponse> {
-    return this.processMessageDataService.execute({
-      message: text,
-      sessionId: '',
-      agentId: 'extract_document',
-    });
+  private async extractDocumentData(
+    text: string,
+  ): Promise<ExtractOcrTextResponse> {
+    const agent = await this.resolveAgentService.resolve('extract_document');
+    return this.generateAiResponseService.execute(
+      text,
+      {
+        session_id: '',
+      },
+      agent,
+      false,
+    );
   }
 }

@@ -2,23 +2,32 @@ import { Module } from '@nestjs/common';
 import { DocumentModule } from 'src/components/Document/document.module';
 import { MediaProcessingModule } from 'src/components/MediaProcessing/media-processing.module';
 import { SessionModule } from 'src/components/Session/session.module';
-import { SupportModule } from './Support/support.module';
+import { AIChatModule } from './AIChat/ai-chat.module';
 import { ArtificialIntelligenceModule } from './ArtificialIntelligence/artificial-intelligence.module';
+import { OcrModule } from './OCR/ocr.module';
+import { ComputerVisionModule } from './ComputerVision/computer-vision.module';
+import { PdfModule } from './Pdf/pdf.module';
 
 @Module({
   imports: [
     DocumentModule,
     MediaProcessingModule,
     SessionModule,
-    SupportModule,
+    AIChatModule,
     ArtificialIntelligenceModule,
+    OcrModule,
+    ComputerVisionModule,
+    PdfModule,
   ],
   exports: [
     DocumentModule,
     MediaProcessingModule,
     SessionModule,
-    SupportModule,
+    AIChatModule,
     ArtificialIntelligenceModule,
+    OcrModule,
+    ComputerVisionModule,
+    PdfModule,
   ],
 })
 export class ComponentsModule {}

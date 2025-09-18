@@ -3,15 +3,15 @@ import { DocumentValidationService } from 'src/components/Document/DocumentValid
 import { RepositoriesModule } from 'src/repositories/repositories.module';
 import { InfrastructureModule } from 'src/infrastructure/infrastructure.module';
 import { DocumentValidationController } from 'src/components/Document/DocumentValidation/document-validation.controller';
-import { FaceMatchModule } from 'src/components/ComputerVision/FaceMatch/face-match.module';
-import { ExtractOcrTextModule } from 'src/components/OCR/ExtractOcrText/extract-ocr-text.module';
+import { OcrModule } from 'src/components/OCR/ocr.module';
+import { ComputerVisionModule } from 'src/components/ComputerVision/computer-vision.module';
 
 @Module({
   imports: [
     InfrastructureModule,
     RepositoriesModule,
-    ExtractOcrTextModule,
-    FaceMatchModule,
+    OcrModule,
+    ComputerVisionModule,
   ],
   providers: [DocumentValidationService],
   exports: [DocumentValidationService],

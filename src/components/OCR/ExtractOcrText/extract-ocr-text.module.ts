@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ImageAnnotatorClient } from '@google-cloud/vision';
-import { ProcessMessageDataModule } from 'src/components/ArtificialIntelligence/MessageProcessing/ProcessMessageData/process-message-data.module';
 import { ExtractOcrTextService } from './extract-ocr-text.service';
+import { ArtificialIntelligenceModule } from 'src/components/ArtificialIntelligence/artificial-intelligence.module';
 
 @Module({
-  imports: [ProcessMessageDataModule],
+  imports: [ArtificialIntelligenceModule],
   providers: [
     ExtractOcrTextService,
     {
