@@ -63,7 +63,7 @@ export class ResolveAgentService {
     return {
       instructions: latestInstructions?.instructions || {
         context: '',
-        diretrizes: {},
+        diretrizes: [],
         objetivo: '',
       },
       chat,

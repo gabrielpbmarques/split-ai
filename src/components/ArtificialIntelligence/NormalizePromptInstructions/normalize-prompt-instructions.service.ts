@@ -8,9 +8,9 @@ export class NormalizePromptInstructionsService {
   execute(instructions: AIInstructions): string {
     let text = `${instructions.context}\n\nDiretrizes:\n\n`;
 
-    for (const key in instructions.diretrizes) {
-      const diretriz = instructions.diretrizes[key];
-      text += `- ${diretriz.descricao}: ${diretriz.detalhes}\n\n`;
+    const list = instructions.diretrizes || [];
+    for (const item of list) {
+      text += `- ${item}\n\n`;
     }
 
     text += `Objetivo:\n\n${instructions.objetivo}`;
