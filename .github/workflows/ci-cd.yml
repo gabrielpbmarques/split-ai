@@ -7,12 +7,12 @@ concurrency:
 on:
   push:
     branches:
-      - master
+      - main
       - develop
   pull_request:
     types: ['opened', 'synchronize', 'reopened', 'ready_for_review']
     branches:
-      - master
+      - main
       - develop
     paths:
       - src/**
