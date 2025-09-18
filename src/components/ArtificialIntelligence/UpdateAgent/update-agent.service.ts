@@ -54,10 +54,10 @@ export class UpdateAgentService {
     }
 
     if (dto.instructions !== undefined) {
-      await this.agentInstructionRepository.create({
-        agent_id: agent.id,
-        instructions: dto.instructions,
-      });
+      await this.agentInstructionRepository.updateLatestByAgentId(
+        agent.id,
+        dto.instructions,
+      );
     }
 
     return { id: agent.id };

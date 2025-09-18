@@ -37,4 +37,16 @@ export class AgentInstructionRepository {
     });
     return list[0] || null;
   }
+
+  async updateLatestByAgentId(
+    agentId: string,
+    instructions: any,
+  ): Promise<AgentInstructionEntity> {
+    const latest = await this.findLatestByAgentId(agentId);
+    if (latest) {
+      latest.instructions = instructions;
+      return await this.repository.save(latest);
+    }
+    return await this.create({ agent_id: agentId, instructions });
+  }
 }
