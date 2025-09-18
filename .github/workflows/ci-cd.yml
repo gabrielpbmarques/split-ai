@@ -107,6 +107,11 @@ jobs:
           KAFKA_SASL_USERNAME: ${{ secrets.KAFKA_SASL_USERNAME }}
           KAFKA_SASL_PASSWORD: ${{ secrets.KAFKA_SASL_PASSWORD }}
           KAFKA_TOPIC_PREFIX: ${{ secrets.KAFKA_TOPIC_PREFIX }}
+          DATABASE_HOST: ${{ secrets.DATABASE_HOST }}
+          DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
+          DATABASE_USERNAME: ${{ secrets.DATABASE_USERNAME }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+          DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
         run: |-
           gcloud run deploy anthor-agi --region $CLOUDSDK_COMPUTE_REGION \
           --image $GCP_DOCKER_IMAGE:${GITHUB_SHA::8} \
@@ -145,4 +150,9 @@ jobs:
           --set-env-vars KAFKA_SASL=$KAFKA_SASL \
           --set-env-vars KAFKA_SASL_USERNAME=$KAFKA_SASL_USERNAME \
           --set-env-vars KAFKA_SASL_PASSWORD=$KAFKA_SASL_PASSWORD \
-          --set-env-vars KAFKA_TOPIC_PREFIX=$KAFKA_TOPIC_PREFIX
+          --set-env-vars KAFKA_TOPIC_PREFIX=$KAFKA_TOPIC_PREFIX \
+          --set-env-vars DATABASE_HOST=$DATABASE_HOST \
+          --set-env-vars DATABASE_PORT=$DATABASE_PORT \
+          --set-env-vars DATABASE_USERNAME=$DATABASE_USERNAME \
+          --set-env-vars DATABASE_PASSWORD=$DATABASE_PASSWORD \
+          --set-env-vars DATABASE_NAME=$DATABASE_NAME
