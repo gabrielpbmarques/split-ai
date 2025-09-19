@@ -8,12 +8,10 @@ on:
   push:
     branches:
       - main
-      - develop
   pull_request:
     types: ['opened', 'synchronize', 'reopened', 'ready_for_review']
     branches:
       - main
-      - develop
     paths:
       - src/**
       - .github/workflows/**
@@ -140,3 +138,4 @@ jobs:
           --set-env-vars TWILIO_AUTH_TOKEN=$TWILIO_AUTH_TOKEN \
           --set-env-vars TWILIO_WEBHOOK_BASE_URL=$TWILIO_WEBHOOK_BASE_URL \
           --set-env-vars GCP_PROJECT_ID=$CLOUDSDK_CORE_PROJECT \
+          --set-env-vars GOOGLE_GEOCODING_API_KEY=$GOOGLE_GEOCODING_API_KEY
