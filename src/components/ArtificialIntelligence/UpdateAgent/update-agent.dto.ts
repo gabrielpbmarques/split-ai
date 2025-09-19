@@ -1,4 +1,4 @@
-import { AIInstructions } from 'src/types/AIInstructions';
+import { AIInstructions } from 'src/types';
 
 export class UpdateAgentDto {
   name?: string;

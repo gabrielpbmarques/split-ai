@@ -5,7 +5,7 @@ import {
   SupabaseService,
 } from 'src/infrastructure/providers/supabase.provider';
 import { CustomMetadata } from 'src/types';
-import { AgentRepository } from 'src/supabase-repositories/agent.repository';
+import { AgentRepository } from 'src/repositories/agent.repository';
 
 import { GenerateAgentSourceDto } from './generate-agent-source.dto';
 

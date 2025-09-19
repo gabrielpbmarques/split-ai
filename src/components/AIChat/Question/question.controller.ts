@@ -3,7 +3,7 @@ import { QuestionService } from './question.service';
 import { QuestionDto } from './question.dto';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { User as AuthUser } from 'src/decorators/user.decorator';
-import { User } from 'src/models/User.model';
+import { UserEntity } from 'src/entities';
 import { FastifyReply } from 'fastify';
 
 @Controller('support')
@@ -15,7 +15,7 @@ export class QuestionController {
   async execute(
     @Res() res: FastifyReply,
     @Body() dto: QuestionDto,
-    @AuthUser() user: User,
+    @AuthUser() user: UserEntity,
   ): Promise<void> {
     res.hijack();
     try {

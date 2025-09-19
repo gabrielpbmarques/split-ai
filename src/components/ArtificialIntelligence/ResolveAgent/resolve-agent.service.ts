@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { ChatVertexAI } from '@langchain/google-vertexai';
-import { AgentRepository } from 'src/supabase-repositories/agent.repository';
-import { AgentInstructionRepository } from 'src/supabase-repositories/agent-instruction.repository';
+import { AgentRepository } from 'src/repositories/agent.repository';
+import { AgentInstructionRepository } from 'src/repositories/agent-instruction.repository';
 import { config } from 'src/config';
 import { buildLangchainToolFromSchema } from 'src/utils/buildZodSchema';
-import { ResolvedAgent } from 'src/types/ResolvedAgent';
+import { ResolvedAgent } from 'src/types';
 
 @Injectable()
 export class ResolveAgentService {

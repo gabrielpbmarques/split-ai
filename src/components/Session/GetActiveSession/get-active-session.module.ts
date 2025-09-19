@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { GetActiveSessionService } from './get-active-session.service';
-import { SupabaseRepositoriesModule } from 'src/supabase-repositories/supabase-repositories.module';
+import { RepositoriesModule } from 'src/repositories/repositories.module';
 
 @Module({
-  imports: [SupabaseRepositoriesModule],
+  imports: [RepositoriesModule],
   providers: [GetActiveSessionService],
   exports: [GetActiveSessionService],
 })

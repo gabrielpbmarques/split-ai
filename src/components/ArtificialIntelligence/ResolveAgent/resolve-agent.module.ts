@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { SupabaseRepositoriesModule } from 'src/supabase-repositories/supabase-repositories.module';
+import { RepositoriesModule } from 'src/repositories/repositories.module';
 import { ResolveAgentService } from './resolve-agent.service';
 
 @Module({
-  imports: [SupabaseRepositoriesModule],
+  imports: [RepositoriesModule],
   providers: [ResolveAgentService],
   exports: [ResolveAgentService],
 })

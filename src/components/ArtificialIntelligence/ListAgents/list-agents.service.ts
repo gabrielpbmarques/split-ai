@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { AgentEntity } from 'src/entities';
-import { AgentRepository } from 'src/supabase-repositories/agent.repository';
+import { AgentRepository } from 'src/repositories/agent.repository';
 
 @Injectable()
 export class ListAgentsService {

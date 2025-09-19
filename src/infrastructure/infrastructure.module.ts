@@ -11,11 +11,6 @@ import {
   VERTEX_AI_CHAT,
 } from 'src/infrastructure/providers/vertex-ai.provider';
 import {
-  S3Provider,
-  S3_CLIENT,
-  S3_SERVICE,
-} from 'src/infrastructure/providers/s3.provider';
-import {
   SendGridProvider,
   SENDGRID_CLIENT,
   EMAIL_SERVICE,
@@ -32,6 +27,11 @@ import {
   GoogleVoiceProvider,
   GOOGLE_VOICE_SERVICE,
 } from 'src/infrastructure/providers/google-voice.provider';
+import {
+  TwilioProvider,
+  TWILIO_CLIENT,
+  TWILIO_SERVICE,
+} from 'src/infrastructure/providers/twilio.provider';
 
 @Module({
   imports: [ConfigModule],
@@ -39,23 +39,23 @@ import {
     AnthorProvider,
     ...SupabaseProvider,
     ...VertexAIProvider,
-    ...S3Provider,
     ...SendGridProvider,
     ...GcpStorageProvider,
     ...GoogleVoiceProvider,
+    ...TwilioProvider,
   ],
   exports: [
     SUPABASE_CLIENT,
     SUPABASE_SERVICE,
     VERTEX_AI_EMBEDDINGS,
     VERTEX_AI_CHAT,
-    S3_CLIENT,
-    S3_SERVICE,
     SENDGRID_CLIENT,
     EMAIL_SERVICE,
     ANTHOR_CLIENT,
     GCP_STORAGE_SERVICE,
     GOOGLE_VOICE_SERVICE,
+    TWILIO_CLIENT,
+    TWILIO_SERVICE,
   ],
 })
 export class InfrastructureModule {}

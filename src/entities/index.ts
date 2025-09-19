@@ -2,3 +2,8 @@ export * from './session.entity';
 export * from './message.entity';
 export * from './agent.entity';
 export * from './agent-instruction.entity';
+export * from './user.entity';
+export * from './organization.entity';
+export * from './sms-verification.entity';
+export * from './user-token.entity';
+export * from './notification.entity';

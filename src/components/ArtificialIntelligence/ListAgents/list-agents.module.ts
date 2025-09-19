@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ListAgentsController } from './list-agents.controller';
 import { ListAgentsService } from './list-agents.service';
-import { SupabaseRepositoriesModule } from 'src/supabase-repositories/supabase-repositories.module';
+import { RepositoriesModule } from 'src/repositories/repositories.module';
 
 @Module({
-  imports: [SupabaseRepositoriesModule],
+  imports: [RepositoriesModule],
   controllers: [ListAgentsController],
   providers: [ListAgentsService],
   exports: [ListAgentsService],

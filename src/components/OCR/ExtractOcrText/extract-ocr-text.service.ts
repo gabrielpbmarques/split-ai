@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { ImageAnnotatorClient } from '@google-cloud/vision';
-import { DocumentData } from 'src/models/Worker.model';
 import { GenerateAiResponseService } from 'src/components/ArtificialIntelligence/GenerateAIResponse/generate-ai-response.service';
 import { ResolveAgentService } from 'src/components/ArtificialIntelligence/ResolveAgent/resolve-agent.service';
+import { DocumentData } from 'src/types';
 
 export interface ExtractOcrTextResponse
   extends Pick<

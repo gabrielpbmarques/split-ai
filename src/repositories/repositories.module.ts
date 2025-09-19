@@ -1,54 +1,62 @@
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
-import { Worker, WorkerSchema } from 'src/schemas/Worker.schema';
-import { WorkerRepository } from 'src/repositories/Worker.repository';
-import { BankAccount, BankAccountSchema } from 'src/schemas/BankAccount.schema';
-import { BankAccountRepository } from 'src/repositories/BankAccount.repository';
-import { Session, SessionSchema } from 'src/schemas/Session.schema';
-import { SessionRepository } from 'src/repositories/Session.repository';
-import { Address, AddressSchema } from 'src/schemas/Address.schema';
-import { AddressRepository } from 'src/repositories/Address.repository';
-import { Phone, PhoneSchema } from 'src/schemas/Phone.schema';
-import { PhoneRepository } from 'src/repositories/Phone.repository';
-import { User, UserSchema } from 'src/schemas/User.schema';
-import { UserRepository } from 'src/repositories/User.repository';
-import { Picture, PictureSchema } from 'src/schemas/Picture.schema';
-import { PictureRepository } from 'src/repositories/Picture.repository';
-import { Job, JobSchema } from 'src/schemas/Job.schema';
-import { JobRepository } from 'src/repositories/Job.repository';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import {
+  UserEntity,
+  OrganizationEntity,
+  UserTokenEntity,
+  SmsVerificationEntity,
+  NotificationEntity,
+  SessionEntity,
+  MessageEntity,
+  AgentEntity,
+  AgentInstructionEntity,
+} from 'src/entities';
+
+import { NotificationRepository } from './notification.repository';
+import { OrganizationRepository } from './organization.repository';
+import { SmsVerificationRepository } from './sms-verification.repository';
+import { UserTokenRepository } from './user-token.repository';
+import { UserRepository } from './user.repository';
+import { SessionRepository } from './session.repository';
+import { MessageRepository } from './message.repository';
+import { AgentRepository } from './agent.repository';
+import { AgentInstructionRepository } from './agent-instruction.repository';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([
-      { name: Worker.name, schema: WorkerSchema },
-      { name: BankAccount.name, schema: BankAccountSchema },
-      { name: Session.name, schema: SessionSchema },
-      { name: Address.name, schema: AddressSchema },
-      { name: Phone.name, schema: PhoneSchema },
-      { name: User.name, schema: UserSchema },
-      { name: Picture.name, schema: PictureSchema },
-      { name: Job.name, schema: JobSchema },
+    TypeOrmModule.forFeature([
+      UserEntity,
+      OrganizationEntity,
+      UserTokenEntity,
+      SmsVerificationEntity,
+      NotificationEntity,
+      SessionEntity,
+      MessageEntity,
+      AgentEntity,
+      AgentInstructionEntity,
     ]),
   ],
   providers: [
-    WorkerRepository,
-    BankAccountRepository,
-    SessionRepository,
-    AddressRepository,
-    PhoneRepository,
+    OrganizationRepository,
     UserRepository,
-    PictureRepository,
-    JobRepository,
+    UserTokenRepository,
+    SmsVerificationRepository,
+    NotificationRepository,
+    SessionRepository,
+    MessageRepository,
+    AgentRepository,
+    AgentInstructionRepository,
   ],
   exports: [
-    WorkerRepository,
-    BankAccountRepository,
-    SessionRepository,
-    AddressRepository,
-    PhoneRepository,
+    OrganizationRepository,
     UserRepository,
-    PictureRepository,
-    JobRepository,
+    UserTokenRepository,
+    SmsVerificationRepository,
+    NotificationRepository,
+    SessionRepository,
+    MessageRepository,
+    AgentRepository,
+    AgentInstructionRepository,
   ],
 })
 export class RepositoriesModule {}

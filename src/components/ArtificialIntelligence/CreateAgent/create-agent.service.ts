@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { AgentRepository } from 'src/supabase-repositories/agent.repository';
-import { AgentInstructionRepository } from 'src/supabase-repositories/agent-instruction.repository';
+import { AgentRepository } from 'src/repositories/agent.repository';
+import { AgentInstructionRepository } from 'src/repositories/agent-instruction.repository';
 import { CreateAgentDto } from './create-agent.dto';
 
 @Injectable()

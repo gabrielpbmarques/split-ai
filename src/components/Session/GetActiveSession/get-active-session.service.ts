@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { SessionRepository } from 'src/supabase-repositories/session.repository';
+import { SessionRepository } from 'src/repositories/session.repository';
 import { GetActiveSessionDto } from './get-active-session.dto';
 import { SessionEntity } from 'src/entities/session.entity';
 

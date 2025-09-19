@@ -9,6 +9,8 @@ services:
       - '8080:80'
     env_file:
       - .env
+    environment:
+      REDIS_URL: redis://redis:6379
 
     volumes:
       - ./.gcloud:/usr/app/.gcloud
@@ -17,7 +19,8 @@ services:
       - ./bun.lockb:/usr/app/bun.lockb
       - ./tsconfig.json:/usr/app/tsconfig.json
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     restart: unless-stopped
     command: ['bun', 'run', 'start:dev']
 
@@ -28,6 +31,11 @@ services:
     volumes:
       - redis-data:/data
     command: redis-server --save 60 1 --loglevel warning
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
 
 volumes:

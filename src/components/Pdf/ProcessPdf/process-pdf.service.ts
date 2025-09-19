@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { CustomDocument } from 'src/types/CustomDocument';
+import { CustomDocument } from 'src/types';
 import { ExtractPdfChunksService } from '../ExtractPdfChunks/extract-pdf-chunks.service';
 
 @Injectable()

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { LoadAiChatService } from 'src/components/ArtificialIntelligence/LoadAiChat/load-ai-chat.service';
 import { CustomMetadata, ResolvedAgent } from 'src/types';
-import { MessageRepository } from 'src/supabase-repositories/message.repository';
+import { MessageRepository } from 'src/repositories/message.repository';
 import { IterableReadableStream } from '@langchain/core/dist/utils/stream';
 import { AIMessageChunk } from '@langchain/core/messages';
 

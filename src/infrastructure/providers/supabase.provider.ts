@@ -2,8 +2,7 @@ import { SupabaseVectorStore } from '@langchain/community/vectorstores/supabase'
 import { Inject, Provider } from '@nestjs/common';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { config } from 'src/config';
-import { Chunks } from 'src/types/Chunks';
-import { CustomMetadata } from 'src/types/CustomMetadata';
+import { Chunks, CustomMetadata } from 'src/types';
 import { Document } from '@langchain/core/documents';
 import { cleanInvalidUnicode } from 'src/utils/clearInvalidUnicode';
 import { VertexAIEmbeddings } from '@langchain/google-vertexai';

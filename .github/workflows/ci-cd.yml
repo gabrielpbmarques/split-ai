@@ -1,10 +1,14 @@
-name: CI/CD for Anthor
+name: CI/CD for Split AI
 
 concurrency:
-  group: ci-cd-anthor-agi-${{ github.ref }}
+  group: ci-cd-split-ai-${{ github.ref }}
   cancel-in-progress: true
 
 on:
+  push:
+    branches:
+      - main
+      - develop
   pull_request:
     types: ['opened', 'synchronize', 'reopened', 'ready_for_review']
     branches:
@@ -52,103 +56,87 @@ jobs:
       - id: 'auth'
         uses: 'google-github-actions/auth@v1'
         with:
-          credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
+          credentials_json: '${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}'
           token_format: 'access_token'
 
       - name: Docker configuration
         uses: 'docker/login-action@v2'
         with:
-          registry: 'us-docker.pkg.dev'
+          registry: 'southamerica-east1-docker.pkg.dev'
           username: 'oauth2accesstoken'
           password: '${{ steps.auth.outputs.access_token }}'
 
       - name: Build Prod Docker Image
         env:
           ENV: production
-          GCP_DOCKER_IMAGE: us-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/gcr.io/anthor-agi
+          GCP_DOCKER_IMAGE: southamerica-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/nexguard/split-ai
           GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
         run: docker build -t $GCP_DOCKER_IMAGE:${GITHUB_SHA::8} .
 
       - name: Publish Prod
         run: |-
-          docker push "us-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/gcr.io/anthor-agi:${GITHUB_SHA::8}"
+          docker push "southamerica-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/nexguard/split-ai:${GITHUB_SHA::8}"
 
       - name: Deploy Prod
         env:
           ENV: production
-          API_KEY: ${{ secrets.API_KEY }}
-          GCP_DOCKER_IMAGE: us-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/gcr.io/anthor-agi
+          GCP_DOCKER_IMAGE: southamerica-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/nexguard/split-ai
           CLOUDSDK_CORE_PROJECT: ${{ secrets.GCP_PROJECT }}
           CLOUDSDK_COMPUTE_REGION: southamerica-east1
-          GOOGLE_APPLICATION_CREDENTIALS: './.gcloud/kms/google.json'
-          MONGO_URI: ${{ secrets.MONGO_URI }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          # Configurações da Aplicação
           EMBEDDING_MODEL: ${{ secrets.EMBEDDING_MODEL }}
           AI_MODEL: ${{ secrets.AI_MODEL }}
-          REDIS_URL: ${{ secrets.REDIS_URL }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_API_KEY: ${{ secrets.SUPABASE_API_KEY }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_S3_BUCKET_NAME: ${{ secrets.AWS_S3_BUCKET_NAME }}
-          WELCOME_EMAIL_TEMPLATE_ID: ${{ secrets.WELCOME_EMAIL_TEMPLATE_ID }}
-          APPROVED_EMAIL_TEMPLATE_ID: ${{ secrets.APPROVED_EMAIL_TEMPLATE_ID }}
-          FINISH_EMAIL_TEMPLATE_ID: ${{ secrets.FINISH_EMAIL_TEMPLATE_ID }}
-          SENDGRID_EMAIL: ${{ secrets.SENDGRID_EMAIL }}
-          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
-          KAFKA_BROKERS: ${{ secrets.KAFKA_BROKERS }}
-          KAFKA_SSL: ${{ secrets.KAFKA_SSL }}
-          KAFKA_SASL: ${{ secrets.KAFKA_SASL }}
-          KAFKA_SASL_USERNAME: ${{ secrets.KAFKA_SASL_USERNAME }}
-          KAFKA_SASL_PASSWORD: ${{ secrets.KAFKA_SASL_PASSWORD }}
-          KAFKA_TOPIC_PREFIX: ${{ secrets.KAFKA_TOPIC_PREFIX }}
+          # JWT
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          JWT_EXPIRATION: ${{ secrets.JWT_EXPIRATION }}
+          # Banco de Dados
           DATABASE_HOST: ${{ secrets.DATABASE_HOST }}
           DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
           DATABASE_USERNAME: ${{ secrets.DATABASE_USERNAME }}
           DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
           DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
+          # Supabase
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_API_KEY: ${{ secrets.SUPABASE_API_KEY }}
+          # SendGrid
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          SENDGRID_EMAIL_DEFAULT_FROM: ${{ secrets.SENDGRID_EMAIL_DEFAULT_FROM }}
+          # Google Credentials
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+          # Redis
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+          # Twilio
+          TWILIO_PHONE_NUMBER: ${{ secrets.TWILIO_PHONE_NUMBER }}
+          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+          TWILIO_WEBHOOK_BASE_URL: ${{ secrets.TWILIO_WEBHOOK_BASE_URL }}
+          GOOGLE_GEOCODING_API_KEY: ${{ secrets.GOOGLE_GEOCODING_API_KEY }}
         run: |-
-          gcloud run deploy anthor-agi --region $CLOUDSDK_COMPUTE_REGION \
+          gcloud run deploy split-ai --region $CLOUDSDK_COMPUTE_REGION \
+          --allow-unauthenticated \
           --image $GCP_DOCKER_IMAGE:${GITHUB_SHA::8} \
-          --timeout 3600 \
-          --vpc-connector anthor-connector-sa \
-          --vpc-egress all \
           --min-instances 1 \
-          --max-instances 100 \
+          --max-instances 2 \
           --memory 4Gi \
           --cpu 4 \
           --set-env-vars ENV=$ENV \
-          --set-env-vars NODE_ENV=$ENV \
-          --set-env-vars API_KEY=$API_KEY \
-          --set-env-vars MONGO_URI=$MONGO_URI \
-          --set-env-vars SENTRY_DSN=$SENTRY_DSN \
-          --set-env-vars TOKEN_EXPIRATION_TIME=$TOKEN_EXPIRATION_TIME \
-          --set-env-vars GCP_PROJECT_ID=$CLOUDSDK_CORE_PROJECT \
-          --set-env-vars GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS \
-          --set-env-vars JWT_SECRET=$JWT_SECRET \
+          --set-env-vars NODE_ENV=ENV \
           --set-env-vars EMBEDDING_MODEL=$EMBEDDING_MODEL \
           --set-env-vars AI_MODEL=$AI_MODEL \
-          --set-env-vars REDIS_URL=$REDIS_URL \
-          --set-env-vars SUPABASE_URL=$SUPABASE_URL \
-          --set-env-vars SUPABASE_API_KEY=$SUPABASE_API_KEY \
-          --set-env-vars AWS_REGION=$AWS_REGION \
-          --set-env-vars AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
-          --set-env-vars AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
-          --set-env-vars AWS_S3_BUCKET_NAME=$AWS_S3_BUCKET_NAME \
-          --set-env-vars WELCOME_EMAIL_TEMPLATE_ID=$WELCOME_EMAIL_TEMPLATE_ID \
-          --set-env-vars APPROVED_EMAIL_TEMPLATE_ID=$APPROVED_EMAIL_TEMPLATE_ID \
-          --set-env-vars FINISH_EMAIL_TEMPLATE_ID=$FINISH_EMAIL_TEMPLATE_ID \
-          --set-env-vars SENDGRID_EMAIL=$SENDGRID_EMAIL \
-          --set-env-vars SENDGRID_API_KEY=$SENDGRID_API_KEY \
-          --set-env-vars KAFKA_BROKERS=$KAFKA_BROKERS \
-          --set-env-vars KAFKA_SSL=$KAFKA_SSL \
-          --set-env-vars KAFKA_SASL=$KAFKA_SASL \
-          --set-env-vars KAFKA_SASL_USERNAME=$KAFKA_SASL_USERNAME \
-          --set-env-vars KAFKA_SASL_PASSWORD=$KAFKA_SASL_PASSWORD \
-          --set-env-vars KAFKA_TOPIC_PREFIX=$KAFKA_TOPIC_PREFIX \
+          --set-env-vars JWT_SECRET=$JWT_SECRET \
+          --set-env-vars JWT_EXPIRATION=$JWT_EXPIRATION \
           --set-env-vars DATABASE_HOST=$DATABASE_HOST \
           --set-env-vars DATABASE_PORT=$DATABASE_PORT \
           --set-env-vars DATABASE_USERNAME=$DATABASE_USERNAME \
           --set-env-vars DATABASE_PASSWORD=$DATABASE_PASSWORD \
-          --set-env-vars DATABASE_NAME=$DATABASE_NAME
+          --set-env-vars DATABASE_NAME=$DATABASE_NAME \
+          --set-env-vars SUPABASE_URL=$SUPABASE_URL \
+          --set-env-vars SUPABASE_API_KEY=$SUPABASE_API_KEY \
+          --set-env-vars SENDGRID_API_KEY=$SENDGRID_API_KEY \
+          --set-env-vars SENDGRID_EMAIL_DEFAULT_FROM=$SENDGRID_EMAIL_DEFAULT_FROM \
+          --set-env-vars REDIS_URL=$REDIS_URL \
+          --set-env-vars TWILIO_PHONE_NUMBER=$TWILIO_PHONE_NUMBER \
+          --set-env-vars TWILIO_ACCOUNT_SID=$TWILIO_ACCOUNT_SID \
+          --set-env-vars TWILIO_AUTH_TOKEN=$TWILIO_AUTH_TOKEN \
+          --set-env-vars TWILIO_WEBHOOK_BASE_URL=$TWILIO_WEBHOOK_BASE_URL \
+          --set-env-vars GCP_PROJECT_ID=$CLOUDSDK_CORE_PROJECT \

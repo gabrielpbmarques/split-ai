@@ -1,85 +1,122 @@
 import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { User } from 'src/models/User.model';
-import { User as UserSchema, UserDocument } from 'src/schemas/User.schema';
-import { flatten } from 'src/utils/mongoose.utils';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
-export interface IUserRepository {
-  findOne(query: Partial<User>): Promise<User | null>;
-  findById(id: string): Promise<User | null>;
-  findByEmail(email: string): Promise<User | null>;
-  findByCPF(cpf: string): Promise<User | null>;
-  findByWorkerId(workerId: string): Promise<User | null>;
-  update(id: string, payload: Partial<User>): Promise<User | null>;
-  create(user: Partial<User>): Promise<User>;
-}
+import { UserEntity } from '../entities';
 
 @Injectable()
-export class UserRepository implements IUserRepository {
+export class UserRepository {
   constructor(
-    @InjectModel(UserSchema.name)
-    private userModel: Model<UserDocument>,
+    @InjectRepository(UserEntity)
+    private userRepository: Repository<UserEntity>,
   ) {}
 
-  async findOne(query: Partial<User>): Promise<User | null> {
-    const user = await this.userModel.findOne(query).exec();
-    return user ? (user.toObject() as unknown as User) : null;
+  async findAll(): Promise<UserEntity[]> {
+    return this.userRepository.find();
   }
 
-  async findById(id: string): Promise<User | null> {
-    const user = await this.userModel.findById(id).exec();
-    return user ? (user.toObject() as unknown as User) : null;
+  async findById(id: string): Promise<UserEntity | null> {
+    return this.userRepository.findOneBy({ id });
   }
 
-  async findByWorkerId(workerId: string): Promise<User | null> {
-    const user = await this.userModel.findOne({ workerId }).exec();
-    return user ? (user.toObject() as unknown as User) : null;
+  async findByEmail(email: string): Promise<UserEntity | null> {
+    return this.userRepository.findOneBy({ email });
   }
 
-  async findByEmail(email: string): Promise<User | null> {
-    const user = await this.userModel.findOne({ email }).exec();
-    return user ? (user.toObject() as unknown as User) : null;
+  async findByPhone(phone: string): Promise<UserEntity | null> {
+    return this.userRepository.findOneBy({ phone });
   }
 
-  async findByCPF(cpf: string): Promise<User | null> {
-    const user = await this.userModel.findOne({ cpf }).exec();
-    return user ? (user.toObject() as unknown as User) : null;
+  async create(data: Partial<UserEntity>): Promise<UserEntity> {
+    const user = this.userRepository.create(data);
+    return this.userRepository.save(user);
   }
 
-  async update(id: string, payload: Partial<User>): Promise<User | null> {
-    // Remove campos imutáveis do MongoDB no nível raiz apenas
-    const { _id, __v, createdAt, updatedAt, ...safePayload } = payload as any;
-
-    const updatedUser = await this.userModel
-      .findByIdAndUpdate(id, { $set: flatten(safePayload) }, { new: true })
-      .exec();
-    return updatedUser ? (updatedUser.toObject() as unknown as User) : null;
+  async update(
+    id: string,
+    data: Partial<UserEntity>,
+  ): Promise<UserEntity | null> {
+    await this.userRepository.update(id, data);
+    return this.findById(id);
   }
 
-  async updateByWorkerId(
-    workerId: string,
-    payload: Partial<User>,
-  ): Promise<User | null> {
-    const existingUser = await this.userModel.findOne({ workerId }).exec();
-
-    if (!existingUser) {
-      return null;
-    }
-
-    // Remove campos imutáveis do MongoDB no nível raiz apenas
-    const { _id, __v, createdAt, updatedAt, ...safePayload } = payload as any;
-
-    const updatedUser = await this.userModel
-      .findOneAndUpdate({ workerId }, { $set: safePayload }, { new: true })
-      .exec();
-
-    return updatedUser ? (updatedUser.toObject() as unknown as User) : null;
+  async delete(id: string): Promise<boolean> {
+    const result = await this.userRepository.delete(id);
+    return (
+      result.affected !== null &&
+      result.affected !== undefined &&
+      result.affected > 0
+    );
   }
 
-  async create(user: Partial<User>): Promise<User | null> {
-    const newUser = new this.userModel(user);
-    const savedUser = await newUser.save();
-    return savedUser ? (savedUser.toObject() as unknown as User) : null;
+  async findNearbySecurityOfficersWithState(
+    latitude: number,
+    longitude: number,
+    alertId: string,
+    radiusInKm = 10,
+    limit = 100,
+  ): Promise<
+    Array<{
+      user_id: string;
+      name: string | null;
+      email: string | null;
+      phone: string | null;
+      latitude: number;
+      longitude: number;
+      notified_for_alert: boolean;
+      is_busy: boolean;
+    }>
+  > {
+    const query = `
+      WITH latest_loc AS (
+        SELECT DISTINCT ON (ul.user_id)
+          ul.user_id,
+          ul.latitude,
+          ul.longitude,
+          ul.created_at
+        FROM user_location ul
+        ORDER BY ul.user_id, ul.created_at DESC
+      )
+      SELECT
+        u.id AS user_id,
+        u.name AS name,
+        u.email AS email,
+        u.phone AS phone,
+        ll.latitude AS latitude,
+        ll.longitude AS longitude,
+        EXISTS (
+          SELECT 1 FROM notifications n
+          WHERE n.user_id = u.id
+            AND n.entity_type = 'Alert'
+            AND n.entity_id = $3
+        ) AS notified_for_alert,
+        EXISTS (
+          SELECT 1 FROM alerts a
+          WHERE a.attended_by_user_id = u.id
+            AND a.status = 'em_atendimento'
+        ) AS is_busy
+      FROM latest_loc ll
+      JOIN users u ON u.id = ll.user_id
+      WHERE u.role = 'security_force'
+        AND u.status = 'active'
+      AND ST_DWithin(
+        ST_SetSRID(ST_MakePoint(ll.longitude, ll.latitude), 4326)::geography,
+        ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography,
+        $4 * 1000
+      )
+      ORDER BY ST_Distance(
+        ST_SetSRID(ST_MakePoint(ll.longitude, ll.latitude), 4326)::geography,
+        ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography
+      ) ASC
+      LIMIT $5
+    `;
+
+    return this.userRepository.query(query, [
+      longitude,
+      latitude,
+      alertId,
+      radiusInKm,
+      limit,
+    ]);
   }
 }

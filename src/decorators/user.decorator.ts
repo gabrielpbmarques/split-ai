@@ -1,4 +1,3 @@
-import { User as UserModel } from '@anthor/entities-types';
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 
 /**
@@ -7,14 +6,19 @@ import { createParamDecorator, ExecutionContext } from '@nestjs/common';
  *
  * @example
  * @UseGuards(AuthGuard)
- * @Roles('admin', 'establishment')
  * async handle(@User() user: User) {
  *   // Acesso ao usuário autenticado
  * }
  */
 export const User = createParamDecorator(
-  (data: unknown, ctx: ExecutionContext): UserModel => {
+  (data: string | undefined, ctx: ExecutionContext): any => {
     const request = ctx.switchToHttp().getRequest();
-    return request.user;
+    const user = request.user;
+
+    if (data && typeof data === 'string') {
+      return user?.[data];
+    }
+
+    return user;
   },
 );

@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
-import { SupabaseRepositoriesModule } from 'src/supabase-repositories/supabase-repositories.module';
+import { RepositoriesModule } from 'src/repositories/repositories.module';
 import { CreateAgentController } from './create-agent.controller';
 import { CreateAgentService } from './create-agent.service';
 
 @Module({
-  imports: [SupabaseRepositoriesModule],
+  imports: [RepositoriesModule],
   controllers: [CreateAgentController],
   providers: [CreateAgentService],
   exports: [CreateAgentService],

@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { QuestionDto } from './question.dto';
-import { User } from 'src/models/User.model';
 import { GenerateAiResponseService } from 'src/components/ArtificialIntelligence/GenerateAIResponse/generate-ai-response.service';
 import { CreateSessionIfNotExistsService } from 'src/components/Session/CreateSessionIfNotExists/create-session-if-not-exists.service';
 import { AIMessageChunk } from '@langchain/core/messages';
-import { MessageRepository } from 'src/supabase-repositories/message.repository';
+import { MessageRepository } from 'src/repositories/message.repository';
 import { ResolveAgentService } from 'src/components/ArtificialIntelligence/ResolveAgent/resolve-agent.service';
 import { IterableReadableStream } from '@langchain/core/dist/utils/stream';
+import { UserEntity } from 'src/entities';
 
 const STREAM = true;
 
@@ -21,7 +21,7 @@ export class QuestionService {
 
   async execute(
     dto: QuestionDto,
-    user: User,
+    user: UserEntity,
     onMessage: (chunk: AIMessageChunk) => void,
   ): Promise<void> {
     const { question, agentId } = dto;
@@ -30,7 +30,7 @@ export class QuestionService {
 
     const session = await this.createSessionIfNotExistsService.execute({
       agent_id: agent.id,
-      user_id: user._id,
+      user_id: user.id,
     });
 
     const aiResponse = await this.generateAiResponseService.execute(

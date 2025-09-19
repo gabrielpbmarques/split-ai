@@ -1,7 +1,7 @@
 import { Body, Controller, Post, Res, UseGuards } from '@nestjs/common';
 import { CreateSessionIfNotExistsService } from './create-session-if-not-exists.service';
 import { User as AuthUser } from 'src/decorators/user.decorator';
-import { User } from 'src/models/User.model';
+import { UserEntity } from 'src/entities';
 import { FastifyReply } from 'fastify';
 import { CreateSessionIfNotExistsDto } from './create-session-if-not-exists.dto';
 import { AuthGuard } from 'src/auth/auth.guard';
@@ -15,14 +15,14 @@ export class CreateSessionIfNotExistsController {
   @Post()
   @UseGuards(AuthGuard)
   async handle(
-    @AuthUser() user: User,
+    @AuthUser() user: UserEntity,
     @Res() res: FastifyReply,
     @Body() body: CreateSessionIfNotExistsDto,
   ) {
     try {
       await this.createSessionIfNotExistsService.execute({
         agent_id: body.agent_id,
-        user_id: user._id,
+        user_id: user.id,
       });
       return res.status(200).send('Session created successfully');
     } catch (error) {
