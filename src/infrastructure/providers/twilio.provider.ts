@@ -35,7 +35,7 @@ class TwilioService implements ITwilioService {
     code: string,
   ): Promise<{ success: boolean; message?: string }> {
     try {
-      const message = `Seu código de verificação Nexguard é: ${code}. Válido por 10 minutos.`;
+      const message = `Seu código de verificação Split AI é: ${code}. Válido por 10 minutos.`;
 
       await this.twilioClient.messages.create({
         body: message,
