@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
 import { PDFLoader } from '@langchain/community/document_loaders/fs/pdf';
+import { Injectable } from '@nestjs/common';
 import { CustomDocument } from 'src/types';
 
 @Injectable()

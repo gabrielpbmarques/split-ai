@@ -1,11 +1,12 @@
 import { SupabaseVectorStore } from '@langchain/community/vectorstores/supabase';
+import { Document } from '@langchain/core/documents';
+import { VertexAIEmbeddings } from '@langchain/google-vertexai';
 import { Inject, Provider } from '@nestjs/common';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { config } from 'src/config';
 import { Chunks, CustomMetadata } from 'src/types';
-import { Document } from '@langchain/core/documents';
 import { cleanInvalidUnicode } from 'src/utils/clearInvalidUnicode';
-import { VertexAIEmbeddings } from '@langchain/google-vertexai';
+
 import { VERTEX_AI_EMBEDDINGS } from './vertex-ai.provider';
 
 export const SUPABASE_CLIENT = 'SUPABASE_CLIENT';

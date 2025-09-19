@@ -6,6 +6,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+
 import { MessageEntity } from './message.entity';
 
 @Entity('sessions')

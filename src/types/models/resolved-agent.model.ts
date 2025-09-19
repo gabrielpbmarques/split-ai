@@ -1,6 +1,7 @@
-import { ChatVertexAI } from '@langchain/google-vertexai';
 import { DynamicStructuredTool } from '@langchain/core/tools';
+import { ChatVertexAI } from '@langchain/google-vertexai';
 import { z } from 'zod';
+
 import { AIInstructions } from './ai-instructions.model';
 import { RunnableChatOpts } from './runnable-chat-opts.model';
 

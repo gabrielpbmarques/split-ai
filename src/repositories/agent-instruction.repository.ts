@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindManyOptions, Repository } from 'typeorm';
 import { AgentInstructionEntity } from 'src/entities/agent-instruction.entity';
+import { FindManyOptions, Repository } from 'typeorm';
 
 @Injectable()
 export class AgentInstructionRepository {

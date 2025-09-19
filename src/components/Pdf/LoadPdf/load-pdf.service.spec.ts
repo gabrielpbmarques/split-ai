@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { LoadPdfService } from './load-pdf.service';
+
 import { ProcessPdfService } from '../ProcessPdf/process-pdf.service';
+
+import { LoadPdfService } from './load-pdf.service';
 
 // Criar mocks simples para as dependências
 const mockProcessPdfService = {

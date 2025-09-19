@@ -1,10 +1,10 @@
-import { AuthGuard, parseJwt, IS_PUBLIC_KEY } from 'src/auth/auth.guard';
 import {
   ForbiddenException,
   UnauthorizedException,
   ExecutionContext,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { AuthGuard, parseJwt, IS_PUBLIC_KEY } from 'src/auth/auth.guard';
 import { ROLES_KEY } from 'src/decorators/roles.decorator';
 
 describe('AuthGuard', () => {
@@ -43,13 +43,11 @@ describe('AuthGuard', () => {
     });
 
     it('should proceed with authorization if endpoint is not public and no roles required', () => {
-      jest
-        .spyOn(reflector, 'getAllAndOverride')
-        .mockImplementation((key, targets) => {
-          if (key === IS_PUBLIC_KEY) return false;
-          if (key === ROLES_KEY) return null; // Sem roles requeridas
-          return undefined;
-        });
+      jest.spyOn(reflector, 'getAllAndOverride').mockImplementation((key) => {
+        if (key === IS_PUBLIC_KEY) return false;
+        if (key === ROLES_KEY) return null; // Sem roles requeridas
+        return undefined;
+      });
 
       const payload = { type: 'establishment' };
       const token = generateMockJwt(payload);
@@ -79,13 +77,11 @@ describe('AuthGuard', () => {
 
     it('should allow access to token endpoint for establishment users', () => {
       // Primeiro mock para IS_PUBLIC_KEY, depois para ROLES_KEY
-      jest
-        .spyOn(reflector, 'getAllAndOverride')
-        .mockImplementation((key, targets) => {
-          if (key === IS_PUBLIC_KEY) return false;
-          if (key === ROLES_KEY) return ['establishment', 'company'];
-          return undefined;
-        });
+      jest.spyOn(reflector, 'getAllAndOverride').mockImplementation((key) => {
+        if (key === IS_PUBLIC_KEY) return false;
+        if (key === ROLES_KEY) return ['establishment', 'company'];
+        return undefined;
+      });
 
       const payload = { type: 'establishment' };
       const token = generateMockJwt(payload);
@@ -100,13 +96,11 @@ describe('AuthGuard', () => {
 
     it('should allow access to token endpoint for company users', () => {
       // Primeiro mock para IS_PUBLIC_KEY, depois para ROLES_KEY
-      jest
-        .spyOn(reflector, 'getAllAndOverride')
-        .mockImplementation((key, targets) => {
-          if (key === IS_PUBLIC_KEY) return false;
-          if (key === ROLES_KEY) return ['establishment', 'company'];
-          return undefined;
-        });
+      jest.spyOn(reflector, 'getAllAndOverride').mockImplementation((key) => {
+        if (key === IS_PUBLIC_KEY) return false;
+        if (key === ROLES_KEY) return ['establishment', 'company'];
+        return undefined;
+      });
 
       const payload = { type: 'company' };
       const token = generateMockJwt(payload);
@@ -121,13 +115,11 @@ describe('AuthGuard', () => {
 
     it('should throw ForbiddenException for worker user accessing token endpoint', () => {
       // Primeiro mock para IS_PUBLIC_KEY
-      jest
-        .spyOn(reflector, 'getAllAndOverride')
-        .mockImplementation((key, targets) => {
-          if (key === IS_PUBLIC_KEY) return false;
-          if (key === ROLES_KEY) return ['establishment', 'company'];
-          return undefined;
-        });
+      jest.spyOn(reflector, 'getAllAndOverride').mockImplementation((key) => {
+        if (key === IS_PUBLIC_KEY) return false;
+        if (key === ROLES_KEY) return ['establishment', 'company'];
+        return undefined;
+      });
 
       const payload = { type: 'worker' };
       const token = generateMockJwt(payload);
@@ -139,13 +131,11 @@ describe('AuthGuard', () => {
 
     it('should allow access to validate-token endpoint for worker users', () => {
       // Primeiro mock para IS_PUBLIC_KEY, depois para ROLES_KEY
-      jest
-        .spyOn(reflector, 'getAllAndOverride')
-        .mockImplementation((key, targets) => {
-          if (key === IS_PUBLIC_KEY) return false;
-          if (key === ROLES_KEY) return ['worker'];
-          return undefined;
-        });
+      jest.spyOn(reflector, 'getAllAndOverride').mockImplementation((key) => {
+        if (key === IS_PUBLIC_KEY) return false;
+        if (key === ROLES_KEY) return ['worker'];
+        return undefined;
+      });
 
       const payload = { type: 'worker' };
       const token = generateMockJwt(payload);
@@ -160,13 +150,11 @@ describe('AuthGuard', () => {
 
     it('should throw ForbiddenException for establishment user accessing validate-token endpoint', () => {
       // Primeiro mock para IS_PUBLIC_KEY, depois para ROLES_KEY
-      jest
-        .spyOn(reflector, 'getAllAndOverride')
-        .mockImplementation((key, targets) => {
-          if (key === IS_PUBLIC_KEY) return false;
-          if (key === ROLES_KEY) return ['worker'];
-          return undefined;
-        });
+      jest.spyOn(reflector, 'getAllAndOverride').mockImplementation((key) => {
+        if (key === IS_PUBLIC_KEY) return false;
+        if (key === ROLES_KEY) return ['worker'];
+        return undefined;
+      });
 
       const payload = { type: 'establishment' };
       const token = generateMockJwt(payload);

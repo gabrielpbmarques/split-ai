@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { FastifyRequest } from 'fastify';
 import { UserRole } from 'src/types';
 

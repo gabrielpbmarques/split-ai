@@ -4,15 +4,15 @@ import {
   InternalServerErrorException,
   Inject,
 } from '@nestjs/common';
+import {
+  ITwilioService,
+  TWILIO_SERVICE,
+} from 'src/infrastructure/providers/twilio.provider';
 
 import { SmsVerificationRepository } from '../../../repositories/sms-verification.repository';
 import { UserRepository } from '../../../repositories/user.repository';
 
 import { SendSmsDto, VerifySmsDto } from './send-sms.dto';
-import {
-  ITwilioService,
-  TWILIO_SERVICE,
-} from 'src/infrastructure/providers/twilio.provider';
 
 @Injectable()
 export class SendSmsService {

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { AgentRepository } from 'src/repositories/agent.repository';
 import { AgentInstructionRepository } from 'src/repositories/agent-instruction.repository';
+import { AgentRepository } from 'src/repositories/agent.repository';
+
 import { UpdateAgentDto } from './update-agent.dto';
 
 @Injectable()

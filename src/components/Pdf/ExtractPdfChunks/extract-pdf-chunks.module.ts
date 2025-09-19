@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+
 import { ExtractPdfChunksService } from './extract-pdf-chunks.service';
 
 @Module({

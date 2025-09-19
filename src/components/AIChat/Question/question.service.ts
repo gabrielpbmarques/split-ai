@@ -1,12 +1,13 @@
-import { Injectable } from '@nestjs/common';
-import { QuestionDto } from './question.dto';
-import { GenerateAiResponseService } from 'src/components/ArtificialIntelligence/GenerateAIResponse/generate-ai-response.service';
-import { CreateSessionIfNotExistsService } from 'src/components/Session/CreateSessionIfNotExists/create-session-if-not-exists.service';
-import { AIMessageChunk } from '@langchain/core/messages';
-import { MessageRepository } from 'src/repositories/message.repository';
-import { ResolveAgentService } from 'src/components/ArtificialIntelligence/ResolveAgent/resolve-agent.service';
 import { IterableReadableStream } from '@langchain/core/dist/utils/stream';
+import { AIMessageChunk } from '@langchain/core/messages';
+import { Injectable } from '@nestjs/common';
+import { GenerateAiResponseService } from 'src/components/ArtificialIntelligence/GenerateAIResponse/generate-ai-response.service';
+import { ResolveAgentService } from 'src/components/ArtificialIntelligence/ResolveAgent/resolve-agent.service';
+import { CreateSessionIfNotExistsService } from 'src/components/Session/CreateSessionIfNotExists/create-session-if-not-exists.service';
 import { UserEntity } from 'src/entities';
+import { MessageRepository } from 'src/repositories/message.repository';
+
+import { QuestionDto } from './question.dto';
 
 const STREAM = true;
 

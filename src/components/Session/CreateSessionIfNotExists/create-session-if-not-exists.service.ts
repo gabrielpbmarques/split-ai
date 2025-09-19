@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { CreateSessionIfNotExistsDto } from './create-session-if-not-exists.dto';
-import { SessionRepository } from 'src/repositories/session.repository';
-import { SessionEntity } from 'src/entities/session.entity';
 import * as moment from 'moment';
+import { SessionEntity } from 'src/entities/session.entity';
+import { SessionRepository } from 'src/repositories/session.repository';
+
+import { CreateSessionIfNotExistsDto } from './create-session-if-not-exists.dto';
 
 @Injectable()
 export class CreateSessionIfNotExistsService {

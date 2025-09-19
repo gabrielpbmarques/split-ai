@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
+import { RepositoriesModule } from 'src/repositories/repositories.module';
+
 import { ListAgentsController } from './list-agents.controller';
 import { ListAgentsService } from './list-agents.service';
-import { RepositoriesModule } from 'src/repositories/repositories.module';
 
 @Module({
   imports: [RepositoriesModule],

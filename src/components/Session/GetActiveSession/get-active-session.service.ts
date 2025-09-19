@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { SessionRepository } from 'src/repositories/session.repository';
-import { GetActiveSessionDto } from './get-active-session.dto';
 import { SessionEntity } from 'src/entities/session.entity';
+import { SessionRepository } from 'src/repositories/session.repository';
+
+import { GetActiveSessionDto } from './get-active-session.dto';
 
 @Injectable()
 export class GetActiveSessionService {

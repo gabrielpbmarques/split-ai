@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ProcessPdfService } from './process-pdf.service';
+
 import { ExtractPdfChunksService } from '../ExtractPdfChunks/extract-pdf-chunks.service';
+
+import { ProcessPdfService } from './process-pdf.service';
 
 describe('ProcessPdfService', () => {
   let service: ProcessPdfService;

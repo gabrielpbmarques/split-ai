@@ -1,8 +1,9 @@
 import { Body, Controller, Get, Param, Patch, Res } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
 import { Roles } from 'src/decorators/roles.decorator';
-import { UpdateAgentService } from './update-agent.service';
+
 import { UpdateAgentDto } from './update-agent.dto';
+import { UpdateAgentService } from './update-agent.service';
 
 @Controller('agent')
 export class UpdateAgentController {

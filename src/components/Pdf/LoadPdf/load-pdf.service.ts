@@ -1,8 +1,10 @@
-import { Injectable } from '@nestjs/common';
-import { CustomDocument } from 'src/types';
 import * as fs from 'fs';
 import * as path from 'path';
+
+import { Injectable } from '@nestjs/common';
 import axios from 'axios';
+import { CustomDocument } from 'src/types';
+
 import { ProcessPdfService } from '../ProcessPdf/process-pdf.service';
 
 @Injectable()

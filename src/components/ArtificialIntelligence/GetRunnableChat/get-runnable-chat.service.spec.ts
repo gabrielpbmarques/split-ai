@@ -1,5 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
+
 import { CreateHistoryService } from '../CreateHistory/create-history.service';
+
 import { GetRunnableChatService } from './get-runnable-chat.service';
 
 describe('GetRunnableChatService', () => {

@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
-import { LoadPdfService } from './load-pdf.service';
+
 import { ProcessPdfModule } from '../ProcessPdf/process-pdf.module';
+
+import { LoadPdfService } from './load-pdf.service';
 
 @Module({
   imports: [ProcessPdfModule],

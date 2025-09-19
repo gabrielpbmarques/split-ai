@@ -1,21 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import {
-  SupabaseProvider,
-  SUPABASE_CLIENT,
-  SUPABASE_SERVICE,
-} from 'src/infrastructure/providers/supabase.provider';
-import {
-  VertexAIProvider,
-  VERTEX_AI_EMBEDDINGS,
-  VERTEX_AI_CHAT,
-} from 'src/infrastructure/providers/vertex-ai.provider';
-import {
-  SendGridProvider,
-  SENDGRID_CLIENT,
-  EMAIL_SERVICE,
-} from 'src/infrastructure/providers/sendgrid.provider';
-import {
   AnthorProvider,
   ANTHOR_CLIENT,
 } from 'src/infrastructure/providers/anthor.provider';
@@ -28,10 +13,25 @@ import {
   GOOGLE_VOICE_SERVICE,
 } from 'src/infrastructure/providers/google-voice.provider';
 import {
+  SendGridProvider,
+  SENDGRID_CLIENT,
+  EMAIL_SERVICE,
+} from 'src/infrastructure/providers/sendgrid.provider';
+import {
+  SupabaseProvider,
+  SUPABASE_CLIENT,
+  SUPABASE_SERVICE,
+} from 'src/infrastructure/providers/supabase.provider';
+import {
   TwilioProvider,
   TWILIO_CLIENT,
   TWILIO_SERVICE,
 } from 'src/infrastructure/providers/twilio.provider';
+import {
+  VertexAIProvider,
+  VERTEX_AI_EMBEDDINGS,
+  VERTEX_AI_CHAT,
+} from 'src/infrastructure/providers/vertex-ai.provider';
 
 @Module({
   imports: [ConfigModule],

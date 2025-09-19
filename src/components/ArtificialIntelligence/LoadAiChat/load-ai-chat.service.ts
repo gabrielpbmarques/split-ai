@@ -3,7 +3,6 @@ import { ExecuteSimilaritySearchService } from 'src/components/ArtificialIntelli
 import { FillPromptService } from 'src/components/ArtificialIntelligence/FillPrompt/fill-prompt.service';
 import { GetRunnableChatService } from 'src/components/ArtificialIntelligence/GetRunnableChat/get-runnable-chat.service';
 import { LoadVectorStoreService } from 'src/components/ArtificialIntelligence/LoadVectorStore/load-vector-store.service';
-import { AgentEntity } from 'src/entities';
 import {
   RunnableChat,
   RunnableMessageHistory,

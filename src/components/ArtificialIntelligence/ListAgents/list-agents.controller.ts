@@ -1,8 +1,9 @@
 import { Controller, Get, Res, UseGuards } from '@nestjs/common';
-import { ListAgentsService } from './list-agents.service';
+import { FastifyReply } from 'fastify';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { Roles } from 'src/decorators/roles.decorator';
-import { FastifyReply } from 'fastify';
+
+import { ListAgentsService } from './list-agents.service';
 
 @Controller('agent')
 export class ListAgentsController {

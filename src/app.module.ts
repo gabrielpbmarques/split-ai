@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
-import { ScheduleModule } from '@nestjs/schedule';
 import { JwtService } from '@nestjs/jwt';
-import { HealthModule } from 'src/health/health.module';
-import { ComponentsModule } from 'src/components/components.module';
-import { InfrastructureModule } from 'src/infrastructure/infrastructure.module';
+import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ComponentsModule } from 'src/components/components.module';
+import { HealthModule } from 'src/health/health.module';
+import { InfrastructureModule } from 'src/infrastructure/infrastructure.module';
+
 import { config } from './config';
 @Module({
   imports: [

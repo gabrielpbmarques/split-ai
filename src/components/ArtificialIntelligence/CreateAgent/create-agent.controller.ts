@@ -1,6 +1,7 @@
 import { Body, Controller, Post, Res } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
 import { Roles } from 'src/decorators/roles.decorator';
+
 import { CreateAgentDto } from './create-agent.dto';
 import { CreateAgentService } from './create-agent.service';
 

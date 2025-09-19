@@ -6,6 +6,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+
 import { AgentInstructionEntity } from './agent-instruction.entity';
 
 @Entity('agents')
