@@ -12,15 +12,17 @@ import {
   AgentInstructionEntity,
 } from 'src/entities';
 
-import { AgentInstructionRepository } from './agent-instruction.repository';
-import { AgentRepository } from './agent.repository';
-import { MessageRepository } from './message.repository';
-import { NotificationRepository } from './notification.repository';
-import { OrganizationRepository } from './organization.repository';
-import { SessionRepository } from './session.repository';
-import { SmsVerificationRepository } from './sms-verification.repository';
-import { UserTokenRepository } from './user-token.repository';
-import { UserRepository } from './user.repository';
+import {
+  AgentInstructionRepository,
+  AgentRepository,
+  MessageRepository,
+  NotificationRepository,
+  OrganizationRepository,
+  SessionRepository,
+  SmsVerificationRepository,
+  UserRepository,
+  UserTokenRepository,
+} from '.';
 
 @Module({
   imports: [
