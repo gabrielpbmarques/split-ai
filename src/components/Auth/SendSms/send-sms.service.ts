@@ -8,9 +8,7 @@ import {
   ITwilioService,
   TWILIO_SERVICE,
 } from 'src/infrastructure/providers/twilio.provider';
-
-import { SmsVerificationRepository } from '../../../repositories/sms-verification.repository';
-import { UserRepository } from '../../../repositories/user.repository';
+import { SmsVerificationRepository, UserRepository } from 'src/repositories';
 
 import { SendSmsDto, VerifySmsDto } from './send-sms.dto';
 

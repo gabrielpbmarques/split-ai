@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { AgentInstructionRepository } from 'src/repositories/agent-instruction.repository';
-import { AgentRepository } from 'src/repositories/agent.repository';
+import { AgentInstructionRepository, AgentRepository } from 'src/repositories';
 
 import { CreateAgentDto } from './create-agent.dto';
 

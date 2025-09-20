@@ -5,7 +5,7 @@ import { GenerateAiResponseService } from 'src/components/ArtificialIntelligence
 import { ResolveAgentService } from 'src/components/ArtificialIntelligence/ResolveAgent/resolve-agent.service';
 import { CreateSessionIfNotExistsService } from 'src/components/Session/CreateSessionIfNotExists/create-session-if-not-exists.service';
 import { UserEntity } from 'src/entities';
-import { MessageRepository } from 'src/repositories/message.repository';
+import { MessageRepository } from 'src/repositories';
 
 import { QuestionDto } from './question.dto';
 

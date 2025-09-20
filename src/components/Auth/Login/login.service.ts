@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
-import { UserRepository } from 'src/repositories/user.repository';
+import { UserRepository } from 'src/repositories';
 
 import { GenerateTokenService } from '../GenerateToken/generate-token.service';
 

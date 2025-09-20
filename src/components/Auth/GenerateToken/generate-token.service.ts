@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { UserEntity } from 'src/entities/user.entity';
-import { UserTokenRepository } from 'src/repositories/user-token.repository';
+import { UserTokenRepository } from 'src/repositories';
 import { UserRole } from 'src/types';
 import { v4 as uuidv4 } from 'uuid';
 
