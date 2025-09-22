@@ -6,11 +6,7 @@ import { NotificationEntity } from '../entities/notification.entity';
 
 export type NotificationStatus = 'sent' | 'failed' | 'delivered';
 export type NotificationEntityType = 'Alert' | 'General';
-export type RecipientRole =
-  | 'citizen'
-  | 'security_force'
-  | 'admin'
-  | 'security_force_central';
+export type RecipientRole = 'user' | 'admin';
 
 @Injectable()
 export class NotificationRepository {

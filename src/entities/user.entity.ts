@@ -18,18 +18,6 @@ export class UserEntity {
   @Column({ type: 'text', unique: true, nullable: true })
   email: string;
 
-  @Column({ type: 'text', nullable: true })
-  document: string;
-
-  @Column({ type: 'text', nullable: true })
-  document_type: string;
-
-  @Column({ type: 'uuid', nullable: true })
-  organization_id: string;
-
-  @Column({ type: 'date', nullable: true })
-  birth_date: Date;
-
   @Column({ type: 'text' })
   password_hash: string;
 

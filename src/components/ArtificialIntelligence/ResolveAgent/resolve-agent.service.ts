@@ -1,7 +1,7 @@
 import { ChatVertexAI } from '@langchain/google-vertexai';
 import { Injectable } from '@nestjs/common';
 import { config } from 'src/config';
-import { AgentInstructionRepository, AgentRepository } from 'src/repositories';
+import { AgentRepository, AgentInstructionRepository } from 'src/repositories';
 import { ResolvedAgent } from 'src/types';
 import { buildLangchainToolFromSchema } from 'src/utils/buildZodSchema';
 
@@ -60,6 +60,7 @@ export class ResolveAgentService {
       : undefined;
 
     return {
+      id: dbAgent.id,
       instructions: latestInstructions?.instructions || {
         context: '',
         diretrizes: [],

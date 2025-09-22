@@ -1,10 +1,5 @@
-export type UserRole =
-  | 'citizen'
-  | 'security_force'
-  | 'admin'
-  | 'establishment'
-  | 'security_force_central';
-export type UserStatus = 'pending' | 'active' | 'inactive';
+export type UserRole = 'user' | 'admin';
+export type UserStatus = 'active' | 'inactive';
 
 export interface User {
   id: string;

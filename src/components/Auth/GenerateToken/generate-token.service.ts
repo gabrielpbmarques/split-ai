@@ -50,8 +50,7 @@ export class GenerateTokenService {
     });
 
     // Store token in database (invalidating previous tokens)
-    const roleToPersist: UserRole =
-      user.role === 'establishment' ? 'citizen' : user.role;
+    const roleToPersist: UserRole = user.role;
 
     await this.userTokenRepository.createUniqueToken({
       user_id: user.id,

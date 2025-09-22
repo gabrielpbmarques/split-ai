@@ -15,13 +15,9 @@ export class NotificationEntity {
 
   @Column({
     type: 'enum',
-    enum: ['citizen', 'security_force', 'admin', 'security_force_central'],
+    enum: ['user', 'admin'],
   })
-  recipient_role:
-    | 'citizen'
-    | 'security_force'
-    | 'admin'
-    | 'security_force_central';
+  recipient_role: 'user' | 'admin';
 
   @Column({ type: 'text', nullable: true })
   title: string | null;
