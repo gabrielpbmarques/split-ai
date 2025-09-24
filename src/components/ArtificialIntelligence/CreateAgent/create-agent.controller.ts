@@ -1,5 +1,6 @@
-import { Body, Controller, Post, Res } from '@nestjs/common';
+import { Body, Controller, Post, Res, UseGuards } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
+import { AuthGuard } from 'src/auth/auth.guard';
 import { Roles } from 'src/decorators/roles.decorator';
 import { User as AuthUser } from 'src/decorators/user.decorator';
 import { User } from 'src/types';
@@ -13,6 +14,7 @@ export class CreateAgentController {
 
   @Post('create')
   @Roles('admin')
+  @UseGuards(AuthGuard)
   async execute(
     @Body() dto: CreateAgentDto,
     @Res() res: FastifyReply,
