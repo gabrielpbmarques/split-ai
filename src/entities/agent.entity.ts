@@ -2,12 +2,16 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
 import { AgentInstructionEntity } from './agent-instruction.entity';
+import { OrganizationEntity } from './organization.entity';
+import { UserEntity } from './user.entity';
 
 @Entity('agents')
 export class AgentEntity {
@@ -40,6 +44,20 @@ export class AgentEntity {
 
   @OneToMany(() => AgentInstructionEntity, (instruction) => instruction.agent)
   instructions: AgentInstructionEntity[];
+
+  @Column({ type: 'uuid', nullable: true })
+  user_id: string | null;
+
+  @ManyToOne(() => UserEntity, (user) => user.agents)
+  @JoinColumn({ name: 'user_id' })
+  user: UserEntity;
+
+  @Column({ type: 'uuid', nullable: true })
+  organization_id: string | null;
+
+  @ManyToOne(() => OrganizationEntity, (organization) => organization.agents)
+  @JoinColumn({ name: 'organization_id' })
+  organization: OrganizationEntity;
 
   @CreateDateColumn()
   created_at: Date;

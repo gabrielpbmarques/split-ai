@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { AgentInstructionRepository, AgentRepository } from 'src/repositories';
+import { User } from 'src/types';
 
 import { CreateAgentDto } from './create-agent.dto';
 
@@ -10,7 +11,7 @@ export class CreateAgentService {
     private readonly agentInstructionRepository: AgentInstructionRepository,
   ) {}
 
-  async execute(dto: CreateAgentDto) {
+  async execute(dto: CreateAgentDto, user: User) {
     const agent = await this.agentRepository.create({
       name: dto.name,
       agent_identifier: dto.agentIdentifier ?? null,
@@ -20,6 +21,8 @@ export class CreateAgentService {
       parser_schema: dto.parser?.schema ?? null,
       parser_name: dto.parser?.name ?? null,
       parser_description: dto.parser?.description ?? null,
+      organization_id: user.role === 'admin' ? null : user.organization_id,
+      user_id: user.id,
     });
 
     await this.agentInstructionRepository.create({

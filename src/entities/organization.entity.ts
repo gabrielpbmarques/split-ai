@@ -1,5 +1,8 @@
 import { Organization, OrganizationPlan, OrganizationStatus } from 'src/types';
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+
+import { AgentEntity } from './agent.entity';
+import { UserEntity } from './user.entity';
 
 @Entity('organizations')
 export class OrganizationEntity implements Organization {
@@ -47,4 +50,10 @@ export class OrganizationEntity implements Organization {
     default: 'manual',
   })
   plan: OrganizationPlan;
+
+  @OneToMany(() => UserEntity, (user) => user.organization)
+  users: UserEntity[];
+
+  @OneToMany(() => AgentEntity, (agent: any) => agent.organization)
+  agents: AgentEntity[];
 }

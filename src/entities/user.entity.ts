@@ -3,9 +3,15 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+
+import { AgentEntity } from './agent.entity';
+import { OrganizationEntity } from './organization.entity';
 
 @Entity('users')
 export class UserEntity {
@@ -37,6 +43,16 @@ export class UserEntity {
     default: 'inactive',
   })
   status: UserStatus;
+
+  @Column({ type: 'uuid', nullable: true })
+  organization_id: string | null;
+
+  @ManyToOne(() => OrganizationEntity, (organization) => organization.users)
+  @JoinColumn({ name: 'organization_id' })
+  organization: OrganizationEntity;
+
+  @OneToMany(() => AgentEntity, (agent: any) => agent.user)
+  agents: AgentEntity[];
 
   @CreateDateColumn({ name: 'created_at' })
   created_at: Date;
