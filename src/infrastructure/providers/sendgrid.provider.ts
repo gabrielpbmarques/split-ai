@@ -1,5 +1,5 @@
 import { Provider } from '@nestjs/common';
-import SendGrid = require('@sendgrid/mail');
+import * as SendGrid from '@sendgrid/mail';
 
 import { config } from '../../config';
 
