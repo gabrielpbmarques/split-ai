@@ -67,18 +67,18 @@ jobs:
       - name: Build Prod Docker Image
         env:
           ENV: production
-          GCP_DOCKER_IMAGE: southamerica-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/ai/split-ai
+          GCP_DOCKER_IMAGE: southamerica-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/nexguard/split-ai
           GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
         run: docker build -t $GCP_DOCKER_IMAGE:${GITHUB_SHA::8} .
 
       - name: Publish Prod
         run: |-
-          docker push "southamerica-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/ai/split-ai:${GITHUB_SHA::8}"
+          docker push "southamerica-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/nexguard/split-ai:${GITHUB_SHA::8}"
 
       - name: Deploy Prod
         env:
           ENV: production
-          GCP_DOCKER_IMAGE: southamerica-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/ai/split-ai
+          GCP_DOCKER_IMAGE: southamerica-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/nexguard/split-ai
           CLOUDSDK_CORE_PROJECT: ${{ secrets.GCP_PROJECT }}
           CLOUDSDK_COMPUTE_REGION: southamerica-east1
           # Configurações da Aplicação
