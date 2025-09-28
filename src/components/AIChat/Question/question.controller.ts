@@ -28,11 +28,14 @@ export class QuestionController {
           'Content-Type, Authorization, X-Requested-With, Accept, Origin',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Expose-Headers': 'Content-Type',
+        'Cache-Control': 'no-store',
+        Connection: 'keep-alive',
+        'X-Accel-Buffering': 'no',
       });
 
       await this.questionService.execute(dto, user, (chunk) => {
         if (chunk?.content) {
-          res.raw.write(chunk.content);
+          res.raw.write(chunk.content.toString());
         }
       });
     } catch (error: any) {

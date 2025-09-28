@@ -38,9 +38,8 @@ export class GenerateAgentSourceController {
       const body: any = (req as any).body || {};
       const file = body.file;
       const sourceType: string | undefined =
-        typeof body.sourceType === 'string' ? body.sourceType : undefined;
-      const agentId: string | undefined =
-        typeof body.agentId === 'string' ? body.agentId : undefined;
+        body.sourceType?.value || undefined;
+      const agentId: string | undefined = body.agentId?.value || undefined;
 
       if (!file || typeof file.toBuffer !== 'function') {
         return res.status(400).send('Arquivo é obrigatório (campo: file)');
