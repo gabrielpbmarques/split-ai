@@ -43,4 +43,28 @@ export class GenerateAgentSourceService {
 
     await this.supabaseService.createVectorStore(chunks, metadata);
   }
+
+  async executeFromBuffer(params: {
+    buffer: Buffer;
+    sourceType?: string;
+    agentId?: string;
+  }): Promise<void> {
+    const { buffer, sourceType } = params;
+
+    let agentId = params.agentId;
+    if (agentId && !this.isUuid(agentId)) {
+      const dbAgent = await this.agentRepository.findByIdentifier(agentId);
+      if (!dbAgent) throw new Error('Agente não encontrado pelo identifier');
+      agentId = dbAgent.id;
+    }
+
+    const chunks = await this.loadPdfService.executeFromBuffer(buffer);
+
+    const metadata: CustomMetadata = {
+      source_type: sourceType,
+      agent_id: agentId,
+    };
+
+    await this.supabaseService.createVectorStore(chunks, metadata);
+  }
 }

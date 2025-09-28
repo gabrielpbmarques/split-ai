@@ -21,6 +21,13 @@ export class LoadPdfService {
     return chunks;
   }
 
+  async executeFromBuffer(buffer: Buffer): Promise<CustomDocument[]> {
+    const tempFilePath = this.savePdfBuffer(buffer);
+    const chunks = await this.processPdfService.execute(tempFilePath);
+    fs.unlinkSync(tempFilePath);
+    return chunks;
+  }
+
   private savePdfBuffer(buffer: Buffer): string {
     const tempFilePath = path.join(__dirname, `temp.pdf`);
     fs.writeFileSync(tempFilePath, new Uint8Array(buffer));

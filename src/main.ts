@@ -8,7 +8,6 @@ import { AppModule } from 'src/app.module';
 // Using Fastify's built-in CORS support instead of the cors package
 import { config } from 'src/config';
 import { initSentryIo } from 'src/observability/sentry.provider';
-
 async function bootstrap() {
   let sentry: any;
   const appLogger = new Logger('AppModule');
@@ -18,7 +17,15 @@ async function bootstrap() {
     logger: true,
   });
 
-  // Add API request/response logging hooks
+  const { default: fastifyMultipart } = await import('@fastify/multipart');
+  await fastifyAdapter.register(fastifyMultipart as any, {
+    attachFieldsToBody: true,
+    limits: {
+      fileSize: 20 * 1024 * 1024,
+      files: 5,
+    },
+  });
+
   const requestTimes = new Map<string, number>();
 
   fastifyAdapter.getInstance().addHook('onRequest', (request, reply, done) => {
