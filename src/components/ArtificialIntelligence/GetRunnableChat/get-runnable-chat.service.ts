@@ -5,12 +5,14 @@ import {
 } from '@langchain/core/runnables';
 import { DynamicStructuredTool } from '@langchain/core/tools';
 import { ChatVertexAI } from '@langchain/google-vertexai';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { CreateHistoryService } from 'src/components/ArtificialIntelligence/CreateHistory/create-history.service';
 import { RunnableChatOpts, RunnableChat, CustomRunnable } from 'src/types';
 
 @Injectable()
 export class GetRunnableChatService {
+  private readonly logger = new Logger(GetRunnableChatService.name);
+
   constructor(private readonly createHistoryService: CreateHistoryService) {}
 
   execute(
@@ -49,10 +51,24 @@ export class GetRunnableChatService {
       runnable = prompt.pipe(chat);
     }
 
+    const historyService = this.createHistoryService.execute('test-session');
+    if (!historyService) {
+      this.logger.warn(
+        'Redis not available - chat will run without persistent history',
+      );
+      return runnable;
+    }
+
     return new RunnableWithMessageHistory({
       runnable,
-      getMessageHistory: (sessionId: string) =>
-        this.createHistoryService.execute(sessionId),
+      getMessageHistory: (sessionId: string) => {
+        const history = this.createHistoryService.execute(sessionId);
+        if (!history) {
+          this.logger.warn(`No history available for session ${sessionId}`);
+          return null;
+        }
+        return history;
+      },
       inputMessagesKey: 'input',
       historyMessagesKey: 'history',
     });
