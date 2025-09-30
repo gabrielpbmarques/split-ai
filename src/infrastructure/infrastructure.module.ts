@@ -1,10 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import {
-  AnthorProvider,
-  ANTHOR_CLIENT,
-} from 'src/infrastructure/providers/anthor.provider';
-import {
   GcpStorageProvider,
   GCP_STORAGE_SERVICE,
 } from 'src/infrastructure/providers/gcp-storage.provider';
@@ -36,7 +32,6 @@ import {
 @Module({
   imports: [ConfigModule],
   providers: [
-    AnthorProvider,
     ...SupabaseProvider,
     ...VertexAIProvider,
     ...SendGridProvider,
@@ -51,7 +46,6 @@ import {
     VERTEX_AI_CHAT,
     SENDGRID_CLIENT,
     EMAIL_SERVICE,
-    ANTHOR_CLIENT,
     GCP_STORAGE_SERVICE,
     GOOGLE_VOICE_SERVICE,
     TWILIO_CLIENT,

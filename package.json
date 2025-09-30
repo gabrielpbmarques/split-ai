@@ -21,8 +21,6 @@
     "prepare": "husky install && chmod ug+x .husky/* && chmod ug+x .husky/_/*"
   },
   "dependencies": {
-    "@anthor/entities-sdk": "^1.132.12",
-    "@anthor/entities-types": "^1.132.12",
     "@fastify/autoload": "^6.0.2",
     "@fastify/cors": "^10.0.1",
     "@fastify/jwt": "^9.0.1",
