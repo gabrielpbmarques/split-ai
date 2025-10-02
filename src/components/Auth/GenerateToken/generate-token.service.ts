@@ -37,6 +37,7 @@ export class GenerateTokenService {
       name: user.name,
       email: user.email,
       phone: user.phone,
+      organization_id: user.organization_id,
       role: user.role,
       jti: uuidv4(), // JWT ID - unique identifier for this token
       iat: Math.floor(Date.now() / 1000), // Issued at time

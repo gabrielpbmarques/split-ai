@@ -15,7 +15,7 @@ export class CreateAgentService {
     const agent = await this.agentRepository.create({
       name: dto.name,
       agent_identifier: dto.agentIdentifier ?? null,
-      model: dto.model ?? null,
+      model: dto.model ?? 'gemini-2.5-flash',
       temperature: dto.temperature ?? 0.4,
       with_history: dto.withHistory ?? true,
       parser_schema: dto.parser?.schema ?? null,

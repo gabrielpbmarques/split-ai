@@ -49,6 +49,7 @@ export class LoginService {
         id: user.id,
         name: user.name,
         email: user.email,
+        organization_id: user.organization_id,
         role: user.role,
         phone: user.phone,
       },
