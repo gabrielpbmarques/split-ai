@@ -51,14 +51,6 @@ export class GetRunnableChatService {
       runnable = prompt.pipe(chat);
     }
 
-    const historyService = this.createHistoryService.execute('test-session');
-    if (!historyService) {
-      this.logger.warn(
-        'Redis not available - chat will run without persistent history',
-      );
-      return runnable;
-    }
-
     return new RunnableWithMessageHistory({
       runnable,
       getMessageHistory: (sessionId: string) => {

@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { BuildSystemPromptModule } from './BuildSystemPrompt/build-system-prompt.module';
 import { ConvertTextToSpeechModule } from './ConvertTextToSpeech/convert-text-to-speech.module';
 import { CreateAgentModule } from './CreateAgent/create-agent.module';
+import { CreateAttendantAgentModule } from './CreateAttendantAgent/create-attendant-agent.module';
 import { CreateHistoryModule } from './CreateHistory/create-history.module';
 import { ExecuteSimilaritySearchModule } from './ExecuteSimilaritySearch/execute-similarity-search.module';
 import { FillPromptModule } from './FillPrompt/fill-prompt.module';
@@ -33,6 +34,7 @@ import { UpdateAgentModule } from './UpdateAgent/update-agent.module';
     ResolveAgentModule,
     UpdateAgentModule,
     ListAgentsModule,
+    CreateAttendantAgentModule,
   ],
   exports: [
     ConvertTextToSpeechModule,
@@ -50,6 +52,7 @@ import { UpdateAgentModule } from './UpdateAgent/update-agent.module';
     ResolveAgentModule,
     UpdateAgentModule,
     ListAgentsModule,
+    CreateAttendantAgentModule,
   ],
 })
 export class ArtificialIntelligenceModule {}

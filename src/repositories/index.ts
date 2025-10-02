@@ -7,3 +7,4 @@ export * from './message.repository';
 export * from './session.repository';
 export * from './agent.repository';
 export * from './agent-instruction.repository';
+export * from './report.repository';

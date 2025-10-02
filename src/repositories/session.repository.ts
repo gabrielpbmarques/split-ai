@@ -25,12 +25,14 @@ export class SessionRepository {
     return await this.repository.findOne(options);
   }
 
-  async findActiveSessionByUserId(
+  async findActiveSessionByUserAndAgent(
     userId: string,
+    agentId: string,
   ): Promise<SessionEntity | null> {
     return await this.repository.findOne({
       where: {
         user_id: userId,
+        agent_id: agentId,
         expires_at: MoreThan(new Date()),
         expired: false,
       },

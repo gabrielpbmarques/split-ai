@@ -10,6 +10,7 @@ import {
   MessageEntity,
   AgentEntity,
   AgentInstructionEntity,
+  ReportEntity,
 } from 'src/entities';
 
 import {
@@ -22,6 +23,7 @@ import {
   SmsVerificationRepository,
   UserRepository,
   UserTokenRepository,
+  ReportRepository,
 } from '.';
 
 @Module({
@@ -36,6 +38,7 @@ import {
       MessageEntity,
       AgentEntity,
       AgentInstructionEntity,
+      ReportEntity,
     ]),
   ],
   providers: [
@@ -48,6 +51,7 @@ import {
     MessageRepository,
     AgentRepository,
     AgentInstructionRepository,
+    ReportRepository,
   ],
   exports: [
     OrganizationRepository,
@@ -59,6 +63,7 @@ import {
     MessageRepository,
     AgentRepository,
     AgentInstructionRepository,
+    ReportRepository,
   ],
 })
 export class RepositoriesModule {}

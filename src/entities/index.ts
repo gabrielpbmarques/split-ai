@@ -7,3 +7,4 @@ export * from './organization.entity';
 export * from './sms-verification.entity';
 export * from './user-token.entity';
 export * from './notification.entity';
+export * from './report.entity';

@@ -20,8 +20,6 @@ export class GenerateAiResponseService {
     promptVariables?: Record<string, any>,
   ): Promise<string | IterableReadableStream<AIMessageChunk> | any> {
     try {
-      const isParser = !!agent.jsonParser;
-
       const response = await this.generateResponse(
         question,
         metadata,
@@ -29,23 +27,6 @@ export class GenerateAiResponseService {
         stream,
         promptVariables,
       );
-
-      if (isParser) {
-        const cleanedResponse = (response as string)
-          .replace(/```json\s*/, '')
-          .replace(/```$/, '')
-          .trim();
-
-        let parsed: Record<string, any>;
-
-        try {
-          parsed = JSON.parse(cleanedResponse);
-        } catch (error) {
-          parsed = {};
-        }
-
-        return parsed;
-      }
 
       return response;
     } catch (error) {
@@ -59,7 +40,7 @@ export class GenerateAiResponseService {
     agent: ResolvedAgent,
     stream: boolean = false,
     promptVariables?: Record<string, any>,
-  ): Promise<string | IterableReadableStream<AIMessageChunk>> {
+  ): Promise<string | IterableReadableStream<AIMessageChunk> | any> {
     await this.messageRepository.create({
       session_id: metadata.session_id,
       message: question,
@@ -86,6 +67,16 @@ export class GenerateAiResponseService {
         templateVariables,
         runnable.config,
       );
+
+      const result = await iterator.next();
+
+      if (
+        Array.isArray((result.value as any).tool_calls) &&
+        (result.value as any).tool_calls.length
+      ) {
+        return (result.value as any).tool_calls[0].args;
+      }
+
       return iterator;
     }
 
@@ -93,6 +84,15 @@ export class GenerateAiResponseService {
       templateVariables,
       runnable.config,
     );
+
+    console.log(result);
+
+    if (
+      Array.isArray((result as any).tool_calls) &&
+      (result as any).tool_calls.length
+    ) {
+      return (result as any).tool_calls[0].args;
+    }
 
     const formattedResponse = result.content.toString();
 

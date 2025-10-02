@@ -7,6 +7,7 @@ import { ArtificialIntelligenceModule } from './ArtificialIntelligence/artificia
 import { OcrModule } from './OCR/ocr.module';
 import { PdfModule } from './Pdf/pdf.module';
 import { RegisterModule } from './Register/register.module';
+import { ReportModule } from './Report/report.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { RegisterModule } from './Register/register.module';
     OcrModule,
     PdfModule,
     RegisterModule,
+    ReportModule,
   ],
   exports: [
     AuthModule,
@@ -26,6 +28,7 @@ import { RegisterModule } from './Register/register.module';
     OcrModule,
     PdfModule,
     RegisterModule,
+    ReportModule,
   ],
 })
 export class ComponentsModule {}
