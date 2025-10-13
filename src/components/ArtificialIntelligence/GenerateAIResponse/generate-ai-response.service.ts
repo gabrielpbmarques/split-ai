@@ -68,15 +68,20 @@ export class GenerateAiResponseService {
         runnable.config,
       );
 
-      const result = await iterator.next();
-
-      if (
-        Array.isArray((result.value as any).tool_calls) &&
-        (result.value as any).tool_calls.length
-      ) {
-        return (result.value as any).tool_calls[0].args;
+      const first = await iterator.next();
+      if (!first.done) {
+        const firstVal: any = first.value as any;
+        if (Array.isArray(firstVal.tool_calls) && firstVal.tool_calls.length) {
+          return firstVal.tool_calls[0].args;
+        }
+        async function* reStream() {
+          yield first.value as AIMessageChunk;
+          for await (const c of iterator as any) {
+            yield c as AIMessageChunk;
+          }
+        }
+        return reStream();
       }
-
       return iterator;
     }
 
