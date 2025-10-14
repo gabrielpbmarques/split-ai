@@ -36,24 +36,29 @@ export class AttendantService {
       false,
     );
 
-    await this.messageRepository.create({
-      session_id: session.id,
-      message: aiResponse.response,
-      from: 'agent',
-    });
+    const finalResponse =
+      typeof aiResponse === 'string'
+        ? aiResponse
+        : (aiResponse?.response as string | undefined);
 
-    if (aiResponse.conversationFinished) {
-      const { type, summary, insights, sentiment } = aiResponse;
-
-      console.log({
+    if (
+      aiResponse &&
+      typeof aiResponse === 'object' &&
+      typeof (aiResponse as any).response === 'string'
+    ) {
+      await this.messageRepository.create({
         session_id: session.id,
-        agent_id: agent.id,
-        organization_id: user.role === 'admin' ? null : user.organization_id,
-        type,
-        sentiment,
-        summary,
-        insights,
+        message: (aiResponse as any).response,
+        from: 'agent',
       });
+    }
+
+    if (
+      aiResponse &&
+      typeof aiResponse === 'object' &&
+      (aiResponse as any).conversationFinished
+    ) {
+      const { type, summary, insights, sentiment } = aiResponse as any;
 
       await this.reportRepository.create({
         session_id: session.id,
@@ -66,6 +71,6 @@ export class AttendantService {
       });
     }
 
-    return aiResponse.response;
+    return finalResponse ?? '';
   }
 }
