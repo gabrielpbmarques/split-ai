@@ -47,7 +47,7 @@ export class OrganizationEntity implements Organization {
   @Column({
     type: 'enum',
     enum: ['manual', 'free', 'monthly'],
-    default: 'manual',
+    default: 'free',
   })
   plan: OrganizationPlan;
 

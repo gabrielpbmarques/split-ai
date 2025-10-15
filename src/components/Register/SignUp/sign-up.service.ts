@@ -34,6 +34,7 @@ export class SignUpService {
       password_hash: hashedPassword,
       phone: userData.phone,
       role: UserType.USER,
+      organization_id: userData.organization,
       status: 'active',
       created_at: new Date(),
       updated_at: new Date(),

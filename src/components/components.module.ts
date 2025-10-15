@@ -5,6 +5,7 @@ import { SessionModule } from 'src/components/Session/session.module';
 import { AIChatModule } from './AIChat/ai-chat.module';
 import { ArtificialIntelligenceModule } from './ArtificialIntelligence/artificial-intelligence.module';
 import { OcrModule } from './OCR/ocr.module';
+import { OrganizationModule } from './Organization/organization.module';
 import { PdfModule } from './Pdf/pdf.module';
 import { RegisterModule } from './Register/register.module';
 import { ReportModule } from './Report/report.module';
@@ -19,6 +20,7 @@ import { ReportModule } from './Report/report.module';
     PdfModule,
     RegisterModule,
     ReportModule,
+    OrganizationModule,
   ],
   exports: [
     AuthModule,
@@ -29,6 +31,7 @@ import { ReportModule } from './Report/report.module';
     PdfModule,
     RegisterModule,
     ReportModule,
+    OrganizationModule,
   ],
 })
 export class ComponentsModule {}
