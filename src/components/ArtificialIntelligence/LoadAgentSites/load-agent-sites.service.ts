@@ -1,53 +1,46 @@
-import { SitemapLoader } from '@langchain/community/document_loaders/web/sitemap';
 import { Document } from '@langchain/core/documents';
-import { VertexAIEmbeddings } from '@langchain/google-vertexai';
 import { Injectable, Inject } from '@nestjs/common';
-import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
-import { MemoryVectorStore } from 'langchain/vectorstores/memory';
-import { VERTEX_AI_EMBEDDINGS } from 'src/infrastructure/providers/vertex-ai.provider';
+import { GenericParams } from '@spider-cloud/spider-client';
+import {
+  SPIDER_SERVICE,
+  SpiderService,
+} from 'src/infrastructure/providers/spider.provider';
+import {
+  SUPABASE_SERVICE,
+  SupabaseService,
+} from 'src/infrastructure/providers/supabase.provider';
 
 @Injectable()
 export class LoadAgentSitesService {
   constructor(
-    @Inject(VERTEX_AI_EMBEDDINGS)
-    private readonly embeddings: VertexAIEmbeddings,
+    @Inject(SPIDER_SERVICE)
+    private readonly spiderService: SpiderService,
+    @Inject(SUPABASE_SERVICE)
+    private readonly supabaseService: SupabaseService,
   ) {}
 
-  async execute(question: string, sites: string[]): Promise<Document[]> {
-    if (!sites?.length) return [];
-
-    const splitter = new RecursiveCharacterTextSplitter({
-      chunkSize: 1200,
-      chunkOverlap: 150,
-    });
+  async execute(sites: string[], agentId: string): Promise<void> {
+    if (!sites?.length) return;
 
     const allDocs: Document[] = [];
 
+    const crawlParams: GenericParams = {
+      limit: 20,
+      depth: 25,
+      metadata: true,
+      readability: true,
+    };
+
     for (const site of sites) {
-      try {
-        const sitemapUrl = site.endsWith('sitemap.xml')
-          ? site
-          : `${site.replace(/\/$/, '')}/sitemap.xml`;
-        const loader = new SitemapLoader(sitemapUrl);
-
-        const rawDocs = await loader.load();
-        const docs = await splitter.splitDocuments(rawDocs);
-
-        allDocs.push(...docs);
-      } catch (err) {
-        continue;
-      }
+      const docs = await this.spiderService.crawl(site, crawlParams);
+      allDocs.push(...docs);
     }
 
-    if (!allDocs.length) return [];
+    if (!allDocs.length) return;
 
-    const memStore = await MemoryVectorStore.fromDocuments(
-      allDocs,
-      this.embeddings,
-    );
-
-    const k = 20;
-    const relevant = await memStore.similaritySearch(question, k);
-    return relevant;
+    await this.supabaseService.createVectorStore(allDocs, {
+      source_type: 'site',
+      agent_id: agentId,
+    });
   }
 }

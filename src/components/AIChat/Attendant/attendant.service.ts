@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { QuestionDto } from 'src/components/AIChat/Question/question.dto';
 import { GenerateAiResponseService } from 'src/components/ArtificialIntelligence/GenerateAIResponse/generate-ai-response.service';
-import { LoadAgentSitesService } from 'src/components/ArtificialIntelligence/LoadAgentSites/load-agent-sites.service';
 import { ResolveAgentService } from 'src/components/ArtificialIntelligence/ResolveAgent/resolve-agent.service';
 import { CreateSessionIfNotExistsService } from 'src/components/Session/CreateSessionIfNotExists/create-session-if-not-exists.service';
 import { MessageRepository } from 'src/repositories';
@@ -16,7 +15,6 @@ export class AttendantService {
     private readonly messageRepository: MessageRepository,
     private readonly resolveAgentService: ResolveAgentService,
     private readonly reportRepository: ReportRepository,
-    private readonly loadAgentSitesService: LoadAgentSitesService,
   ) {}
 
   async execute(dto: QuestionDto, user: User): Promise<string> {
@@ -29,10 +27,6 @@ export class AttendantService {
       user_id: user.id,
     });
 
-    const siteDocs = agent.sites?.length
-      ? await this.loadAgentSitesService.execute(question, agent.sites)
-      : undefined;
-
     const aiResponse = await this.generateAiResponseService.execute(
       question,
       {
@@ -40,8 +34,6 @@ export class AttendantService {
       },
       agent,
       false,
-      undefined,
-      siteDocs,
     );
 
     const finalResponse =

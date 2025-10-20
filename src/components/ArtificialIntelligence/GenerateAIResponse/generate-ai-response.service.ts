@@ -1,5 +1,4 @@
 import { IterableReadableStream } from '@langchain/core/dist/utils/stream';
-import { Document } from '@langchain/core/documents';
 import { AIMessageChunk } from '@langchain/core/messages';
 import { Injectable } from '@nestjs/common';
 import { LoadAiChatService } from 'src/components/ArtificialIntelligence/LoadAiChat/load-ai-chat.service';
@@ -19,7 +18,6 @@ export class GenerateAiResponseService {
     agent: ResolvedAgent,
     stream: boolean = false,
     promptVariables?: Record<string, any>,
-    extraDocuments?: Document[],
   ): Promise<string | IterableReadableStream<AIMessageChunk> | any> {
     try {
       const response = await this.generateResponse(
@@ -28,11 +26,11 @@ export class GenerateAiResponseService {
         agent,
         stream,
         promptVariables,
-        extraDocuments,
       );
 
       return response;
     } catch (error) {
+      console.log(error);
       return 'Desculpe, tive um problema ao processar sua mensagem. Pode tentar novamente?';
     }
   }
@@ -43,7 +41,6 @@ export class GenerateAiResponseService {
     agent: ResolvedAgent,
     stream: boolean = false,
     promptVariables?: Record<string, any>,
-    extraDocuments?: Document[],
   ): Promise<string | IterableReadableStream<AIMessageChunk> | any> {
     await this.messageRepository.create({
       session_id: metadata.session_id,
@@ -59,7 +56,6 @@ export class GenerateAiResponseService {
       },
       metadata.session_id,
       agent,
-      extraDocuments,
     );
 
     const templateVariables = {
@@ -77,7 +73,10 @@ export class GenerateAiResponseService {
       if (!first.done) {
         const firstVal: any = first.value as any;
         if (Array.isArray(firstVal.tool_calls) && firstVal.tool_calls.length) {
-          return firstVal.tool_calls[0].args;
+          const args = firstVal.tool_calls[0].args;
+          const parsed =
+            typeof args === 'string' ? this.parseJsonLike(args) : null;
+          return parsed ?? args;
         }
         async function* reStream() {
           yield first.value as AIMessageChunk;
@@ -95,16 +94,21 @@ export class GenerateAiResponseService {
       runnable.config,
     );
 
-    console.log(result);
-
     if (
       Array.isArray((result as any).tool_calls) &&
       (result as any).tool_calls.length
     ) {
-      return (result as any).tool_calls[0].args;
+      const args = (result as any).tool_calls[0].args;
+      const parsed = typeof args === 'string' ? this.parseJsonLike(args) : null;
+      return parsed ?? args;
     }
 
     const formattedResponse = result.content.toString();
+
+    const maybeParsed = this.parseJsonLike(formattedResponse);
+    if (maybeParsed && typeof maybeParsed === 'object') {
+      return maybeParsed;
+    }
 
     await this.messageRepository.create({
       session_id: metadata.session_id,
@@ -113,5 +117,33 @@ export class GenerateAiResponseService {
     });
 
     return formattedResponse;
+  }
+
+  private parseJsonLike(value: string): any | null {
+    if (typeof value !== 'string') return null;
+    let s = value.trim();
+    if (s.startsWith('```')) {
+      s = s
+        .replace(/^```[a-zA-Z]*\n?/, '')
+        .replace(/```$/, '')
+        .trim();
+    }
+    if (
+      (s.startsWith('{') && s.endsWith('}')) ||
+      (s.startsWith('[') && s.endsWith(']'))
+    ) {
+      try {
+        return JSON.parse(s);
+      } catch {}
+    }
+    const first = s.indexOf('{');
+    const last = s.lastIndexOf('}');
+    if (first !== -1 && last !== -1 && last > first) {
+      const sub = s.slice(first, last + 1);
+      try {
+        return JSON.parse(sub);
+      } catch {}
+    }
+    return null;
   }
 }

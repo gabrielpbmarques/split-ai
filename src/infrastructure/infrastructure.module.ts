@@ -14,6 +14,10 @@ import {
   EMAIL_SERVICE,
 } from 'src/infrastructure/providers/sendgrid.provider';
 import {
+  SpiderServiceProvider,
+  SPIDER_SERVICE,
+} from 'src/infrastructure/providers/spider.provider';
+import {
   SupabaseProvider,
   SUPABASE_CLIENT,
   SUPABASE_SERVICE,
@@ -38,6 +42,7 @@ import {
     ...GcpStorageProvider,
     ...GoogleVoiceProvider,
     ...TwilioProvider,
+    ...SpiderServiceProvider,
   ],
   exports: [
     SUPABASE_CLIENT,
@@ -50,6 +55,7 @@ import {
     GOOGLE_VOICE_SERVICE,
     TWILIO_CLIENT,
     TWILIO_SERVICE,
+    SPIDER_SERVICE,
   ],
 })
 export class InfrastructureModule {}

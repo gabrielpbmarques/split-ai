@@ -1,4 +1,3 @@
-import { Document } from '@langchain/core/documents';
 import { Injectable } from '@nestjs/common';
 import { ExecuteSimilaritySearchService } from 'src/components/ArtificialIntelligence/ExecuteSimilaritySearch/execute-similarity-search.service';
 import { FillPromptService } from 'src/components/ArtificialIntelligence/FillPrompt/fill-prompt.service';
@@ -25,7 +24,6 @@ export class LoadAiChatService {
     metadata: CustomMetadata,
     sessionId: string,
     agent: ResolvedAgent,
-    extraDocuments?: Document[],
   ): Promise<RunnableMessageHistory | RunnableChat> {
     const { chat, runnableOpts, jsonParser } = agent;
 
@@ -33,11 +31,10 @@ export class LoadAiChatService {
     const retrievedDocuments =
       await this.executeSimilaritySearchService.execute(vectorStore, question);
 
-    const contextDocs = Array.isArray(extraDocuments)
-      ? [...extraDocuments, ...retrievedDocuments]
-      : retrievedDocuments;
-
-    const prompt = await this.fillPromptService.execute(contextDocs, agent);
+    const prompt = await this.fillPromptService.execute(
+      retrievedDocuments,
+      agent,
+    );
 
     return this.getRunnableChatService.execute(
       chat,

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, FindOptionsWhere } from 'typeorm';
 
 import { OrganizationEntity } from '../entities';
 
@@ -12,9 +12,11 @@ export class OrganizationRepository {
   ) {}
 
   async findOne(
-    query: Partial<OrganizationEntity>,
+    where:
+      | FindOptionsWhere<OrganizationEntity>
+      | FindOptionsWhere<OrganizationEntity>[],
   ): Promise<OrganizationEntity | null> {
-    return this.organizationRepository.findOneBy(query);
+    return this.organizationRepository.findOne({ where });
   }
 
   async findAll(): Promise<OrganizationEntity[]> {

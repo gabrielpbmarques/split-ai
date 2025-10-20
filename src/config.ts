@@ -21,6 +21,7 @@ interface IConfig {
   twilioAccountSid: string;
   twilioAuthToken: string;
   twilioPhoneNumber: string;
+  spiderApiKey: string;
 }
 
 export const config: IConfig = {
@@ -42,4 +43,5 @@ export const config: IConfig = {
   twilioAccountSid: process.env.TWILIO_ACCOUNT_SID,
   twilioAuthToken: process.env.TWILIO_AUTH_TOKEN,
   twilioPhoneNumber: process.env.TWILIO_PHONE_NUMBER,
+  spiderApiKey: process.env.SPIDER_API_KEY,
 };

@@ -20,8 +20,10 @@ export class BuildSystemPromptService {
       .map((doc: CustomDocument) => doc.pageContent)
       .join(' ');
 
-    if (!sources)
-      return `${textPrompt}\nData de hoje: ${new Date().toLocaleDateString()}\nReferência de conhecimento:\n${source}`;
+    if (!sources) {
+      const final = `${textPrompt}\nData de hoje: ${new Date().toLocaleDateString()}\nReferência de conhecimento:\n${source}`;
+      return this.escapeTemplateBraces(final);
+    }
 
     const groupedSources = context.reduce(
       (acc, doc) => {
@@ -38,6 +40,12 @@ export class BuildSystemPromptService {
       sourceSection += `\n${type.toUpperCase()}:\n- ${content.join('\n- ')}\n`;
     }
 
-    return `${textPrompt}\nData de hoje: ${new Date().toLocaleDateString()}\nReferência de conhecimento:\n${sourceSection}`;
+    const final = `${textPrompt}\nData de hoje: ${new Date().toLocaleDateString()}\nReferência de conhecimento:\n${sourceSection}`;
+    return this.escapeTemplateBraces(final);
+  }
+
+  private escapeTemplateBraces(str: string): string {
+    if (!str) return str;
+    return str.replace(/[{}]/g, (m) => (m === '{' ? '{{' : '}}'));
   }
 }
