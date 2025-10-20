@@ -1,4 +1,5 @@
 import { IterableReadableStream } from '@langchain/core/dist/utils/stream';
+import { Document } from '@langchain/core/documents';
 import { AIMessageChunk } from '@langchain/core/messages';
 import { Injectable } from '@nestjs/common';
 import { LoadAiChatService } from 'src/components/ArtificialIntelligence/LoadAiChat/load-ai-chat.service';
@@ -18,6 +19,7 @@ export class GenerateAiResponseService {
     agent: ResolvedAgent,
     stream: boolean = false,
     promptVariables?: Record<string, any>,
+    extraDocuments?: Document[],
   ): Promise<string | IterableReadableStream<AIMessageChunk> | any> {
     try {
       const response = await this.generateResponse(
@@ -26,6 +28,7 @@ export class GenerateAiResponseService {
         agent,
         stream,
         promptVariables,
+        extraDocuments,
       );
 
       return response;
@@ -40,6 +43,7 @@ export class GenerateAiResponseService {
     agent: ResolvedAgent,
     stream: boolean = false,
     promptVariables?: Record<string, any>,
+    extraDocuments?: Document[],
   ): Promise<string | IterableReadableStream<AIMessageChunk> | any> {
     await this.messageRepository.create({
       session_id: metadata.session_id,
@@ -55,6 +59,7 @@ export class GenerateAiResponseService {
       },
       metadata.session_id,
       agent,
+      extraDocuments,
     );
 
     const templateVariables = {

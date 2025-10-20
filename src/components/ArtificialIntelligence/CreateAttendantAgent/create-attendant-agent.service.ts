@@ -27,6 +27,7 @@ export class CreateAttendantAgentService {
       parser_description,
       parser_schema,
       with_history: dto.withHistory ?? true,
+      sites: dto.sites && dto.sites.length ? dto.sites : null,
       organization_id: user.role === 'admin' ? null : user.organization_id,
       user_id: user.id,
     });
@@ -35,7 +36,7 @@ export class CreateAttendantAgentService {
 
     const instructions = {
       ...dto.instructions,
-      diretrizes: [...dto.instructions.diretrizes, defaultAttendantDirective],
+      diretrizes: [defaultAttendantDirective, ...dto.instructions.diretrizes],
     };
 
     await this.agentInstructionRepository.create({
@@ -93,7 +94,7 @@ export class CreateAttendantAgentService {
         type: tipo da conversa (appointment, order, faq)
         sentiment: sentimento da conversa (positive, negative, neutral)
         summary: resumo da conversa
-        insights: insights da conversa
+        insights: se fizer sentido, dicas para um atendente humano sobre como abordar o cliente
         conversationFinished: true se você interpretar que a conversa foi finalizada, false caso contrário
         response: todas as suas respostas ao usuário serão definidas neste campo
     `;

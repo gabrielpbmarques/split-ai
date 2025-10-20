@@ -11,4 +11,5 @@ export interface ResolvedAgent {
   chat: ChatVertexAI;
   jsonParser?: DynamicStructuredTool<z.ZodObject<any>>;
   runnableOpts: RunnableChatOpts;
+  sites?: string[];
 }

@@ -36,6 +36,8 @@ export class UpdateAgentService {
     if (dto.temperature !== undefined) updateData.temperature = dto.temperature;
     if (dto.withHistory !== undefined)
       updateData.with_history = dto.withHistory;
+    if (dto.sites !== undefined)
+      updateData.sites = dto.sites && dto.sites.length ? dto.sites : null;
 
     if (dto.parser !== undefined) {
       if (dto.parser === null) {
@@ -78,6 +80,7 @@ export class UpdateAgentService {
       model: agent.model,
       temperature: agent.temperature,
       withHistory: agent.with_history,
+      sites: (agent as any).sites ?? null,
       parser: agent.parser_schema
         ? {
             name: agent.parser_name,
@@ -106,6 +109,7 @@ export class UpdateAgentService {
           model: a.model,
           temperature: a.temperature,
           withHistory: a.with_history,
+          sites: (a as any).sites ?? null,
           parser: a.parser_schema
             ? {
                 name: a.parser_name,

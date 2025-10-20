@@ -1,4 +1,5 @@
 import {
+  IsArray,
   IsBoolean,
   IsNumber,
   IsOptional,
@@ -31,6 +32,11 @@ export class UpdateAgentDto {
   @IsObject()
   @IsOptional()
   instructions?: AIInstructions;
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  sites?: string[] | null;
 
   @IsObject()
   @IsOptional()

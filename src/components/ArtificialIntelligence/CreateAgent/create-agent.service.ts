@@ -18,6 +18,7 @@ export class CreateAgentService {
       model: dto.model ?? 'gemini-2.5-flash',
       temperature: dto.temperature ?? 0.4,
       with_history: dto.withHistory ?? true,
+      sites: dto.sites && dto.sites.length ? dto.sites : null,
       parser_schema: dto.parser?.schema ?? null,
       parser_name: dto.parser?.name ?? null,
       parser_description: dto.parser?.description ?? null,

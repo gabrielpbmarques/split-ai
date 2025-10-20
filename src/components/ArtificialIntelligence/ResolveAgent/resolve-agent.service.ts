@@ -69,6 +69,7 @@ export class ResolveAgentService {
       chat,
       jsonParser,
       runnableOpts,
+      sites: (dbAgent as any).sites || undefined,
     } as ResolvedAgent;
   }
 }

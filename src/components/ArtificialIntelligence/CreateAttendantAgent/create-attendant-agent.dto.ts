@@ -1,4 +1,5 @@
 import {
+  IsArray,
   IsBoolean,
   IsNotEmpty,
   IsNumber,
@@ -32,4 +33,9 @@ export class CreateAttendantAgentDto {
   @IsObject()
   @IsOptional()
   instructions: AIInstructions;
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  sites?: string[];
 }

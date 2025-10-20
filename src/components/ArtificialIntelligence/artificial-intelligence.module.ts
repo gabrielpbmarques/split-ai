@@ -11,6 +11,7 @@ import { GenerateAgentSourceModule } from './GenerateAgentSource/generate-agent-
 import { GenerateAiResponseModule } from './GenerateAIResponse/generate-ai-response.module';
 import { GetRunnableChatModule } from './GetRunnableChat/get-runnable-chat.module';
 import { ListAgentsModule } from './ListAgents/list-agents.module';
+import { LoadAgentSitesModule } from './LoadAgentSites/load-agent-sites.module';
 import { LoadAiChatModule } from './LoadAiChat/load-ai-chat.module';
 import { LoadVectorStoreModule } from './LoadVectorStore/load-vector-store.module';
 import { NormalizePromptInstructionsModule } from './NormalizePromptInstructions/normalize-prompt-instructions.module';
@@ -35,6 +36,7 @@ import { UpdateAgentModule } from './UpdateAgent/update-agent.module';
     UpdateAgentModule,
     ListAgentsModule,
     CreateAttendantAgentModule,
+    LoadAgentSitesModule,
   ],
   exports: [
     ConvertTextToSpeechModule,
@@ -53,6 +55,7 @@ import { UpdateAgentModule } from './UpdateAgent/update-agent.module';
     UpdateAgentModule,
     ListAgentsModule,
     CreateAttendantAgentModule,
+    LoadAgentSitesModule,
   ],
 })
 export class ArtificialIntelligenceModule {}

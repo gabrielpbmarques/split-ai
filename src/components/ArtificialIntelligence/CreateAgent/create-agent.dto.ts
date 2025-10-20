@@ -1,4 +1,5 @@
 import {
+  IsArray,
   IsBoolean,
   IsNotEmpty,
   IsNumber,
@@ -40,4 +41,9 @@ export class CreateAgentDto {
     description: string;
     schema: any;
   } | null;
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  sites?: string[];
 }
