@@ -1,4 +1,4 @@
-import { Controller, Get, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, Res, UseGuards } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { Roles } from 'src/decorators/roles.decorator';
@@ -14,9 +14,22 @@ export class ListOrganizationsController {
   @Get()
   @UseGuards(AuthGuard)
   @Roles('admin')
-  async handle(@Res() res: FastifyReply) {
+  async handle(
+    @Query()
+    query: {
+      name?: string;
+      acronym?: string;
+      email_domain?: string;
+      contact_name?: string;
+      contact_email?: string;
+      status?: string;
+      plan?: string;
+      activated_at?: string;
+    },
+    @Res() res: FastifyReply,
+  ) {
     try {
-      const result = await this.listOrganizationsService.execute();
+      const result = await this.listOrganizationsService.execute(query);
       return res.status(200).send(result);
     } catch (error) {
       return res.status(500).send(error);

@@ -7,6 +7,8 @@ import {
 import { AgentRepository } from 'src/repositories';
 import { CustomMetadata } from 'src/types';
 
+import { LoadAgentSitesService } from '../LoadAgentSites/load-agent-sites.service';
+
 import { GenerateAgentSourceDto } from './generate-agent-source.dto';
 
 @Injectable()
@@ -16,6 +18,7 @@ export class GenerateAgentSourceService {
     private readonly supabaseService: SupabaseService,
     private readonly loadPdfService: LoadPdfService,
     private readonly agentRepository: AgentRepository,
+    private readonly loadAgentSitesService: LoadAgentSitesService,
   ) {}
 
   private isUuid(id: string): boolean {
@@ -24,32 +27,10 @@ export class GenerateAgentSourceService {
     );
   }
 
-  async execute(dto: GenerateAgentSourceDto): Promise<void> {
-    const { url, sourceType } = dto;
-
-    let agentId = dto.agentId;
-    if (agentId && !this.isUuid(agentId)) {
-      const dbAgent = await this.agentRepository.findByIdentifier(agentId);
-      if (!dbAgent) throw new Error('Agente não encontrado pelo identifier');
-      agentId = dbAgent.id;
-    }
-
-    const chunks = await this.loadPdfService.execute(url);
-
-    const metadata: CustomMetadata = {
-      source_type: sourceType,
-      agent_id: agentId,
-    };
-
-    await this.supabaseService.createVectorStore(chunks, metadata);
-  }
-
-  async executeFromBuffer(params: {
-    buffer: Buffer;
-    sourceType?: string;
-    agentId?: string;
-  }): Promise<void> {
-    const { buffer, sourceType } = params;
+  async execute(
+    params: GenerateAgentSourceDto & { buffer?: Buffer },
+  ): Promise<void> {
+    const { url, sourceType } = params;
 
     let agentId = params.agentId;
     if (agentId && !this.isUuid(agentId)) {
@@ -58,13 +39,46 @@ export class GenerateAgentSourceService {
       agentId = dbAgent.id;
     }
 
-    const chunks = await this.loadPdfService.executeFromBuffer(buffer);
+    const tasks: Promise<any>[] = [];
 
-    const metadata: CustomMetadata = {
-      source_type: sourceType,
-      agent_id: agentId,
-    };
+    if (params.buffer) {
+      tasks.push(
+        (async () => {
+          const chunks = await this.loadPdfService.executeFromBuffer(
+            params.buffer as Buffer,
+          );
+          const metadata: CustomMetadata = {
+            source_type: sourceType,
+            agent_id: agentId,
+          };
+          await this.supabaseService.createVectorStore(chunks, metadata);
+        })(),
+      );
+    }
 
-    await this.supabaseService.createVectorStore(chunks, metadata);
+    if (url && url.trim().length) {
+      if (!agentId) {
+        throw new Error('agentId é obrigatório ao processar URLs');
+      }
+
+      const sitesArray = url
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => s.length);
+
+      tasks.push(
+        (async () => {
+          await this.loadAgentSitesService.execute(url, agentId as string);
+          if (sitesArray.length) {
+            await this.agentRepository.update(agentId as string, {
+              sites: sitesArray,
+            });
+          }
+        })(),
+      );
+    }
+
+    if (!tasks.length) return;
+    await Promise.all(tasks);
   }
 }

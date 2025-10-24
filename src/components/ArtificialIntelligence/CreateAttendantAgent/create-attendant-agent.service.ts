@@ -65,8 +65,21 @@ export class CreateAttendantAgentService {
             enum: ['positive', 'negative', 'neutral'],
             optional: true,
           },
+          phone: {
+            type: 'string',
+            optional: true,
+          },
+          name: {
+            type: 'string',
+            optional: true,
+          },
+          email: {
+            type: 'string',
+            optional: true,
+          },
           summary: {
             type: 'string',
+            optional: true,
           },
           insights: {
             type: 'string',
@@ -93,9 +106,12 @@ export class CreateAttendantAgentService {
 
         type: tipo da conversa (appointment, order, faq)
         sentiment: sentimento da conversa (positive, negative, neutral)
+        phone: telefone do cliente
+        name: nome do cliente
+        email: email do cliente
         summary: resumo da conversa
-        insights: se fizer sentido, dicas para um atendente humano sobre como abordar o cliente
-        conversationFinished: true se você interpretar que a conversa foi finalizada, false caso contrário
+        insights: dicas para um atendente humano sobre como abordar o cliente
+        conversationFinished: true se você interpretar que a conversa foi finalizada, false caso contrário. Esse valor só pode ser verdadeiro uma única vez.
         response: todas as suas respostas ao usuário serão definidas neste campo
     `;
   }

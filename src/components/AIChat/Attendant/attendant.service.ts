@@ -58,7 +58,8 @@ export class AttendantService {
       typeof aiResponse === 'object' &&
       (aiResponse as any).conversationFinished
     ) {
-      const { type, summary, insights, sentiment } = aiResponse as any;
+      const { type, summary, insights, sentiment, phone, name, email } =
+        aiResponse as any;
 
       await this.reportRepository.create({
         session_id: session.id,
@@ -68,6 +69,9 @@ export class AttendantService {
         sentiment,
         summary,
         insights,
+        phone,
+        name,
+        email,
       });
     }
 

@@ -1,9 +1,9 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 
 export class GenerateAgentSourceDto {
   @IsString()
-  @IsNotEmpty()
-  url: string;
+  @IsOptional()
+  url?: string;
 
   @IsString()
   @IsOptional()
@@ -12,4 +12,7 @@ export class GenerateAgentSourceDto {
   @IsString()
   @IsOptional()
   agentId?: string;
+
+  @IsOptional()
+  buffer?: any;
 }

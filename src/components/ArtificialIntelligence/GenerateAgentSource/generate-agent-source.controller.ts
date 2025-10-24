@@ -15,39 +15,38 @@ export class GenerateAgentSourceController {
   @Roles('admin')
   async execute(
     @Body() generateAgentSourceDto: GenerateAgentSourceDto,
-    @Res() res: FastifyReply,
-  ): Promise<FastifyReply> {
-    try {
-      const result = await this.generateAgentSourceService.execute(
-        generateAgentSourceDto,
-      );
-
-      return res.status(200).send(result);
-    } catch (error) {
-      return res.status(error.status || 500).send(error.message);
-    }
-  }
-
-  @Post('generate-source/upload')
-  @Roles('admin')
-  async upload(
     @Req() req: FastifyRequest,
     @Res() res: FastifyReply,
   ): Promise<FastifyReply> {
     try {
       const body: any = (req as any).body || {};
-      const file = body.file;
-      const sourceType: string | undefined =
-        body.sourceType?.value || undefined;
-      const agentId: string | undefined = body.agentId?.value || undefined;
 
-      if (!file || typeof file.toBuffer !== 'function') {
-        return res.status(400).send('Arquivo é obrigatório (campo: file)');
+      const file = body.file;
+      const hasFile = file && typeof file.toBuffer === 'function';
+      const buffer: Buffer | undefined = hasFile
+        ? await file.toBuffer()
+        : undefined;
+
+      const sourceType: string | undefined = hasFile
+        ? body.sourceType?.value || undefined
+        : generateAgentSourceDto.sourceType;
+
+      const agentId: string | undefined = hasFile
+        ? body.agentId?.value || undefined
+        : generateAgentSourceDto.agentId;
+
+      const url: string | undefined = hasFile
+        ? body.url?.value || undefined
+        : generateAgentSourceDto.url;
+
+      if (!buffer && (!url || !url.trim())) {
+        return res
+          .status(400)
+          .send('Informe ao menos uma URL (url) ou um arquivo (file)');
       }
 
-      const buffer: Buffer = await file.toBuffer();
-
-      await this.generateAgentSourceService.executeFromBuffer({
+      await this.generateAgentSourceService.execute({
+        url,
         buffer,
         sourceType,
         agentId,

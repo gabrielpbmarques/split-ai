@@ -19,7 +19,7 @@ export class LoadAgentSitesService {
     private readonly supabaseService: SupabaseService,
   ) {}
 
-  async execute(sites: string[], agentId: string): Promise<void> {
+  async execute(sites: string, agentId: string): Promise<void> {
     if (!sites?.length) return;
 
     const allDocs: Document[] = [];
@@ -29,12 +29,11 @@ export class LoadAgentSitesService {
       depth: 25,
       metadata: true,
       readability: true,
+      return_format: 'text',
     };
 
-    for (const site of sites) {
-      const docs = await this.spiderService.crawl(site, crawlParams);
-      allDocs.push(...docs);
-    }
+    const docs = await this.spiderService.crawl(sites, crawlParams);
+    allDocs.push(...docs);
 
     if (!allDocs.length) return;
 

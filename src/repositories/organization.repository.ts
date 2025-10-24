@@ -23,6 +23,70 @@ export class OrganizationRepository {
     return this.organizationRepository.find();
   }
 
+  async findWithFilters(filters: {
+    name?: string;
+    acronym?: string;
+    email_domain?: string;
+    contact_name?: string;
+    contact_email?: string;
+    status?: string;
+    plan?: string;
+    activated_at?: string;
+  }): Promise<OrganizationEntity[]> {
+    const queryBuilder =
+      this.organizationRepository.createQueryBuilder('organization');
+
+    if (filters.name) {
+      queryBuilder.andWhere('organization.name ILIKE :name', {
+        name: `%${filters.name}%`,
+      });
+    }
+
+    if (filters.acronym) {
+      queryBuilder.andWhere('organization.acronym ILIKE :acronym', {
+        acronym: `%${filters.acronym}%`,
+      });
+    }
+
+    if (filters.email_domain) {
+      queryBuilder.andWhere('organization.email_domain ILIKE :email_domain', {
+        email_domain: `%${filters.email_domain}%`,
+      });
+    }
+
+    if (filters.contact_name) {
+      queryBuilder.andWhere('organization.contact_name ILIKE :contact_name', {
+        contact_name: `%${filters.contact_name}%`,
+      });
+    }
+
+    if (filters.contact_email) {
+      queryBuilder.andWhere('organization.contact_email ILIKE :contact_email', {
+        contact_email: `%${filters.contact_email}%`,
+      });
+    }
+
+    if (filters.status) {
+      queryBuilder.andWhere('organization.status = :status', {
+        status: filters.status,
+      });
+    }
+
+    if (filters.plan) {
+      queryBuilder.andWhere('organization.plan = :plan', {
+        plan: filters.plan,
+      });
+    }
+
+    if (filters.activated_at) {
+      queryBuilder.andWhere('DATE(organization.activated_at) = :activated_at', {
+        activated_at: filters.activated_at,
+      });
+    }
+
+    return queryBuilder.getMany();
+  }
+
   async findById(id: string): Promise<OrganizationEntity | null> {
     return this.organizationRepository.findOneBy({ id });
   }

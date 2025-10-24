@@ -1,8 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { AgentInstructionRepository, AgentRepository } from 'src/repositories';
 
-import { LoadAgentSitesService } from '../LoadAgentSites/load-agent-sites.service';
-
 import { UpdateAgentDto } from './update-agent.dto';
 
 @Injectable()
@@ -10,7 +8,6 @@ export class UpdateAgentService {
   constructor(
     private readonly agentRepository: AgentRepository,
     private readonly agentInstructionRepository: AgentInstructionRepository,
-    private readonly loadAgentSitesService: LoadAgentSitesService,
   ) {}
 
   private isUuid(id: string): boolean {
@@ -63,10 +60,6 @@ export class UpdateAgentService {
         agent.id,
         dto.instructions,
       );
-    }
-
-    if (dto.sites !== undefined) {
-      await this.loadAgentSitesService.execute(dto.sites, agent.id);
     }
 
     return { id: agent.id };
