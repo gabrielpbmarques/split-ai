@@ -16,15 +16,51 @@ export class UserRepository {
   }
 
   async findById(id: string): Promise<UserEntity | null> {
-    return this.userRepository.findOneBy({ id });
+    return this.userRepository.findOne({
+      where: { id },
+      select: [
+        'id',
+        'name',
+        'email',
+        'phone',
+        'role',
+        'status',
+        'created_at',
+        'updated_at',
+      ],
+    });
   }
 
   async findByEmail(email: string): Promise<UserEntity | null> {
-    return this.userRepository.findOneBy({ email });
+    return this.userRepository.findOne({
+      where: { email },
+      select: [
+        'id',
+        'name',
+        'email',
+        'phone',
+        'role',
+        'status',
+        'created_at',
+        'updated_at',
+      ],
+    });
   }
 
   async findByPhone(phone: string): Promise<UserEntity | null> {
-    return this.userRepository.findOneBy({ phone });
+    return this.userRepository.findOne({
+      where: { phone },
+      select: [
+        'id',
+        'name',
+        'email',
+        'phone',
+        'role',
+        'status',
+        'created_at',
+        'updated_at',
+      ],
+    });
   }
 
   async create(data: Partial<UserEntity>): Promise<UserEntity> {

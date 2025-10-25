@@ -45,4 +45,12 @@ export class UpdateAgentDto {
     description: string;
     schema: any;
   };
+
+  @IsString()
+  @IsOptional()
+  organizationId?: string | null;
+
+  @IsString()
+  @IsOptional()
+  organization_id?: string | null;
 }

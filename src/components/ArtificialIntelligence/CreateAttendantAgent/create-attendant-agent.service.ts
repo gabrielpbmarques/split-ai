@@ -18,6 +18,17 @@ export class CreateAttendantAgentService {
       schema: parser_schema,
     } = this.getDefaultParser();
 
+    const requestedOrgIdRaw =
+      (dto as any).organization_id ?? dto.organizationId ?? null;
+    const requestedOrgId =
+      typeof requestedOrgIdRaw === 'string' &&
+      requestedOrgIdRaw.trim().length === 0
+        ? null
+        : requestedOrgIdRaw;
+
+    const orgIdToSave =
+      user.role === 'admin' ? requestedOrgId ?? null : user.organization_id;
+
     const agent = await this.agentRepository.create({
       name: dto.name,
       agent_identifier: dto.agentIdentifier ?? null,
@@ -28,7 +39,7 @@ export class CreateAttendantAgentService {
       parser_schema,
       with_history: dto.withHistory ?? true,
       sites: dto.sites && dto.sites.length ? dto.sites : null,
-      organization_id: user.role === 'admin' ? null : user.organization_id,
+      organization_id: orgIdToSave ?? null,
       user_id: user.id,
     });
 

@@ -39,6 +39,16 @@ export class UpdateAgentService {
     if (dto.sites !== undefined)
       updateData.sites = dto.sites && dto.sites.length ? dto.sites : null;
 
+    // Support organization update (admin-only at controller level). Accept both camelCase and snake_case
+    const orgFromDtoRaw = (dto as any).organization_id ?? dto.organizationId;
+    if (orgFromDtoRaw !== undefined) {
+      const normalized =
+        typeof orgFromDtoRaw === 'string' && orgFromDtoRaw.trim().length === 0
+          ? null
+          : orgFromDtoRaw;
+      updateData.organization_id = normalized ?? null;
+    }
+
     if (dto.parser !== undefined) {
       if (dto.parser === null) {
         updateData.parser_name = null;
@@ -80,6 +90,7 @@ export class UpdateAgentService {
       model: agent.model,
       temperature: agent.temperature,
       withHistory: agent.with_history,
+      organization_id: (agent as any).organization_id ?? null,
       sites: (agent as any).sites ?? null,
       parser: agent.parser_schema
         ? {

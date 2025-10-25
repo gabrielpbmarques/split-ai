@@ -15,4 +15,16 @@ export interface Organization {
   activated_at?: Date;
   deactivated_at?: Date;
   plan?: OrganizationPlan;
+  // Embeddable chat widget settings
+  chat_embed_enabled?: boolean;
+  chat_embed_token?: string | null;
+  chat_embed_agent_id?: string | null;
+  chat_embed_primary_color?: string | null;
+  chat_embed_button_position?:
+    | 'bottom-right'
+    | 'bottom-left'
+    | 'top-right'
+    | 'top-left';
+  chat_embed_greeting?: string | null;
+  chat_embed_welcome_enabled?: boolean;
 }

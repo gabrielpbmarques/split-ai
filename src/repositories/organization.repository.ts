@@ -110,6 +110,30 @@ export class OrganizationRepository {
     return this.findById(id);
   }
 
+  async updateEmbedSettings(
+    id: string,
+    data: Partial<
+      Pick<
+        OrganizationEntity,
+        | 'chat_embed_enabled'
+        | 'chat_embed_agent_id'
+        | 'chat_embed_primary_color'
+        | 'chat_embed_button_position'
+        | 'chat_embed_greeting'
+        | 'chat_embed_welcome_enabled'
+      >
+    >,
+  ): Promise<OrganizationEntity | null> {
+    await this.organizationRepository.update(id, data);
+    return this.findById(id);
+  }
+
+  async findByEmbedToken(token: string): Promise<OrganizationEntity | null> {
+    return this.organizationRepository.findOne({
+      where: { chat_embed_token: token },
+    });
+  }
+
   async delete(id: string): Promise<boolean> {
     const result = await this.organizationRepository.delete(id);
     return (

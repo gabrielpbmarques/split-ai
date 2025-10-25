@@ -51,6 +51,36 @@ export class OrganizationEntity implements Organization {
   })
   plan: OrganizationPlan;
 
+  // Embeddable chat widget settings
+  @Column({ type: 'boolean', default: false })
+  chat_embed_enabled: boolean;
+
+  @Column({ type: 'text', nullable: true })
+  chat_embed_token: string;
+
+  @Column({ type: 'uuid', nullable: true })
+  chat_embed_agent_id: string;
+
+  @Column({ type: 'text', nullable: true })
+  chat_embed_primary_color: string;
+
+  @Column({
+    type: 'enum',
+    enum: ['bottom-right', 'bottom-left', 'top-right', 'top-left'],
+    default: 'bottom-right',
+  })
+  chat_embed_button_position:
+    | 'bottom-right'
+    | 'bottom-left'
+    | 'top-right'
+    | 'top-left';
+
+  @Column({ type: 'text', nullable: true })
+  chat_embed_greeting: string;
+
+  @Column({ type: 'boolean', default: false })
+  chat_embed_welcome_enabled: boolean;
+
   @OneToMany(() => UserEntity, (user) => user.organization)
   users: UserEntity[];
 

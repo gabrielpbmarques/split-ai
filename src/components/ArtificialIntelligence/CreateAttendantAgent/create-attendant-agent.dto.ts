@@ -34,6 +34,14 @@ export class CreateAttendantAgentDto {
   @IsOptional()
   instructions: AIInstructions;
 
+  @IsString()
+  @IsOptional()
+  organizationId?: string;
+
+  @IsString()
+  @IsOptional()
+  organization_id?: string;
+
   @IsArray()
   @IsString({ each: true })
   @IsOptional()
