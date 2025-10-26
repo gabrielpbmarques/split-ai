@@ -30,7 +30,6 @@ export class GenerateAiResponseService {
 
       return response;
     } catch (error) {
-      console.log(error);
       return 'Desculpe, tive um problema ao processar sua mensagem. Pode tentar novamente?';
     }
   }
@@ -44,6 +43,8 @@ export class GenerateAiResponseService {
   ): Promise<string | IterableReadableStream<AIMessageChunk> | any> {
     await this.messageRepository.create({
       session_id: metadata.session_id,
+      user_id: metadata.user_id,
+      agent_id: metadata.agent_id,
       message: question,
       from: 'user',
     });
@@ -53,6 +54,7 @@ export class GenerateAiResponseService {
       {
         ...metadata,
         agent_id: agent.id,
+        user_id: metadata.user_id,
       },
       metadata.session_id,
       agent,
@@ -63,87 +65,57 @@ export class GenerateAiResponseService {
       ...promptVariables,
     };
 
-    if (stream) {
-      const iterator = await runnable.runnable.stream(
-        templateVariables,
-        runnable.config,
+    if (stream)
+      return this.returnStreamResponse(
+        await runnable.runnable.stream(templateVariables, runnable.config),
       );
 
-      const first = await iterator.next();
-      if (!first.done) {
-        const firstVal: any = first.value as any;
-        if (Array.isArray(firstVal.tool_calls) && firstVal.tool_calls.length) {
-          const args = firstVal.tool_calls[0].args;
-          const parsed =
-            typeof args === 'string' ? this.parseJsonLike(args) : null;
-          return parsed ?? args;
-        }
-        async function* reStream() {
-          yield first.value as AIMessageChunk;
-          for await (const c of iterator as any) {
-            yield c as AIMessageChunk;
-          }
-        }
-        return reStream();
-      }
-      return iterator;
-    }
-
-    const result = await runnable.runnable.invoke(
-      templateVariables,
-      runnable.config,
+    return this.returnNonStreamResponse(
+      await runnable.runnable.invoke(templateVariables, runnable.config),
+      metadata,
     );
+  }
 
+  private async returnStreamResponse(
+    iterator: AsyncIterableIterator<AIMessageChunk>,
+  ) {
+    const first = await iterator.next();
+    if (!first.done) {
+      const firstVal: any = first.value as any;
+      if (Array.isArray(firstVal.tool_calls) && firstVal.tool_calls.length) {
+        const args = firstVal.tool_calls[0].args;
+        return args;
+      }
+      async function* reStream() {
+        yield first.value as AIMessageChunk;
+        for await (const c of iterator as any) {
+          yield c as AIMessageChunk;
+        }
+      }
+      return reStream();
+    }
+    return iterator;
+  }
+
+  private async returnNonStreamResponse(result: any, metadata: CustomMetadata) {
     if (
       Array.isArray((result as any).tool_calls) &&
       (result as any).tool_calls.length
     ) {
       const args = (result as any).tool_calls[0].args;
-      const parsed = typeof args === 'string' ? this.parseJsonLike(args) : null;
-      return parsed ?? args;
+      return args;
     }
 
     const formattedResponse = result.content.toString();
 
-    const maybeParsed = this.parseJsonLike(formattedResponse);
-    if (maybeParsed && typeof maybeParsed === 'object') {
-      return maybeParsed;
-    }
-
     await this.messageRepository.create({
       session_id: metadata.session_id,
+      user_id: metadata.user_id,
+      agent_id: metadata.agent_id,
       message: formattedResponse,
       from: 'agent',
     });
 
     return formattedResponse;
-  }
-
-  private parseJsonLike(value: string): any | null {
-    if (typeof value !== 'string') return null;
-    let s = value.trim();
-    if (s.startsWith('```')) {
-      s = s
-        .replace(/^```[a-zA-Z]*\n?/, '')
-        .replace(/```$/, '')
-        .trim();
-    }
-    if (
-      (s.startsWith('{') && s.endsWith('}')) ||
-      (s.startsWith('[') && s.endsWith(']'))
-    ) {
-      try {
-        return JSON.parse(s);
-      } catch {}
-    }
-    const first = s.indexOf('{');
-    const last = s.lastIndexOf('}');
-    if (first !== -1 && last !== -1 && last > first) {
-      const sub = s.slice(first, last + 1);
-      try {
-        return JSON.parse(sub);
-      } catch {}
-    }
-    return null;
   }
 }

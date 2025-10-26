@@ -10,6 +10,7 @@ export class BuildSystemPromptService {
 
   execute(
     context: CustomDocument[],
+    messages: CustomDocument[],
     instructions: AIInstructions,
     sources?: AISourceType[],
   ): string {
@@ -20,9 +21,19 @@ export class BuildSystemPromptService {
       .map((doc: CustomDocument) => doc.pageContent)
       .join(' ');
 
+    const messagesSource = messages
+      .map((doc: CustomDocument) => doc.pageContent)
+      .join(' ');
+
     if (!sources) {
-      const final = `${textPrompt}\nData de hoje: ${new Date().toLocaleDateString()}\nReferência de conhecimento:\n${source}`;
-      return this.escapeTemplateBraces(final);
+      const final = `
+        ${textPrompt}\n
+        Data de hoje: ${new Date().toLocaleDateString()}\n
+        Referência de conhecimento:\n${source}
+        Mensagens de outras conversas:\n${messagesSource || 'Nenhuma mensagem disponível'}
+      `;
+
+      return final;
     }
 
     const groupedSources = context.reduce(
@@ -40,12 +51,12 @@ export class BuildSystemPromptService {
       sourceSection += `\n${type.toUpperCase()}:\n- ${content.join('\n- ')}\n`;
     }
 
-    const final = `${textPrompt}\nData de hoje: ${new Date().toLocaleDateString()}\nReferência de conhecimento:\n${sourceSection}`;
-    return this.escapeTemplateBraces(final);
-  }
-
-  private escapeTemplateBraces(str: string): string {
-    if (!str) return str;
-    return str.replace(/[{}]/g, (m) => (m === '{' ? '{{' : '}}'));
+    const final = `
+      ${textPrompt}\n
+      Data de hoje: ${new Date().toLocaleDateString()}\n
+      Referência de conhecimento:\n${sourceSection}\n
+      Mensagens de outras conversas:\n${messagesSource || 'Nenhuma mensagem disponível'}
+    `;
+    return final;
   }
 }

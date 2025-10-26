@@ -48,6 +48,7 @@ export class ExtractOcrTextService {
       text,
       {
         session_id: '',
+        agent_id: agent.id,
       },
       agent,
       false,

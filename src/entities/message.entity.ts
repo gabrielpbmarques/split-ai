@@ -18,6 +18,12 @@ export class MessageEntity {
   @Column({ type: 'uuid', nullable: false })
   session_id: string;
 
+  @Column({ type: 'uuid', nullable: true })
+  user_id: string | null;
+
+  @Column({ type: 'uuid', nullable: true })
+  agent_id: string | null;
+
   @Column({ type: 'text', nullable: false })
   message: string;
 
@@ -27,6 +33,9 @@ export class MessageEntity {
 
   @Column({ type: 'enum', enum: ['user', 'agent'], nullable: false })
   from: 'user' | 'agent';
+
+  @Column({ type: 'jsonb', nullable: true })
+  embedding?: number[] | null;
 
   @CreateDateColumn()
   created_at: Date;

@@ -17,6 +17,7 @@ export class FillPromptService {
 
   async execute(
     context: CustomDocument[],
+    messages: CustomDocument[],
     agent?: ResolvedAgent,
     sources?: AISourceType[],
   ): Promise<ChatPromptTemplate> {
@@ -26,6 +27,7 @@ export class FillPromptService {
     } = agent!;
     const systemPrompt = this.buildSystemPromptService.execute(
       context,
+      messages,
       instructions,
       sources,
     );

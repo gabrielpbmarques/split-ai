@@ -31,33 +31,22 @@ export class AttendantService {
       question,
       {
         session_id: session.id,
+        user_id: user.id,
+        agent_id: agent.id,
       },
       agent,
       false,
     );
 
-    const finalResponse =
-      typeof aiResponse === 'string'
-        ? aiResponse
-        : (aiResponse?.response as string | undefined);
+    await this.messageRepository.create({
+      session_id: session.id,
+      user_id: user.id,
+      agent_id: agent.id,
+      message: (aiResponse as any).response,
+      from: 'agent',
+    });
 
-    if (
-      aiResponse &&
-      typeof aiResponse === 'object' &&
-      typeof (aiResponse as any).response === 'string'
-    ) {
-      await this.messageRepository.create({
-        session_id: session.id,
-        message: (aiResponse as any).response,
-        from: 'agent',
-      });
-    }
-
-    if (
-      aiResponse &&
-      typeof aiResponse === 'object' &&
-      (aiResponse as any).conversationFinished
-    ) {
+    if (aiResponse.conversationFinished) {
       const { type, summary, insights, sentiment, phone, name, email } =
         aiResponse as any;
 
@@ -75,6 +64,6 @@ export class AttendantService {
       });
     }
 
-    return finalResponse ?? '';
+    return aiResponse?.response ?? '';
   }
 }

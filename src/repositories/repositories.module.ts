@@ -12,6 +12,7 @@ import {
   AgentInstructionEntity,
   ReportEntity,
 } from 'src/entities';
+import { InfrastructureModule } from 'src/infrastructure/infrastructure.module';
 
 import {
   AgentInstructionRepository,
@@ -40,6 +41,7 @@ import {
       AgentInstructionEntity,
       ReportEntity,
     ]),
+    InfrastructureModule,
   ],
   providers: [
     OrganizationRepository,

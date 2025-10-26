@@ -27,12 +27,37 @@ export class LoadAiChatService {
   ): Promise<RunnableMessageHistory | RunnableChat> {
     const { chat, runnableOpts, jsonParser } = agent;
 
-    const vectorStore = await this.loadVectorStoreService.execute(metadata);
+    // Carrega informações das fontes de conhecimento da IA
+    const documentsVectorStore = await this.loadVectorStoreService.execute(
+      {
+        source_type: metadata.source_type,
+        agent_id: metadata.agent_id,
+      },
+      'documents',
+    );
+
+    // Carrega informações de outras sessões do usuário
+    const messagesVectorStore = await this.loadVectorStoreService.execute(
+      {
+        user_id: metadata.user_id,
+        agent_id: metadata.agent_id,
+      },
+      'messages',
+    );
+
     const retrievedDocuments =
-      await this.executeSimilaritySearchService.execute(vectorStore, question);
+      await this.executeSimilaritySearchService.execute(
+        documentsVectorStore,
+        question,
+      );
+    const retrievedMessages = await this.executeSimilaritySearchService.execute(
+      messagesVectorStore,
+      question,
+    );
 
     const prompt = await this.fillPromptService.execute(
       retrievedDocuments,
+      retrievedMessages,
       agent,
     );
 

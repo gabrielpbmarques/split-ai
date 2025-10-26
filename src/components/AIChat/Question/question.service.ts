@@ -38,6 +38,8 @@ export class QuestionService {
       question,
       {
         session_id: session.id,
+        user_id: user.id,
+        agent_id: agent.id,
       },
       agent,
       STREAM,
@@ -54,6 +56,8 @@ export class QuestionService {
 
     await this.messageRepository.create({
       session_id: session.id,
+      user_id: user.id,
+      agent_id: agent.id,
       message: full,
       from: 'agent',
     });
