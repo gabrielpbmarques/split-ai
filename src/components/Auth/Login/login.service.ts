@@ -3,7 +3,7 @@ import {
   UnauthorizedException,
   BadRequestException,
 } from '@nestjs/common';
-import * as bcrypt from 'bcryptjs';
+import bcrypt from 'bcryptjs';
 import { UserRepository } from 'src/repositories';
 
 import { GenerateTokenService } from '../GenerateToken/generate-token.service';

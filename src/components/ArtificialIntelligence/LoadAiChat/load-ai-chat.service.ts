@@ -1,72 +1,78 @@
 import { Injectable } from '@nestjs/common';
-import { ExecuteSimilaritySearchService } from 'src/components/ArtificialIntelligence/ExecuteSimilaritySearch/execute-similarity-search.service';
-import { FillPromptService } from 'src/components/ArtificialIntelligence/FillPrompt/fill-prompt.service';
-import { GetRunnableChatService } from 'src/components/ArtificialIntelligence/GetRunnableChat/get-runnable-chat.service';
-import { LoadVectorStoreService } from 'src/components/ArtificialIntelligence/LoadVectorStore/load-vector-store.service';
 import {
-  RunnableChat,
-  RunnableMessageHistory,
-  CustomMetadata,
-  ResolvedAgent,
-} from 'src/types';
+  AgentMiddleware,
+  createAgent,
+  ReactAgent,
+  ResponseFormatUndefined,
+} from 'langchain';
+import { DynamicStructuredTool } from 'langchain';
+import { BuildSystemPromptService } from 'src/components/ArtificialIntelligence/BuildSystemPrompt/build-system-prompt.service';
+import { LoadCheckpointerService } from 'src/components/ArtificialIntelligence/LoadCheckpointer/load-checkpointer.service';
+import { LoadDatabaseToolService } from 'src/components/ArtificialIntelligence/LoadDatabaseTool/load-database-tool.service';
+import { ResolvedAgent } from 'src/types';
+import { AISourceType, CustomMetadata } from 'src/types';
+import z from 'zod';
 
 @Injectable()
 export class LoadAiChatService {
   constructor(
-    private fillPromptService: FillPromptService,
-    private getRunnableChatService: GetRunnableChatService,
-    private loadVectorStoreService: LoadVectorStoreService,
-    private executeSimilaritySearchService: ExecuteSimilaritySearchService,
+    private readonly loadCheckpointerService: LoadCheckpointerService,
+    private readonly buildSystemPromptService: BuildSystemPromptService,
+    private readonly loadDatabaseToolService: LoadDatabaseToolService,
   ) {}
 
   async execute(
-    question: string,
-    metadata: CustomMetadata,
-    sessionId: string,
     agent: ResolvedAgent,
-  ): Promise<RunnableMessageHistory | RunnableChat> {
-    const { chat, runnableOpts, jsonParser } = agent;
+    metadata: CustomMetadata,
+    question: string,
+    databaseTool: boolean = false,
+    sources?: AISourceType[],
+  ): Promise<
+    ReactAgent<
+      ResponseFormatUndefined,
+      undefined,
+      any,
+      readonly AgentMiddleware<any, any, any>[]
+    >
+  > {
+    const { chat, jsonParser, runnableOpts, instructions } = agent;
 
-    // Carrega informações das fontes de conhecimento da IA
-    const documentsVectorStore = await this.loadVectorStoreService.execute(
-      {
-        source_type: metadata.source_type,
-        agent_id: metadata.agent_id,
-      },
-      'documents',
-    );
+    const tools: DynamicStructuredTool<z.ZodObject<{ query: z.ZodString }>>[] =
+      [];
 
-    // Carrega informações de outras sessões do usuário
-    const messagesVectorStore = await this.loadVectorStoreService.execute(
-      {
-        user_id: metadata.user_id,
-        agent_id: metadata.agent_id,
-      },
-      'messages',
-    );
+    let dbTool: DynamicStructuredTool<z.ZodObject<{ query: z.ZodString }>>;
 
-    const retrievedDocuments =
-      await this.executeSimilaritySearchService.execute(
-        documentsVectorStore,
-        question,
-      );
-    const retrievedMessages = await this.executeSimilaritySearchService.execute(
-      messagesVectorStore,
+    const systemPrompt = await this.buildSystemPromptService.execute(
+      instructions,
+      metadata,
       question,
+      sources,
     );
 
-    const prompt = await this.fillPromptService.execute(
-      retrievedDocuments,
-      retrievedMessages,
-      agent,
-    );
+    if (databaseTool) {
+      dbTool = await this.loadDatabaseToolService.execute();
+      tools.push(dbTool);
+    }
 
-    return this.getRunnableChatService.execute(
-      chat,
-      prompt,
-      sessionId,
-      runnableOpts,
-      jsonParser,
-    );
+    if (jsonParser) {
+      tools.push(jsonParser);
+    }
+
+    if (runnableOpts.withHistory) {
+      const checkpointer = this.loadCheckpointerService.execute();
+
+      return createAgent({
+        model: chat as any,
+        tools,
+        systemPrompt,
+        checkpointer,
+      });
+    }
+
+    return createAgent({
+      model: chat as any,
+      tools,
+      systemPrompt,
+    });
   }
 }

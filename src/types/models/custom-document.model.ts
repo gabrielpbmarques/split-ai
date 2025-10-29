@@ -1,5 +1,5 @@
-import { DocumentInterface } from '@langchain/core/documents';
+import { Document } from 'langchain';
 
 export type CustomDocument =
-  | DocumentInterface<Record<string, unknown>>
-  | Partial<DocumentInterface<Record<string, unknown>>>;
+  | Document<Record<string, unknown>>
+  | Partial<Document<Record<string, unknown>>>;

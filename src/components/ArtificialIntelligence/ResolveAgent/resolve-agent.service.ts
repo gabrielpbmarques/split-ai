@@ -70,6 +70,6 @@ export class ResolveAgentService {
       jsonParser,
       runnableOpts,
       sites: (dbAgent as any).sites || undefined,
-    } as ResolvedAgent;
+    };
   }
 }

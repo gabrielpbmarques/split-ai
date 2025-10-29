@@ -1,24 +1,26 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { QuestionDto } from 'src/components/AIChat/Question/question.dto';
 import { GenerateAiResponseService } from 'src/components/ArtificialIntelligence/GenerateAIResponse/generate-ai-response.service';
 import { ResolveAgentService } from 'src/components/ArtificialIntelligence/ResolveAgent/resolve-agent.service';
 import { CreateSessionIfNotExistsService } from 'src/components/Session/CreateSessionIfNotExists/create-session-if-not-exists.service';
-import { MessageRepository } from 'src/repositories';
-import { ReportRepository } from 'src/repositories/report.repository';
-import { User } from 'src/types';
+import { ReportRepository, UserRepository } from 'src/repositories';
 
 @Injectable()
 export class AttendantService {
   constructor(
     private readonly generateAiResponseService: GenerateAiResponseService,
     private readonly createSessionIfNotExistsService: CreateSessionIfNotExistsService,
-    private readonly messageRepository: MessageRepository,
     private readonly resolveAgentService: ResolveAgentService,
     private readonly reportRepository: ReportRepository,
+    private readonly userRepository: UserRepository,
   ) {}
 
-  async execute(dto: QuestionDto, user: User): Promise<string> {
-    const { question, agentId } = dto;
+  async execute(dto: QuestionDto): Promise<string> {
+    const { question, agentId, phone } = dto;
+
+    const user = await this.userRepository.findByPhone(phone);
+
+    if (!user) throw new NotFoundException('Usuário não encontrado');
 
     const agent = await this.resolveAgentService.resolve(agentId);
 
@@ -38,14 +40,6 @@ export class AttendantService {
       false,
     );
 
-    await this.messageRepository.create({
-      session_id: session.id,
-      user_id: user.id,
-      agent_id: agent.id,
-      message: (aiResponse as any).response,
-      from: 'agent',
-    });
-
     if (aiResponse.conversationFinished) {
       const { type, summary, insights, sentiment, phone, name, email } =
         aiResponse as any;
@@ -64,6 +58,6 @@ export class AttendantService {
       });
     }
 
-    return aiResponse?.response ?? '';
+    return aiResponse?.response ? aiResponse.response : (aiResponse ?? '');
   }
 }

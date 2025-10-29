@@ -7,11 +7,10 @@ import { ArtificialIntelligenceModule } from './ArtificialIntelligence/artificia
 import { OcrModule } from './OCR/ocr.module';
 import { OrganizationModule } from './Organization/organization.module';
 import { PdfModule } from './Pdf/pdf.module';
-import { PublicChatModule } from './PublicChat/public-chat.module';
-import { PublicEmbedModule } from './PublicEmbed/public-embed.module';
 import { RegisterModule } from './Register/register.module';
 import { ReportModule } from './Report/report.module';
 import { UserModule } from './User/user.module';
+import { WhatsappModule } from './Whatsapp/whatsapp.module';
 
 @Module({
   imports: [
@@ -24,9 +23,8 @@ import { UserModule } from './User/user.module';
     RegisterModule,
     ReportModule,
     OrganizationModule,
-    PublicEmbedModule,
-    PublicChatModule,
     UserModule,
+    WhatsappModule,
   ],
   exports: [
     AuthModule,
@@ -38,9 +36,8 @@ import { UserModule } from './User/user.module';
     RegisterModule,
     ReportModule,
     OrganizationModule,
-    PublicEmbedModule,
-    PublicChatModule,
     UserModule,
+    WhatsappModule,
   ],
 })
 export class ComponentsModule {}

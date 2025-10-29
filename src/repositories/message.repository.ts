@@ -1,4 +1,4 @@
-import { Embeddings } from '@langchain/core/embeddings';
+import { VertexAIEmbeddings } from '@langchain/google-vertexai';
 import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MessageEntity } from 'src/entities/message.entity';
@@ -11,7 +11,7 @@ export class MessageRepository {
     @InjectRepository(MessageEntity)
     private readonly repository: Repository<MessageEntity>,
     @Inject(VERTEX_AI_EMBEDDINGS)
-    private readonly embeddings: Embeddings,
+    private readonly embeddings: VertexAIEmbeddings,
   ) {}
 
   async create(data: Partial<MessageEntity>): Promise<MessageEntity> {
@@ -22,7 +22,7 @@ export class MessageRepository {
       embedding,
     });
 
-    return message;
+    return this.repository.save(message);
   }
 
   async findById(id: string): Promise<MessageEntity | null> {

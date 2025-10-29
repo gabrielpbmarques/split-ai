@@ -1,7 +1,7 @@
 import { SupabaseVectorStore } from '@langchain/community/vectorstores/supabase';
-import { Document } from '@langchain/core/documents';
 import { VertexAIEmbeddings } from '@langchain/google-vertexai';
 import { Injectable, Inject } from '@nestjs/common';
+import { Document } from 'langchain';
 import { VERTEX_AI_EMBEDDINGS } from 'src/infrastructure/providers/vertex-ai.provider';
 
 @Injectable()

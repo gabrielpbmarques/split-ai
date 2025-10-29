@@ -1,5 +1,6 @@
 export type UserRole = 'user' | 'admin';
 export type UserStatus = 'active' | 'inactive';
+export type UserOrigin = 'whatsapp' | 'website' | 'app';
 
 export interface User {
   id: string;

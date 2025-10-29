@@ -1,7 +1,7 @@
-import * as path from 'path';
+import path from 'path';
 
 import { Injectable, Inject } from '@nestjs/common';
-import * as fs from 'fs-extra';
+import fs from 'fs-extra';
 import {
   GCP_STORAGE_SERVICE,
   GcpStorageService,

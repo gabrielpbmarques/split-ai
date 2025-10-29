@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import * as moment from 'moment';
+import moment from 'moment';
 import { SessionEntity } from 'src/entities';
 import { SessionRepository } from 'src/repositories';
 

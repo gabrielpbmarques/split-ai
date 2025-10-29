@@ -1,6 +1,5 @@
-import { IterableReadableStream } from '@langchain/core/dist/utils/stream';
-import { AIMessageChunk } from '@langchain/core/messages';
 import { Injectable } from '@nestjs/common';
+import { AIMessageChunk } from 'langchain';
 import { GenerateAiResponseService } from 'src/components/ArtificialIntelligence/GenerateAIResponse/generate-ai-response.service';
 import { ResolveAgentService } from 'src/components/ArtificialIntelligence/ResolveAgent/resolve-agent.service';
 import { CreateSessionIfNotExistsService } from 'src/components/Session/CreateSessionIfNotExists/create-session-if-not-exists.service';
@@ -46,7 +45,7 @@ export class QuestionService {
     );
 
     let full = '';
-    for await (const chunk of aiResponse as IterableReadableStream<AIMessageChunk>) {
+    for await (const chunk of aiResponse as AIMessageChunk[]) {
       if (chunk?.content) {
         const text = chunk.content.toString();
         full += text;

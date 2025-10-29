@@ -27,7 +27,7 @@ export class CreateAttendantAgentService {
         : requestedOrgIdRaw;
 
     const orgIdToSave =
-      user.role === 'admin' ? requestedOrgId ?? null : user.organization_id;
+      user.role === 'admin' ? (requestedOrgId ?? null) : user.organization_id;
 
     const agent = await this.agentRepository.create({
       name: dto.name,
@@ -60,51 +60,61 @@ export class CreateAttendantAgentService {
 
   private getDefaultParser(): any {
     return {
-      name: 'attendantParserFormatter',
-      description:
-        'Estrutura de relatório para atendente com resumo, sentimento e status da conversa',
+      name: 'response-formatter',
+      description: 'Estrutura de resposta para conversas',
       schema: {
         type: 'object',
         properties: {
           type: {
             type: 'string',
             enum: ['appointment', 'order', 'faq'],
+            description: 'Tipo da conversa',
             optional: true,
           },
           sentiment: {
             type: 'string',
             enum: ['positive', 'negative', 'neutral'],
+            description: 'Sentimento da conversa',
             optional: true,
           },
           phone: {
             type: 'string',
+            description: 'Telefone do cliente',
             optional: true,
           },
           name: {
             type: 'string',
+            description: 'Nome do cliente',
             optional: true,
           },
           email: {
             type: 'string',
+            description: 'Email do cliente',
             optional: true,
           },
           summary: {
             type: 'string',
+            description: 'Resumo da conversa',
             optional: true,
           },
           insights: {
             type: 'string',
+            description:
+              'Dicas para um atendente humano sobre como abordar o cliente',
             optional: true,
           },
           return: {
             type: 'string',
+            description: 'Retorno para o usuário',
             optional: true,
           },
           response: {
             type: 'string',
+            description: 'Resposta para o usuário',
           },
           conversationFinished: {
             type: 'boolean',
+            description: 'Indica se a conversa foi finalizada',
           },
         },
       },
@@ -112,18 +122,6 @@ export class CreateAttendantAgentService {
   }
 
   private getDefaultAttendantDirective(): string {
-    return `
-        IMPORTANTE: Todas as respostas devem estar no formato JSON, com os campos:
-
-        type: tipo da conversa (appointment, order, faq)
-        sentiment: sentimento da conversa (positive, negative, neutral)
-        phone: telefone do cliente
-        name: nome do cliente
-        email: email do cliente
-        summary: resumo da conversa
-        insights: dicas para um atendente humano sobre como abordar o cliente
-        conversationFinished: true se você interpretar que a conversa foi finalizada, false caso contrário. Esse valor só pode ser verdadeiro uma única vez.
-        response: todas as suas respostas ao usuário serão definidas neste campo
-    `;
+    return 'IMPORTANTE: Sempre use a tool response-formatter para estruturar sua resposta';
   }
 }

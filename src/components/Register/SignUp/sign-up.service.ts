@@ -3,7 +3,7 @@ import {
   BadRequestException,
   ConflictException,
 } from '@nestjs/common';
-import * as bcrypt from 'bcryptjs';
+import bcrypt from 'bcryptjs';
 import { UserRepository } from 'src/repositories';
 
 import { SignUpDto, UserType } from './sign-up.dto';

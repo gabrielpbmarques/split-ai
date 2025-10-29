@@ -1,6 +1,6 @@
-import { Document } from '@langchain/core/documents';
 import { Injectable, Inject } from '@nestjs/common';
 import { GenericParams } from '@spider-cloud/spider-client';
+import { Document } from 'langchain';
 import {
   SPIDER_SERVICE,
   SpiderService,

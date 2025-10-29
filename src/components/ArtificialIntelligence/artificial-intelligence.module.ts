@@ -4,12 +4,9 @@ import { BuildSystemPromptModule } from './BuildSystemPrompt/build-system-prompt
 import { ConvertTextToSpeechModule } from './ConvertTextToSpeech/convert-text-to-speech.module';
 import { CreateAgentModule } from './CreateAgent/create-agent.module';
 import { CreateAttendantAgentModule } from './CreateAttendantAgent/create-attendant-agent.module';
-import { CreateHistoryModule } from './CreateHistory/create-history.module';
 import { ExecuteSimilaritySearchModule } from './ExecuteSimilaritySearch/execute-similarity-search.module';
-import { FillPromptModule } from './FillPrompt/fill-prompt.module';
 import { GenerateAgentSourceModule } from './GenerateAgentSource/generate-agent-source.module';
 import { GenerateAiResponseModule } from './GenerateAIResponse/generate-ai-response.module';
-import { GetRunnableChatModule } from './GetRunnableChat/get-runnable-chat.module';
 import { ListAgentsModule } from './ListAgents/list-agents.module';
 import { LoadAgentSitesModule } from './LoadAgentSites/load-agent-sites.module';
 import { LoadAiChatModule } from './LoadAiChat/load-ai-chat.module';
@@ -21,14 +18,11 @@ import { UpdateAgentModule } from './UpdateAgent/update-agent.module';
 @Module({
   imports: [
     ConvertTextToSpeechModule,
-    CreateHistoryModule,
     ExecuteSimilaritySearchModule,
-    GetRunnableChatModule,
     LoadAiChatModule,
     LoadVectorStoreModule,
     GenerateAgentSourceModule,
     BuildSystemPromptModule,
-    FillPromptModule,
     NormalizePromptInstructionsModule,
     GenerateAiResponseModule,
     CreateAgentModule,
@@ -40,14 +34,11 @@ import { UpdateAgentModule } from './UpdateAgent/update-agent.module';
   ],
   exports: [
     ConvertTextToSpeechModule,
-    CreateHistoryModule,
     ExecuteSimilaritySearchModule,
-    GetRunnableChatModule,
     LoadAiChatModule,
     LoadVectorStoreModule,
     GenerateAgentSourceModule,
     BuildSystemPromptModule,
-    FillPromptModule,
     NormalizePromptInstructionsModule,
     GenerateAiResponseModule,
     CreateAgentModule,

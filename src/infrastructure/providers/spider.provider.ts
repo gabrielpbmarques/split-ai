@@ -1,14 +1,11 @@
 import { SpiderLoader } from '@langchain/community/document_loaders/web/spider';
-import { DocumentInterface } from '@langchain/core/documents';
 import { Provider } from '@nestjs/common';
 import { GenericParams } from '@spider-cloud/spider-client';
+import { Document } from 'langchain';
 import { config } from 'src/config';
 
 export class SpiderService {
-  async crawl(
-    url: string,
-    params: GenericParams,
-  ): Promise<DocumentInterface[]> {
+  async crawl(url: string, params: GenericParams): Promise<Document[]> {
     const loader = new SpiderLoader({
       apiKey: config.spiderApiKey,
       url,
