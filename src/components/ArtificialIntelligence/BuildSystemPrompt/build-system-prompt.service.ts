@@ -42,7 +42,7 @@ export class BuildSystemPromptService {
       Regras:
       - Pense passo a passo.
       - Quando precisar de dados, chame a ferramenta 'execute_sql' com UMA consulta SELECT.
-      - Somente leitura; sem INSERT/UPDATE/DELETE/ALTER/DROP/CREATE/REPLACE/TRUNCATE.
+      - SOMENTE leitura, escrita e atualização, métodos SELECT, INSERT e UPDATE.
       - Se a ferramenta retornar 'Erro:', revise a consulta SQL e tente novamente.
       - Limite o número de tentativas a 5.
       - Se não for bem-sucedido após 5 tentativas, retorne uma nota para o usuário.
