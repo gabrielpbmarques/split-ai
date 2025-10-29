@@ -1,4 +1,4 @@
-import { tool } from 'langchain';
+import { DynamicStructuredTool, tool } from 'langchain';
 import { z, ZodSchema, ZodTypeAny } from 'zod';
 
 type SchemaDef = {
@@ -60,7 +60,11 @@ export function buildLangchainToolFromSchema(
   name: string,
   description: string,
   def: SchemaDef,
-) {
+): DynamicStructuredTool<z.ZodObject<any>> {
   const schema = buildZodSchema(def);
-  return tool(async () => {}, { name, description, schema: schema as any });
+  return tool(async () => {}, {
+    name,
+    description,
+    schema: schema as any,
+  }) as unknown as DynamicStructuredTool<z.ZodObject<any>>;
 }
