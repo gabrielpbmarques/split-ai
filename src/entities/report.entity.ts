@@ -35,6 +35,15 @@ export class ReportEntity {
   sentiment: 'positive' | 'negative' | 'neutral';
 
   @Column({ type: 'text', nullable: false })
+  phone: string;
+
+  @Column({ type: 'text', nullable: false })
+  name: string;
+
+  @Column({ type: 'text', nullable: false })
+  email: string;
+
+  @Column({ type: 'text', nullable: false })
   summary: string;
 
   @Column({ type: 'text', nullable: true })
@@ -42,6 +51,9 @@ export class ReportEntity {
 
   @Column({ type: 'text', nullable: true })
   return: string;
+
+  @CreateDateColumn({ nullable: true })
+  scheduled_to: Date;
 
   @CreateDateColumn()
   created_at: Date;

@@ -1,7 +1,7 @@
 import { SupabaseVectorStore } from '@langchain/community/vectorstores/supabase';
-import { Document } from '@langchain/core/documents';
 import { VertexAIEmbeddings } from '@langchain/google-vertexai';
 import { Injectable, Inject } from '@nestjs/common';
+import { Document } from 'langchain';
 import { VERTEX_AI_EMBEDDINGS } from 'src/infrastructure/providers/vertex-ai.provider';
 
 @Injectable()
@@ -15,7 +15,7 @@ export class ExecuteSimilaritySearchService {
     vectorStore: SupabaseVectorStore,
     question: string,
   ): Promise<Document<Record<string, any>>[]> {
-    const topK = 30;
+    const topK = 6;
     const queryEmbeddings = await this.embeddings.embedQuery(question);
     const similarDocs = await vectorStore.similaritySearchVectorWithScore(
       queryEmbeddings,

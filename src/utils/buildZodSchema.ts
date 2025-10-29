@@ -1,16 +1,17 @@
-import { tool } from '@langchain/core/tools';
-import { z, ZodTypeAny } from 'zod';
+import { DynamicStructuredTool, tool } from 'langchain';
+import { z, ZodSchema, ZodTypeAny } from 'zod';
 
 type SchemaDef = {
   type?: 'string' | 'number' | 'boolean' | 'object' | 'array';
   optional?: boolean;
   enum?: string[];
   default?: any;
+  description?: string;
   properties?: Record<string, SchemaDef>;
   items?: SchemaDef;
 };
 
-export function buildZodSchema(def: SchemaDef): ZodTypeAny {
+export function buildZodSchema(def: SchemaDef): ZodSchema<any> {
   let schema: ZodTypeAny;
 
   if (def.enum && def.enum.length) {
@@ -37,7 +38,9 @@ export function buildZodSchema(def: SchemaDef): ZodTypeAny {
           const child = buildZodSchema(props[key]);
           shape[key] = props[key].optional ? child.optional() : child;
           if (Object.prototype.hasOwnProperty.call(props[key], 'default')) {
-            shape[key] = shape[key].default(props[key].default);
+            shape[key] = shape[key]
+              .default(props[key].default)
+              .describe(props[key].description);
           }
         }
         schema = z.object(shape);
@@ -57,7 +60,11 @@ export function buildLangchainToolFromSchema(
   name: string,
   description: string,
   def: SchemaDef,
-) {
+): DynamicStructuredTool<z.ZodObject<any>> {
   const schema = buildZodSchema(def);
-  return tool(async () => {}, { name, description, schema });
+  return tool(async () => {}, {
+    name,
+    description,
+    schema: schema as any,
+  }) as unknown as DynamicStructuredTool<z.ZodObject<any>>;
 }

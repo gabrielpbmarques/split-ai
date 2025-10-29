@@ -20,6 +20,10 @@ export class SignUpDto {
 
   @IsNotEmpty()
   @IsString()
+  organization: string;
+
+  @IsNotEmpty()
+  @IsString()
   @MinLength(8)
   password: string;
 

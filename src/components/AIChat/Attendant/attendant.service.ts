@@ -1,24 +1,25 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { QuestionDto } from 'src/components/AIChat/Question/question.dto';
 import { GenerateAiResponseService } from 'src/components/ArtificialIntelligence/GenerateAIResponse/generate-ai-response.service';
 import { ResolveAgentService } from 'src/components/ArtificialIntelligence/ResolveAgent/resolve-agent.service';
 import { CreateSessionIfNotExistsService } from 'src/components/Session/CreateSessionIfNotExists/create-session-if-not-exists.service';
-import { MessageRepository } from 'src/repositories';
-import { ReportRepository } from 'src/repositories/report.repository';
-import { User } from 'src/types';
+import { UserRepository } from 'src/repositories';
 
 @Injectable()
 export class AttendantService {
   constructor(
     private readonly generateAiResponseService: GenerateAiResponseService,
     private readonly createSessionIfNotExistsService: CreateSessionIfNotExistsService,
-    private readonly messageRepository: MessageRepository,
     private readonly resolveAgentService: ResolveAgentService,
-    private readonly reportRepository: ReportRepository,
+    private readonly userRepository: UserRepository,
   ) {}
 
-  async execute(dto: QuestionDto, user: User): Promise<string> {
-    const { question, agentId } = dto;
+  async execute(dto: QuestionDto): Promise<string> {
+    const { question, agentId, phone } = dto;
+
+    const user = await this.userRepository.findByPhone(phone);
+
+    if (!user) throw new NotFoundException('Usuário não encontrado');
 
     const agent = await this.resolveAgentService.resolve(agentId);
 
@@ -31,46 +32,18 @@ export class AttendantService {
       question,
       {
         session_id: session.id,
+        user_id: user.id,
+        agent_id: agent.id,
       },
       agent,
       false,
+      {
+        sessionId: session.id,
+        agentId: agent.id,
+        organizationId: user.organization_id,
+      },
     );
 
-    const finalResponse =
-      typeof aiResponse === 'string'
-        ? aiResponse
-        : (aiResponse?.response as string | undefined);
-
-    if (
-      aiResponse &&
-      typeof aiResponse === 'object' &&
-      typeof (aiResponse as any).response === 'string'
-    ) {
-      await this.messageRepository.create({
-        session_id: session.id,
-        message: (aiResponse as any).response,
-        from: 'agent',
-      });
-    }
-
-    if (
-      aiResponse &&
-      typeof aiResponse === 'object' &&
-      (aiResponse as any).conversationFinished
-    ) {
-      const { type, summary, insights, sentiment } = aiResponse as any;
-
-      await this.reportRepository.create({
-        session_id: session.id,
-        agent_id: agent.id,
-        organization_id: user.role === 'admin' ? null : user.organization_id,
-        type,
-        sentiment,
-        summary,
-        insights,
-      });
-    }
-
-    return finalResponse ?? '';
+    return aiResponse?.response ? aiResponse.response : (aiResponse ?? '');
   }
 }

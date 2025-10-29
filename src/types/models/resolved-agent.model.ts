@@ -1,5 +1,5 @@
-import { DynamicStructuredTool } from '@langchain/core/tools';
 import { ChatVertexAI } from '@langchain/google-vertexai';
+import { DynamicStructuredTool } from 'langchain';
 import { z } from 'zod';
 
 import { AIInstructions } from './ai-instructions.model';
@@ -11,4 +11,5 @@ export interface ResolvedAgent {
   chat: ChatVertexAI;
   jsonParser?: DynamicStructuredTool<z.ZodObject<any>>;
   runnableOpts: RunnableChatOpts;
+  sites?: string[];
 }

@@ -1,4 +1,4 @@
-import * as dotenv from 'dotenv';
+import dotenv from 'dotenv';
 
 dotenv.config();
 
@@ -16,11 +16,14 @@ interface IConfig {
   databaseUserName: string;
   databasePassword: string;
   databaseName: string;
+  databaseUrl: string;
   sendgridApiKey: string;
   emailDefaultFrom: string;
   twilioAccountSid: string;
   twilioAuthToken: string;
   twilioPhoneNumber: string;
+  twilioWhatsappNumber: string;
+  spiderApiKey: string;
 }
 
 export const config: IConfig = {
@@ -37,9 +40,12 @@ export const config: IConfig = {
   databaseUserName: process.env.DATABASE_USERNAME,
   databasePassword: process.env.DATABASE_PASSWORD,
   databaseName: process.env.DATABASE_NAME,
+  databaseUrl: process.env.DATABASE_URL,
   sendgridApiKey: process.env.SENDGRID_API_KEY,
   emailDefaultFrom: process.env.SENDGRID_EMAIL_DEFAULT_FROM,
   twilioAccountSid: process.env.TWILIO_ACCOUNT_SID,
   twilioAuthToken: process.env.TWILIO_AUTH_TOKEN,
   twilioPhoneNumber: process.env.TWILIO_PHONE_NUMBER,
+  twilioWhatsappNumber: process.env.TWILIO_WHATSAPP_NUMBER,
+  spiderApiKey: process.env.SPIDER_API_KEY,
 };

@@ -1,8 +1,8 @@
 import { SupabaseVectorStore } from '@langchain/community/vectorstores/supabase';
-import { Document } from '@langchain/core/documents';
 import { VertexAIEmbeddings } from '@langchain/google-vertexai';
 import { Inject, Provider } from '@nestjs/common';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { Document } from 'langchain';
 import { config } from 'src/config';
 import { Chunks, CustomMetadata } from 'src/types';
 import { cleanInvalidUnicode } from 'src/utils/clearInvalidUnicode';

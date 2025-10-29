@@ -1,4 +1,4 @@
-import { UserRole, UserStatus } from 'src/types';
+import { UserOrigin, UserRole, UserStatus } from 'src/types';
 import {
   Column,
   CreateDateColumn,
@@ -24,7 +24,7 @@ export class UserEntity {
   @Column({ type: 'text', unique: true, nullable: true })
   email: string;
 
-  @Column({ type: 'text' })
+  @Column({ type: 'text', nullable: true })
   password_hash: string;
 
   @Column({
@@ -53,6 +53,13 @@ export class UserEntity {
 
   @OneToMany(() => AgentEntity, (agent: any) => agent.user)
   agents: AgentEntity[];
+
+  @Column({
+    type: 'enum',
+    enum: ['whatsapp', 'website', 'app'],
+    default: 'website',
+  })
+  origin: UserOrigin;
 
   @CreateDateColumn({ name: 'created_at' })
   created_at: Date;

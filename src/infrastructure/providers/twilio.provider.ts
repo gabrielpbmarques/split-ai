@@ -17,6 +17,10 @@ export interface ITwilioService {
     phone: string,
     code: string,
   ): Promise<{ success: boolean; message?: string }>;
+  sendWhatsapp(
+    phone: string,
+    message: string,
+  ): Promise<{ success: boolean; message?: string }>;
 }
 
 class TwilioService implements ITwilioService {
@@ -45,7 +49,23 @@ class TwilioService implements ITwilioService {
 
       return { success: true };
     } catch (error) {
-      console.error('Erro ao enviar SMS via Twilio:', error);
+      return { success: false, message: error.message };
+    }
+  }
+
+  async sendWhatsapp(
+    phone: string,
+    message: string,
+  ): Promise<{ success: boolean; message?: string }> {
+    try {
+      await this.twilioClient.messages.create({
+        body: message,
+        from: `whatsapp:${config.twilioWhatsappNumber}`,
+        to: `whatsapp:+${phone.startsWith('55') ? phone : '55' + phone}`,
+      });
+
+      return { success: true };
+    } catch (error) {
       return { success: false, message: error.message };
     }
   }

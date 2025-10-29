@@ -42,6 +42,9 @@ export class AgentEntity {
   @Column({ type: 'text', nullable: true })
   parser_description: string | null;
 
+  @Column('text', { array: true, nullable: true })
+  sites: string[] | null;
+
   @OneToMany(() => AgentInstructionEntity, (instruction) => instruction.agent)
   instructions: AgentInstructionEntity[];
 
