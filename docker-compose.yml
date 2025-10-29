@@ -16,7 +16,7 @@ services:
       - ./.gcloud:/usr/app/.gcloud
       - ./src:/usr/app/src
       - ./package.json:/usr/app/package.json
-      - ./bun.lockb:/usr/app/bun.lockb
+      - ./bun.lock:/usr/app/bun.lock
       - ./tsconfig.json:/usr/app/tsconfig.json
     depends_on:
       redis:

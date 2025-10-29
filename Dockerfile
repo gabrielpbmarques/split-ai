@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y curl unzip && \
 
 # Copy package files
 COPY package.json ./
-COPY bun.lockb ./
+COPY bun.lock ./
 
 # Install dependencies using Bun
 RUN bun install --ignore-scripts
