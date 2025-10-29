@@ -52,6 +52,9 @@ export class ReportEntity {
   @Column({ type: 'text', nullable: true })
   return: string;
 
+  @CreateDateColumn({ nullable: true })
+  scheduled_to: Date;
+
   @CreateDateColumn()
   created_at: Date;
 

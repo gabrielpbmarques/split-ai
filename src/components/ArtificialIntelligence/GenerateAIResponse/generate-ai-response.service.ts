@@ -108,6 +108,8 @@ export class GenerateAiResponseService {
   }
 
   private async returnNonStreamResponse(result: any, metadata: CustomMetadata) {
+    console.log(result.messages);
+
     if (
       Array.isArray((result as any).messages.at(-3).tool_calls) &&
       (result as any).messages.at(-3).tool_calls.length

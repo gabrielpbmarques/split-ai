@@ -5,8 +5,7 @@ import { config } from 'src/config';
 import { DataSource } from 'typeorm';
 import z from 'zod';
 
-const DENY_RE =
-  /\b(INSERT|UPDATE|DELETE|ALTER|DROP|CREATE|REPLACE|TRUNCATE)\b/i;
+const DENY_RE = /\b(DELETE|ALTER|DROP|CREATE|REPLACE|TRUNCATE)\b/i;
 const HAS_LIMIT_TAIL_RE = /\blimit\b\s+\d+(\s*,\s*\d+)?\s*;?\s*$/i;
 
 @Injectable()
@@ -41,11 +40,13 @@ export class LoadDatabaseToolService {
       {
         name: 'execute_sql',
         description:
-          'Execute a READ-ONLY SQLite SELECT query and return results.',
+          'Execute a SQLite SELECT/INSERT/UPDATE query and return results.',
         schema: z.object({
           query: z
             .string()
-            .describe('SQLite SELECT query to execute (read-only).'),
+            .describe(
+              'SQLite SELECT/INSERT/UPDATE query to execute (read-only).',
+            ),
         }),
       },
     );
@@ -72,12 +73,18 @@ export class LoadDatabaseToolService {
 
     query = query.replace(/;+\s*$/g, '').trim();
 
-    if (!query.toLowerCase().startsWith('select')) {
-      throw new Error('Only SELECT statements are allowed');
+    if (
+      !(
+        query.toLowerCase().startsWith('select') ||
+        query.toLowerCase().startsWith('insert') ||
+        query.toLowerCase().startsWith('update')
+      )
+    ) {
+      throw new Error('Only SELECT/INSERT/UPDATE statements are allowed');
     }
     if (DENY_RE.test(query)) {
       throw new Error(
-        'DML/DDL detected. Only read-only queries are permitted.',
+        'DML/DDL detected. Only SELECT/INSERT/UPDATE queries are permitted.',
       );
     }
 

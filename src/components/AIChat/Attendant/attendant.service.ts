@@ -3,7 +3,7 @@ import { QuestionDto } from 'src/components/AIChat/Question/question.dto';
 import { GenerateAiResponseService } from 'src/components/ArtificialIntelligence/GenerateAIResponse/generate-ai-response.service';
 import { ResolveAgentService } from 'src/components/ArtificialIntelligence/ResolveAgent/resolve-agent.service';
 import { CreateSessionIfNotExistsService } from 'src/components/Session/CreateSessionIfNotExists/create-session-if-not-exists.service';
-import { ReportRepository, UserRepository } from 'src/repositories';
+import { UserRepository } from 'src/repositories';
 
 @Injectable()
 export class AttendantService {
@@ -11,7 +11,6 @@ export class AttendantService {
     private readonly generateAiResponseService: GenerateAiResponseService,
     private readonly createSessionIfNotExistsService: CreateSessionIfNotExistsService,
     private readonly resolveAgentService: ResolveAgentService,
-    private readonly reportRepository: ReportRepository,
     private readonly userRepository: UserRepository,
   ) {}
 
@@ -38,25 +37,12 @@ export class AttendantService {
       },
       agent,
       false,
+      {
+        sessionId: session.id,
+        agentId: agent.id,
+        organizationId: user.organization_id,
+      },
     );
-
-    if (aiResponse.conversationFinished) {
-      const { type, summary, insights, sentiment, phone, name, email } =
-        aiResponse as any;
-
-      await this.reportRepository.create({
-        session_id: session.id,
-        agent_id: agent.id,
-        organization_id: user.role === 'admin' ? null : user.organization_id,
-        type,
-        sentiment,
-        summary,
-        insights,
-        phone,
-        name,
-        email,
-      });
-    }
 
     return aiResponse?.response ? aiResponse.response : (aiResponse ?? '');
   }
