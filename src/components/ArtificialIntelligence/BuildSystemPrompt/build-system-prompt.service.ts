@@ -43,7 +43,6 @@ export class BuildSystemPromptService {
       - Pense passo a passo.
       - Quando precisar de dados, chame a ferramenta 'execute_sql' com UMA consulta SELECT.
       - Somente leitura; sem INSERT/UPDATE/DELETE/ALTER/DROP/CREATE/REPLACE/TRUNCATE.
-      - Limite a 5 linhas a menos que o usuário peça explicitamente.
       - Se a ferramenta retornar 'Erro:', revise a consulta SQL e tente novamente.
       - Limite o número de tentativas a 5.
       - Se não for bem-sucedido após 5 tentativas, retorne uma nota para o usuário.
@@ -57,7 +56,7 @@ export class BuildSystemPromptService {
     if (!sources) {
       const final = `
         ${textPrompt}\n
-        ${databasePrompt}\n
+        Banco de dados: ${databasePrompt}\n
         Data de hoje: ${new Date().toLocaleDateString()}\n
         Referência de conhecimento:\n${source}
       `;
@@ -82,7 +81,7 @@ export class BuildSystemPromptService {
 
     const final = `
       ${textPrompt}\n
-      ${databasePrompt}\n
+      Banco de dados: ${databasePrompt}\n
       Data de hoje: ${new Date().toLocaleDateString()}\n
       Referência de conhecimento:\n${sourceSection}\n
     `;
