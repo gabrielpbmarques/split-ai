@@ -93,6 +93,7 @@ jobs:
           DATABASE_USERNAME: ${{ secrets.DATABASE_USERNAME }}
           DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
           DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
           # Supabase
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_API_KEY: ${{ secrets.SUPABASE_API_KEY }}
@@ -108,6 +109,10 @@ jobs:
           TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
           TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
           TWILIO_WEBHOOK_BASE_URL: ${{ secrets.TWILIO_WEBHOOK_BASE_URL }}
+          TWILIO_WHATSAPP_NUMBER: ${{ secrets.TWILIO_WHATSAPP_NUMBER }}
+          WHATSAPP_PROVIDER: twilio
+          SESSION_WINDOW_MINUTES: 1440
+          SPIDER_API_KEY: ${{ secrets.SPIDER_API_KEY }}
           GOOGLE_GEOCODING_API_KEY: ${{ secrets.GOOGLE_GEOCODING_API_KEY }}
         run: |-
           gcloud run deploy split-ai --region $CLOUDSDK_COMPUTE_REGION \
@@ -128,6 +133,7 @@ jobs:
           --set-env-vars DATABASE_USERNAME=$DATABASE_USERNAME \
           --set-env-vars DATABASE_PASSWORD=$DATABASE_PASSWORD \
           --set-env-vars DATABASE_NAME=$DATABASE_NAME \
+          --set-env-vars DATABASE_URL=$DATABASE_URL \
           --set-env-vars SUPABASE_URL=$SUPABASE_URL \
           --set-env-vars SUPABASE_API_KEY=$SUPABASE_API_KEY \
           --set-env-vars SENDGRID_API_KEY=$SENDGRID_API_KEY \
@@ -137,5 +143,9 @@ jobs:
           --set-env-vars TWILIO_ACCOUNT_SID=$TWILIO_ACCOUNT_SID \
           --set-env-vars TWILIO_AUTH_TOKEN=$TWILIO_AUTH_TOKEN \
           --set-env-vars TWILIO_WEBHOOK_BASE_URL=$TWILIO_WEBHOOK_BASE_URL \
+          --set-env-vars TWILIO_WHATSAPP_NUMBER=$TWILIO_WHATSAPP_NUMBER \
+          --set-env-vars WHATSAPP_PROVIDER=$WHATSAPP_PROVIDER \
+          --set-env-vars SESSION_WINDOW_MINUTES=$SESSION_WINDOW_MINUTES \
+          --set-env-vars SPIDER_API_KEY=$SPIDER_API_KEY \
           --set-env-vars GCP_PROJECT_ID=$CLOUDSDK_CORE_PROJECT \
           --set-env-vars GOOGLE_GEOCODING_API_KEY=$GOOGLE_GEOCODING_API_KEY
