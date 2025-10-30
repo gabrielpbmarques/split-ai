@@ -15,7 +15,7 @@ export class PublicEmbedService {
   const position = script.getAttribute('data-position') || 'bottom-right';
   const agent = script.getAttribute('data-agent') || '';
   if (!org || !token) {
-    console.warn('[Split-AI] Missing data-org or data-token');
+    console.warn('[MAIA] Missing data-org or data-token');
     return;
   }
 
@@ -27,6 +27,7 @@ export class PublicEmbedService {
   if (color) iframeUrl.searchParams.set('color', color);
 
   const container = document.createElement('div');
+  container.id = 'splitai-container';
   container.style.position = 'fixed';
   container.style.zIndex = '2147483647';
   const [posY, posX] = position.split('-');
@@ -35,16 +36,21 @@ export class PublicEmbedService {
   if (posX === 'right') container.style.right = spacing; else container.style.left = spacing;
 
   const button = document.createElement('button');
+  button.id = 'splitai-button';
+  button.setAttribute('aria-label', 'Abrir chat');
   button.textContent = 'Chat';
   button.style.background = color;
   button.style.color = '#ffffff';
   button.style.border = 'none';
-  button.style.borderRadius = '24px';
+  button.style.borderRadius = '9999px';
   button.style.padding = '12px 16px';
+  button.style.minWidth = '56px';
+  button.style.minHeight = '44px';
   button.style.cursor = 'pointer';
   button.style.boxShadow = '0 8px 24px rgba(0,0,0,0.2)';
 
   const iframe = document.createElement('iframe');
+  iframe.id = 'splitai-iframe';
   iframe.src = iframeUrl.toString();
   iframe.style.position = 'fixed';
   iframe.style.width = '380px';
@@ -57,12 +63,56 @@ export class PublicEmbedService {
   if (posY === 'bottom') iframe.style.bottom = spacing; else iframe.style.top = spacing;
   if (posX === 'right') iframe.style.right = spacing; else iframe.style.left = spacing;
 
+  // Close button (shown when chat is open)
+  const closeBtn = document.createElement('button');
+  closeBtn.id = 'splitai-close';
+  closeBtn.setAttribute('aria-label', 'Fechar chat');
+  closeBtn.textContent = '✕';
+  closeBtn.style.background = color;
+  closeBtn.style.color = '#ffffff';
+  closeBtn.style.border = 'none';
+  closeBtn.style.borderRadius = '9999px';
+  closeBtn.style.width = '44px';
+  closeBtn.style.height = '44px';
+  closeBtn.style.cursor = 'pointer';
+  closeBtn.style.boxShadow = '0 8px 24px rgba(0,0,0,0.2)';
+  closeBtn.style.display = 'none';
+  closeBtn.style.zIndex = '2147483648';
+
+  // Responsive styles via injected <style>
+  const styleEl = document.createElement('style');
+  styleEl.textContent = "#splitai-iframe { max-width: calc(100vw - 32px); max-height: calc(100dvh - 32px); }\n" +
+    "@media (max-width: 480px), (max-height: 700px) {\n" +
+    "  #splitai-iframe {\n" +
+    "    width: 100vw !important;\n" +
+    "    height: 100dvh !important;\n" +
+    "    top: 0 !important; right: 0 !important; bottom: 0 !important; left: 0 !important;\n" +
+    "    border-radius: 0 !important;\n" +
+    "    box-shadow: none !important;\n" +
+    "  }\n" +
+    "  #splitai-button, #splitai-close {\n" +
+    "    padding: 14px 16px !important;\n" +
+    "    min-width: 56px !important;\n" +
+    "    min-height: 56px !important;\n" +
+    "  }\n" +
+    "}\n";
+  document.head.appendChild(styleEl);
+
   button.addEventListener('click', () => {
     const isOpen = iframe.style.display !== 'none';
     iframe.style.display = isOpen ? 'none' : 'block';
+    button.style.display = isOpen ? 'inline-block' : 'none';
+    closeBtn.style.display = isOpen ? 'none' : 'inline-flex';
+  });
+
+  closeBtn.addEventListener('click', () => {
+    iframe.style.display = 'none';
+    closeBtn.style.display = 'none';
+    button.style.display = 'inline-block';
   });
 
   container.appendChild(button);
+  container.appendChild(closeBtn);
   document.body.appendChild(container);
   document.body.appendChild(iframe);
 })();`;
@@ -73,8 +123,8 @@ export class PublicEmbedService {
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Split-AI Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>MAIA Chat</title>
   <style>
     :root {
       --primary: #5A3E95;
@@ -85,14 +135,14 @@ export class PublicEmbedService {
       --surface: #11162a;
       --text: #ffffff;
     }
-    html, body { margin: 0; padding: 0; height: 100%; font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
-    .root { display: flex; flex-direction: column; height: 100%; background: linear-gradient(180deg, #0b1020 0%, #141433 100%); color: var(--text); }
-    .header { padding: 12px 14px; background: var(--primary); border-bottom: 1px solid rgba(255,255,255,0.08); font-weight: 600; letter-spacing: 0.2px; }
+    html, body { margin: 0; padding: 0; height: 100%; font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; overscroll-behavior: contain; }
+    .root { display: flex; flex-direction: column; min-height: 100dvh; background: linear-gradient(180deg, #0b1020 0%, #141433 100%); color: var(--text); -webkit-font-smoothing: antialiased; touch-action: manipulation; }
+    .header { position: sticky; top: 0; padding: calc(12px + env(safe-area-inset-top)) 14px 12px; background: var(--primary); border-bottom: 1px solid rgba(255,255,255,0.08); font-weight: 600; letter-spacing: 0.2px; z-index: 1; }
     .messages { flex: 1; overflow: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
-    .input { display: flex; gap: 8px; padding: 12px; border-top: 1px solid rgba(255,255,255,0.08); background: var(--bg); }
+    .input { position: sticky; bottom: 0; display: flex; gap: 8px; padding: 12px; padding-bottom: calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid rgba(255,255,255,0.08); background: var(--bg); }
     .input input { flex: 1; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); background: #0f1530; color: var(--text); outline: none; }
     .input input:focus { border-color: var(--primary-300); box-shadow: 0 0 0 3px rgba(138, 99, 208, 0.2); }
-    .input button { padding: 10px 12px; border-radius: 10px; border: 0; background: var(--primary); color: #fff; font-weight: 600; cursor: pointer; transition: background 0.2s ease; }
+    .input button { padding: 10px 12px; border-radius: 10px; border: 0; background: var(--primary); color: #fff; font-weight: 600; cursor: pointer; transition: background 0.2s ease; min-height: 44px; }
     .input button:hover { background: var(--primary-600); }
     .input button:disabled { opacity: 0.7; cursor: not-allowed; }
     .msg { max-width: 85%; background: rgba(255,255,255,0.06); padding: 10px 12px; border-radius: 12px; font-size: 14px; line-height: 1.4; }
@@ -108,7 +158,7 @@ export class PublicEmbedService {
 </head>
 <body>
   <div class="root">
-    <div class="header">Assistente Split-AI</div>
+    <div class="header">Assistente MAIA</div>
     <div id="messages" class="messages"></div>
     <div class="input">
       <input id="q" placeholder="Digite sua mensagem..." />
@@ -175,6 +225,14 @@ export class PublicEmbedService {
         e.preventDefault();
         sendBtn.click();
       }
+    });
+
+    // Improve mobile keyboard behavior
+    inputEl.addEventListener('focus', () => {
+      setTimeout(() => { messagesEl.scrollTop = messagesEl.scrollHeight; }, 250);
+    });
+    window.addEventListener('resize', () => {
+      messagesEl.scrollTop = messagesEl.scrollHeight;
     });
 
     sendBtn.addEventListener('click', async () => {
