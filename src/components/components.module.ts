@@ -3,6 +3,7 @@ import { AuthModule } from 'src/components/Auth/auth.module';
 import { SessionModule } from 'src/components/Session/session.module';
 
 import { AIChatModule } from './AIChat/ai-chat.module';
+import { AnalyticsModule } from './Analytics/analytics.module';
 import { ArtificialIntelligenceModule } from './ArtificialIntelligence/artificial-intelligence.module';
 import { OcrModule } from './OCR/ocr.module';
 import { OrganizationModule } from './Organization/organization.module';
@@ -25,6 +26,7 @@ import { WhatsappModule } from './Whatsapp/whatsapp.module';
     OrganizationModule,
     UserModule,
     WhatsappModule,
+    AnalyticsModule,
   ],
   exports: [
     AuthModule,
@@ -38,6 +40,7 @@ import { WhatsappModule } from './Whatsapp/whatsapp.module';
     OrganizationModule,
     UserModule,
     WhatsappModule,
+    AnalyticsModule,
   ],
 })
 export class ComponentsModule {}
