@@ -1,6 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { GenericParams } from '@spider-cloud/spider-client';
-import { Document } from 'langchain';
 import {
   SPIDER_SERVICE,
   SpiderService,
@@ -22,8 +21,6 @@ export class LoadAgentSitesService {
   async execute(sites: string, agentId: string): Promise<void> {
     if (!sites?.length) return;
 
-    const allDocs: Document[] = [];
-
     const crawlParams: GenericParams = {
       limit: 20,
       depth: 25,
@@ -33,11 +30,8 @@ export class LoadAgentSitesService {
     };
 
     const docs = await this.spiderService.crawl(sites, crawlParams);
-    allDocs.push(...docs);
 
-    if (!allDocs.length) return;
-
-    await this.supabaseService.createVectorStore(allDocs, {
+    await this.supabaseService.createVectorStore(docs, {
       source_type: 'site',
       agent_id: agentId,
     });

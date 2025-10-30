@@ -47,6 +47,7 @@ export class BuildSystemPromptService {
       - Limite o número de tentativas a 5.
       - Se não for bem-sucedido após 5 tentativas, retorne uma nota para o usuário.
       - Prefira listas de colunas explícitas; evite SELECT *.
+      - Para as colunas agent_id, organization_id e session_id, use os valores {agentId}, {organizationId} e {sessionId}, respectivamente.
     `;
 
     const source = retrievedDocuments

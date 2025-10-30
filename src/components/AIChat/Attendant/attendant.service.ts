@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { QuestionDto } from 'src/components/AIChat/Question/question.dto';
 import { GenerateAiResponseService } from 'src/components/ArtificialIntelligence/GenerateAIResponse/generate-ai-response.service';
 import { ResolveAgentService } from 'src/components/ArtificialIntelligence/ResolveAgent/resolve-agent.service';
@@ -15,11 +15,21 @@ export class AttendantService {
   ) {}
 
   async execute(dto: QuestionDto): Promise<string> {
-    const { question, agentId, phone } = dto;
+    const { question, agentId, phone, name } = dto;
 
-    const user = await this.userRepository.findByPhone(phone);
-
-    if (!user) throw new NotFoundException('Usuário não encontrado');
+    let user = await this.userRepository.findByPhone(phone);
+    if (!user) {
+      user = await this.userRepository.create({
+        phone,
+        name: name || null,
+        status: 'active',
+        origin: 'website',
+        role: 'user',
+      });
+    } else if (!user.name && name) {
+      await this.userRepository.update(user.id, { name });
+      user = (await this.userRepository.findById(user.id))!;
+    }
 
     const agent = await this.resolveAgentService.resolve(agentId);
 
