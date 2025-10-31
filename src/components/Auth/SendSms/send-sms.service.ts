@@ -28,6 +28,19 @@ export class SendSmsService {
       throw new BadRequestException('Número de telefone inválido');
     }
 
+    const user = await this.userRepository.findByPhone(cleanPhone);
+
+    if (!user) {
+      throw new BadRequestException('Usuário não encontrado');
+    }
+
+    // Se o client enviar um userId, validar consistência com o usuário encontrado pelo telefone
+    if (sendSmsDto.userId && sendSmsDto.userId !== user.id) {
+      throw new BadRequestException(
+        'Usuário divergente para o telefone informado',
+      );
+    }
+
     const verificationCode = this.generateVerificationCode();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
@@ -36,7 +49,7 @@ export class SendSmsService {
       code: verificationCode,
       expires_at: expiresAt,
       verified: false,
-      user_id: sendSmsDto.userId,
+      user_id: user.id,
     });
 
     const smsResult = await this.twilioService.sendSmsMessage(
