@@ -19,10 +19,7 @@ export class GenerateTokenService {
    * @param user The user entity to generate a token for
    * @returns The generated token and its expiration date
    */
-  async execute(
-    user: UserEntity,
-    deviceFingerprint?: string,
-  ): Promise<{ token: string; expiresAt: Date }> {
+  async execute(user: UserEntity): Promise<{ token: string; expiresAt: Date }> {
     // Define token expiration time (default: 24 hours)
     const expirationHours = this.configService.get<number>(
       'JWT_EXPIRATION_HOURS',
@@ -41,7 +38,6 @@ export class GenerateTokenService {
       role: user.role,
       jti: uuidv4(), // JWT ID - unique identifier for this token
       iat: Math.floor(Date.now() / 1000), // Issued at time
-      device_fingerprint: deviceFingerprint,
     };
 
     // Generate JWT token
