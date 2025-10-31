@@ -39,10 +39,7 @@ export class LoginService {
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
-    const { token, expiresAt } = await this.generateTokenService.execute(
-      user,
-      loginDto.deviceFingerprint,
-    );
+    const { token, expiresAt } = await this.generateTokenService.execute(user);
 
     return {
       user: {
