@@ -26,7 +26,7 @@ export class QuestionService {
   ): Promise<void> {
     const { question, agentId } = dto;
 
-    const agent = await this.resolveAgentService.resolve(agentId);
+    const agent = await this.resolveAgentService.execute(agentId);
 
     const session = await this.createSessionIfNotExistsService.execute({
       agent_id: agent.id,

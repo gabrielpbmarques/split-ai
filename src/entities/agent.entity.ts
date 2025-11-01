@@ -42,6 +42,12 @@ export class AgentEntity {
   @Column({ type: 'text', nullable: true })
   parser_description: string | null;
 
+  @Column({ type: 'boolean', nullable: true })
+  vector_search_tool: boolean | null;
+
+  @Column({ type: 'boolean', nullable: true })
+  database_tool: boolean | null;
+
   @Column('text', { array: true, nullable: true })
   sites: string[] | null;
 

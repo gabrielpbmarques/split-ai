@@ -15,7 +15,7 @@ export class ExecuteSimilaritySearchService {
     vectorStore: SupabaseVectorStore,
     question: string,
   ): Promise<Document<Record<string, any>>[]> {
-    const topK = 6;
+    const topK = 10;
     const queryEmbeddings = await this.embeddings.embedQuery(question);
     const similarDocs = await vectorStore.similaritySearchVectorWithScore(
       queryEmbeddings,

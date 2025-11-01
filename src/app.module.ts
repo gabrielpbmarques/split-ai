@@ -17,7 +17,7 @@ import { config } from './config';
       password: config.databasePassword,
       database: config.databaseName,
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: false,
+      synchronize: true,
       autoLoadEntities: true,
     }),
     HealthModule,

@@ -16,7 +16,6 @@ export class GenerateAiResponseService {
     metadata: CustomMetadata,
     agent: ResolvedAgent,
     stream: boolean = false,
-    promptVariables?: Record<string, any>,
   ): Promise<string | AIMessageChunk[] | any> {
     try {
       const response = await this.generateResponse(
@@ -24,11 +23,11 @@ export class GenerateAiResponseService {
         metadata,
         agent,
         stream,
-        promptVariables,
       );
 
       return response;
     } catch (error) {
+      console.log(error);
       return 'Desculpe, tive um problema ao processar sua mensagem. Pode tentar novamente?';
     }
   }
@@ -38,7 +37,6 @@ export class GenerateAiResponseService {
     metadata: CustomMetadata,
     agent: ResolvedAgent,
     stream: boolean = false,
-    promptVariables?: Record<string, any>,
   ): Promise<string | AIMessageChunk[] | any> {
     await this.messageRepository.create({
       session_id: metadata.session_id,
@@ -48,85 +46,28 @@ export class GenerateAiResponseService {
       from: 'user',
     });
 
-    const runnable = await this.loadAiChatService.execute(
-      agent,
-      metadata,
-      question,
-      true,
-    );
+    const runnable = await this.loadAiChatService.execute(agent);
 
-    if (stream)
-      return this.returnStreamResponse(
-        await runnable.stream(
-          {
-            ...promptVariables,
-            messages: [{ role: 'user', content: question }],
-          },
-          {
-            configurable: {
-              thread_id: metadata.session_id,
-            },
-          },
-        ),
-      );
+    const invokeParams = {
+      messages: [{ role: 'user', content: question }],
+    };
+
+    const configurable = {
+      configurable: {
+        thread_id: metadata.session_id,
+      },
+    };
+
+    if (stream) return runnable.stream(invokeParams, configurable);
 
     return this.returnNonStreamResponse(
-      await runnable.invoke(
-        {
-          ...promptVariables,
-          messages: [{ role: 'user', content: question }],
-        },
-        {
-          configurable: {
-            thread_id: metadata.session_id,
-          },
-        },
-      ),
+      await runnable.invoke(invokeParams, configurable),
       metadata,
     );
-  }
-
-  private async returnStreamResponse(
-    iterator: AsyncIterableIterator<AIMessageChunk>,
-  ) {
-    const first = await iterator.next();
-    if (!first.done) {
-      const firstVal: any = first.value as any;
-      if (Array.isArray(firstVal.tool_calls) && firstVal.tool_calls.length) {
-        const args = firstVal.tool_calls[0].args;
-        return args;
-      }
-      async function* reStream() {
-        yield first.value as AIMessageChunk;
-        for await (const c of iterator as any) {
-          yield c as AIMessageChunk;
-        }
-      }
-      return reStream();
-    }
-    return iterator;
   }
 
   private async returnNonStreamResponse(result: any, metadata: CustomMetadata) {
-    console.log(result.messages);
-
-    if (
-      Array.isArray((result as any).messages.at(-3).tool_calls) &&
-      (result as any).messages.at(-3).tool_calls.length
-    ) {
-      const args = (result as any).messages.at(-3).tool_calls[0].args;
-
-      await this.messageRepository.create({
-        session_id: metadata.session_id,
-        user_id: metadata.user_id,
-        agent_id: metadata.agent_id,
-        message: args.response,
-        from: 'agent',
-      });
-
-      return args;
-    }
-
+    console.log(result);
     const formattedResponse = (result as any).messages
       .at(-1)
       .content.toString();

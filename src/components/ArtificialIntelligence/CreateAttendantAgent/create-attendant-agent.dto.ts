@@ -38,9 +38,13 @@ export class CreateAttendantAgentDto {
   @IsOptional()
   organizationId?: string;
 
-  @IsString()
+  @IsBoolean()
   @IsOptional()
-  organization_id?: string;
+  databaseTool?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  vectorSearchTool?: boolean;
 
   @IsArray()
   @IsString({ each: true })

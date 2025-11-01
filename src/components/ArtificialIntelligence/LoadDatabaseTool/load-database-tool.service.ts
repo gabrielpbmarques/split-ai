@@ -1,5 +1,5 @@
 import { SqlDatabase } from '@langchain/classic/sql_db';
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { DynamicStructuredTool, tool } from 'langchain';
 import { config } from 'src/config';
 import { DataSource } from 'typeorm';
@@ -9,17 +9,20 @@ const DENY_RE = /\b(DELETE|ALTER|DROP|CREATE|REPLACE|TRUNCATE)\b/i;
 const HAS_LIMIT_TAIL_RE = /\blimit\b\s+\d+(\s*,\s*\d+)?\s*;?\s*$/i;
 
 @Injectable()
-export class LoadDatabaseToolService {
+export class LoadDatabaseToolService implements OnModuleInit {
   private dataSource: DataSource;
   private db: SqlDatabase;
+  private schema: string;
 
-  constructor() {
+  constructor() {}
+
+  onModuleInit(): void {
     this.dataSource = new DataSource({
       type: 'postgres',
       url: config.databaseUrl,
     });
 
-    this.getDatabase();
+    this.loadDatabase();
   }
 
   async execute(): Promise<
@@ -39,8 +42,14 @@ export class LoadDatabaseToolService {
       },
       {
         name: 'execute_sql',
-        description:
-          'Execute a SQLite SELECT/INSERT/UPDATE query and return results.',
+        description: `
+            Esquema autoritário (não invente colunas/tabelas):\n
+            ${this.schema}\n\n
+            - Se a ferramenta retornar 'Erro:', revise a consulta SQL e tente novamente.\n
+            - Limite o número de tentativas a 5.\n
+            - Se não for bem-sucedido após 5 tentativas, retorne uma nota para o usuário.\n
+            - Prefira listas de colunas explícitas; evite SELECT *.\n
+          `,
         schema: z.object({
           query: z
             .string()
@@ -52,12 +61,6 @@ export class LoadDatabaseToolService {
     );
 
     return executeSql;
-  }
-
-  async getSchema(): Promise<string> {
-    const schema = await this.db.getTableInfo();
-
-    return schema;
   }
 
   private sanitizeSqlQuery(q: string): string {
@@ -95,9 +98,11 @@ export class LoadDatabaseToolService {
     return query;
   }
 
-  private async getDatabase(): Promise<void> {
+  private async loadDatabase(): Promise<void> {
     this.db = await SqlDatabase.fromDataSourceParams({
       appDataSource: this.dataSource,
     });
+
+    this.schema = await this.db.getTableInfo(['reports', 'users']);
   }
 }

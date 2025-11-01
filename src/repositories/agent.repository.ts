@@ -38,4 +38,8 @@ export class AgentRepository {
   async find(options?: FindManyOptions<AgentEntity>): Promise<AgentEntity[]> {
     return await this.repository.find(options);
   }
+
+  async rawQuery(query: string): Promise<AgentEntity[]> {
+    return await this.repository.query(query);
+  }
 }

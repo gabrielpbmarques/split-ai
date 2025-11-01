@@ -28,15 +28,27 @@ export class AttendantService {
       });
     } else if (!user.name && name) {
       await this.userRepository.update(user.id, { name });
-      user = (await this.userRepository.findById(user.id))!;
+      user = await this.userRepository.findById(user.id);
     }
 
-    const agent = await this.resolveAgentService.resolve(agentId);
-
     const session = await this.createSessionIfNotExistsService.execute({
-      agent_id: agent.id,
+      agent_id: agentId,
       user_id: user.id,
     });
+
+    const promptVariables = {
+      sessionId: session.id,
+      agentId,
+      organizationId: user.organization_id,
+      userName: user.name,
+      userPhone: user.phone,
+      userId: user.id,
+    };
+
+    const agent = await this.resolveAgentService.execute(
+      agentId,
+      promptVariables,
+    );
 
     const aiResponse = await this.generateAiResponseService.execute(
       question,
@@ -47,13 +59,8 @@ export class AttendantService {
       },
       agent,
       false,
-      {
-        sessionId: session.id,
-        agentId: agent.id,
-        organizationId: user.organization_id,
-      },
     );
 
-    return aiResponse?.response ? aiResponse.response : (aiResponse ?? '');
+    return aiResponse;
   }
 }

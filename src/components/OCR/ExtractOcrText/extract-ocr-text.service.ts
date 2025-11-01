@@ -43,7 +43,7 @@ export class ExtractOcrTextService {
   private async extractDocumentData(
     text: string,
   ): Promise<ExtractOcrTextResponse> {
-    const agent = await this.resolveAgentService.resolve('extract_document');
+    const agent = await this.resolveAgentService.execute('extract_document');
     return this.generateAiResponseService.execute(
       text,
       {

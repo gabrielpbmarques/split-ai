@@ -1,19 +1,30 @@
 import { Injectable } from '@nestjs/common';
+import { DynamicStructuredTool } from 'langchain';
 import { AIInstructions } from 'src/types';
 
 @Injectable()
 export class NormalizePromptInstructionsService {
   constructor() {}
 
-  execute(instructions: AIInstructions): string {
-    let text = `${instructions.context}\n\nDiretrizes:\n\n`;
+  execute(
+    instructions: AIInstructions,
+    tools: DynamicStructuredTool[],
+    promptVariables?: Record<string, any>,
+  ): string {
+    const summary =
+      'OBJ = Objetivo | CTX = Contexto | DIR = Diretrizes | VRS=variáveis | CTX=contexto | MEM=memória curta | TOOLS=ferramentas | OUT=saída';
+    const formattedVariables = Object.entries(promptVariables || {})
+      .map(([key, value]) => `${key}: ${value}\n`)
+      .join('');
 
-    const list = instructions.diretrizes || [];
-    for (const item of list) {
-      text += `- ${item}\n\n`;
-    }
-
-    text += `Objetivo:\n\n${instructions.objetivo}`;
+    const text = `
+    ${summary}\n\n
+    OBJ: ${instructions.objetivo}\n
+    CTX: ${instructions.context}\n
+    VRS:\n${formattedVariables}\n
+    DIR:\n${instructions.diretrizes.flatMap((item) => `- ${item}\n`)}\n
+    TOOLS:\n${tools.flatMap((item) => `${item.name}\n`)}\n
+    `;
 
     return text;
   }
