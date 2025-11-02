@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
 
+import { CreateUserModule } from './CreateUser/create-user.module';
 import { GetUserModule } from './GetUser/get-user.module';
 import { ListUsersModule } from './ListUsers/list-users.module';
 import { UpdateUserModule } from './UpdateUser/update-user.module';
 
 @Module({
-  imports: [ListUsersModule, GetUserModule, UpdateUserModule],
-  exports: [ListUsersModule, GetUserModule, UpdateUserModule],
+  imports: [ListUsersModule, GetUserModule, UpdateUserModule, CreateUserModule],
+  exports: [ListUsersModule, GetUserModule, UpdateUserModule, CreateUserModule],
 })
 export class UserModule {}
