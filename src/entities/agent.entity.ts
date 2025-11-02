@@ -42,10 +42,10 @@ export class AgentEntity {
   @Column({ type: 'text', nullable: true })
   parser_description: string | null;
 
-  @Column({ type: 'boolean', nullable: true })
+  @Column({ type: 'boolean', nullable: true, default: true })
   vector_search_tool: boolean | null;
 
-  @Column({ type: 'boolean', nullable: true })
+  @Column({ type: 'boolean', nullable: true, default: true })
   database_tool: boolean | null;
 
   @Column('text', { array: true, nullable: true })
