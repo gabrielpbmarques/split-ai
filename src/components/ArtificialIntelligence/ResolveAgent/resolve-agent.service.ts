@@ -39,7 +39,31 @@ export class ResolveAgentService {
     const latestInstructions =
       await this.agentInstructionRepository.findLatestByAgentId(agent.id);
 
-    const chat = new ChatVertexAI({
+    const runnableOpts = { withHistory: !!agent.with_history };
+
+    const [chat, tools] = await Promise.all([
+      this.loadChat(agent),
+      this.loadTools(agent),
+    ]);
+
+    const systemPrompt = await this.buildSystemPromptService.execute(
+      latestInstructions?.instructions,
+      tools,
+      promptVariables,
+    );
+
+    return {
+      id: agent.id,
+      systemPrompt,
+      chat,
+      tools,
+      runnableOpts,
+      sites: (agent as any).sites || undefined,
+    };
+  }
+
+  private async loadChat(agent: AgentEntity): Promise<ChatVertexAI> {
+    return new ChatVertexAI({
       model: agent.model || config.aiModel,
       temperature: agent.temperature ?? 0.4,
       safetySettings: [
@@ -61,24 +85,6 @@ export class ResolveAgentService {
         },
       ],
     });
-
-    const runnableOpts = { withHistory: !!agent.with_history };
-
-    const tools = await this.loadTools(agent);
-    const systemPrompt = await this.buildSystemPromptService.execute(
-      latestInstructions?.instructions,
-      tools,
-      promptVariables,
-    );
-
-    return {
-      id: agent.id,
-      systemPrompt,
-      chat,
-      tools,
-      runnableOpts,
-      sites: (agent as any).sites || undefined,
-    };
   }
 
   private async loadTools(

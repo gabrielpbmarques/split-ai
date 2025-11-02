@@ -4,7 +4,6 @@ import { GenerateAiResponseService } from 'src/components/ArtificialIntelligence
 import { ResolveAgentService } from 'src/components/ArtificialIntelligence/ResolveAgent/resolve-agent.service';
 import { CreateSessionIfNotExistsService } from 'src/components/Session/CreateSessionIfNotExists/create-session-if-not-exists.service';
 import { UserEntity } from 'src/entities';
-import { MessageRepository } from 'src/repositories';
 
 import { QuestionDto } from './question.dto';
 
@@ -15,7 +14,6 @@ export class QuestionService {
   constructor(
     private readonly generateAiResponseService: GenerateAiResponseService,
     private readonly createSessionIfNotExistsService: CreateSessionIfNotExistsService,
-    private readonly messageRepository: MessageRepository,
     private readonly resolveAgentService: ResolveAgentService,
   ) {}
 
@@ -44,21 +42,10 @@ export class QuestionService {
       STREAM,
     );
 
-    let full = '';
     for await (const chunk of aiResponse as AIMessageChunk[]) {
       if (chunk?.content) {
-        const text = chunk.content.toString();
-        full += text;
         onMessage(chunk);
       }
     }
-
-    await this.messageRepository.create({
-      session_id: session.id,
-      user_id: user.id,
-      agent_id: agent.id,
-      message: full,
-      from: 'agent',
-    });
   }
 }

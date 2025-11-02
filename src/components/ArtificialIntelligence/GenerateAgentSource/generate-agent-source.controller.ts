@@ -56,7 +56,6 @@ export class GenerateAgentSourceController {
         .status(200)
         .send({ message: 'Fonte de conhecimento processada com sucesso' });
     } catch (error) {
-      console.log(error);
       return res.status(error.status || 500).send(error.message);
     }
   }
