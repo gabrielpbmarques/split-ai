@@ -23,7 +23,7 @@ export class NormalizePromptInstructionsService {
     CTX: ${instructions.context}\n
     VRS:\n${formattedVariables}\n
     DIR:\n${instructions.diretrizes.flatMap((item) => `- ${item}\n`)}\n
-    TOOLS:\n${tools.flatMap((item) => `${item.name}\n`)}\n
+    TOOLS:\n${tools.flatMap((item) => `Name: ${item.name}\nDescription: ${item.description}\n`)}\n
     `;
 
     return text;
