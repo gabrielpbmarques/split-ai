@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 
+import { TokenUsageModule } from '../TokenUsage/token-usage.module';
+
 import { BuildSystemPromptModule } from './BuildSystemPrompt/build-system-prompt.module';
 import { ConvertTextToSpeechModule } from './ConvertTextToSpeech/convert-text-to-speech.module';
 import { CreateAgentModule } from './CreateAgent/create-agent.module';
@@ -33,6 +35,7 @@ import { UpdateAgentModule } from './UpdateAgent/update-agent.module';
     CreateAttendantAgentModule,
     LoadAgentSitesModule,
     LoadVectorSearchToolModule,
+    TokenUsageModule,
   ],
   exports: [
     ConvertTextToSpeechModule,
@@ -50,6 +53,7 @@ import { UpdateAgentModule } from './UpdateAgent/update-agent.module';
     CreateAttendantAgentModule,
     LoadAgentSitesModule,
     LoadVectorSearchToolModule,
+    TokenUsageModule,
   ],
 })
 export class ArtificialIntelligenceModule {}

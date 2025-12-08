@@ -8,3 +8,5 @@ export * from './sms-verification.entity';
 export * from './user-token.entity';
 export * from './notification.entity';
 export * from './report.entity';
+export * from './token-usage.entity';
+export * from './source.entity';

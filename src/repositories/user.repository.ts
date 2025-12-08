@@ -41,6 +41,7 @@ export class UserRepository {
         'email',
         'password_hash',
         'phone',
+        'organization_id',
         'role',
         'origin',
         'status',

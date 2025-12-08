@@ -18,8 +18,12 @@ export class LoadAgentSitesService {
     private readonly supabaseService: SupabaseService,
   ) {}
 
-  async execute(sites: string, agentId: string): Promise<void> {
-    if (!sites?.length) return;
+  async execute(
+    sites: string,
+    agentId: string,
+    sourceId?: string,
+  ): Promise<number> {
+    if (!sites?.length) return 0;
 
     const crawlParams: GenericParams = {
       limit: 20,
@@ -31,9 +35,12 @@ export class LoadAgentSitesService {
 
     const docs = await this.spiderService.crawl(sites, crawlParams);
 
-    await this.supabaseService.createVectorStore(docs, {
+    const chunkCount = await this.supabaseService.createVectorStore(docs, {
       source_type: 'site',
       agent_id: agentId,
+      source_id: sourceId,
     });
+
+    return chunkCount;
   }
 }

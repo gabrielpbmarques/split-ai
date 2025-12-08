@@ -20,7 +20,10 @@ export class SupabaseService {
     this.supabaseClient = createClient(config.supabaseUrl, config.supabaseKey);
   }
 
-  async createVectorStore(docs: Chunks, metadata: CustomMetadata) {
+  async createVectorStore(
+    docs: Chunks,
+    metadata: CustomMetadata,
+  ): Promise<number> {
     const chunks = docs.map(
       (rawChunk) =>
         new Document({
@@ -34,18 +37,14 @@ export class SupabaseService {
         }),
     );
 
-    const vectorStore = await SupabaseVectorStore.fromDocuments(
-      chunks,
-      this.embeddings,
-      {
-        client: this.supabaseClient,
-        tableName: 'documents',
-        queryName: 'match_documents',
-        filter: metadata,
-      },
-    );
+    await SupabaseVectorStore.fromDocuments(chunks, this.embeddings, {
+      client: this.supabaseClient,
+      tableName: 'documents',
+      queryName: 'match_documents',
+      filter: metadata,
+    });
 
-    return vectorStore;
+    return chunks.length;
   }
 }
 

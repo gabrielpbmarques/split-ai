@@ -11,4 +11,5 @@ export interface ResolvedAgent {
   runnableOpts: RunnableChatOpts;
   tools?: DynamicStructuredTool<z.ZodObject<any>>[];
   sites?: string[];
+  organization_id?: string;
 }

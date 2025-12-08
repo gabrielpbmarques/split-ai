@@ -13,6 +13,10 @@ export class GenerateAgentSourceDto {
   @IsOptional()
   agentId?: string;
 
+  @IsString()
+  @IsOptional()
+  fileName?: string;
+
   @IsOptional()
   buffer?: any;
 }

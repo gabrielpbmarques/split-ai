@@ -59,6 +59,7 @@ export class ResolveAgentService {
       tools,
       runnableOpts,
       sites: (agent as any).sites || undefined,
+      organization_id: agent.organization_id,
     };
   }
 

@@ -10,6 +10,8 @@ export class ListAgentsService {
   async execute(
     user: User,
   ): Promise<Pick<AgentEntity, 'id' | 'agent_identifier' | 'name'>[]> {
+    console.log(user);
+
     if (user.role === 'admin') {
       return this.agentRepository.find({
         select: ['id', 'agent_identifier', 'name'],

@@ -11,6 +11,8 @@ import {
   AgentEntity,
   AgentInstructionEntity,
   ReportEntity,
+  TokenUsageEntity,
+  SourceEntity,
 } from 'src/entities';
 import { InfrastructureModule } from 'src/infrastructure/infrastructure.module';
 
@@ -25,6 +27,8 @@ import {
   UserRepository,
   UserTokenRepository,
   ReportRepository,
+  TokenUsageRepository,
+  SourceRepository,
 } from '.';
 
 @Module({
@@ -40,6 +44,8 @@ import {
       AgentEntity,
       AgentInstructionEntity,
       ReportEntity,
+      TokenUsageEntity,
+      SourceEntity,
     ]),
     InfrastructureModule,
   ],
@@ -54,6 +60,8 @@ import {
     AgentRepository,
     AgentInstructionRepository,
     ReportRepository,
+    TokenUsageRepository,
+    SourceRepository,
   ],
   exports: [
     OrganizationRepository,
@@ -66,6 +74,8 @@ import {
     AgentRepository,
     AgentInstructionRepository,
     ReportRepository,
+    TokenUsageRepository,
+    SourceRepository,
   ],
 })
 export class RepositoriesModule {}

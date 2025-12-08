@@ -10,6 +10,7 @@ import { OrganizationModule } from './Organization/organization.module';
 import { PdfModule } from './Pdf/pdf.module';
 import { RegisterModule } from './Register/register.module';
 import { ReportModule } from './Report/report.module';
+import { SourceModule } from './Source/source.module';
 import { UserModule } from './User/user.module';
 import { WhatsappModule } from './Whatsapp/whatsapp.module';
 
@@ -27,6 +28,7 @@ import { WhatsappModule } from './Whatsapp/whatsapp.module';
     UserModule,
     WhatsappModule,
     AnalyticsModule,
+    SourceModule,
   ],
   exports: [
     AuthModule,
@@ -41,6 +43,7 @@ import { WhatsappModule } from './Whatsapp/whatsapp.module';
     UserModule,
     WhatsappModule,
     AnalyticsModule,
+    SourceModule,
   ],
 })
 export class ComponentsModule {}
