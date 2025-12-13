@@ -49,7 +49,10 @@ export class ResolveAgentService {
     const systemPrompt = await this.buildSystemPromptService.execute(
       latestInstructions?.instructions,
       tools,
-      promptVariables,
+      {
+        ...promptVariables,
+        organizationId: agent.organization_id,
+      },
     );
 
     return {
