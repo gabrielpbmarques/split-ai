@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { QuestionDto } from 'src/components/AIChat/Question/question.dto';
+import { RecordChatMessageService } from 'src/components/AIChat/RecordChatMessage/record-chat-message.service';
 import { GenerateAiResponseService } from 'src/components/ArtificialIntelligence/GenerateAIResponse/generate-ai-response.service';
 import { ResolveAgentService } from 'src/components/ArtificialIntelligence/ResolveAgent/resolve-agent.service';
 import { CreateSessionIfNotExistsService } from 'src/components/Session/CreateSessionIfNotExists/create-session-if-not-exists.service';
@@ -12,15 +13,17 @@ export class AttendantService {
     private readonly createSessionIfNotExistsService: CreateSessionIfNotExistsService,
     private readonly resolveAgentService: ResolveAgentService,
     private readonly userRepository: UserRepository,
+    private readonly recordChatMessageService: RecordChatMessageService,
   ) {}
 
   async execute(dto: QuestionDto): Promise<string> {
     const { question, agentId, phone, name } = dto;
 
-    let user = await this.userRepository.findByPhone(phone);
+    let user = phone ? await this.userRepository.findByPhone(phone) : null;
+
     if (!user) {
       user = await this.userRepository.create({
-        phone,
+        phone: phone || null,
         name: name || null,
         status: 'active',
         origin: 'website',
@@ -35,6 +38,14 @@ export class AttendantService {
       agent_id: agentId,
       user_id: user.id,
     });
+
+    // Record user message
+    await this.recordChatMessageService.recordUserMessage(
+      session.id,
+      user.id,
+      agentId,
+      question,
+    );
 
     const promptVariables = {
       sessionId: session.id,
@@ -60,6 +71,18 @@ export class AttendantService {
       agent,
       false,
     );
+
+    // Record agent message
+    if (aiResponse) {
+      await this.recordChatMessageService.recordAgentMessage(
+        session.id,
+        user.id,
+        agentId,
+        typeof aiResponse === 'string'
+          ? aiResponse
+          : JSON.stringify(aiResponse),
+      );
+    }
 
     return aiResponse;
   }

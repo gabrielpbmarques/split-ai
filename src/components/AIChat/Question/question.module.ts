@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { RecordChatMessageModule } from 'src/components/AIChat/RecordChatMessage/record-chat-message.module';
 import { ArtificialIntelligenceModule } from 'src/components/ArtificialIntelligence/artificial-intelligence.module';
 import { SessionModule } from 'src/components/Session/session.module';
 import { InfrastructureModule } from 'src/infrastructure/infrastructure.module';
@@ -13,6 +14,7 @@ import { QuestionService } from './question.service';
     RepositoriesModule,
     ArtificialIntelligenceModule,
     SessionModule,
+    RecordChatMessageModule,
   ],
   providers: [QuestionService],
   controllers: [QuestionController],

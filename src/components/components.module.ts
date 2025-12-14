@@ -5,6 +5,7 @@ import { SessionModule } from 'src/components/Session/session.module';
 import { AIChatModule } from './AIChat/ai-chat.module';
 import { AnalyticsModule } from './Analytics/analytics.module';
 import { ArtificialIntelligenceModule } from './ArtificialIntelligence/artificial-intelligence.module';
+import { DashboardModule } from './Dashboard/dashboard.module';
 import { OcrModule } from './OCR/ocr.module';
 import { OrganizationModule } from './Organization/organization.module';
 import { PdfModule } from './Pdf/pdf.module';
@@ -20,6 +21,7 @@ import { WhatsappModule } from './Whatsapp/whatsapp.module';
     SessionModule,
     AIChatModule,
     ArtificialIntelligenceModule,
+    DashboardModule,
     OcrModule,
     PdfModule,
     RegisterModule,
@@ -35,6 +37,7 @@ import { WhatsappModule } from './Whatsapp/whatsapp.module';
     SessionModule,
     AIChatModule,
     ArtificialIntelligenceModule,
+    DashboardModule,
     OcrModule,
     PdfModule,
     RegisterModule,

@@ -1,0 +1,258 @@
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { MessageEntity } from 'src/entities/message.entity';
+import { ReportEntity } from 'src/entities/report.entity';
+import { SessionEntity } from 'src/entities/session.entity';
+import { User } from 'src/types';
+import { Between, Repository } from 'typeorm';
+
+import {
+  DashboardChartsDto,
+  DashboardCharts,
+  ChartData,
+} from './dashboard-charts.dto';
+
+@Injectable()
+export class DashboardChartsService {
+  constructor(
+    @InjectRepository(SessionEntity)
+    private readonly sessionRepository: Repository<SessionEntity>,
+    @InjectRepository(MessageEntity)
+    private readonly messageRepository: Repository<MessageEntity>,
+    @InjectRepository(ReportEntity)
+    private readonly reportRepository: Repository<ReportEntity>,
+  ) {}
+
+  async execute(user: User, dto: DashboardChartsDto): Promise<DashboardCharts> {
+    const { startDate, endDate } = this.getDateRange(dto);
+
+    // Get sentiment data
+    const sentimentData = await this.getSentimentData(
+      user,
+      startDate,
+      endDate,
+      dto.agentId,
+    );
+
+    // Get conversations data
+    const conversationsData = await this.getConversationsData(
+      user,
+      startDate,
+      endDate,
+      dto.agentId,
+    );
+
+    // Get tokens data
+    const tokensData = await this.getTokensData(
+      user,
+      startDate,
+      endDate,
+      dto.agentId,
+    );
+
+    return {
+      sentiment: sentimentData,
+      conversations: conversationsData,
+      tokens: tokensData,
+    };
+  }
+
+  private async getSentimentData(
+    user: User,
+    startDate: Date,
+    endDate: Date,
+    agentId?: string,
+  ): Promise<ChartData> {
+    const where: any = {
+      created_at: Between(startDate, endDate),
+    };
+
+    if (user.role !== 'admin' && user.organization_id) {
+      where.organization_id = user.organization_id;
+    }
+
+    if (agentId) {
+      where.agent_id = agentId;
+    }
+
+    // Get sentiment counts from reports
+    const [positive, negative, neutral] = await Promise.all([
+      this.reportRepository.count({
+        where: { ...where, sentiment: 'positive' },
+      }),
+      this.reportRepository.count({
+        where: { ...where, sentiment: 'negative' },
+      }),
+      this.reportRepository.count({
+        where: { ...where, sentiment: 'neutral' },
+      }),
+    ]);
+
+    return {
+      labels: ['Positivo', 'Neutro', 'Negativo'],
+      datasets: [
+        {
+          data: [positive, neutral, negative],
+          backgroundColor: ['#2ECC71', '#F1C40F', '#E74C3C'],
+        },
+      ],
+    };
+  }
+
+  private async getConversationsData(
+    user: User,
+    startDate: Date,
+    endDate: Date,
+    agentId?: string,
+  ): Promise<ChartData> {
+    const labels = [];
+    const data = [];
+
+    // Generate daily labels and get counts
+    const currentDate = new Date(startDate);
+    while (currentDate <= endDate) {
+      const dayStart = new Date(currentDate);
+      dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(currentDate);
+      dayEnd.setHours(23, 59, 59, 999);
+
+      const where: any = {
+        created_at: Between(dayStart, dayEnd),
+      };
+
+      if (user.role !== 'admin' && user.organization_id) {
+        where.organization_id = user.organization_id;
+      }
+
+      if (agentId) {
+        where.agent_id = agentId;
+      }
+
+      const count = await this.sessionRepository.count({ where });
+
+      labels.push(
+        currentDate.toLocaleDateString('pt-BR', { weekday: 'short' }),
+      );
+      data.push(count);
+
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    // Limit to last 7 days for readability
+    const limitedLabels = labels.slice(-7);
+    const limitedData = data.slice(-7);
+
+    return {
+      labels: limitedLabels,
+      datasets: [
+        {
+          label: 'Conversas',
+          data: limitedData,
+          borderColor: '#8B3FE4',
+          backgroundColor: 'rgba(139, 63, 228, 0.1)',
+          tension: 0.4,
+        },
+      ],
+    };
+  }
+
+  private async getTokensData(
+    user: User,
+    startDate: Date,
+    endDate: Date,
+    agentId?: string,
+  ): Promise<ChartData> {
+    const labels = [];
+    const data = [];
+
+    // Get monthly data for last 6 months
+    const monthsToShow = 6;
+    const currentDate = new Date(endDate);
+    currentDate.setMonth(currentDate.getMonth() - monthsToShow + 1);
+
+    for (let i = 0; i < monthsToShow; i++) {
+      const monthStart = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth(),
+        1,
+      );
+      const monthEnd = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth() + 1,
+        0,
+        23,
+        59,
+        59,
+        999,
+      );
+
+      const where: any = {
+        created_at: Between(monthStart, monthEnd),
+      };
+
+      if (user.role !== 'admin' && user.organization_id) {
+        where.organization_id = user.organization_id;
+      }
+
+      if (agentId) {
+        where.agent_id = agentId;
+      }
+
+      const messages = await this.messageRepository.find({ where });
+      const tokens = messages.reduce((total, msg) => {
+        return total + Math.ceil((msg.message?.length || 0) / 4);
+      }, 0);
+
+      labels.push(monthStart.toLocaleDateString('pt-BR', { month: 'short' }));
+      data.push(Math.round(tokens / 1000)); // Convert to thousands
+
+      currentDate.setMonth(currentDate.getMonth() + 1);
+    }
+
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'Tokens (milhares)',
+          data,
+          backgroundColor: '#E14C9A',
+        },
+      ],
+    };
+  }
+
+  private getDateRange(dto: DashboardChartsDto): {
+    startDate: Date;
+    endDate: Date;
+  } {
+    const now = new Date();
+    let startDate: Date;
+    let endDate: Date = now;
+
+    switch (dto.period) {
+      case 'today':
+        startDate = new Date(now);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      case '7days':
+        startDate = new Date(now);
+        startDate.setDate(startDate.getDate() - 7);
+        break;
+      case '30days':
+        startDate = new Date(now);
+        startDate.setDate(startDate.getDate() - 30);
+        break;
+      case 'custom':
+        startDate = dto.startDate
+          ? new Date(dto.startDate)
+          : new Date(now.setDate(now.getDate() - 7));
+        endDate = dto.endDate ? new Date(dto.endDate) : new Date();
+        break;
+      default:
+        startDate = new Date(now);
+        startDate.setDate(startDate.getDate() - 7);
+    }
+
+    return { startDate, endDate };
+  }
+}
