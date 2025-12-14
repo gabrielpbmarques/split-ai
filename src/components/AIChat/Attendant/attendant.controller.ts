@@ -2,6 +2,8 @@ import { Body, Controller, Post, Res } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
 import { Public } from 'src/auth/auth.guard';
 import { QuestionDto } from 'src/components/AIChat/Question/question.dto';
+import { User as AuthUser } from 'src/decorators/user.decorator';
+import { User } from 'src/types';
 
 import { AttendantService } from './attendant.service';
 
@@ -11,9 +13,13 @@ export class AttendantController {
 
   @Post('attendant')
   @Public()
-  async handle(@Res() res: FastifyReply, @Body() dto: QuestionDto) {
+  async handle(
+    @Res() res: FastifyReply,
+    @Body() dto: QuestionDto,
+    @AuthUser() user: User,
+  ) {
     try {
-      const result = await this.attendantService.execute(dto);
+      const result = await this.attendantService.execute(dto, user);
       return res.status(200).send(result);
     } catch (error) {
       return res.status(500).send(error.message);

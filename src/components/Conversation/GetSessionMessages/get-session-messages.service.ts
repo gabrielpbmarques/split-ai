@@ -45,11 +45,12 @@ export class GetSessionMessagesService {
     // Get session with agent and user info
     const session = await this.sessionRepository
       .createQueryBuilder('s')
-      .leftJoin('agents', 'a', 'a.id = s.agent_id')
-      .leftJoin('users', 'u', 'u.id = s.user_id')
+      .leftJoin('agents', 'a', 'a.id::text = s.agent_id')
+      .leftJoin('users', 'u', 'u.id::text = s.user_id')
       .where('s.id = :sessionId', { sessionId })
       .select([
         's.id as id',
+        's.user_id as user_id',
         's.created_at as created_at',
         's.organization_id as organization_id',
         'a.name as agent_name',
@@ -63,11 +64,16 @@ export class GetSessionMessagesService {
     }
 
     // Check permission
-    if (
-      user.role !== 'admin' &&
-      session.organization_id !== user.organization_id
-    ) {
-      throw new ForbiddenException('Acesso negado');
+    if (user.role !== 'admin') {
+      if (session.organization_id) {
+        if (session.organization_id !== user.organization_id) {
+          throw new ForbiddenException('Acesso negado');
+        }
+      } else {
+        if (session.user_id && session.user_id !== user.id) {
+          throw new ForbiddenException('Acesso negado');
+        }
+      }
     }
 
     // Get messages

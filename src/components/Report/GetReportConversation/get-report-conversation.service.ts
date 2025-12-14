@@ -20,18 +20,13 @@ export class GetReportConversationService {
   ) {}
 
   async execute(user: AuthUser, reportId: string) {
-    // Get report
     const report = await this.reportRepository.findById(reportId);
 
     if (!report) {
       throw new NotFoundException('Relatório não encontrado');
     }
 
-    // Check permission
-    if (
-      user.role !== 'admin' &&
-      report.organization_id !== user.organization_id
-    ) {
+    if (report.organization_id !== user.organization_id) {
       throw new ForbiddenException('Acesso negado');
     }
 

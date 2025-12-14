@@ -31,6 +31,7 @@ export class QuestionService {
     const session = await this.createSessionIfNotExistsService.execute({
       agent_id: agent.id,
       user_id: user.id,
+      organization_id: user.organization_id,
     });
 
     // Record user message

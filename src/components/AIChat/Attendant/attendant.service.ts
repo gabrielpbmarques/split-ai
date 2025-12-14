@@ -4,7 +4,9 @@ import { RecordChatMessageService } from 'src/components/AIChat/RecordChatMessag
 import { GenerateAiResponseService } from 'src/components/ArtificialIntelligence/GenerateAIResponse/generate-ai-response.service';
 import { ResolveAgentService } from 'src/components/ArtificialIntelligence/ResolveAgent/resolve-agent.service';
 import { CreateSessionIfNotExistsService } from 'src/components/Session/CreateSessionIfNotExists/create-session-if-not-exists.service';
+import { UserEntity } from 'src/entities';
 import { UserRepository } from 'src/repositories';
+import { User } from 'src/types';
 
 @Injectable()
 export class AttendantService {
@@ -16,12 +18,11 @@ export class AttendantService {
     private readonly recordChatMessageService: RecordChatMessageService,
   ) {}
 
-  async execute(dto: QuestionDto): Promise<string> {
+  async execute(dto: QuestionDto, loggedUser: User): Promise<string> {
+    let user: UserEntity = loggedUser as unknown as UserEntity;
     const { question, agentId, phone, name } = dto;
 
-    let user = phone ? await this.userRepository.findByPhone(phone) : null;
-
-    if (!user) {
+    if (!loggedUser) {
       user = await this.userRepository.create({
         phone: phone || null,
         name: name || null,
@@ -37,6 +38,7 @@ export class AttendantService {
     const session = await this.createSessionIfNotExistsService.execute({
       agent_id: agentId,
       user_id: user.id,
+      organization_id: user.organization_id,
     });
 
     // Record user message

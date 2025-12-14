@@ -186,19 +186,26 @@ export class DashboardChartsService {
         999,
       );
 
-      const where: any = {
-        created_at: Between(monthStart, monthEnd),
-      };
+      // Build query with proper joins
+      const query = this.messageRepository
+        .createQueryBuilder('m')
+        .leftJoin('sessions', 's', 's.id = m.session_id')
+        .where('m.created_at BETWEEN :monthStart AND :monthEnd', {
+          monthStart,
+          monthEnd,
+        });
 
       if (user.role !== 'admin' && user.organization_id) {
-        where.organization_id = user.organization_id;
+        query.andWhere('s.organization_id = :orgId', {
+          orgId: user.organization_id,
+        });
       }
 
       if (agentId) {
-        where.agent_id = agentId;
+        query.andWhere('m.agent_id = :agentId', { agentId });
       }
 
-      const messages = await this.messageRepository.find({ where });
+      const messages = await query.getMany();
       const tokens = messages.reduce((total, msg) => {
         return total + Math.ceil((msg.message?.length || 0) / 4);
       }, 0);

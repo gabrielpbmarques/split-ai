@@ -9,6 +9,10 @@ export class CreateSessionIfNotExistsDto {
   @IsOptional()
   user_id?: string;
 
+  @IsString()
+  @IsOptional()
+  organization_id?: string;
+
   @IsDate()
   @IsOptional()
   expires_at?: Date;

@@ -105,20 +105,50 @@ export class DashboardStatisticsService {
     // Calculate satisfaction rate from reports
     // For now, we'll simulate this based on sentiment from messages
     // In a real scenario, you might have a feedback table
-    const positiveMessages = await this.messageRepository.count({
-      where: {
-        ...where,
-        from: 'agent',
-        // You might want to add a sentiment field to messages
-      },
-    });
 
-    const totalMessages = await this.messageRepository.count({
-      where: {
-        ...where,
-        from: 'agent',
-      },
-    });
+    // Build query for positive messages with proper joins
+    const positiveMessagesQuery = this.messageRepository
+      .createQueryBuilder('m')
+      .leftJoin('sessions', 's', 's.id = m.session_id')
+      .where('m.created_at BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      })
+      .andWhere('m.from = :from', { from: 'agent' });
+
+    if (user.role !== 'admin' && user.organization_id) {
+      positiveMessagesQuery.andWhere('s.organization_id = :orgId', {
+        orgId: user.organization_id,
+      });
+    }
+
+    if (agentId) {
+      positiveMessagesQuery.andWhere('m.agent_id = :agentId', { agentId });
+    }
+
+    const positiveMessages = await positiveMessagesQuery.getCount();
+
+    // Build query for total messages with proper joins
+    const totalMessagesQuery = this.messageRepository
+      .createQueryBuilder('m')
+      .leftJoin('sessions', 's', 's.id = m.session_id')
+      .where('m.created_at BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      })
+      .andWhere('m.from = :from', { from: 'agent' });
+
+    if (user.role !== 'admin' && user.organization_id) {
+      totalMessagesQuery.andWhere('s.organization_id = :orgId', {
+        orgId: user.organization_id,
+      });
+    }
+
+    if (agentId) {
+      totalMessagesQuery.andWhere('m.agent_id = :agentId', { agentId });
+    }
+
+    const totalMessages = await totalMessagesQuery.getCount();
 
     const satisfactionRate =
       totalMessages > 0
@@ -126,8 +156,26 @@ export class DashboardStatisticsService {
         : 94; // Default value
 
     // Calculate tokens used
-    // This is a simplified calculation - you might want to store actual token counts
-    const messages = await this.messageRepository.find({ where });
+    // Build query for messages with proper joins
+    const messagesQuery = this.messageRepository
+      .createQueryBuilder('m')
+      .leftJoin('sessions', 's', 's.id = m.session_id')
+      .where('m.created_at BETWEEN :startDate AND :endDate', {
+        startDate,
+        endDate,
+      });
+
+    if (user.role !== 'admin' && user.organization_id) {
+      messagesQuery.andWhere('s.organization_id = :orgId', {
+        orgId: user.organization_id,
+      });
+    }
+
+    if (agentId) {
+      messagesQuery.andWhere('m.agent_id = :agentId', { agentId });
+    }
+
+    const messages = await messagesQuery.getMany();
     const tokensUsed = messages.reduce((total, msg) => {
       // Rough estimation: 1 token per 4 characters
       return total + Math.ceil((msg.message?.length || 0) / 4);

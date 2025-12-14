@@ -24,14 +24,22 @@ export class ListSessionsService {
     user: AuthUser,
     dto: ListSessionsDto,
   ): Promise<SessionsListResponse> {
+    // Debug logging
+    console.log('ListSessions - User:', {
+      id: user.id,
+      role: user.role,
+      organization_id: user.organization_id,
+    });
+
     const query = this.sessionRepository
       .createQueryBuilder('s')
-      .leftJoin('agents', 'a', 'a.id = s.agent_id')
-      .leftJoin('users', 'u', 'u.id = s.user_id')
+      .leftJoin('agents', 'a', 'a.id::text = s.agent_id')
+      .leftJoin('users', 'u', 'u.id::text = s.user_id')
       .select([
         's.id as id',
         's.agent_id as agent_id',
         's.user_id as user_id',
+        's.organization_id as organization_id',
         's.created_at as created_at',
         's.expires_at as expires_at',
         's.expired as expired',
@@ -42,12 +50,35 @@ export class ListSessionsService {
       ]);
 
     // Apply organization scoping for non-admin users
-    if (user.role !== 'admin') {
-      query.where('s.organization_id = :orgId', {
-        orgId: user.organization_id,
-      });
-    } else {
+    if (user.role !== 'admin' && user.organization_id) {
+      query.where(
+        '(s.organization_id = :orgId OR (s.organization_id IS NULL AND s.user_id = :userId))',
+        {
+          orgId: user.organization_id,
+          userId: user.id,
+        },
+      );
+      console.log(
+        'ListSessions - Filtering by organization_id:',
+        user.organization_id,
+      );
+    } else if (user.role === 'admin') {
       query.where('1=1'); // Ensure WHERE clause exists for subsequent andWhere
+      console.log('ListSessions - Admin user, no organization filter');
+    } else {
+      // User without organization_id - return empty result
+      console.log(
+        'ListSessions - User has no organization_id, returning empty result',
+      );
+      return {
+        sessions: [],
+        pagination: {
+          page: dto.page || 1,
+          limit: dto.limit || 20,
+          total: 0,
+          totalPages: 0,
+        },
+      };
     }
 
     // Apply filters
@@ -113,6 +144,12 @@ export class ListSessionsService {
       query.getRawMany(),
       countQuery.getCount(),
     ]);
+
+    console.log('ListSessions - Results:', {
+      total,
+      sessions: sessionsRaw.length,
+      firstSession: sessionsRaw[0] || null,
+    });
 
     // Transform raw results
     const sessions = sessionsRaw.map((session) => ({
