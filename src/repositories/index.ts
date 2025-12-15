@@ -10,3 +10,8 @@ export * from './agent-instruction.repository';
 export * from './report.repository';
 export * from './token-usage.repository';
 export * from './source.repository';
+export * from './credit-transaction.repository';
+export * from './credit-balance.repository';
+export * from './plan.repository';
+export * from './subscription.repository';
+export * from './payment.repository';

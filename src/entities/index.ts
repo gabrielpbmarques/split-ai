@@ -10,3 +10,8 @@ export * from './notification.entity';
 export * from './report.entity';
 export * from './token-usage.entity';
 export * from './source.entity';
+export * from './plan.entity';
+export * from './credit-balance.entity';
+export * from './credit-transaction.entity';
+export * from './subscription.entity';
+export * from './payment.entity';

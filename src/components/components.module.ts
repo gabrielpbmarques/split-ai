@@ -9,6 +9,7 @@ import { ConversationModule } from './Conversation/conversation.module';
 import { DashboardModule } from './Dashboard/dashboard.module';
 import { OcrModule } from './OCR/ocr.module';
 import { OrganizationModule } from './Organization/organization.module';
+import { PaymentModule } from './Payment/payment.module';
 import { PdfModule } from './Pdf/pdf.module';
 import { RegisterModule } from './Register/register.module';
 import { ReportModule } from './Report/report.module';
@@ -25,6 +26,7 @@ import { WhatsappModule } from './Whatsapp/whatsapp.module';
     ConversationModule,
     DashboardModule,
     OcrModule,
+    PaymentModule,
     PdfModule,
     RegisterModule,
     ReportModule,
@@ -42,6 +44,7 @@ import { WhatsappModule } from './Whatsapp/whatsapp.module';
     ConversationModule,
     DashboardModule,
     OcrModule,
+    PaymentModule,
     PdfModule,
     RegisterModule,
     ReportModule,

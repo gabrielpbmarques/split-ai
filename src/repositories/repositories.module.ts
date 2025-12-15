@@ -13,6 +13,11 @@ import {
   ReportEntity,
   TokenUsageEntity,
   SourceEntity,
+  CreditTransactionEntity,
+  CreditBalanceEntity,
+  PlanEntity,
+  SubscriptionEntity,
+  PaymentEntity,
 } from 'src/entities';
 import { InfrastructureModule } from 'src/infrastructure/infrastructure.module';
 
@@ -29,6 +34,11 @@ import {
   ReportRepository,
   TokenUsageRepository,
   SourceRepository,
+  CreditTransactionRepository,
+  CreditBalanceRepository,
+  PlanRepository,
+  SubscriptionRepository,
+  PaymentRepository,
 } from '.';
 
 @Module({
@@ -46,6 +56,11 @@ import {
       ReportEntity,
       TokenUsageEntity,
       SourceEntity,
+      CreditTransactionEntity,
+      CreditBalanceEntity,
+      PlanEntity,
+      SubscriptionEntity,
+      PaymentEntity,
     ]),
     InfrastructureModule,
   ],
@@ -62,6 +77,11 @@ import {
     ReportRepository,
     TokenUsageRepository,
     SourceRepository,
+    CreditTransactionRepository,
+    CreditBalanceRepository,
+    PlanRepository,
+    SubscriptionRepository,
+    PaymentRepository,
   ],
   exports: [
     OrganizationRepository,
@@ -76,6 +96,11 @@ import {
     ReportRepository,
     TokenUsageRepository,
     SourceRepository,
+    CreditTransactionRepository,
+    CreditBalanceRepository,
+    PlanRepository,
+    SubscriptionRepository,
+    PaymentRepository,
   ],
 })
 export class RepositoriesModule {}

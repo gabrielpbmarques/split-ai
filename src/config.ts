@@ -24,6 +24,9 @@ interface IConfig {
   twilioPhoneNumber: string;
   twilioWhatsappNumber: string;
   spiderApiKey: string;
+  stripeSecretKey: string;
+  stripePublishableKey: string;
+  stripeWebhookSecret: string;
 }
 
 export const config: IConfig = {
@@ -48,4 +51,7 @@ export const config: IConfig = {
   twilioPhoneNumber: process.env.TWILIO_PHONE_NUMBER,
   twilioWhatsappNumber: process.env.TWILIO_WHATSAPP_NUMBER,
   spiderApiKey: process.env.SPIDER_API_KEY,
+  stripeSecretKey: process.env.STRIPE_SECRET_KEY,
+  stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
+  stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
 };

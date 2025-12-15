@@ -18,6 +18,10 @@ import {
   SPIDER_SERVICE,
 } from 'src/infrastructure/providers/spider.provider';
 import {
+  StripeProvider,
+  STRIPE_CLIENT,
+} from 'src/infrastructure/providers/stripe.provider';
+import {
   SupabaseProvider,
   SUPABASE_CLIENT,
   SUPABASE_SERVICE,
@@ -43,6 +47,7 @@ import {
     ...GoogleVoiceProvider,
     ...TwilioProvider,
     ...SpiderServiceProvider,
+    ...StripeProvider,
   ],
   exports: [
     SUPABASE_CLIENT,
@@ -56,6 +61,7 @@ import {
     TWILIO_CLIENT,
     TWILIO_SERVICE,
     SPIDER_SERVICE,
+    STRIPE_CLIENT,
   ],
 })
 export class InfrastructureModule {}
