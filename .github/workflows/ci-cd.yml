@@ -114,6 +114,8 @@ jobs:
           SESSION_WINDOW_MINUTES: 1440
           SPIDER_API_KEY: ${{ secrets.SPIDER_API_KEY }}
           GOOGLE_GEOCODING_API_KEY: ${{ secrets.GOOGLE_GEOCODING_API_KEY }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
         run: |-
           gcloud run deploy split-ai --region $CLOUDSDK_COMPUTE_REGION \
           --allow-unauthenticated \
@@ -148,4 +150,6 @@ jobs:
           --set-env-vars SESSION_WINDOW_MINUTES=$SESSION_WINDOW_MINUTES \
           --set-env-vars SPIDER_API_KEY=$SPIDER_API_KEY \
           --set-env-vars GCP_PROJECT_ID=$CLOUDSDK_CORE_PROJECT \
-          --set-env-vars GOOGLE_GEOCODING_API_KEY=$GOOGLE_GEOCODING_API_KEY
+          --set-env-vars GOOGLE_GEOCODING_API_KEY=$GOOGLE_GEOCODING_API_KEY \
+          --set-env-vars STRIPE_SECRET_KEY=$STRIPE_SECRET_KEY \
+          --set-env-vars STRIPE_PUBLISHABLE_KEY=$STRIPE_PUBLISHABLE_KEY
