@@ -65,7 +65,15 @@ export class CreateCheckoutService {
       stripeCustomerId = customer.id;
     }
 
-    // Create price data for one-time payment
+    // Determine mode and recurring options
+    const isSubscription =
+      plan.billing_period === 'monthly' || plan.billing_period === 'yearly';
+
+    const mode: Stripe.Checkout.SessionCreateParams.Mode = isSubscription
+      ? 'subscription'
+      : 'payment';
+
+    // Create price data
     const priceData: Stripe.Checkout.SessionCreateParams.LineItem.PriceData = {
       currency: 'brl',
       product_data: {
@@ -79,8 +87,15 @@ export class CreateCheckoutService {
       unit_amount: Math.round(plan.price * 100), // Convert to cents
     };
 
-    // Create checkout session
-    const session = await this.stripe.checkout.sessions.create({
+    // Add recurring interval if subscription
+    if (isSubscription) {
+      priceData.recurring = {
+        interval: plan.billing_period === 'monthly' ? 'month' : 'year',
+      };
+    }
+
+    // Prepare session configuration
+    const sessionConfig: Stripe.Checkout.SessionCreateParams = {
       payment_method_types: ['card', 'boleto', 'pix'],
       line_items: [
         {
@@ -88,17 +103,10 @@ export class CreateCheckoutService {
           quantity: 1,
         },
       ],
-      mode: 'payment',
+      mode,
       success_url: successUrl,
       cancel_url: cancelUrl,
       customer: stripeCustomerId,
-      payment_intent_data: {
-        metadata: {
-          organizationId,
-          planType,
-          credits: plan.credits.toString(),
-        },
-      },
       metadata: {
         organizationId,
         planType,
@@ -110,28 +118,54 @@ export class CreateCheckoutService {
       payment_method_options: {
         card: {
           installments: {
-            enabled: true,
+            enabled: !isSubscription, // Installments only for one-time payments
           },
         },
         boleto: {
           expires_after_days: 3,
         },
       },
-    });
+    };
+
+    // Add mode-specific data
+    if (isSubscription) {
+      sessionConfig.subscription_data = {
+        metadata: {
+          organizationId,
+          planType,
+          credits: plan.credits.toString(),
+        },
+      };
+    } else {
+      sessionConfig.payment_intent_data = {
+        metadata: {
+          organizationId,
+          planType,
+          credits: plan.credits.toString(),
+        },
+      };
+    }
+
+    // Create checkout session
+    const session = await this.stripe.checkout.sessions.create(sessionConfig);
 
     // Create payment record with pending status
     await this.paymentRepository.create({
       organization_id: organizationId,
       plan_id: plan.id,
-      stripe_payment_intent_id: session.payment_intent as string,
+      stripe_payment_intent_id:
+        (session.payment_intent as string) || (session.subscription as string), // Use subscription ID if payment intent is null
       amount: plan.price,
       currency: 'BRL',
       credits_purchased: plan.credits,
       status: PaymentStatus.PENDING,
-      description: `Compra de ${plan.credits} créditos - Plano ${plan.name}`,
+      description: isSubscription
+        ? `Assinatura - Plano ${plan.name}`
+        : `Compra de ${plan.credits} créditos - Plano ${plan.name}`,
       metadata: {
         sessionId: session.id,
         planType,
+        mode,
       },
     });
 
