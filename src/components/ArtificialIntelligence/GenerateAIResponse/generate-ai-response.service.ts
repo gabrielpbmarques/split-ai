@@ -1,15 +1,17 @@
 import { UsageMetadata } from '@langchain/core/messages';
 import { Injectable } from '@nestjs/common';
 import { AIMessage, AIMessageChunk } from 'langchain';
-import { LoadAiChatService } from 'src/components/ArtificialIntelligence/LoadAiChat/load-ai-chat.service';
-import { CustomMetadata, ResolvedAgent } from 'src/types';
+import {
+  AgentFinalResponseSchema,
+  CustomMetadata,
+  ResolvedAgent,
+} from 'src/types';
 
 import { RecordTokenUsageService } from '../../TokenUsage/RecordTokenUsage/record-token-usage.service';
 
 @Injectable()
 export class GenerateAiResponseService {
   constructor(
-    private readonly loadAiChatService: LoadAiChatService,
     private readonly recordTokenUsageService: RecordTokenUsageService,
   ) {}
 
@@ -39,7 +41,7 @@ export class GenerateAiResponseService {
     agent: ResolvedAgent,
     stream: boolean = false,
   ): Promise<string | AIMessageChunk[] | any> {
-    const runnable = await this.loadAiChatService.execute(agent);
+    const runnable = agent.runnable;
 
     const invokeParams = {
       messages: [{ role: 'user', content: question }],
@@ -47,14 +49,14 @@ export class GenerateAiResponseService {
 
     const configurable = {
       configurable: {
-        thread_id: metadata.session_id,
+        thread_id: `${agent.organization_id}_${metadata.session_id}`,
       },
     };
 
     if (stream) {
       const streamIterator = await runnable.stream(invokeParams, {
         ...configurable,
-        streamMode: 'messages',
+        streamMode: 'updates',
       });
       return this.handleStreamResponse(streamIterator, metadata, agent);
     }
@@ -76,35 +78,37 @@ export class GenerateAiResponseService {
       });
     }
 
-    return this.returnNonStreamResponse(result);
+    const structured = AgentFinalResponseSchema.parse(
+      result.structuredResponse,
+    );
+
+    return structured.finalAnswer;
   }
 
   private async *handleStreamResponse(
-    stream: AsyncGenerator<AIMessage> | any,
+    stream: AsyncGenerator<any>,
     metadata: CustomMetadata,
     agent: ResolvedAgent,
   ) {
     for await (const chunk of stream) {
-      if (chunk.usage_metadata && agent.organization_id) {
-        this.recordTokenUsageService.execute({
-          organization_id: agent.organization_id,
-          agent_id: agent.id,
-          user_id: metadata.user_id,
-          input_tokens: chunk.usage_metadata?.input_tokens ?? 0,
-          output_tokens: chunk.usage_metadata?.output_tokens ?? 0,
-          total_tokens: chunk.usage_metadata?.total_tokens ?? 0,
-          model: (agent.chat as any).model || 'unknown',
-        });
+      if (chunk.agent?.messages && chunk.agent.messages.length > 0) {
+        const message = chunk.agent.messages[0];
+        if (message.usage_metadata && agent.organization_id) {
+          await this.recordTokenUsageService.execute({
+            organization_id: agent.organization_id,
+            agent_id: agent.id,
+            user_id: metadata.user_id,
+            input_tokens: message.usage_metadata?.input_tokens ?? 0,
+            output_tokens: message.usage_metadata?.output_tokens ?? 0,
+            total_tokens: message.usage_metadata?.total_tokens ?? 0,
+            model: (agent.chat as any).model || 'unknown',
+          });
+        }
+      } else if (chunk['model']?.structuredResponse) {
+        // Return only the finalAnswer from structured response
+        yield chunk.model.structuredResponse.finalAnswer;
       }
-      yield chunk;
+      // Ignore other chunks
     }
-  }
-
-  private async returnNonStreamResponse(result: any) {
-    const formattedResponse = (result as any).messages
-      .at(-1)
-      .content.toString();
-
-    return formattedResponse;
   }
 }

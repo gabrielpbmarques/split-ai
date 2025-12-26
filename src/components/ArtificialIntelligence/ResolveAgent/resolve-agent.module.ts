@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { RepositoriesModule } from 'src/repositories/repositories.module';
 
 import { BuildSystemPromptModule } from '../BuildSystemPrompt/build-system-prompt.module';
+import { LoadCheckpointerModule } from '../LoadCheckpointer/load-checkpointer.module';
 import { LoadDatabaseToolModule } from '../LoadDatabaseTool/load-database-tool.module';
 import { LoadVectorSearchToolModule } from '../LoadVectorSearchTool/load-vector-search-tool.module';
 
@@ -13,6 +14,7 @@ import { ResolveAgentService } from './resolve-agent.service';
     LoadDatabaseToolModule,
     LoadVectorSearchToolModule,
     BuildSystemPromptModule,
+    LoadCheckpointerModule,
   ],
   providers: [ResolveAgentService],
   exports: [ResolveAgentService],

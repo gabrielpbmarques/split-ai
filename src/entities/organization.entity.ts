@@ -1,7 +1,15 @@
-import { Organization, OrganizationPlan, OrganizationStatus } from 'src/types';
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Organization, OrganizationStatus } from 'src/types';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 import { AgentEntity } from './agent.entity';
+import { PlanEntity } from './plan.entity';
 import { UserEntity } from './user.entity';
 
 @Entity('organizations')
@@ -44,12 +52,9 @@ export class OrganizationEntity implements Organization {
   @Column({ type: 'timestamp', nullable: true })
   deactivated_at: Date;
 
-  @Column({
-    type: 'enum',
-    enum: ['manual', 'free', 'monthly'],
-    default: 'free',
-  })
-  plan: OrganizationPlan;
+  @ManyToOne(() => PlanEntity)
+  @JoinColumn({ name: 'plan_id' })
+  plan: PlanEntity;
 
   // Embeddable chat widget settings
   @Column({ type: 'boolean', default: false })

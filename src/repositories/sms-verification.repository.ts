@@ -14,7 +14,6 @@ export class SmsVerificationRepository {
   async findValidCode(
     phone: string,
     code: string,
-    userId: string,
   ): Promise<SmsVerificationEntity | null> {
     return this.smsVerificationRepository
       .createQueryBuilder('sms')
@@ -22,7 +21,6 @@ export class SmsVerificationRepository {
       .andWhere('sms.code = :code', { code })
       .andWhere('sms.verified = :verified', { verified: false })
       .andWhere('sms.expires_at > :now', { now: new Date() })
-      .andWhere('sms.user_id = :userId', { userId })
       .getOne();
   }
 

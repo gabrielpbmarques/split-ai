@@ -1,10 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { AgentEntity } from 'src/entities/agent.entity';
-import { MessageEntity } from 'src/entities/message.entity';
-import { SessionEntity } from 'src/entities/session.entity';
+import {
+  SessionRepository,
+  MessageRepository,
+  AgentRepository,
+  ReportRepository,
+  TokenUsageRepository,
+} from 'src/repositories';
 import { User } from 'src/types';
-import { Between, Repository } from 'typeorm';
+import { Between } from 'typeorm';
 
 import {
   DashboardStatisticsDto,
@@ -14,12 +17,11 @@ import {
 @Injectable()
 export class DashboardStatisticsService {
   constructor(
-    @InjectRepository(SessionEntity)
-    private readonly sessionRepository: Repository<SessionEntity>,
-    @InjectRepository(MessageEntity)
-    private readonly messageRepository: Repository<MessageEntity>,
-    @InjectRepository(AgentEntity)
-    private readonly agentRepository: Repository<AgentEntity>,
+    private readonly sessionRepository: SessionRepository,
+    private readonly messageRepository: MessageRepository,
+    private readonly agentRepository: AgentRepository,
+    private readonly reportRepository: ReportRepository,
+    private readonly tokenUsageRepository: TokenUsageRepository,
   ) {}
 
   async execute(
@@ -102,84 +104,48 @@ export class DashboardStatisticsService {
     const sessions = await this.sessionRepository.find({ where });
     const totalConversations = sessions.length;
 
-    // Calculate satisfaction rate from reports
-    // For now, we'll simulate this based on sentiment from messages
-    // In a real scenario, you might have a feedback table
-
-    // Build query for positive messages with proper joins
-    const positiveMessagesQuery = this.messageRepository
-      .createQueryBuilder('m')
-      .leftJoin('sessions', 's', 's.id = m.session_id')
-      .where('m.created_at BETWEEN :startDate AND :endDate', {
-        startDate,
-        endDate,
-      })
-      .andWhere('m.from = :from', { from: 'agent' });
+    // Calculate satisfaction rate from reports (ReportEntity)
+    const reportWhere: any = {
+      created_at: Between(startDate, endDate),
+    };
 
     if (user.role !== 'admin' && user.organization_id) {
-      positiveMessagesQuery.andWhere('s.organization_id = :orgId', {
-        orgId: user.organization_id,
-      });
+      reportWhere.organization_id = user.organization_id;
     }
 
     if (agentId) {
-      positiveMessagesQuery.andWhere('m.agent_id = :agentId', { agentId });
+      reportWhere.agent_id = agentId;
     }
 
-    const positiveMessages = await positiveMessagesQuery.getCount();
+    const totalReports = await this.reportRepository.count({
+      where: reportWhere,
+    });
 
-    // Build query for total messages with proper joins
-    const totalMessagesQuery = this.messageRepository
-      .createQueryBuilder('m')
-      .leftJoin('sessions', 's', 's.id = m.session_id')
-      .where('m.created_at BETWEEN :startDate AND :endDate', {
-        startDate,
-        endDate,
-      })
-      .andWhere('m.from = :from', { from: 'agent' });
-
-    if (user.role !== 'admin' && user.organization_id) {
-      totalMessagesQuery.andWhere('s.organization_id = :orgId', {
-        orgId: user.organization_id,
-      });
-    }
-
-    if (agentId) {
-      totalMessagesQuery.andWhere('m.agent_id = :agentId', { agentId });
-    }
-
-    const totalMessages = await totalMessagesQuery.getCount();
+    const positiveReports = await this.reportRepository.count({
+      where: { ...reportWhere, sentiment: 'positive' },
+    });
 
     const satisfactionRate =
-      totalMessages > 0
-        ? Math.round((positiveMessages / totalMessages) * 100)
-        : 94; // Default value
+      totalReports > 0
+        ? Math.round((positiveReports / totalReports) * 100)
+        : 100; // Default to 100 if no reports, or 0? 100 matches current behavior of "perfect until proven otherwise"
 
-    // Calculate tokens used
-    // Build query for messages with proper joins
-    const messagesQuery = this.messageRepository
-      .createQueryBuilder('m')
-      .leftJoin('sessions', 's', 's.id = m.session_id')
-      .where('m.created_at BETWEEN :startDate AND :endDate', {
-        startDate,
-        endDate,
-      });
+    // Calculate tokens used from TokenUsageRepository
+    const tokenFilters: any = {
+      start_date: startDate,
+      end_date: endDate,
+    };
 
     if (user.role !== 'admin' && user.organization_id) {
-      messagesQuery.andWhere('s.organization_id = :orgId', {
-        orgId: user.organization_id,
-      });
+      tokenFilters.organization_id = user.organization_id;
     }
 
     if (agentId) {
-      messagesQuery.andWhere('m.agent_id = :agentId', { agentId });
+      tokenFilters.agent_id = agentId;
     }
 
-    const messages = await messagesQuery.getMany();
-    const tokensUsed = messages.reduce((total, msg) => {
-      // Rough estimation: 1 token per 4 characters
-      return total + Math.ceil((msg.message?.length || 0) / 4);
-    }, 0);
+    const tokenStats = await this.tokenUsageRepository.getTotals(tokenFilters);
+    const tokensUsed = tokenStats.total_tokens;
 
     // Get active agents count
     const activeAgents = await this.agentRepository.count({

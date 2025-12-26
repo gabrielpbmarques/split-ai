@@ -11,7 +11,6 @@ import { GenerateAgentSourceModule } from './GenerateAgentSource/generate-agent-
 import { GenerateAiResponseModule } from './GenerateAIResponse/generate-ai-response.module';
 import { ListAgentsModule } from './ListAgents/list-agents.module';
 import { LoadAgentSitesModule } from './LoadAgentSites/load-agent-sites.module';
-import { LoadAiChatModule } from './LoadAiChat/load-ai-chat.module';
 import { LoadVectorSearchToolModule } from './LoadVectorSearchTool/load-vector-search-tool.module';
 import { LoadVectorStoreModule } from './LoadVectorStore/load-vector-store.module';
 import { NormalizePromptInstructionsModule } from './NormalizePromptInstructions/normalize-prompt-instructions.module';
@@ -22,7 +21,6 @@ import { UpdateAgentModule } from './UpdateAgent/update-agent.module';
   imports: [
     ConvertTextToSpeechModule,
     ExecuteSimilaritySearchModule,
-    LoadAiChatModule,
     LoadVectorStoreModule,
     GenerateAgentSourceModule,
     BuildSystemPromptModule,
@@ -40,7 +38,6 @@ import { UpdateAgentModule } from './UpdateAgent/update-agent.module';
   exports: [
     ConvertTextToSpeechModule,
     ExecuteSimilaritySearchModule,
-    LoadAiChatModule,
     LoadVectorStoreModule,
     GenerateAgentSourceModule,
     BuildSystemPromptModule,

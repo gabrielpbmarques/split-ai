@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { DeactivateOrganizationService } from 'src/components/Organization/DeactivateOrganization/deactivate-organization.service';
 import { TransactionType } from 'src/entities/credit-transaction.entity';
 import { CreditBalanceRepository } from 'src/repositories/credit-balance.repository';
 
@@ -12,6 +13,7 @@ export class ConsumeCreditsService {
   constructor(
     private readonly manageCreditsService: ManageCreditsService,
     private readonly creditBalanceRepository: CreditBalanceRepository,
+    private readonly deactivateOrganizationService: DeactivateOrganizationService,
   ) {}
 
   async execute(
@@ -32,6 +34,10 @@ export class ConsumeCreditsService {
       );
 
       if (!hasCredits) {
+        await this.deactivateOrganizationService.execute(
+          organizationId,
+          'Insufficient credits during consumption',
+        );
         return false;
       }
 
@@ -58,10 +64,25 @@ export class ConsumeCreditsService {
   async checkCredits(organizationId: string): Promise<boolean> {
     const minCreditsRequired =
       this.CREDITS_PER_MESSAGE + this.CREDITS_PER_AI_RESPONSE;
-    return this.creditBalanceRepository.hasEnoughCredits(
+    const hasCredits = await this.creditBalanceRepository.hasEnoughCredits(
       organizationId,
       minCreditsRequired,
     );
+
+    if (!hasCredits) {
+      // Check available balance to verify if it is really empty or just insufficient for this message
+      const balance =
+        await this.creditBalanceRepository.getAvailableCredits(organizationId);
+      if (balance < minCreditsRequired) {
+        // We can preemptively deactivate here too if we want strict blocking
+        await this.deactivateOrganizationService.execute(
+          organizationId,
+          'Insufficient credits check',
+        );
+      }
+    }
+
+    return hasCredits;
   }
 
   async getAvailableCredits(organizationId: string): Promise<number> {

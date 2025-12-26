@@ -38,6 +38,10 @@ export class ReportRepository {
     return await this.repository.find(options);
   }
 
+  async count(options?: FindManyOptions<ReportEntity>): Promise<number> {
+    return await this.repository.count(options);
+  }
+
   // Analytics helpers
   private applyFilters(
     qb: SelectQueryBuilder<ReportEntity>,

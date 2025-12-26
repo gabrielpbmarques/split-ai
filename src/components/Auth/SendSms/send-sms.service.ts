@@ -4,11 +4,14 @@ import {
   InternalServerErrorException,
   Inject,
 } from '@nestjs/common';
+import { UserEntity } from 'src/entities/user.entity';
 import {
   ITwilioService,
   TWILIO_SERVICE,
 } from 'src/infrastructure/providers/twilio.provider';
 import { SmsVerificationRepository, UserRepository } from 'src/repositories';
+
+import { GenerateTokenService } from '../GenerateToken/generate-token.service';
 
 import { SendSmsDto, VerifySmsDto } from './send-sms.dto';
 
@@ -19,6 +22,7 @@ export class SendSmsService {
     private readonly twilioService: ITwilioService,
     private readonly smsVerificationRepository: SmsVerificationRepository,
     private readonly userRepository: UserRepository,
+    private readonly generateTokenService: GenerateTokenService,
   ) {}
 
   async execute(sendSmsDto: SendSmsDto) {
@@ -28,17 +32,24 @@ export class SendSmsService {
       throw new BadRequestException('Número de telefone inválido');
     }
 
-    const user = await this.userRepository.findByPhone(cleanPhone);
+    let user: UserEntity | null = null;
 
-    if (!user) {
-      throw new BadRequestException('Usuário não encontrado');
-    }
+    if (!sendSmsDto.isGuest) {
+      user = await this.userRepository.findByPhone(cleanPhone);
 
-    // Se o client enviar um userId, validar consistência com o usuário encontrado pelo telefone
-    if (sendSmsDto.userId && sendSmsDto.userId !== user.id) {
-      throw new BadRequestException(
-        'Usuário divergente para o telefone informado',
-      );
+      if (!user) {
+        throw new BadRequestException('Usuário não encontrado');
+      }
+
+      if (sendSmsDto.userId && sendSmsDto.userId !== user.id) {
+        throw new BadRequestException(
+          'Usuário divergente para o telefone informado',
+        );
+      }
+    } else {
+      if (!sendSmsDto.name) {
+        throw new BadRequestException('Nome é obrigatório para visitantes');
+      }
     }
 
     const verificationCode = this.generateVerificationCode();
@@ -49,17 +60,15 @@ export class SendSmsService {
       code: verificationCode,
       expires_at: expiresAt,
       verified: false,
-      user_id: user.id,
+      user_id: user?.id,
     });
 
-    const smsResult = await this.twilioService.sendSmsMessage(
-      cleanPhone,
-      verificationCode,
-    );
-
-    if (!smsResult.success) {
-      throw new InternalServerErrorException('Falha ao enviar SMS');
-    }
+    await this.twilioService
+      .sendSmsMessage(cleanPhone, verificationCode)
+      .catch((error) => {
+        console.log(error);
+        throw new InternalServerErrorException('Falha ao enviar SMS', error);
+      });
 
     return {
       success: true,
@@ -73,7 +82,6 @@ export class SendSmsService {
     const verification = await this.smsVerificationRepository.findValidCode(
       cleanPhone,
       verifySmsDto.code,
-      verifySmsDto.userId,
     );
 
     if (!verification) {
@@ -82,18 +90,27 @@ export class SendSmsService {
 
     await this.smsVerificationRepository.markAsVerified(verification.id);
 
-    const user = await this.userRepository.findById(verifySmsDto.userId);
+    let user = await this.userRepository.findByPhone(cleanPhone);
 
-    if (user) {
-      await this.userRepository.update(user.id, {
-        status: 'active',
-      });
+    if (!user) {
+      const newUser = new UserEntity();
+      newUser.phone = cleanPhone;
+      newUser.name = verifySmsDto.name || 'Visitante';
+      newUser.role = 'guest';
+      newUser.origin = 'website';
+      newUser.status = 'active';
+
+      user = await this.userRepository.create(newUser);
     }
+
+    const tokenResult = await this.generateTokenService.execute(user!);
 
     return {
       success: true,
       message: 'Telefone verificado com sucesso',
-      user_id: user?.id || verification.user_id,
+      user_id: user!.id,
+      token: tokenResult.token,
+      expiresAt: tokenResult.expiresAt,
     };
   }
 

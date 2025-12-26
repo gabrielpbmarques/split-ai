@@ -1,5 +1,5 @@
-import { IsNotEmpty, IsString } from 'class-validator';
-import { OrganizationPlan } from 'src/types';
+import { IsNotEmpty, IsString, IsOptional } from 'class-validator';
+import { PlanType } from 'src/entities/plan.entity';
 
 export class CreateOrganizationDto {
   @IsNotEmpty()
@@ -28,5 +28,9 @@ export class CreateOrganizationDto {
 
   @IsNotEmpty()
   @IsString()
-  plan?: OrganizationPlan;
+  plan?: PlanType;
+
+  @IsOptional()
+  @IsString()
+  planId?: string;
 }

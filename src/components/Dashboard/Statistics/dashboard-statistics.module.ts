@@ -1,16 +1,11 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { AgentEntity } from 'src/entities/agent.entity';
-import { MessageEntity } from 'src/entities/message.entity';
-import { SessionEntity } from 'src/entities/session.entity';
+import { RepositoriesModule } from 'src/repositories/repositories.module';
 
 import { DashboardStatisticsController } from './dashboard-statistics.controller';
 import { DashboardStatisticsService } from './dashboard-statistics.service';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([SessionEntity, MessageEntity, AgentEntity]),
-  ],
+  imports: [RepositoriesModule],
   controllers: [DashboardStatisticsController],
   providers: [DashboardStatisticsService],
   exports: [DashboardStatisticsService],

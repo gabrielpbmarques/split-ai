@@ -108,4 +108,17 @@ export class CreditTransactionRepository {
     const result = await query.getRawOne();
     return parseInt(result?.total || '0', 10);
   }
+
+  async getSessionConsumption(sessionId: string): Promise<number> {
+    const query = this.creditTransactionRepository
+      .createQueryBuilder('transaction')
+      .select('SUM(ABS(transaction.amount))', 'total')
+      .where('transaction.session_id = :sessionId', { sessionId })
+      .andWhere('transaction.type = :type', {
+        type: TransactionType.CONSUMPTION,
+      });
+
+    const result = await query.getRawOne();
+    return parseInt(result?.total || '0', 10);
+  }
 }

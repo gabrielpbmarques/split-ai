@@ -94,9 +94,27 @@ export class CreateCheckoutService {
       };
     }
 
+    // Define payment methods and options
+    const paymentMethodTypes: Stripe.Checkout.SessionCreateParams.PaymentMethodType[] =
+      isSubscription ? ['card'] : ['card', 'boleto', 'pix'];
+
+    const paymentMethodOptions: Stripe.Checkout.SessionCreateParams.PaymentMethodOptions =
+      {};
+
+    if (!isSubscription) {
+      paymentMethodOptions.boleto = {
+        expires_after_days: 3,
+      };
+      paymentMethodOptions.card = {
+        installments: {
+          enabled: true,
+        },
+      };
+    }
+
     // Prepare session configuration
     const sessionConfig: Stripe.Checkout.SessionCreateParams = {
-      payment_method_types: ['card', 'boleto', 'pix'],
+      payment_method_types: paymentMethodTypes,
       line_items: [
         {
           price_data: priceData,
@@ -115,16 +133,7 @@ export class CreateCheckoutService {
       locale: 'pt-BR',
       allow_promotion_codes: true,
       billing_address_collection: 'required',
-      payment_method_options: {
-        card: {
-          installments: {
-            enabled: !isSubscription, // Installments only for one-time payments
-          },
-        },
-        boleto: {
-          expires_after_days: 3,
-        },
-      },
+      payment_method_options: paymentMethodOptions,
     };
 
     // Add mode-specific data
@@ -154,7 +163,9 @@ export class CreateCheckoutService {
       organization_id: organizationId,
       plan_id: plan.id,
       stripe_payment_intent_id:
-        (session.payment_intent as string) || (session.subscription as string), // Use subscription ID if payment intent is null
+        (session.payment_intent as string) ||
+        (session.subscription as string) ||
+        session.id, // Use session ID if both are null (e.g. initial subscription creation)
       amount: plan.price,
       currency: 'BRL',
       credits_purchased: plan.credits,

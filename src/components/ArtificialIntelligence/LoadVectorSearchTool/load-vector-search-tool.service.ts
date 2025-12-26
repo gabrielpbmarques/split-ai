@@ -20,8 +20,11 @@ export class LoadVectorSearchToolService {
   > {
     return new DynamicStructuredTool({
       name: 'vector_similarity_search',
-      description:
-        'Busca embeddings no Supabase; use se precisar de contexto factual externo. O agent_id é {agentId}.',
+      description: `
+        IMPORTANTE: SEMPRE use esta ferramenta antes de responder.
+        Busca embeddings no Supabase; use se precisar de contexto factual externo.
+        O agent_id é {agentId}.
+      `,
       schema: z.object({
         query: z.string().describe('Consulta semântica'),
         agent_id: z.string().describe('ID do agente'),

@@ -1,7 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SessionEntity } from 'src/entities/session.entity';
-import { FindOneOptions, MoreThan, Repository } from 'typeorm';
+import {
+  FindManyOptions,
+  FindOneOptions,
+  MoreThan,
+  Repository,
+  SelectQueryBuilder,
+} from 'typeorm';
 
 @Injectable()
 export class SessionRepository {
@@ -23,6 +29,20 @@ export class SessionRepository {
     options: FindOneOptions<SessionEntity>,
   ): Promise<SessionEntity | null> {
     return await this.repository.findOne(options);
+  }
+
+  async find(
+    options?: FindManyOptions<SessionEntity>,
+  ): Promise<SessionEntity[]> {
+    return await this.repository.find(options);
+  }
+
+  async count(options?: FindManyOptions<SessionEntity>): Promise<number> {
+    return await this.repository.count(options);
+  }
+
+  createQueryBuilder(alias: string): SelectQueryBuilder<SessionEntity> {
+    return this.repository.createQueryBuilder(alias);
   }
 
   async findActiveSessionByUserAndAgent(

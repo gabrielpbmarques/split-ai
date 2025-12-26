@@ -3,7 +3,12 @@ import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MessageEntity } from 'src/entities/message.entity';
 import { VERTEX_AI_EMBEDDINGS } from 'src/infrastructure/providers/vertex-ai.provider';
-import { FindOneOptions, Repository } from 'typeorm';
+import {
+  FindManyOptions,
+  FindOneOptions,
+  Repository,
+  SelectQueryBuilder,
+} from 'typeorm';
 
 @Injectable()
 export class MessageRepository {
@@ -33,5 +38,19 @@ export class MessageRepository {
     options: FindOneOptions<MessageEntity>,
   ): Promise<MessageEntity | null> {
     return await this.repository.findOne(options);
+  }
+
+  async find(
+    options?: FindManyOptions<MessageEntity>,
+  ): Promise<MessageEntity[]> {
+    return await this.repository.find(options);
+  }
+
+  async count(options?: FindManyOptions<MessageEntity>): Promise<number> {
+    return await this.repository.count(options);
+  }
+
+  createQueryBuilder(alias: string): SelectQueryBuilder<MessageEntity> {
+    return this.repository.createQueryBuilder(alias);
   }
 }

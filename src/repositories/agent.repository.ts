@@ -39,6 +39,10 @@ export class AgentRepository {
     return await this.repository.find(options);
   }
 
+  async count(options?: FindManyOptions<AgentEntity>): Promise<number> {
+    return await this.repository.count(options);
+  }
+
   async rawQuery(query: string): Promise<AgentEntity[]> {
     return await this.repository.query(query);
   }

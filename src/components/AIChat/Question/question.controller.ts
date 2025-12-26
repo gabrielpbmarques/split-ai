@@ -1,5 +1,6 @@
 import { Controller, Post, Body, UseGuards, Res } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
+import { ActiveOrgGuard } from 'src/auth/active-org.guard';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { User as AuthUser } from 'src/decorators/user.decorator';
 import { UserEntity } from 'src/entities';
@@ -12,7 +13,7 @@ export class QuestionController {
   constructor(private readonly questionService: QuestionService) {}
 
   @Post('question')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, ActiveOrgGuard)
   async execute(
     @Res() res: FastifyReply,
     @Body() dto: QuestionDto,

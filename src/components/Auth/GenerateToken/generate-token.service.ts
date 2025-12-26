@@ -20,7 +20,6 @@ export class GenerateTokenService {
    * @returns The generated token and its expiration date
    */
   async execute(user: UserEntity): Promise<{ token: string; expiresAt: Date }> {
-    // Define token expiration time (default: 24 hours)
     const expirationHours = this.configService.get<number>(
       'JWT_EXPIRATION_HOURS',
       24,
@@ -28,25 +27,28 @@ export class GenerateTokenService {
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + expirationHours);
 
-    // Create payload for JWT
-    const payload = {
+    let payload: any = {
       sub: user.id,
       name: user.name,
       email: user.email,
       phone: user.phone,
-      organization_id: user.organization_id,
       role: user.role,
-      jti: uuidv4(), // JWT ID - unique identifier for this token
-      iat: Math.floor(Date.now() / 1000), // Issued at time
+      jti: uuidv4(),
+      iat: Math.floor(Date.now() / 1000),
     };
 
-    // Generate JWT token
+    if (user.role !== 'guest') {
+      payload = {
+        ...payload,
+        organization_id: user.organization_id,
+      };
+    }
+
     const token = this.jwtService.sign(payload, {
       expiresIn: `${expirationHours}h`,
       secret: this.configService.get<string>('JWT_SECRET'),
     });
 
-    // Store token in database (invalidating previous tokens)
     const roleToPersist: UserRole = user.role;
 
     await this.userTokenRepository.createUniqueToken({

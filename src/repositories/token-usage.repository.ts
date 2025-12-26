@@ -5,6 +5,8 @@ import { Repository, SelectQueryBuilder } from 'typeorm';
 
 export interface TokenUsageFilters {
   organization_id?: string;
+  agent_id?: string;
+  user_id?: string;
   start_date?: Date;
   end_date?: Date;
 }
@@ -28,6 +30,18 @@ export class TokenUsageRepository {
     if (filters.organization_id) {
       qb.andWhere('token_usage.organization_id = :organization_id', {
         organization_id: filters.organization_id,
+      });
+    }
+
+    if (filters.agent_id) {
+      qb.andWhere('token_usage.agent_id = :agent_id', {
+        agent_id: filters.agent_id,
+      });
+    }
+
+    if (filters.user_id) {
+      qb.andWhere('token_usage.user_id = :user_id', {
+        user_id: filters.user_id,
       });
     }
 

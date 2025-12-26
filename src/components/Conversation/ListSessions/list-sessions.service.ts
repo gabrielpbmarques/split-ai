@@ -1,7 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { MessageEntity, SessionEntity } from 'src/entities';
-import { Repository } from 'typeorm';
+import { SessionRepository } from 'src/repositories';
 
 import { ListSessionsDto, SessionsListResponse } from './list-sessions.dto';
 
@@ -13,24 +11,12 @@ interface AuthUser {
 
 @Injectable()
 export class ListSessionsService {
-  constructor(
-    @InjectRepository(SessionEntity)
-    private sessionRepository: Repository<SessionEntity>,
-    @InjectRepository(MessageEntity)
-    private messageRepository: Repository<MessageEntity>,
-  ) {}
+  constructor(private readonly sessionRepository: SessionRepository) {}
 
   async execute(
     user: AuthUser,
     dto: ListSessionsDto,
   ): Promise<SessionsListResponse> {
-    // Debug logging
-    console.log('ListSessions - User:', {
-      id: user.id,
-      role: user.role,
-      organization_id: user.organization_id,
-    });
-
     const query = this.sessionRepository
       .createQueryBuilder('s')
       .leftJoin('agents', 'a', 'a.id::text = s.agent_id')
@@ -58,18 +44,9 @@ export class ListSessionsService {
           userId: user.id,
         },
       );
-      console.log(
-        'ListSessions - Filtering by organization_id:',
-        user.organization_id,
-      );
     } else if (user.role === 'admin') {
-      query.where('1=1'); // Ensure WHERE clause exists for subsequent andWhere
-      console.log('ListSessions - Admin user, no organization filter');
+      query.where('1=1');
     } else {
-      // User without organization_id - return empty result
-      console.log(
-        'ListSessions - User has no organization_id, returning empty result',
-      );
       return {
         sessions: [],
         pagination: {
@@ -144,12 +121,6 @@ export class ListSessionsService {
       query.getRawMany(),
       countQuery.getCount(),
     ]);
-
-    console.log('ListSessions - Results:', {
-      total,
-      sessions: sessionsRaw.length,
-      firstSession: sessionsRaw[0] || null,
-    });
 
     // Transform raw results
     const sessions = sessionsRaw.map((session) => ({

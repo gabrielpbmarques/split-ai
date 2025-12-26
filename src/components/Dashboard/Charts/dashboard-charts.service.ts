@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { MessageEntity } from 'src/entities/message.entity';
-import { ReportEntity } from 'src/entities/report.entity';
-import { SessionEntity } from 'src/entities/session.entity';
+import {
+  MessageRepository,
+  ReportRepository,
+  SessionRepository,
+  TokenUsageRepository,
+} from 'src/repositories';
 import { User } from 'src/types';
-import { Between, Repository } from 'typeorm';
+import { Between } from 'typeorm';
 
 import {
   DashboardChartsDto,
@@ -15,12 +17,10 @@ import {
 @Injectable()
 export class DashboardChartsService {
   constructor(
-    @InjectRepository(SessionEntity)
-    private readonly sessionRepository: Repository<SessionEntity>,
-    @InjectRepository(MessageEntity)
-    private readonly messageRepository: Repository<MessageEntity>,
-    @InjectRepository(ReportEntity)
-    private readonly reportRepository: Repository<ReportEntity>,
+    private readonly sessionRepository: SessionRepository,
+    private readonly messageRepository: MessageRepository,
+    private readonly reportRepository: ReportRepository,
+    private readonly tokenUsageRepository: TokenUsageRepository,
   ) {}
 
   async execute(user: User, dto: DashboardChartsDto): Promise<DashboardCharts> {
@@ -187,28 +187,22 @@ export class DashboardChartsService {
       );
 
       // Build query with proper joins
-      const query = this.messageRepository
-        .createQueryBuilder('m')
-        .leftJoin('sessions', 's', 's.id = m.session_id')
-        .where('m.created_at BETWEEN :monthStart AND :monthEnd', {
-          monthStart,
-          monthEnd,
-        });
+      const tokenFilters: any = {
+        start_date: monthStart,
+        end_date: monthEnd,
+      };
 
       if (user.role !== 'admin' && user.organization_id) {
-        query.andWhere('s.organization_id = :orgId', {
-          orgId: user.organization_id,
-        });
+        tokenFilters.organization_id = user.organization_id;
       }
 
       if (agentId) {
-        query.andWhere('m.agent_id = :agentId', { agentId });
+        tokenFilters.agent_id = agentId;
       }
 
-      const messages = await query.getMany();
-      const tokens = messages.reduce((total, msg) => {
-        return total + Math.ceil((msg.message?.length || 0) / 4);
-      }, 0);
+      const tokenStats =
+        await this.tokenUsageRepository.getTotals(tokenFilters);
+      const tokens = tokenStats.total_tokens;
 
       labels.push(monthStart.toLocaleDateString('pt-BR', { month: 'short' }));
       data.push(Math.round(tokens / 1000)); // Convert to thousands

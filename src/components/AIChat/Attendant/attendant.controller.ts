@@ -1,6 +1,7 @@
-import { Body, Controller, Post, Res } from '@nestjs/common';
+import { Body, Controller, Post, Res, UseGuards } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
-import { Public } from 'src/auth/auth.guard';
+import { ActiveOrgGuard } from 'src/auth/active-org.guard';
+import { AuthGuard } from 'src/auth/auth.guard';
 import { QuestionDto } from 'src/components/AIChat/Question/question.dto';
 import { User as AuthUser } from 'src/decorators/user.decorator';
 import { User } from 'src/types';
@@ -12,7 +13,7 @@ export class AttendantController {
   constructor(private readonly attendantService: AttendantService) {}
 
   @Post('attendant')
-  @Public()
+  @UseGuards(AuthGuard, ActiveOrgGuard)
   async handle(
     @Res() res: FastifyReply,
     @Body() dto: QuestionDto,

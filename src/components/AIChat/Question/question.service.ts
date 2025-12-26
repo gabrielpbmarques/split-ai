@@ -40,20 +40,23 @@ export class QuestionService {
       }
     }
 
-    const agent = await this.resolveAgentService.execute(agentId);
-
     const session = await this.createSessionIfNotExistsService.execute({
-      agent_id: agent.id,
+      agent_id: agentId,
       user_id: user.id,
       organization_id: user.organization_id,
     });
 
+    const agent = await this.resolveAgentService.execute(agentId, {
+      sessionId: session.id,
+    });
+
     // Record user message
-    await this.recordChatMessageService.recordUserMessage(
+    await this.recordChatMessageService.execute(
       session.id,
       user.id,
       agent.id,
       question,
+      'user',
     );
 
     const aiResponse = await this.generateAiResponseService.execute(
@@ -79,11 +82,12 @@ export class QuestionService {
 
     // Record agent message
     if (fullResponse) {
-      await this.recordChatMessageService.recordAgentMessage(
+      await this.recordChatMessageService.execute(
         session.id,
         user.id,
         agent.id,
         fullResponse,
+        'agent',
       );
 
       // Consume credits after successful response

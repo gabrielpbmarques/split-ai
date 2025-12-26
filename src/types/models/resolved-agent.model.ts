@@ -12,4 +12,5 @@ export interface ResolvedAgent {
   tools?: DynamicStructuredTool<z.ZodObject<any>>[];
   sites?: string[];
   organization_id?: string;
+  runnable?: any;
 }

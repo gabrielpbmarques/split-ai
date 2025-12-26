@@ -1,14 +1,15 @@
 import { ChatVertexAI } from '@langchain/google-vertexai';
 import { Injectable } from '@nestjs/common';
-import { DynamicStructuredTool } from 'langchain';
+import { DynamicStructuredTool, createAgent } from 'langchain';
 import { config } from 'src/config';
 import { AgentEntity } from 'src/entities';
 import { AgentRepository, AgentInstructionRepository } from 'src/repositories';
-import { ResolvedAgent } from 'src/types';
+import { AgentFinalResponseSchema, ResolvedAgent } from 'src/types';
 import { buildLangchainToolFromSchema } from 'src/utils/buildZodSchema';
 import { z } from 'zod';
 
 import { BuildSystemPromptService } from '../BuildSystemPrompt/build-system-prompt.service';
+import { LoadCheckpointerService } from '../LoadCheckpointer/load-checkpointer.service';
 import { LoadDatabaseToolService } from '../LoadDatabaseTool/load-database-tool.service';
 import { LoadVectorSearchToolService } from '../LoadVectorSearchTool/load-vector-search-tool.service';
 
@@ -20,21 +21,20 @@ export class ResolveAgentService {
     private readonly loadVectorSearchToolService: LoadVectorSearchToolService,
     private readonly buildSystemPromptService: BuildSystemPromptService,
     private readonly loadDatabaseToolService: LoadDatabaseToolService,
+    private readonly loadCheckpointerService: LoadCheckpointerService,
   ) {}
 
   async execute(
     agentId: string,
     promptVariables?: any,
   ): Promise<ResolvedAgent> {
-    const dbAgent = await this.agentRepository.rawQuery(
-      `SELECT * FROM agents WHERE id = '${agentId}' OR agent_identifier = '${agentId}' LIMIT 1`,
-    );
+    const agent = await this.agentRepository.findOne({
+      where: [{ id: agentId }, { agent_identifier: agentId }],
+    });
 
-    if (!dbAgent.length) {
+    if (!agent) {
       throw new Error('Agent não encontrado');
     }
-
-    const agent = dbAgent[0];
 
     const latestInstructions =
       await this.agentInstructionRepository.findLatestByAgentId(agent.id);
@@ -55,6 +55,20 @@ export class ResolveAgentService {
       },
     );
 
+    let checkpointer;
+
+    if (runnableOpts.withHistory) {
+      checkpointer = this.loadCheckpointerService.execute();
+    }
+
+    const runnable = createAgent({
+      model: chat as any,
+      tools,
+      systemPrompt,
+      checkpointer,
+      responseFormat: AgentFinalResponseSchema,
+    });
+
     return {
       id: agent.id,
       systemPrompt,
@@ -63,6 +77,7 @@ export class ResolveAgentService {
       runnableOpts,
       sites: (agent as any).sites || undefined,
       organization_id: agent.organization_id,
+      runnable,
     };
   }
 
@@ -111,7 +126,9 @@ export class ResolveAgentService {
     }
 
     if (dbAgent.database_tool) {
-      tools.push(await this.loadDatabaseToolService.execute());
+      tools.push(
+        await this.loadDatabaseToolService.execute(dbAgent.organization_id),
+      );
     }
 
     return tools;

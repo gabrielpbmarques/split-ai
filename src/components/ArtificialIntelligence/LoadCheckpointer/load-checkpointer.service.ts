@@ -1,18 +1,21 @@
 import { PostgresSaver } from '@langchain/langgraph-checkpoint-postgres';
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { config } from 'src/config';
 
 const DB_URI = config.databaseUrl;
 
 @Injectable()
-export class LoadCheckpointerService {
-  private checkpointer: PostgresSaver;
-  constructor() {
-    this.checkpointer = PostgresSaver.fromConnString(DB_URI);
-    this.checkpointer.setup();
+export class LoadCheckpointerService implements OnModuleInit {
+  private static saver: PostgresSaver;
+
+  async onModuleInit() {
+    if (!LoadCheckpointerService.saver) {
+      LoadCheckpointerService.saver = PostgresSaver.fromConnString(DB_URI);
+      await LoadCheckpointerService.saver.setup();
+    }
   }
 
   execute(): PostgresSaver {
-    return this.checkpointer;
+    return LoadCheckpointerService.saver;
   }
 }

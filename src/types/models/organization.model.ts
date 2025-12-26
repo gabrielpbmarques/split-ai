@@ -1,5 +1,5 @@
 export type OrganizationStatus = 'active' | 'inactive';
-export type OrganizationPlan = 'manual' | 'free' | 'monthly';
+import { PlanEntity } from 'src/entities/plan.entity';
 
 export interface Organization {
   id?: string;
@@ -14,7 +14,7 @@ export interface Organization {
   updated_at?: Date;
   activated_at?: Date;
   deactivated_at?: Date;
-  plan?: OrganizationPlan;
+  plan?: PlanEntity;
   // Embeddable chat widget settings
   chat_embed_enabled?: boolean;
   chat_embed_token?: string | null;

@@ -36,6 +36,8 @@ export class OrganizationRepository {
     const queryBuilder =
       this.organizationRepository.createQueryBuilder('organization');
 
+    queryBuilder.leftJoinAndSelect('organization.plan', 'plan');
+
     if (filters.name) {
       queryBuilder.andWhere('organization.name ILIKE :name', {
         name: `%${filters.name}%`,
@@ -73,7 +75,7 @@ export class OrganizationRepository {
     }
 
     if (filters.plan) {
-      queryBuilder.andWhere('organization.plan = :plan', {
+      queryBuilder.andWhere('(plan.type = :plan OR plan.name ILIKE :plan)', {
         plan: filters.plan,
       });
     }

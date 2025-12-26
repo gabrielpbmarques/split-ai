@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-} from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
 import { UserRepository } from 'src/repositories';
 
@@ -17,19 +13,7 @@ export class CreateUserService {
   }
 
   async execute(dto: CreateUserDto) {
-    const {
-      email,
-      password,
-      confirmPassword,
-      phone,
-      role,
-      organization_id,
-      name,
-    } = dto;
-
-    if (password !== confirmPassword) {
-      throw new BadRequestException('Senhas não conferem');
-    }
+    const { email, password, phone, role, organization_id, name } = dto;
 
     const existingByEmail = await this.userRepository.findByEmail(email);
     if (existingByEmail) {

@@ -26,13 +26,13 @@ export class CreateUserDto {
   @MinLength(8)
   password: string;
 
-  @IsNotEmpty()
   @IsString()
+  @IsOptional()
   confirmPassword: string;
 
   @IsOptional()
-  @IsIn(['user', 'admin'])
-  role?: 'user' | 'admin';
+  @IsIn(['user', 'admin', 'guest'])
+  role?: 'user' | 'admin' | 'guest';
 
   @IsOptional()
   @IsUUID()

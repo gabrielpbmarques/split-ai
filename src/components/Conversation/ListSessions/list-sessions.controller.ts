@@ -1,5 +1,6 @@
 import { Controller, Get, Query, Res, UseGuards } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
+import { ActiveOrgGuard } from 'src/auth/active-org.guard';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { Roles } from 'src/decorators/roles.decorator';
 import { User } from 'src/decorators/user.decorator';
@@ -13,7 +14,7 @@ export class ListSessionsController {
   constructor(private readonly listSessionsService: ListSessionsService) {}
 
   @Get('sessions')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, ActiveOrgGuard)
   @Roles('admin', 'user')
   async handle(
     @Query() dto: ListSessionsDto,

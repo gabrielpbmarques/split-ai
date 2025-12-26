@@ -5,7 +5,7 @@ import { GenerateAiResponseService } from 'src/components/ArtificialIntelligence
 import { ResolveAgentService } from 'src/components/ArtificialIntelligence/ResolveAgent/resolve-agent.service';
 import { CreateSessionIfNotExistsService } from 'src/components/Session/CreateSessionIfNotExists/create-session-if-not-exists.service';
 import { UserEntity } from 'src/entities';
-import { UserRepository } from 'src/repositories';
+import { AgentRepository } from 'src/repositories';
 import { User } from 'src/types';
 
 @Injectable()
@@ -14,45 +14,16 @@ export class AttendantService {
     private readonly generateAiResponseService: GenerateAiResponseService,
     private readonly createSessionIfNotExistsService: CreateSessionIfNotExistsService,
     private readonly resolveAgentService: ResolveAgentService,
-    private readonly userRepository: UserRepository,
     private readonly recordChatMessageService: RecordChatMessageService,
+    private readonly agentRepository: AgentRepository,
   ) {}
 
   async execute(dto: QuestionDto, loggedUser: User): Promise<string> {
-    let user: UserEntity = loggedUser as unknown as UserEntity;
-    const { question, agentId, phone, name } = dto;
-
-    if (!loggedUser) {
-      user = await this.userRepository.create({
-        phone: phone || null,
-        name: name || null,
-        status: 'active',
-        origin: 'website',
-        role: 'user',
-      });
-    } else if (!user.name && name) {
-      await this.userRepository.update(user.id, { name });
-      user = await this.userRepository.findById(user.id);
-    }
-
-    const session = await this.createSessionIfNotExistsService.execute({
-      agent_id: agentId,
-      user_id: user.id,
-      organization_id: user.organization_id,
-    });
-
-    // Record user message
-    await this.recordChatMessageService.recordUserMessage(
-      session.id,
-      user.id,
-      agentId,
-      question,
-    );
+    const user: UserEntity = loggedUser as unknown as UserEntity;
+    const { question, agentId } = dto;
 
     const promptVariables = {
-      sessionId: session.id,
       agentId,
-      organizationId: user.organization_id,
       userName: user.name,
       userPhone: user.phone,
       userId: user.id,
@@ -61,6 +32,21 @@ export class AttendantService {
     const agent = await this.resolveAgentService.execute(
       agentId,
       promptVariables,
+    );
+
+    const session = await this.createSessionIfNotExistsService.execute({
+      agent_id: agent.id,
+      user_id: user.id,
+      organization_id: agent.organization_id,
+    });
+
+    // Record user message
+    await this.recordChatMessageService.execute(
+      session.id,
+      user.id,
+      agentId,
+      question,
+      'user',
     );
 
     const aiResponse = await this.generateAiResponseService.execute(
@@ -76,13 +62,14 @@ export class AttendantService {
 
     // Record agent message
     if (aiResponse) {
-      await this.recordChatMessageService.recordAgentMessage(
+      await this.recordChatMessageService.execute(
         session.id,
         user.id,
         agentId,
         typeof aiResponse === 'string'
           ? aiResponse
           : JSON.stringify(aiResponse),
+        'agent',
       );
     }
 

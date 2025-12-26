@@ -22,7 +22,6 @@ export class RecordTokenUsageService {
         `Failed to record token usage for organization ${params.organization_id}: ${error.message}`,
         error.stack,
       );
-      // We don't want to throw error here to avoid interrupting the main flow
     }
   }
 }

@@ -20,7 +20,7 @@ export class UserTokenEntity {
 
   @Column({
     type: 'enum',
-    enum: ['user', 'admin'],
+    enum: ['user', 'admin', 'guest'],
     default: 'user',
   })
   role: UserRole;

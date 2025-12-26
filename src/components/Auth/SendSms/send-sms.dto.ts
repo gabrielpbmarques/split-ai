@@ -17,6 +17,13 @@ export class SendSmsDto {
   @IsOptional()
   @IsString()
   userId?: string;
+
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @IsOptional()
+  isGuest?: boolean;
 }
 
 export class VerifySmsDto {
@@ -33,7 +40,11 @@ export class VerifySmsDto {
   @Matches(/^\d{6}$/, { message: 'Código deve conter apenas números' })
   code: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  userId: string;
+  userId?: string;
+
+  @IsOptional()
+  @IsString()
+  name?: string;
 }

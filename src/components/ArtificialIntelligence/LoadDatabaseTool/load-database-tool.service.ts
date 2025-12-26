@@ -25,12 +25,12 @@ export class LoadDatabaseToolService implements OnModuleInit {
     this.loadDatabase();
   }
 
-  async execute(): Promise<
-    DynamicStructuredTool<z.ZodObject<{ query: z.ZodString }>>
-  > {
+  async execute(
+    organizationId: string,
+  ): Promise<DynamicStructuredTool<z.ZodObject<{ query: z.ZodString }>>> {
     const executeSql = tool(
       async ({ query }) => {
-        const q = this.sanitizeSqlQuery(query);
+        const q = this.sanitizeSqlQuery(query, organizationId);
         try {
           const result = await this.db.run(q);
           return typeof result === 'string'
@@ -49,6 +49,7 @@ export class LoadDatabaseToolService implements OnModuleInit {
             - Limite o número de tentativas a 5.\n
             - Se não for bem-sucedido após 5 tentativas, retorne uma nota para o usuário.\n
             - Prefira listas de colunas explícitas; evite SELECT *.\n
+            - SEMPRE filtre por "organization_id = '${organizationId}'" no WHERE.\n
           `,
         schema: z.object({
           query: z
@@ -63,7 +64,7 @@ export class LoadDatabaseToolService implements OnModuleInit {
     return executeSql;
   }
 
-  private sanitizeSqlQuery(q: string): string {
+  private sanitizeSqlQuery(q: string, organizationId: string): string {
     let query = String(q ?? '').trim();
 
     const semis = [...query].filter((c) => c === ';').length;
@@ -75,6 +76,13 @@ export class LoadDatabaseToolService implements OnModuleInit {
     }
 
     query = query.replace(/;+\s*$/g, '').trim();
+
+    // Basic tenant isolation check: ensure organizationId is present in the query text
+    if (!query.includes(organizationId)) {
+      throw new Error(
+        `Security Error: Query must filter by organization_id = '${organizationId}'`,
+      );
+    }
 
     if (
       !(

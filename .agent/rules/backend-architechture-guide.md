@@ -105,10 +105,7 @@ Contém a regra de negócio do caso de uso específico.
 ```typescript
 @Injectable()
 export class ListSessionsService {
-  constructor(
-    @InjectRepository(SessionEntity)
-    private sessionRepository: Repository<SessionEntity>,
-  ) {}
+  constructor(private sessionRepository: SessionRepository) {}
 
   async execute(
     // << SEMPRE 'execute'

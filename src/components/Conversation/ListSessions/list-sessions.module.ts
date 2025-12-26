@@ -1,12 +1,11 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { MessageEntity, SessionEntity } from 'src/entities';
+import { RepositoriesModule } from 'src/repositories/repositories.module';
 
 import { ListSessionsController } from './list-sessions.controller';
 import { ListSessionsService } from './list-sessions.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([SessionEntity, MessageEntity])],
+  imports: [RepositoriesModule],
   controllers: [ListSessionsController],
   providers: [ListSessionsService],
   exports: [ListSessionsService],

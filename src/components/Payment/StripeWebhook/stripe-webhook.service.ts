@@ -1,5 +1,7 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { ManageCreditsService } from 'src/components/Credits/ManageCredits/manage-credits.service';
+import { ActivateOrganizationService } from 'src/components/Organization/ActivateOrganization/activate-organization.service';
+import { DeactivateOrganizationService } from 'src/components/Organization/DeactivateOrganization/deactivate-organization.service';
 import { TransactionType } from 'src/entities/credit-transaction.entity';
 import { PaymentStatus } from 'src/entities/payment.entity';
 import { STRIPE_CLIENT } from 'src/infrastructure/providers/stripe.provider';
@@ -14,6 +16,8 @@ export class StripeWebhookService {
     @Inject(STRIPE_CLIENT) private readonly stripe: Stripe,
     private readonly paymentRepository: PaymentRepository,
     private readonly manageCreditsService: ManageCreditsService,
+    private readonly activateOrganizationService: ActivateOrganizationService,
+    private readonly deactivateOrganizationService: DeactivateOrganizationService,
   ) {}
 
   async execute(
@@ -126,6 +130,9 @@ export class StripeWebhookService {
     this.logger.log(
       `Payment succeeded for organization ${payment.organization_id}: ${credits} credits added`,
     );
+
+    // Activate organization
+    await this.activateOrganizationService.execute(payment.organization_id);
   }
 
   private async handlePaymentIntentFailed(
@@ -213,6 +220,9 @@ export class StripeWebhookService {
     this.logger.log(
       `Subscription renewed for organization ${organizationId}: ${credits} credits added`,
     );
+
+    // Activate organization
+    await this.activateOrganizationService.execute(organizationId);
   }
 
   private async handleSubscriptionUpdate(
@@ -227,5 +237,14 @@ export class StripeWebhookService {
   ): Promise<void> {
     // Implementation for subscription cancellation
     this.logger.log(`Subscription deleted: ${subscription.id}`);
+
+    const organizationId = subscription.metadata?.organizationId;
+
+    if (organizationId) {
+      await this.deactivateOrganizationService.execute(
+        organizationId,
+        'Subscription deleted',
+      );
+    }
   }
 }

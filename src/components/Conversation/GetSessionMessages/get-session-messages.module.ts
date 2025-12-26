@@ -1,12 +1,11 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { MessageEntity, SessionEntity } from 'src/entities';
+import { RepositoriesModule } from 'src/repositories/repositories.module';
 
 import { GetSessionMessagesController } from './get-session-messages.controller';
 import { GetSessionMessagesService } from './get-session-messages.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([SessionEntity, MessageEntity])],
+  imports: [RepositoriesModule],
   controllers: [GetSessionMessagesController],
   providers: [GetSessionMessagesService],
   exports: [GetSessionMessagesService],

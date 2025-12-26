@@ -1,5 +1,6 @@
 import { Controller, Get, Param, Res, UseGuards } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
+import { ActiveOrgGuard } from 'src/auth/active-org.guard';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { Roles } from 'src/decorators/roles.decorator';
 import { User } from 'src/decorators/user.decorator';
@@ -14,7 +15,7 @@ export class GetSessionMessagesController {
   ) {}
 
   @Get('sessions/:sessionId/messages')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, ActiveOrgGuard)
   @Roles('admin', 'user')
   async handle(
     @Param('sessionId') sessionId: string,

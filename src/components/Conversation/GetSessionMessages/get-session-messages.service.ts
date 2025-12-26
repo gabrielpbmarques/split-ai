@@ -3,9 +3,11 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { MessageEntity, SessionEntity } from 'src/entities';
-import { Repository } from 'typeorm';
+import {
+  MessageRepository,
+  SessionRepository,
+  CreditTransactionRepository,
+} from 'src/repositories';
 
 interface AuthUser {
   id: string;
@@ -20,6 +22,8 @@ export interface ConversationDetail {
     user_name: string;
     user_email: string;
     created_at: Date;
+    remaining_tokens: number;
+    tokens_used: number;
   };
   messages: {
     id: string;
@@ -32,10 +36,9 @@ export interface ConversationDetail {
 @Injectable()
 export class GetSessionMessagesService {
   constructor(
-    @InjectRepository(SessionEntity)
-    private sessionRepository: Repository<SessionEntity>,
-    @InjectRepository(MessageEntity)
-    private messageRepository: Repository<MessageEntity>,
+    private sessionRepository: SessionRepository,
+    private messageRepository: MessageRepository,
+    private creditTransactionRepository: CreditTransactionRepository,
   ) {}
 
   async execute(
@@ -51,6 +54,7 @@ export class GetSessionMessagesService {
       .select([
         's.id as id',
         's.user_id as user_id',
+        's.agent_id as agent_id',
         's.created_at as created_at',
         's.organization_id as organization_id',
         'a.name as agent_name',
@@ -83,6 +87,10 @@ export class GetSessionMessagesService {
       select: ['id', 'from', 'message', 'created_at'],
     });
 
+    // Calculate credits used (accurately via transactions)
+    const creditsUsed =
+      await this.creditTransactionRepository.getSessionConsumption(sessionId);
+
     return {
       session: {
         id: session.id,
@@ -90,6 +98,8 @@ export class GetSessionMessagesService {
         user_name: session.user_name || 'Anonymous',
         user_email: session.user_email || '',
         created_at: session.created_at,
+        remaining_tokens: session.remaining_tokens,
+        tokens_used: creditsUsed,
       },
       messages: messages.map((msg) => ({
         id: msg.id,

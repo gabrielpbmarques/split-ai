@@ -58,6 +58,7 @@ describe('SignUpService', () => {
       password: 'password123',
       confirmPassword: 'password123',
       phone: '11999999999',
+      organization: '1',
     };
 
     it('should register a citizen successfully', async () => {

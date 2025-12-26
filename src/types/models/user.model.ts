@@ -1,4 +1,4 @@
-export type UserRole = 'user' | 'admin';
+export type UserRole = 'user' | 'admin' | 'guest';
 export type UserStatus = 'active' | 'inactive';
 export type UserOrigin = 'whatsapp' | 'website' | 'app';
 
