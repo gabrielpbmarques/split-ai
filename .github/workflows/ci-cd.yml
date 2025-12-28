@@ -116,6 +116,12 @@ jobs:
           GOOGLE_GEOCODING_API_KEY: ${{ secrets.GOOGLE_GEOCODING_API_KEY }}
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
           STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
+          LANGSMITH_TRACING: ${{ secrets.LANGSMITH_TRACING }}
+          LANGCHAIN_CALLBACKS_BACKGROUND: ${{ secrets.LANGCHAIN_CALLBACKS_BACKGROUND }}
+          LANGSMITH_ENDPOINT: ${{ secrets.LANGSMITH_ENDPOINT }}
+          LANGSMITH_WORKSPACE_ID: ${{ secrets.LANGSMITH_WORKSPACE_ID }}
+          LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+          LANGSMITH_PROJECT: ${{ secrets.LANGSMITH_PROJECT }}
         run: |-
           gcloud run deploy split-ai --region $CLOUDSDK_COMPUTE_REGION \
           --allow-unauthenticated \
@@ -152,4 +158,10 @@ jobs:
           --set-env-vars GCP_PROJECT_ID=$CLOUDSDK_CORE_PROJECT \
           --set-env-vars GOOGLE_GEOCODING_API_KEY=$GOOGLE_GEOCODING_API_KEY \
           --set-env-vars STRIPE_SECRET_KEY=$STRIPE_SECRET_KEY \
-          --set-env-vars STRIPE_PUBLISHABLE_KEY=$STRIPE_PUBLISHABLE_KEY
+          --set-env-vars STRIPE_PUBLISHABLE_KEY=$STRIPE_PUBLISHABLE_KEY \
+          --set-env-vars LANGSMITH_TRACING=$LANGSMITH_TRACING \
+          --set-env-vars LANGCHAIN_CALLBACKS_BACKGROUND=$LANGCHAIN_CALLBACKS_BACKGROUND \
+          --set-env-vars LANGSMITH_ENDPOINT=$LANGSMITH_ENDPOINT \
+          --set-env-vars LANGSMITH_WORKSPACE_ID=$LANGSMITH_WORKSPACE_ID \
+          --set-env-vars LANGSMITH_API_KEY=$LANGSMITH_API_KEY \
+          --set-env-vars LANGSMITH_PROJECT=$LANGSMITH_PROJECT
