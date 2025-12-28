@@ -59,6 +59,12 @@ export class GenerateAiResponseService {
         thread_id: `${agent.organization_id}_${metadata.session_id}`,
       },
       callbacks: [this.tracer],
+      tags: [config.env, agent.id, metadata.organization_id],
+      metadata: {
+        userId: metadata.user_id,
+        sessionId: metadata.session_id,
+        environment: config.env,
+      },
     };
 
     if (stream) {
