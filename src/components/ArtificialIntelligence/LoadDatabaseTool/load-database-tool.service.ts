@@ -2,6 +2,7 @@ import { SqlDatabase } from '@langchain/classic/sql_db';
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { DynamicStructuredTool, tool } from 'langchain';
 import { config } from 'src/config';
+import { UniversalDataRepository } from 'src/repositories';
 import { DataSource } from 'typeorm';
 import z from 'zod';
 
@@ -14,7 +15,9 @@ export class LoadDatabaseToolService implements OnModuleInit {
   private db: SqlDatabase;
   private schema: string;
 
-  constructor() {}
+  constructor(
+    private readonly universalDataRepository: UniversalDataRepository,
+  ) {}
 
   onModuleInit(): void {
     this.dataSource = new DataSource({
@@ -32,7 +35,7 @@ export class LoadDatabaseToolService implements OnModuleInit {
       async ({ query }) => {
         const q = this.sanitizeSqlQuery(query, organizationId);
         try {
-          const result = await this.db.run(q);
+          const result = await this.universalDataRepository.execute(q);
           return typeof result === 'string'
             ? result
             : JSON.stringify(result, null, 2);

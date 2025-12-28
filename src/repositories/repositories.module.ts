@@ -39,6 +39,7 @@ import {
   PlanRepository,
   SubscriptionRepository,
   PaymentRepository,
+  UniversalDataRepository,
 } from '.';
 
 @Module({
@@ -82,6 +83,7 @@ import {
     PlanRepository,
     SubscriptionRepository,
     PaymentRepository,
+    UniversalDataRepository,
   ],
   exports: [
     OrganizationRepository,
@@ -101,6 +103,7 @@ import {
     PlanRepository,
     SubscriptionRepository,
     PaymentRepository,
+    UniversalDataRepository,
   ],
 })
 export class RepositoriesModule {}
