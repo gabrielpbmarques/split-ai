@@ -43,20 +43,37 @@ export class LoadDatabaseToolService implements OnModuleInit {
       {
         name: 'execute_sql',
         description: `
-            Esquema autoritário (não invente colunas/tabelas):\n
-            ${this.schema}\n\n
-            - Se a ferramenta retornar 'Erro:', revise a consulta SQL e tente novamente.\n
-            - Limite o número de tentativas a 5.\n
-            - Se não for bem-sucedido após 5 tentativas, retorne uma nota para o usuário.\n
-            - Prefira listas de colunas explícitas; evite SELECT *.\n
-            - SEMPRE filtre por "organization_id = '${organizationId}'" no WHERE.\n
+            --- ESQUEMA DE BANCO DE DADOS (Não invente tabelas/colunas) ---
+            ${this.schema}
+
+            --- REGRAS DE OURO PARA SQL (Siga estritamente) ---
+            1. UUIDs e IDs:
+               - Novos registros (INSERT): Use SEMPRE \`gen_random_uuid()\`.
+               - Literais UUID: Use cast explícito, ex: '123e4567-e89b...'::uuid.
+
+            2. Enums:
+               - Use SEMPRE \`'value'::enum_name\`.
+
+            3. Datas e Horários:
+               - \`created_at\` / \`updated_at\`: Use SEMPRE \`NOW()\`.
+               - Outras Datas: Converta referências como "amanhã" para datas exatas (YYYY-MM-DD HH:MM:SS).
+
+            4. Segurança e Escopo:
+               - SEMPRE adicione \`WHERE organization_id = '${organizationId}'\` em todas as queries (SELECT, UPDATE, DELETE, INSERT). falhar nisso é um erro grave de segurança.
+
+            5. Tratamento de Erros de SQL:
+               - Se receber "Error: ...", NÃO peça desculpas imediatamente.
+               - 1º: Analise a mensagem de erro (ex: type mismatch uuid vs text).
+               - 2º: Corrija a query (ex: adicione ::uuid ou use gen_random_uuid()).
+               - 3º: Tente executar novamente. Faça isso até 3 tentativas.
+
+            6. Boas Práticas:
+               - Prefira listar colunas (SELECT id, name...) em vez de SELECT *.
           `,
         schema: z.object({
           query: z
             .string()
-            .describe(
-              'SQLite SELECT/INSERT/UPDATE query to execute (read-only).',
-            ),
+            .describe('SQLite SELECT/INSERT/UPDATE query to execute.'),
         }),
       },
     );
@@ -77,7 +94,6 @@ export class LoadDatabaseToolService implements OnModuleInit {
 
     query = query.replace(/;+\s*$/g, '').trim();
 
-    // Basic tenant isolation check: ensure organizationId is present in the query text
     if (!query.includes(organizationId)) {
       throw new Error(
         `Security Error: Query must filter by organization_id = '${organizationId}'`,

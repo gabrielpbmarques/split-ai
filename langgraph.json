@@ -1,8 +1,0 @@
-{
-  "node_version": "20",
-  "dependencies": ["."],
-  "graphs": {
-    "attendant": "./src/utils/langGraphAgent.ts:graph"
-  },
-  "env": ".env"
-}

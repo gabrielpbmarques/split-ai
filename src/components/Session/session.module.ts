@@ -1,9 +1,19 @@
 import { Module } from '@nestjs/common';
 
 import { CreateSessionIfNotExistsModule } from './CreateSessionIfNotExists/create-session-if-not-exists.module';
+import { GetSessionMessagesModule } from './GetSessionMessages/get-session-messages.module';
+import { ListSessionsModule } from './ListSessions/list-sessions.module';
 
 @Module({
-  imports: [CreateSessionIfNotExistsModule],
-  exports: [CreateSessionIfNotExistsModule],
+  imports: [
+    CreateSessionIfNotExistsModule,
+    ListSessionsModule,
+    GetSessionMessagesModule,
+  ],
+  exports: [
+    CreateSessionIfNotExistsModule,
+    ListSessionsModule,
+    GetSessionMessagesModule,
+  ],
 })
 export class SessionModule {}

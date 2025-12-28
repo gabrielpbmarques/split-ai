@@ -3,7 +3,7 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
-import { GetSessionMessagesService } from 'src/components/Conversation/GetSessionMessages/get-session-messages.service';
+import { GetSessionMessagesService } from 'src/components/Session/GetSessionMessages/get-session-messages.service';
 import { ReportRepository } from 'src/repositories';
 
 interface AuthUser {

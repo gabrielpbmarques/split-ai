@@ -18,11 +18,7 @@ import { config } from './config';
     ]),
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: config.databaseHost,
-      port: parseInt(config.databasePort || '5432', 10),
-      username: config.databaseUserName,
-      password: config.databasePassword,
-      database: config.databaseName,
+      url: config.databaseUrl,
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: true,
       autoLoadEntities: true,

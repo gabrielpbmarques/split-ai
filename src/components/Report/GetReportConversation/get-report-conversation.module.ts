@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
-import { ConversationModule } from 'src/components/Conversation/conversation.module';
+import { SessionModule } from 'src/components/Session/session.module';
 import { RepositoriesModule } from 'src/repositories/repositories.module';
 
 import { GetReportConversationController } from './get-report-conversation.controller';
 import { GetReportConversationService } from './get-report-conversation.service';
 
 @Module({
-  imports: [RepositoriesModule, ConversationModule],
+  imports: [RepositoriesModule, SessionModule],
   controllers: [GetReportConversationController],
   providers: [GetReportConversationService],
   exports: [GetReportConversationService],
