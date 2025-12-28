@@ -26,7 +26,10 @@ export class GetReportConversationService {
       throw new NotFoundException('Relatório não encontrado');
     }
 
-    if (report.organization_id !== user.organization_id) {
+    if (
+      user.role !== 'admin' &&
+      report.organization_id !== user.organization_id
+    ) {
       throw new ForbiddenException('Acesso negado');
     }
 
