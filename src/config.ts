@@ -27,6 +27,8 @@ interface IConfig {
   stripeSecretKey: string;
   stripePublishableKey: string;
   stripeWebhookSecret: string;
+  langchainProject: string;
+  langchainWorkspaceId: string;
 }
 
 export const config: IConfig = {
@@ -54,4 +56,6 @@ export const config: IConfig = {
   stripeSecretKey: process.env.STRIPE_SECRET_KEY,
   stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
   stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+  langchainProject: process.env.LANGCHAIN_PROJECT,
+  langchainWorkspaceId: process.env.LANGCHAIN_WORKSPACE_ID,
 };

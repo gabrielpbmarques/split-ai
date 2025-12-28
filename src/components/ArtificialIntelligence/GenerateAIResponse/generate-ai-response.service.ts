@@ -1,19 +1,26 @@
 import { UsageMetadata } from '@langchain/core/messages';
+import { LangChainTracer } from '@langchain/core/tracers/tracer_langchain';
 import { Injectable } from '@nestjs/common';
 import { AIMessage, AIMessageChunk } from 'langchain';
+import { config } from 'src/config';
 import {
   AgentFinalResponseSchema,
   CustomMetadata,
   ResolvedAgent,
 } from 'src/types';
+import { InvokeConfigurationModel } from 'src/types/models/invoke-configuration.model';
 
 import { RecordTokenUsageService } from '../../TokenUsage/RecordTokenUsage/record-token-usage.service';
 
 @Injectable()
 export class GenerateAiResponseService {
+  private tracer: LangChainTracer;
+
   constructor(
     private readonly recordTokenUsageService: RecordTokenUsageService,
-  ) {}
+  ) {
+    this.tracer = new LangChainTracer({ projectName: config.langchainProject });
+  }
 
   async execute(
     question: string,
@@ -47,10 +54,11 @@ export class GenerateAiResponseService {
       messages: [{ role: 'user', content: question }],
     };
 
-    const configurable = {
+    const configurable: InvokeConfigurationModel = {
       configurable: {
         thread_id: `${agent.organization_id}_${metadata.session_id}`,
       },
+      callbacks: [this.tracer],
     };
 
     if (stream) {

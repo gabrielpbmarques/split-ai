@@ -5,7 +5,6 @@ import { GenerateAiResponseService } from 'src/components/ArtificialIntelligence
 import { ResolveAgentService } from 'src/components/ArtificialIntelligence/ResolveAgent/resolve-agent.service';
 import { CreateSessionIfNotExistsService } from 'src/components/Session/CreateSessionIfNotExists/create-session-if-not-exists.service';
 import { UserEntity } from 'src/entities';
-import { AgentRepository } from 'src/repositories';
 import { User } from 'src/types';
 
 @Injectable()
@@ -15,7 +14,6 @@ export class AttendantService {
     private readonly createSessionIfNotExistsService: CreateSessionIfNotExistsService,
     private readonly resolveAgentService: ResolveAgentService,
     private readonly recordChatMessageService: RecordChatMessageService,
-    private readonly agentRepository: AgentRepository,
   ) {}
 
   async execute(dto: QuestionDto, loggedUser: User): Promise<string> {

@@ -1,4 +1,5 @@
 import { ChatVertexAI } from '@langchain/google-vertexai';
+import { MemorySaver } from '@langchain/langgraph';
 import { Injectable } from '@nestjs/common';
 import { DynamicStructuredTool, createAgent } from 'langchain';
 import { config } from 'src/config';
@@ -27,6 +28,7 @@ export class ResolveAgentService {
   async execute(
     agentId: string,
     promptVariables?: any,
+    memorySaver?: MemorySaver,
   ): Promise<ResolvedAgent> {
     const agent = await this.agentRepository.findOne({
       where: [{ id: agentId }, { agent_identifier: agentId }],
@@ -58,7 +60,11 @@ export class ResolveAgentService {
     let checkpointer;
 
     if (runnableOpts.withHistory) {
-      checkpointer = this.loadCheckpointerService.execute();
+      if (memorySaver) {
+        checkpointer = memorySaver;
+      } else {
+        checkpointer = this.loadCheckpointerService.execute();
+      }
     }
 
     const runnable = createAgent({

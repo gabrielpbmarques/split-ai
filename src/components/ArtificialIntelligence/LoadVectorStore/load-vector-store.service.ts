@@ -20,7 +20,7 @@ export class LoadVectorStoreService {
     const vectorStore = await SupabaseVectorStore.fromExistingIndex(
       this.embeddings,
       {
-        client: this.supabaseClient,
+        client: this.supabaseClient as unknown as any,
         tableName,
         queryName: `match_${tableName}`,
         filter,

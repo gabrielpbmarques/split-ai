@@ -15,10 +15,9 @@ export class SupabaseService {
   constructor(
     @Inject(VERTEX_AI_EMBEDDINGS)
     private readonly embeddings: VertexAIEmbeddings,
+    @Inject(SUPABASE_CLIENT)
     private readonly supabaseClient: SupabaseClient,
-  ) {
-    this.supabaseClient = createClient(config.supabaseUrl, config.supabaseKey);
-  }
+  ) {}
 
   async createVectorStore(
     docs: Chunks,
@@ -38,7 +37,7 @@ export class SupabaseService {
     );
 
     await SupabaseVectorStore.fromDocuments(chunks, this.embeddings, {
-      client: this.supabaseClient,
+      client: this.supabaseClient as unknown as any,
       tableName: 'documents',
       queryName: 'match_documents',
       filter: metadata,
