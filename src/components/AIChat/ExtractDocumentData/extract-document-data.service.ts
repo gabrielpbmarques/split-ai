@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { GenerateAiResponseService } from 'src/components/ArtificialIntelligence/GenerateAIResponse/generate-ai-response.service';
 import { ResolveAgentService } from 'src/components/ArtificialIntelligence/ResolveAgent/resolve-agent.service';
+import { User } from 'src/types';
 
 import { RecordChatMessageService } from '../RecordChatMessage/record-chat-message.service';
 
@@ -14,7 +15,10 @@ export class ExtractDocumentDataService {
     private readonly recordChatMessageService: RecordChatMessageService,
   ) {}
 
-  async execute(dto: ExtractDocumentDataDto): Promise<any> {
-    return dto;
+  async execute(dto: ExtractDocumentDataDto, user: User): Promise<any> {
+    return {
+      dto,
+      user,
+    };
   }
 }
