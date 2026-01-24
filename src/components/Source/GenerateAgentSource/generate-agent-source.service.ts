@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { LoadAgentSitesService } from 'src/components/ArtificialIntelligence/LoadAgentSites/load-agent-sites.service';
 import { LoadPdfService } from 'src/components/Pdf/LoadPdf/load-pdf.service';
 import { SourceEntity, SourceType } from 'src/entities/source.entity';
 import {
@@ -7,8 +8,6 @@ import {
 } from 'src/infrastructure/providers/supabase.provider';
 import { AgentRepository, SourceRepository } from 'src/repositories';
 import { CustomMetadata } from 'src/types';
-
-import { LoadAgentSitesService } from '../LoadAgentSites/load-agent-sites.service';
 
 import { GenerateAgentSourceDto } from './generate-agent-source.dto';
 

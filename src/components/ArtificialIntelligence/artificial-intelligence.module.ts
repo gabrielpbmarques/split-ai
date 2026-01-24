@@ -7,7 +7,6 @@ import { ConvertTextToSpeechModule } from './ConvertTextToSpeech/convert-text-to
 import { CreateAgentModule } from './CreateAgent/create-agent.module';
 import { CreateAttendantAgentModule } from './CreateAttendantAgent/create-attendant-agent.module';
 import { ExecuteSimilaritySearchModule } from './ExecuteSimilaritySearch/execute-similarity-search.module';
-import { GenerateAgentSourceModule } from './GenerateAgentSource/generate-agent-source.module';
 import { GenerateAiResponseModule } from './GenerateAIResponse/generate-ai-response.module';
 import { ListAgentsModule } from './ListAgents/list-agents.module';
 import { LoadAgentSitesModule } from './LoadAgentSites/load-agent-sites.module';
@@ -22,7 +21,6 @@ import { UpdateAgentModule } from './UpdateAgent/update-agent.module';
     ConvertTextToSpeechModule,
     ExecuteSimilaritySearchModule,
     LoadVectorStoreModule,
-    GenerateAgentSourceModule,
     BuildSystemPromptModule,
     NormalizePromptInstructionsModule,
     GenerateAiResponseModule,
@@ -39,7 +37,6 @@ import { UpdateAgentModule } from './UpdateAgent/update-agent.module';
     ConvertTextToSpeechModule,
     ExecuteSimilaritySearchModule,
     LoadVectorStoreModule,
-    GenerateAgentSourceModule,
     BuildSystemPromptModule,
     NormalizePromptInstructionsModule,
     GenerateAiResponseModule,
