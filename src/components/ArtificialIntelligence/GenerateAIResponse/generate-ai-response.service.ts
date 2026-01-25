@@ -1,4 +1,4 @@
-import { UsageMetadata } from '@langchain/core/messages';
+import { HumanMessage, UsageMetadata } from '@langchain/core/messages';
 import { LangChainTracer } from '@langchain/core/tracers/tracer_langchain';
 import { Injectable } from '@nestjs/common';
 import { AIMessage, AIMessageChunk } from 'langchain';
@@ -50,9 +50,11 @@ export class GenerateAiResponseService {
   ): Promise<string | AIMessageChunk[] | any> {
     const runnable = agent.runnable;
 
+    // NOTE: `createAgent`'s inferred Invoke input type can become overly strict
+    // depending on generic inference. Runtime accepts `{ messages: BaseMessage[] }`.
     const invokeParams = {
-      messages: [{ role: 'user', content: question }],
-    };
+      messages: [new HumanMessage(question)],
+    } as any;
 
     const configurable: InvokeConfigurationModel = {
       configurable: {
