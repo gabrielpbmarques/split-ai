@@ -6,11 +6,13 @@ interface IConfig {
   env: string;
   aiModel: string;
   embeddingModel: string;
+  googleVertexAiApiKey: string;
   mongoUri: string;
   sentryDsn: string;
   redisUrl: string;
   supabaseUrl: string;
   supabaseKey: string;
+  supabasePublishableKey: string;
   databaseHost: string;
   databasePort: string;
   databaseUserName: string;
@@ -35,11 +37,13 @@ export const config: IConfig = {
   env: process.env.ENV || process.env.NODE_ENV,
   aiModel: process.env.AI_MODEL,
   embeddingModel: process.env.EMBEDDING_MODEL,
+  googleVertexAiApiKey: process.env.GOOGLE_VERTEX_AI_API_KEY,
   mongoUri: process.env.MONGO_URI || 'mongodb://localhost:27017/split-ai',
   sentryDsn: process.env.SENTRY_DSN,
   redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
   supabaseUrl: process.env.SUPABASE_URL,
   supabaseKey: process.env.SUPABASE_API_KEY,
+  supabasePublishableKey: process.env.SUPABASE_API_PUBLIC_KEY,
   databaseHost: process.env.DATABASE_HOST,
   databasePort: process.env.DATABASE_PORT,
   databaseUserName: process.env.DATABASE_USERNAME,

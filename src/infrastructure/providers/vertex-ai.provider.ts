@@ -27,6 +27,7 @@ export const VertexAIProvider: Provider[] = [
 
       return new ChatVertexAI({
         model: config.aiModel,
+        apiKey: config.googleVertexAiApiKey,
         temperature: 0.4,
       });
     },
