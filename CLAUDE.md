@@ -32,7 +32,9 @@ The dev server defaults to **port 4000** (`PORT || 4000` in `src/main.ts`). The 
 
 ## Auto-loaded skills
 
-`.claude/skills/` contains six SKILL.md files that auto-load when working here. They cover:
+`.claude/skills/` contains eleven SKILL.md files that auto-load when working here. They split into two groups:
+
+**General (read before scaffolding new code):**
 
 - `main-instructions` — quick stack reference
 - `architecture` — module hierarchy, scope/use-case pattern, repository/provider patterns
@@ -40,6 +42,14 @@ The dev server defaults to **port 4000** (`PORT || 4000` in `src/main.ts`). The 
 - `import-and-naming-conventions` — paths, suffixes, casing, commit format
 - `tech-stack` — every external integration, token, and env var
 - `thinking-flow` — how to approach problems before coding
+
+**AI pipeline (most engineering work here lives in this stack — LangChain/LangGraph + Vertex AI + Supabase pgvector):**
+
+- `agent-end-to-end-flow` — the cross-cutting map: `POST /agent/create` and source ingestion → `POST /support/question` / `/chat/attendant` → `ResolveAgent` → `GenerateAIResponse` → LangGraph runnable → tools → pgvector → persistence/billing. **Start here for any change that crosses the AI areas below.**
+- `ai-agent-configuration` — agent CRUD, `AIInstructions`, prompt construction, parser schemas, `agents` / `agents_instructions` tables
+- `ai-agent-runtime` — `ResolveAgent`, `GenerateAIResponse`, LangGraph streaming, structured responses, `thread_id` memory via `PostgresSaver`, LangSmith tracing
+- `ai-agent-tools-and-rag` — LangChain tools (`vector_similarity_search`, `execute_sql` with guardrails, parser), pgvector behavior, Spider ingestion, embeddings via Vertex AI
+- `ai-chat-flows` — `src/components/AIChat/`, the `/support/question` SSE-like streaming endpoint, `/chat/attendant`, Fastify response hijacking, session/credit/message persistence
 
 **Read the relevant skill before scaffolding new code.** This file intentionally doesn't restate them.
 
@@ -59,6 +69,8 @@ src/
   components/                Feature modules — PascalCase Scope/ → PascalCase UseCase/ → kebab-case files
   health/                    Liveness endpoint
   observability/             Sentry init
+  services/                  One-off non-NestJS helpers (e.g., cep.service.ts axios wrapper) —
+                             NOT the home for feature services; those live under components/
   types/models/              Plain TS interfaces + barrel
   utils/                     Pure helper functions
 migrations/                  Raw SQL migration files — applied by hand, NOT TypeORM migrations
