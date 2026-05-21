@@ -14,7 +14,7 @@ This skill is the **end-to-end map** of how a chat request becomes a streamed AI
 | Layer               | Technology                                                                      |
 | ------------------- | ------------------------------------------------------------------------------- |
 | Runtime             | Node.js + Bun + Fastify (NestJS 10)                                             |
-| LLM                 | Google Vertex AI (`ChatVertexAI`) via `@langchain/google-vertexai`              |
+| LLM                 | Anthropic AI (`ChatAnthropic`) via `@langchain/anthropic`                       |
 | Embeddings          | Vertex AI Embeddings (`VertexAIEmbeddings`)                                     |
 | Agent orchestration | `langchain` v1 `createAgent` + `@langchain/langgraph` (streamMode: `updates`)   |
 | Vector store        | Supabase pgvector on table `documents`, function `match_documents`              |
@@ -68,7 +68,7 @@ Default port is **`4000`** (`src/main.ts:115`). There is **no global API prefix*
 │     consumeCreditsService.checkCredits(orgId)         ─┐                     │
 │     createSessionIfNotExistsService.execute(...)       │                     │
 │     resolveAgentService.execute(agentId, vars)         ├── per request       │
-│         loadChat (ChatVertexAI) ─────────────┐         │                     │
+│         loadChat (ChatAnthropic) ─────────────┐         │                     │
 │         loadTools (parser / vector / sql) ───┤         │                     │
 │         buildSystemPrompt (NormalizePrompt) ─┤         │                     │
 │         loadCheckpointer (PostgresSaver*)    │         │                     │
@@ -679,7 +679,7 @@ const [chat, tools] = await Promise.all([loadChat(agent), loadTools(agent)]);
 ### 6.3 `loadChat` (lines 90-112)
 
 ```ts
-new ChatVertexAI({
+new ChatAnthropic({
   model: agent.model || config.aiModel,
   temperature: agent.temperature ?? 0.4,
   safetySettings: [

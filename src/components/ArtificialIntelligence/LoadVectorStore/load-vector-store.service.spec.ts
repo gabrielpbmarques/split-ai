@@ -5,7 +5,7 @@ import { LoadVectorStoreService } from './load-vector-store.service';
 describe('LoadVectorStoreService', () => {
   let service: LoadVectorStoreService;
 
-  const mockVertexAiEmbeddings = {
+  const mockEmbeddings = {
     embedQuery: jest.fn().mockResolvedValue([]),
     embedDocuments: jest.fn().mockResolvedValue([]),
   };
@@ -22,7 +22,7 @@ describe('LoadVectorStoreService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         LoadVectorStoreService,
-        { provide: 'VERTEX_AI_EMBEDDINGS', useValue: mockVertexAiEmbeddings },
+        { provide: 'VOYAGE_EMBEDDINGS', useValue: mockEmbeddings },
         { provide: 'SUPABASE_CLIENT', useValue: mockSupabaseClient },
       ],
     }).compile();

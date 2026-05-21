@@ -1,4 +1,4 @@
-import { ChatVertexAI } from '@langchain/google-vertexai';
+import { ChatAnthropic } from '@langchain/anthropic';
 import { MemorySaver } from '@langchain/langgraph';
 import { Injectable } from '@nestjs/common';
 import { DynamicStructuredTool, createAgent } from 'langchain';
@@ -10,6 +10,7 @@ import { buildLangchainToolFromSchema } from 'src/utils/buildZodSchema';
 import { z } from 'zod';
 
 import { BuildSystemPromptService } from '../BuildSystemPrompt/build-system-prompt.service';
+import { LoadAnalyticsToolsService } from '../LoadAnalyticsTools/load-analytics-tools.service';
 import { LoadCheckpointerService } from '../LoadCheckpointer/load-checkpointer.service';
 import { LoadDatabaseToolService } from '../LoadDatabaseTool/load-database-tool.service';
 import { LoadVectorSearchToolService } from '../LoadVectorSearchTool/load-vector-search-tool.service';
@@ -23,6 +24,7 @@ export class ResolveAgentService {
     private readonly buildSystemPromptService: BuildSystemPromptService,
     private readonly loadDatabaseToolService: LoadDatabaseToolService,
     private readonly loadCheckpointerService: LoadCheckpointerService,
+    private readonly loadAnalyticsToolsService: LoadAnalyticsToolsService,
   ) {}
 
   async execute(
@@ -30,8 +32,14 @@ export class ResolveAgentService {
     promptVariables?: any,
     memorySaver?: MemorySaver,
   ): Promise<ResolvedAgent> {
+    // Postgres rejects non-UUID strings when binding `id` (uuid column), so
+    // route the lookup by shape: UUID-shaped → `id`, otherwise → `agent_identifier`.
+    const isUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        agentId,
+      );
     const agent = await this.agentRepository.findOne({
-      where: [{ id: agentId }, { agent_identifier: agentId }],
+      where: isUuid ? { id: agentId } : { agent_identifier: agentId },
     });
 
     if (!agent) {
@@ -45,7 +53,7 @@ export class ResolveAgentService {
 
     const [chat, tools] = await Promise.all([
       this.loadChat(agent),
-      this.loadTools(agent),
+      this.loadTools(agent, promptVariables),
     ]);
 
     const systemPrompt = await this.buildSystemPromptService.execute(
@@ -87,33 +95,16 @@ export class ResolveAgentService {
     };
   }
 
-  private async loadChat(agent: AgentEntity): Promise<ChatVertexAI> {
-    return new ChatVertexAI({
+  private async loadChat(agent: AgentEntity): Promise<ChatAnthropic> {
+    return new ChatAnthropic({
       model: agent.model || config.aiModel,
       temperature: agent.temperature ?? 0.4,
-      safetySettings: [
-        {
-          category: 'HARM_CATEGORY_HARASSMENT',
-          threshold: 'BLOCK_ONLY_HIGH',
-        },
-        {
-          category: 'HARM_CATEGORY_HATE_SPEECH',
-          threshold: 'BLOCK_ONLY_HIGH',
-        },
-        {
-          category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-          threshold: 'BLOCK_ONLY_HIGH',
-        },
-        {
-          category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-          threshold: 'BLOCK_ONLY_HIGH',
-        },
-      ],
     });
   }
 
   private async loadTools(
     dbAgent: AgentEntity,
+    promptVariables?: any,
   ): Promise<DynamicStructuredTool<z.ZodObject<any>>[]> {
     const tools: DynamicStructuredTool<z.ZodObject<any>>[] = [];
 
@@ -135,6 +126,23 @@ export class ResolveAgentService {
       tools.push(
         await this.loadDatabaseToolService.execute(dbAgent.organization_id),
       );
+    }
+
+    if (this.loadAnalyticsToolsService.appliesTo(dbAgent.agent_identifier)) {
+      const companyId = Number(promptVariables?.companyId);
+      const threadId = String(
+        promptVariables?.threadId ?? promptVariables?.sessionId ?? 'default',
+      );
+      if (!Number.isFinite(companyId) || companyId <= 0) {
+        throw new Error(
+          'companyId obrigatório no promptVariables para agentes de analytics',
+        );
+      }
+      const analyticsTools = this.loadAnalyticsToolsService.execute(
+        dbAgent.agent_identifier as string,
+        { companyId, threadId },
+      );
+      tools.push(...analyticsTools);
     }
 
     return tools;

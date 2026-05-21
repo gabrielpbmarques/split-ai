@@ -1,8 +1,8 @@
-import { VertexAIEmbeddings } from '@langchain/google-vertexai';
+import { Embeddings } from '@langchain/core/embeddings';
 import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MessageEntity } from 'src/entities/message.entity';
-import { VERTEX_AI_EMBEDDINGS } from 'src/infrastructure/providers/vertex-ai.provider';
+import { VOYAGE_EMBEDDINGS } from 'src/infrastructure/providers/voyage-embeddings.provider';
 import {
   FindManyOptions,
   FindOneOptions,
@@ -15,8 +15,8 @@ export class MessageRepository {
   constructor(
     @InjectRepository(MessageEntity)
     private readonly repository: Repository<MessageEntity>,
-    @Inject(VERTEX_AI_EMBEDDINGS)
-    private readonly embeddings: VertexAIEmbeddings,
+    @Inject(VOYAGE_EMBEDDINGS)
+    private readonly embeddings: Embeddings,
   ) {}
 
   async create(data: Partial<MessageEntity>): Promise<MessageEntity> {

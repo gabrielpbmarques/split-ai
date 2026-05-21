@@ -1,4 +1,4 @@
-import { ChatVertexAI } from '@langchain/google-vertexai';
+import { ChatAnthropic } from '@langchain/anthropic';
 import type { createAgent, DynamicStructuredTool } from 'langchain';
 import { z } from 'zod';
 
@@ -9,7 +9,7 @@ export type AgentRunnable = ReturnType<typeof createAgent>;
 export interface ResolvedAgent {
   id?: string;
   systemPrompt: string;
-  chat: ChatVertexAI;
+  chat: ChatAnthropic;
   runnableOpts: RunnableChatOpts;
   tools?: DynamicStructuredTool<z.ZodObject<any>>[];
   sites?: string[];

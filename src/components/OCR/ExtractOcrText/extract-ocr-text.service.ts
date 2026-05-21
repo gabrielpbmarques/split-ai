@@ -4,11 +4,10 @@ import { GenerateAiResponseService } from 'src/components/ArtificialIntelligence
 import { ResolveAgentService } from 'src/components/ArtificialIntelligence/ResolveAgent/resolve-agent.service';
 import { DocumentData } from 'src/types';
 
-export interface ExtractOcrTextResponse
-  extends Pick<
-    DocumentData,
-    'documentNumber' | 'cpf' | 'name' | 'birthDate' | 'issueDate' | 'errors'
-  > {}
+export interface ExtractOcrTextResponse extends Pick<
+  DocumentData,
+  'documentNumber' | 'cpf' | 'name' | 'birthDate' | 'issueDate' | 'errors'
+> {}
 
 @Injectable()
 export class ExtractOcrTextService {

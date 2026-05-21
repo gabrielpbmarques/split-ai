@@ -32,28 +32,38 @@ import {
   TWILIO_SERVICE,
 } from 'src/infrastructure/providers/twilio.provider';
 import {
-  VertexAIProvider,
-  VERTEX_AI_EMBEDDINGS,
-  VERTEX_AI_CHAT,
-} from 'src/infrastructure/providers/vertex-ai.provider';
+  VoyageEmbeddingsProvider,
+  VOYAGE_EMBEDDINGS,
+} from 'src/infrastructure/providers/voyage-embeddings.provider';
+
+import {
+  AnthropicProvider,
+  ANTHROPIC_CHAT,
+} from './providers/anthropic.provider';
+import {
+  BravohubAnalyticsProvider,
+  BRAVOHUB_ANALYTICS_SERVICE,
+} from './providers/bravohub-analytics.provider';
 
 @Module({
   imports: [ConfigModule],
   providers: [
     ...SupabaseProvider,
-    ...VertexAIProvider,
+    ...VoyageEmbeddingsProvider,
+    ...AnthropicProvider,
     ...SendGridProvider,
     ...GcpStorageProvider,
     ...GoogleVoiceProvider,
     ...TwilioProvider,
     ...SpiderServiceProvider,
     ...StripeProvider,
+    ...BravohubAnalyticsProvider,
   ],
   exports: [
     SUPABASE_CLIENT,
     SUPABASE_SERVICE,
-    VERTEX_AI_EMBEDDINGS,
-    VERTEX_AI_CHAT,
+    VOYAGE_EMBEDDINGS,
+    ANTHROPIC_CHAT,
     SENDGRID_CLIENT,
     EMAIL_SERVICE,
     GCP_STORAGE_SERVICE,
@@ -62,6 +72,7 @@ import {
     TWILIO_SERVICE,
     SPIDER_SERVICE,
     STRIPE_CLIENT,
+    BRAVOHUB_ANALYTICS_SERVICE,
   ],
 })
 export class InfrastructureModule {}

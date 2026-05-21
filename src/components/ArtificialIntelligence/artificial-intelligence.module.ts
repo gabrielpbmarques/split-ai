@@ -10,6 +10,7 @@ import { ExecuteSimilaritySearchModule } from './ExecuteSimilaritySearch/execute
 import { GenerateAiResponseModule } from './GenerateAIResponse/generate-ai-response.module';
 import { ListAgentsModule } from './ListAgents/list-agents.module';
 import { LoadAgentSitesModule } from './LoadAgentSites/load-agent-sites.module';
+import { LoadAnalyticsToolsModule } from './LoadAnalyticsTools/load-analytics-tools.module';
 import { LoadVectorSearchToolModule } from './LoadVectorSearchTool/load-vector-search-tool.module';
 import { LoadVectorStoreModule } from './LoadVectorStore/load-vector-store.module';
 import { NormalizePromptInstructionsModule } from './NormalizePromptInstructions/normalize-prompt-instructions.module';
@@ -31,6 +32,7 @@ import { UpdateAgentModule } from './UpdateAgent/update-agent.module';
     CreateAttendantAgentModule,
     LoadAgentSitesModule,
     LoadVectorSearchToolModule,
+    LoadAnalyticsToolsModule,
     TokenUsageModule,
   ],
   exports: [
@@ -47,6 +49,7 @@ import { UpdateAgentModule } from './UpdateAgent/update-agent.module';
     CreateAttendantAgentModule,
     LoadAgentSitesModule,
     LoadVectorSearchToolModule,
+    LoadAnalyticsToolsModule,
     TokenUsageModule,
   ],
 })

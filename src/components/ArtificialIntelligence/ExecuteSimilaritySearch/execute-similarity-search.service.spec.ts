@@ -5,7 +5,7 @@ import { ExecuteSimilaritySearchService } from './execute-similarity-search.serv
 describe('ExecuteSimilaritySearchService', () => {
   let service: ExecuteSimilaritySearchService;
 
-  const mockVertexAiEmbeddings = {
+  const mockEmbeddings = {
     embedQuery: jest.fn().mockResolvedValue([]),
     embedDocuments: jest.fn().mockResolvedValue([]),
   };
@@ -14,7 +14,7 @@ describe('ExecuteSimilaritySearchService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ExecuteSimilaritySearchService,
-        { provide: 'VERTEX_AI_EMBEDDINGS', useValue: mockVertexAiEmbeddings },
+        { provide: 'VOYAGE_EMBEDDINGS', useValue: mockEmbeddings },
       ],
     }).compile();
 

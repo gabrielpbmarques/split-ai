@@ -18,7 +18,11 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "prepare": "husky install && chmod ug+x .husky/* && chmod ug+x .husky/_/*"
+    "prepare": "husky install && chmod ug+x .husky/* && chmod ug+x .husky/_/*",
+    "analytics:ingest-schema": "bun run scripts/ingest-bravohub-schema.ts",
+    "analytics:ingest-domain": "bun run scripts/ingest-bravohub-domain.ts",
+    "analytics:seed-agents": "bun run scripts/seed-analytics-agents.ts",
+    "analytics:bootstrap": "bun run analytics:ingest-schema && bun run analytics:ingest-domain && bun run analytics:seed-agents"
   },
   "dependencies": {
     "@fastify/autoload": "^6.3.1",
@@ -30,9 +34,10 @@
     "@google-cloud/storage": "^7.19.0",
     "@google-cloud/text-to-speech": "^6.4.0",
     "@google-cloud/vision": "^4.3.3",
+    "@langchain/anthropic": "^1.4.0",
     "@langchain/classic": "^1.0.17",
     "@langchain/community": "^0.3.59",
-    "@langchain/core": "^1.1.24",
+    "@langchain/core": "^1.1.47",
     "@langchain/google-vertexai": "^0.2.18",
     "@langchain/langgraph": "0.3.12",
     "@langchain/langgraph-checkpoint-postgres": "^1.0.0",
@@ -83,6 +88,7 @@
     "moment": "^2.30.1",
     "moment-timezone": "^0.5.48",
     "mongoose": "^8.23.0",
+    "node-sql-parser": "^5.3.0",
     "openai": "^6.21.0",
     "openevals": "^0.1.4",
     "path": "^0.12.7",

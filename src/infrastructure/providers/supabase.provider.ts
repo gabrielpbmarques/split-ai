@@ -1,5 +1,5 @@
 import { SupabaseVectorStore } from '@langchain/community/vectorstores/supabase';
-import { VertexAIEmbeddings } from '@langchain/google-vertexai';
+import { Embeddings } from '@langchain/core/embeddings';
 import { Inject, Provider } from '@nestjs/common';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Document } from 'langchain';
@@ -7,14 +7,14 @@ import { config } from 'src/config';
 import { Chunks, CustomMetadata } from 'src/types';
 import { cleanInvalidUnicode } from 'src/utils/clearInvalidUnicode';
 
-import { VERTEX_AI_EMBEDDINGS } from './vertex-ai.provider';
+import { VOYAGE_EMBEDDINGS } from './voyage-embeddings.provider';
 
 export const SUPABASE_CLIENT = 'SUPABASE_CLIENT';
 
 export class SupabaseService {
   constructor(
-    @Inject(VERTEX_AI_EMBEDDINGS)
-    private readonly embeddings: VertexAIEmbeddings,
+    @Inject(VOYAGE_EMBEDDINGS)
+    private readonly embeddings: Embeddings,
     @Inject(SUPABASE_CLIENT)
     private readonly supabaseClient: SupabaseClient,
   ) {}
@@ -54,7 +54,7 @@ export const SupabaseProvider: Provider[] = [
     provide: SUPABASE_CLIENT,
     useFactory: (): SupabaseClient => {
       const supabaseUrl = config.supabaseUrl;
-      const supabaseKey = config.supabasePublishableKey;
+      const supabaseKey = config.supabaseKey;
 
       if (!supabaseUrl || !supabaseKey) {
         throw new Error('Supabase URL and key must be provided');
@@ -66,11 +66,11 @@ export const SupabaseProvider: Provider[] = [
   {
     provide: SUPABASE_SERVICE,
     useFactory: (
-      embeddings: VertexAIEmbeddings,
+      embeddings: Embeddings,
       supabaseClient: SupabaseClient,
     ): SupabaseService => {
       return new SupabaseService(embeddings, supabaseClient);
     },
-    inject: [VERTEX_AI_EMBEDDINGS, SUPABASE_CLIENT],
+    inject: [VOYAGE_EMBEDDINGS, SUPABASE_CLIENT],
   },
 ];

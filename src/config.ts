@@ -31,6 +31,10 @@ interface IConfig {
   stripeWebhookSecret: string;
   langchainProject: string;
   langchainWorkspaceId: string;
+  bravohubAnalyticsBaseUrl: string;
+  bravohubSqlGatewayApiKey: string;
+  analyticsAskApiKey: string;
+  orchestratorModel: string;
 }
 
 export const config: IConfig = {
@@ -41,9 +45,9 @@ export const config: IConfig = {
   mongoUri: process.env.MONGO_URI || 'mongodb://localhost:27017/split-ai',
   sentryDsn: process.env.SENTRY_DSN,
   redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
-  supabaseUrl: process.env.SUPABASE_URL,
-  supabaseKey: process.env.SUPABASE_API_KEY,
-  supabasePublishableKey: process.env.SUPABASE_API_PUBLIC_KEY,
+  supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  supabasePublishableKey: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
   databaseHost: process.env.DATABASE_HOST,
   databasePort: process.env.DATABASE_PORT,
   databaseUserName: process.env.DATABASE_USERNAME,
@@ -62,4 +66,8 @@ export const config: IConfig = {
   stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
   langchainProject: process.env.LANGCHAIN_PROJECT,
   langchainWorkspaceId: process.env.LANGCHAIN_WORKSPACE_ID,
+  bravohubAnalyticsBaseUrl: process.env.BRAVOHUB_ANALYTICS_BASE_URL,
+  bravohubSqlGatewayApiKey: process.env.BRAVOHUB_SQL_GATEWAY_API_KEY,
+  analyticsAskApiKey: process.env.ANALYTICS_ASK_API_KEY,
+  orchestratorModel: process.env.ORCHESTRATOR_MODEL || 'claude-sonnet-4-6',
 };

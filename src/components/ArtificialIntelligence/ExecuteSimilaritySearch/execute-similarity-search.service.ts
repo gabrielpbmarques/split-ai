@@ -1,14 +1,14 @@
 import { SupabaseVectorStore } from '@langchain/community/vectorstores/supabase';
-import { VertexAIEmbeddings } from '@langchain/google-vertexai';
+import { Embeddings } from '@langchain/core/embeddings';
 import { Injectable, Inject } from '@nestjs/common';
 import { Document } from 'langchain';
-import { VERTEX_AI_EMBEDDINGS } from 'src/infrastructure/providers/vertex-ai.provider';
+import { VOYAGE_EMBEDDINGS } from 'src/infrastructure/providers/voyage-embeddings.provider';
 
 @Injectable()
 export class ExecuteSimilaritySearchService {
   constructor(
-    @Inject(VERTEX_AI_EMBEDDINGS)
-    private readonly embeddings: VertexAIEmbeddings,
+    @Inject(VOYAGE_EMBEDDINGS)
+    private readonly embeddings: Embeddings,
   ) {}
 
   async execute(
