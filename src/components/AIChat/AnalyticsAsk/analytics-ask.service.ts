@@ -15,6 +15,7 @@ type StreamEvent =
   | { type: 'done' };
 
 type AgentMessage = {
+  id?: string;
   content?: unknown;
   usage_metadata?: UsageMetadata;
   tool_calls?: Array<{ name?: string }>;
@@ -37,9 +38,14 @@ function extractTextContent(content: unknown): string | null {
 }
 
 type StreamChunk = {
-  agent?: { messages?: AgentMessage[] };
+  // LangChain v1's `createAgent` names the LLM node "model_request" and emits
+  // both the new messages and any `structuredResponse` update from that same
+  // node (see node_modules/langchain/dist/agents/nodes/AgentNode.js).
+  model_request?: {
+    messages?: AgentMessage[];
+    structuredResponse?: { finalAnswer?: string };
+  };
   tools?: { messages?: Array<{ name?: string }> };
-  model?: { structuredResponse?: { finalAnswer?: string } };
 };
 
 @Injectable()
@@ -106,46 +112,66 @@ export class AnalyticsAskService {
 
     let finalEmitted = false;
     // Fallback: when `responseFormat` parsing doesn't surface a
-    // `structuredResponse` chunk (which happens often with createAgent),
-    // we use the last `agent` message that has content and no tool_calls.
+    // `structuredResponse` chunk, we use the last model_request message
+    // that has content and no tool_calls.
     let lastAgentContent: string | null = null;
+    // Avoid double-recording: the final structured-response chunk re-emits
+    // every message accumulated so far (see AgentNode.js line 86-89), so
+    // iterating it would replay usage_metadata that was already billed.
+    const recordedUsageIds = new Set<string>();
 
     try {
       const stream = await agent.runnable.stream(invokeParams, configurable);
       for await (const raw of stream as AsyncIterable<StreamChunk>) {
         const chunk = raw ?? {};
 
-        if (chunk.agent?.messages?.length) {
-          for (const message of chunk.agent.messages) {
-            if (message?.usage_metadata && agent.organization_id) {
-              await this.recordTokenUsageService
-                .execute({
-                  organization_id: agent.organization_id,
-                  agent_id: agent.id,
-                  user_id: `company-${dto.companyId}`,
-                  input_tokens: message.usage_metadata.input_tokens ?? 0,
-                  output_tokens: message.usage_metadata.output_tokens ?? 0,
-                  total_tokens: message.usage_metadata.total_tokens ?? 0,
-                  model: (agent.chat as any).model || 'unknown',
-                } as any)
-                .catch(() => {});
-            }
-            if (message?.tool_calls?.length) {
-              for (const call of message.tool_calls) {
-                if (call?.name) {
-                  onEvent({
-                    type: 'status',
-                    phase: 'tool_call',
-                    tool: call.name,
-                  });
+        if (chunk.model_request) {
+          const update = chunk.model_request;
+          if (update.messages?.length) {
+            for (const message of update.messages) {
+              if (
+                message?.usage_metadata &&
+                agent.organization_id &&
+                !(message.id && recordedUsageIds.has(message.id))
+              ) {
+                if (message.id) recordedUsageIds.add(message.id);
+                await this.recordTokenUsageService
+                  .execute({
+                    organization_id: agent.organization_id,
+                    agent_id: agent.id,
+                    user_id: `company-${dto.companyId}`,
+                    input_tokens: message.usage_metadata.input_tokens ?? 0,
+                    output_tokens: message.usage_metadata.output_tokens ?? 0,
+                    total_tokens: message.usage_metadata.total_tokens ?? 0,
+                    model: (agent.chat as any).model || 'unknown',
+                  } as any)
+                  .catch(() => {});
+              }
+              if (message?.tool_calls?.length) {
+                for (const call of message.tool_calls) {
+                  if (call?.name) {
+                    onEvent({
+                      type: 'status',
+                      phase: 'tool_call',
+                      tool: call.name,
+                    });
+                  }
+                }
+              } else {
+                const text = extractTextContent(message?.content);
+                if (text && text.trim().length > 0) {
+                  lastAgentContent = text;
                 }
               }
-            } else {
-              const text = extractTextContent(message?.content);
-              if (text && text.trim().length > 0) {
-                lastAgentContent = text;
-              }
             }
+          }
+
+          if (update.structuredResponse?.finalAnswer) {
+            finalEmitted = true;
+            onEvent({
+              type: 'final',
+              text: update.structuredResponse.finalAnswer,
+            });
           }
           continue;
         }
@@ -161,14 +187,6 @@ export class AnalyticsAskService {
             }
           }
           continue;
-        }
-
-        if (chunk.model?.structuredResponse?.finalAnswer) {
-          finalEmitted = true;
-          onEvent({
-            type: 'final',
-            text: chunk.model.structuredResponse.finalAnswer,
-          });
         }
       }
 

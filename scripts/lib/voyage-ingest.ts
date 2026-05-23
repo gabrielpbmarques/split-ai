@@ -8,7 +8,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 const VOYAGE_API_URL = 'https://api.voyageai.com/v1/embeddings';
 const DEFAULT_BATCH_SIZE = 8; // Voyage hard cap is 8 inputs per request.
-const DEFAULT_DELAY_MS = 21_000; // 3 RPM → 1 request every 20s, +1s safety.
+const DEFAULT_DELAY_MS = 1_000; // Paid tier (2000 RPM); 1s leaves ~60 RPM headroom.
 
 export type IngestDoc = {
   pageContent: string;

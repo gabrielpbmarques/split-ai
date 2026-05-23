@@ -106,25 +106,38 @@ export class GenerateAiResponseService {
     metadata: CustomMetadata,
     agent: ResolvedAgent,
   ) {
+    // LangChain v1's `createAgent` names the LLM node "model_request" and
+    // emits both new messages and the `structuredResponse` from that node
+    // (see node_modules/langchain/dist/agents/nodes/AgentNode.js).
+    const recordedUsageIds = new Set<string>();
     for await (const chunk of stream) {
-      if (chunk.agent?.messages && chunk.agent.messages.length > 0) {
-        const message = chunk.agent.messages[0];
-        if (message.usage_metadata && agent.organization_id) {
-          await this.recordTokenUsageService.execute({
-            organization_id: agent.organization_id,
-            agent_id: agent.id,
-            user_id: metadata.user_id,
-            input_tokens: message.usage_metadata?.input_tokens ?? 0,
-            output_tokens: message.usage_metadata?.output_tokens ?? 0,
-            total_tokens: message.usage_metadata?.total_tokens ?? 0,
-            model: (agent.chat as any).model || 'unknown',
-          });
+      const update = chunk?.model_request;
+      if (!update) continue;
+
+      if (update.messages?.length) {
+        for (const message of update.messages) {
+          if (
+            message?.usage_metadata &&
+            agent.organization_id &&
+            !(message.id && recordedUsageIds.has(message.id))
+          ) {
+            if (message.id) recordedUsageIds.add(message.id);
+            await this.recordTokenUsageService.execute({
+              organization_id: agent.organization_id,
+              agent_id: agent.id,
+              user_id: metadata.user_id,
+              input_tokens: message.usage_metadata?.input_tokens ?? 0,
+              output_tokens: message.usage_metadata?.output_tokens ?? 0,
+              total_tokens: message.usage_metadata?.total_tokens ?? 0,
+              model: (agent.chat as any).model || 'unknown',
+            });
+          }
         }
-      } else if (chunk['model']?.structuredResponse) {
-        // Return only the finalAnswer from structured response
-        yield chunk.model.structuredResponse.finalAnswer;
       }
-      // Ignore other chunks
+
+      if (update.structuredResponse?.finalAnswer) {
+        yield update.structuredResponse.finalAnswer;
+      }
     }
   }
 }
