@@ -14,7 +14,7 @@ describe('ExecuteSimilaritySearchService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ExecuteSimilaritySearchService,
-        { provide: 'EMBEDDINGS', useValue: mockEmbeddings },
+        { provide: 'VOYAGE_EMBEDDINGS', useValue: mockEmbeddings },
       ],
     }).compile();
 

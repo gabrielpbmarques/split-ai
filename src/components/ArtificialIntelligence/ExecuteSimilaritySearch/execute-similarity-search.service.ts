@@ -2,12 +2,12 @@ import { SupabaseVectorStore } from '@langchain/community/vectorstores/supabase'
 import { Embeddings } from '@langchain/core/embeddings';
 import { Injectable, Inject } from '@nestjs/common';
 import { Document } from 'langchain';
-import { EMBEDDINGS } from 'src/infrastructure/providers/ollama-embeddings.provider';
+import { VOYAGE_EMBEDDINGS } from 'src/infrastructure/providers/voyage-embeddings.provider';
 
 @Injectable()
 export class ExecuteSimilaritySearchService {
   constructor(
-    @Inject(EMBEDDINGS)
+    @Inject(VOYAGE_EMBEDDINGS)
     private readonly embeddings: Embeddings,
   ) {}
 

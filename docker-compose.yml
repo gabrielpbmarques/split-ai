@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   api:
     build:
@@ -9,7 +11,6 @@ services:
       - .env
     environment:
       REDIS_URL: redis://redis:6379
-      OLLAMA_BASE_URL: http://ollama:11434
 
     volumes:
       - ./.gcloud:/usr/app/.gcloud
@@ -20,32 +21,8 @@ services:
     depends_on:
       redis:
         condition: service_healthy
-      ollama:
-        condition: service_healthy
     restart: unless-stopped
     command: ['bun', 'run', 'start:dev']
-
-  ollama:
-    build:
-      context: ./ollama
-      dockerfile: Dockerfile
-    ports:
-      - '11434:11434'
-    volumes:
-      - ollama-data:/root/.ollama
-    environment:
-      OLLAMA_HOST: '0.0.0.0'
-      OLLAMA_KEEP_ALIVE: '-1'
-      OLLAMA_PRELOAD_MODEL: mxbai-embed-large
-    healthcheck:
-      test:
-        - CMD-SHELL
-        - 'curl -sf http://localhost:11434/api/tags | grep -q mxbai-embed-large'
-      interval: 10s
-      timeout: 5s
-      start_period: 120s # primeiro boot puxa o modelo (~30-60s)
-      retries: 30
-    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
@@ -63,4 +40,3 @@ services:
 
 volumes:
   redis-data:
-  ollama-data:

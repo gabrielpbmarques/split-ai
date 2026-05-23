@@ -41,7 +41,6 @@
     "@langchain/google-vertexai": "^0.2.18",
     "@langchain/langgraph": "0.3.12",
     "@langchain/langgraph-checkpoint-postgres": "^1.0.0",
-    "@langchain/ollama": "^1.2.7",
     "@langchain/openai": "^0.5.18",
     "@langchain/redis": "^0.1.4",
     "@nestjs/common": "^10.4.22",

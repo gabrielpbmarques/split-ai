@@ -2,7 +2,7 @@ import { Embeddings } from '@langchain/core/embeddings';
 import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MessageEntity } from 'src/entities/message.entity';
-import { EMBEDDINGS } from 'src/infrastructure/providers/ollama-embeddings.provider';
+import { VOYAGE_EMBEDDINGS } from 'src/infrastructure/providers/voyage-embeddings.provider';
 import {
   FindManyOptions,
   FindOneOptions,
@@ -15,7 +15,7 @@ export class MessageRepository {
   constructor(
     @InjectRepository(MessageEntity)
     private readonly repository: Repository<MessageEntity>,
-    @Inject(EMBEDDINGS)
+    @Inject(VOYAGE_EMBEDDINGS)
     private readonly embeddings: Embeddings,
   ) {}
 

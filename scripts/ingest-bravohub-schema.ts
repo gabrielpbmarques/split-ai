@@ -1,38 +1,31 @@
 /**
  * Ingest the bravohub_application MySQL schema into Supabase pgvector
- * (`documents` table, source_type='mysql-schema'), one chunk per CREATE TABLE
- * — with sub-chunking for tables whose DDL exceeds the embedding model's
- * input window (~512 tokens for mxbai-embed-large).
+ * (`documents` table, source_type='mysql-schema'), one chunk per CREATE TABLE.
  *
  * Usage:
  *   bun run scripts/ingest-bravohub-schema.ts
  *
- * Idempotent: deletes prior rows matching (source_type='mysql-schema') before
- * inserting fresh.
+ * Idempotent: deletes prior rows matching (source_type='mysql-schema',
+ * source_id=<version>) before inserting fresh.
  *
  * Required env (loaded from .env via dotenv):
  *   NEXT_PUBLIC_SUPABASE_URL
  *   NEXT_PUBLIC_SUPABASE_ANON_KEY   (service-role key recommended)
- *   EMBEDDING_MODEL                  (e.g., mxbai-embed-large)
- *   OLLAMA_BASE_URL                  (e.g., http://localhost:11434)
+ *   EMBEDDING_MODEL                  (e.g., voyage-3-large)
+ *   VOYAGEAI_API_KEY
  */
 import { readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { SupabaseVectorStore } from '@langchain/community/vectorstores/supabase';
-import { OllamaEmbeddings } from '@langchain/ollama';
 import { createClient } from '@supabase/supabase-js';
 import * as dotenv from 'dotenv';
-import { Document } from 'langchain';
+
+import { ingestDocs } from './lib/voyage-ingest';
 
 dotenv.config();
 
 const SCHEMA_PATH = resolve(__dirname, '../data/schema/bravohub-database.sql');
 const SOURCE_TYPE = 'mysql-schema';
-// mxbai-embed-large has a 512-token input window. MySQL DDL is dense
-// (backticks/symbols → ~2 chars/token worst case), so cap chunks ≤ 1000 chars
-// (~330–500 tokens) to leave a safety margin.
-const MAX_CHUNK_CHARS = 1000;
 
 function parseTables(dump: string): { tableName: string; ddl: string }[] {
   const blocks: { tableName: string; ddl: string }[] = [];
@@ -80,52 +73,19 @@ function extractColumns(ddl: string): string[] {
   return columns;
 }
 
-/**
- * Split a table's DDL into pieces ≤ MAX_CHUNK_CHARS, keeping the column-row
- * lines intact and prepending a common header so retrieval from any chunk
- * still resolves to the right table.
- */
-function chunkTable(tableName: string, ddl: string, columns: string[]): string[] {
-  const header = [
-    `TABLE: ${tableName}`,
-    `COLUMNS: ${columns.join(', ')}`,
-    '',
-  ].join('\n');
-
-  const fullContent = `${header}${ddl}`;
-  if (fullContent.length <= MAX_CHUNK_CHARS) {
-    return [fullContent];
-  }
-
-  const ddlLines = ddl.split('\n');
-  const chunks: string[] = [];
-  let buf = header;
-  for (const line of ddlLines) {
-    const candidate = `${buf}${line}\n`;
-    if (candidate.length > MAX_CHUNK_CHARS && buf.length > header.length) {
-      chunks.push(buf.trimEnd());
-      buf = `${header}${line}\n`;
-    } else {
-      buf = candidate;
-    }
-  }
-  if (buf.length > header.length) chunks.push(buf.trimEnd());
-  return chunks;
-}
-
 async function main() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const embeddingModel = process.env.EMBEDDING_MODEL;
-  const ollamaBaseUrl = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
+  const voyageApiKey = process.env.VOYAGEAI_API_KEY;
   if (!supabaseUrl || !supabaseKey) throw new Error('Supabase env vars ausentes');
   if (!embeddingModel) throw new Error('EMBEDDING_MODEL ausente');
+  if (!voyageApiKey) throw new Error('VOYAGEAI_API_KEY ausente');
 
   const stats = statSync(SCHEMA_PATH);
   const sourceId = `bravohub-schema-${stats.mtime.toISOString().slice(0, 10)}`;
   console.log(`Lendo dump: ${SCHEMA_PATH} (${stats.size} bytes)`);
   console.log(`source_id: ${sourceId}`);
-  console.log(`Ollama: ${ollamaBaseUrl}  modelo: ${embeddingModel}`);
 
   const dump = readFileSync(SCHEMA_PATH, 'utf-8');
   const tables = parseTables(dump);
@@ -142,46 +102,31 @@ async function main() {
     console.warn(`(aviso) falha ao deletar chunks antigos: ${delErr.message}`);
   }
 
-  const documents: Document[] = [];
-  for (const { tableName, ddl } of tables) {
+  const docs = tables.map(({ tableName, ddl }) => {
     const columns = extractColumns(ddl);
-    const chunks = chunkTable(tableName, ddl, columns);
-    chunks.forEach((content, idx) => {
-      documents.push(
-        new Document({
-          pageContent: content,
-          metadata: {
-            source_type: SOURCE_TYPE,
-            source_id: sourceId,
-            table_name: tableName,
-            column_count: columns.length,
-            chunk_index: idx,
-            chunk_total: chunks.length,
-          },
-        }),
-      );
-    });
-  }
-  console.log(`${documents.length} chunks gerados (média ${(documents.length / tables.length).toFixed(2)} por tabela).`);
-
-  const embeddings = new OllamaEmbeddings({
-    model: embeddingModel,
-    baseUrl: ollamaBaseUrl,
-    // Safety net: if a chunk somehow exceeds the model's context, let Ollama
-    // truncate silently instead of failing the whole batch.
-    truncate: true,
+    const content = [
+      `TABLE: ${tableName}`,
+      `COLUMNS: ${columns.join(', ')}`,
+      '',
+      ddl,
+    ].join('\n');
+    return {
+      pageContent: content,
+      metadata: {
+        source_type: SOURCE_TYPE,
+        source_id: sourceId,
+        table_name: tableName,
+        column_count: columns.length,
+      },
+    };
   });
 
-  const longest = documents.reduce(
-    (m, d) => Math.max(m, d.pageContent.length),
-    0,
-  );
-  console.log(`Maior chunk: ${longest} chars.`);
-  console.log('Embeddings + insert via SupabaseVectorStore.fromDocuments...');
-  await SupabaseVectorStore.fromDocuments(documents, embeddings, {
-    client: supabaseClient as unknown as any,
-    tableName: 'documents',
-    queryName: 'match_documents',
+  await ingestDocs({
+    docs,
+    supabaseClient,
+    embeddingModel,
+    outputDimension: 1024,
+    apiKey: voyageApiKey,
   });
 
   console.log('Ingestão concluída.');
