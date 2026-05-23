@@ -35,6 +35,7 @@ interface IConfig {
   bravohubSqlGatewayApiKey: string;
   analyticsAskApiKey: string;
   orchestratorModel: string;
+  ollamaBaseUrl: string;
 }
 
 export const config: IConfig = {
@@ -70,4 +71,5 @@ export const config: IConfig = {
   bravohubSqlGatewayApiKey: process.env.BRAVOHUB_SQL_GATEWAY_API_KEY,
   analyticsAskApiKey: process.env.ANALYTICS_ASK_API_KEY,
   orchestratorModel: process.env.ORCHESTRATOR_MODEL || 'claude-sonnet-4-6',
+  ollamaBaseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
 };

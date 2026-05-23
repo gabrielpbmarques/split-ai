@@ -22,7 +22,7 @@ describe('LoadVectorStoreService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         LoadVectorStoreService,
-        { provide: 'VOYAGE_EMBEDDINGS', useValue: mockEmbeddings },
+        { provide: 'EMBEDDINGS', useValue: mockEmbeddings },
         { provide: 'SUPABASE_CLIENT', useValue: mockSupabaseClient },
       ],
     }).compile();

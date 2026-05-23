@@ -7,13 +7,13 @@ import { config } from 'src/config';
 import { Chunks, CustomMetadata } from 'src/types';
 import { cleanInvalidUnicode } from 'src/utils/clearInvalidUnicode';
 
-import { VOYAGE_EMBEDDINGS } from './voyage-embeddings.provider';
+import { EMBEDDINGS } from './ollama-embeddings.provider';
 
 export const SUPABASE_CLIENT = 'SUPABASE_CLIENT';
 
 export class SupabaseService {
   constructor(
-    @Inject(VOYAGE_EMBEDDINGS)
+    @Inject(EMBEDDINGS)
     private readonly embeddings: Embeddings,
     @Inject(SUPABASE_CLIENT)
     private readonly supabaseClient: SupabaseClient,
@@ -71,6 +71,6 @@ export const SupabaseProvider: Provider[] = [
     ): SupabaseService => {
       return new SupabaseService(embeddings, supabaseClient);
     },
-    inject: [VOYAGE_EMBEDDINGS, SUPABASE_CLIENT],
+    inject: [EMBEDDINGS, SUPABASE_CLIENT],
   },
 ];

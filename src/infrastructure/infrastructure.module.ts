@@ -9,6 +9,10 @@ import {
   GOOGLE_VOICE_SERVICE,
 } from 'src/infrastructure/providers/google-voice.provider';
 import {
+  OllamaEmbeddingsProvider,
+  EMBEDDINGS,
+} from 'src/infrastructure/providers/ollama-embeddings.provider';
+import {
   SendGridProvider,
   SENDGRID_CLIENT,
   EMAIL_SERVICE,
@@ -31,10 +35,6 @@ import {
   TWILIO_CLIENT,
   TWILIO_SERVICE,
 } from 'src/infrastructure/providers/twilio.provider';
-import {
-  VoyageEmbeddingsProvider,
-  VOYAGE_EMBEDDINGS,
-} from 'src/infrastructure/providers/voyage-embeddings.provider';
 
 import {
   AnthropicProvider,
@@ -49,7 +49,7 @@ import {
   imports: [ConfigModule],
   providers: [
     ...SupabaseProvider,
-    ...VoyageEmbeddingsProvider,
+    ...OllamaEmbeddingsProvider,
     ...AnthropicProvider,
     ...SendGridProvider,
     ...GcpStorageProvider,
@@ -62,7 +62,7 @@ import {
   exports: [
     SUPABASE_CLIENT,
     SUPABASE_SERVICE,
-    VOYAGE_EMBEDDINGS,
+    EMBEDDINGS,
     ANTHROPIC_CHAT,
     SENDGRID_CLIENT,
     EMAIL_SERVICE,
