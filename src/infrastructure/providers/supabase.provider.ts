@@ -54,7 +54,7 @@ export const SupabaseProvider: Provider[] = [
     provide: SUPABASE_CLIENT,
     useFactory: (): SupabaseClient => {
       const supabaseUrl = config.supabaseUrl;
-      const supabaseKey = config.supabaseKey;
+      const supabaseKey = config.supabasePublishableKey;
 
       if (!supabaseUrl || !supabaseKey) {
         throw new Error('Supabase URL and key must be provided');
