@@ -19,6 +19,7 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "prepare": "husky install && chmod ug+x .husky/* && chmod ug+x .husky/_/*",
+    "analytics:compile-toro-docs": "bun run scripts/compile-toro-docs.ts",
     "analytics:ingest-schema": "bun run scripts/ingest-bravohub-schema.ts",
     "analytics:ingest-domain": "bun run scripts/ingest-bravohub-domain.ts",
     "analytics:seed-agents": "bun run scripts/seed-analytics-agents.ts",

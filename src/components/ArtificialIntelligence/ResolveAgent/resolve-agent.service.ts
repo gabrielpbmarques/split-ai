@@ -2,6 +2,11 @@ import { ChatAnthropic } from '@langchain/anthropic';
 import { MemorySaver } from '@langchain/langgraph';
 import { Injectable } from '@nestjs/common';
 import { DynamicStructuredTool, createAgent } from 'langchain';
+import { BusinessContextToolService } from 'src/components/Tools/BusinessContext/business-context-tool.service';
+import { DescribeTableToolService } from 'src/components/Tools/DescribeTable/describe-table-tool.service';
+import { ExecuteSqlToolService } from 'src/components/Tools/ExecuteSql/execute-sql-tool.service';
+import { ExploreSchemaToolService } from 'src/components/Tools/ExploreSchema/explore-schema-tool.service';
+import { ValidateSqlToolService } from 'src/components/Tools/ValidateSql/validate-sql-tool.service';
 import { config } from 'src/config';
 import { AgentEntity } from 'src/entities';
 import { AgentRepository, AgentInstructionRepository } from 'src/repositories';
@@ -10,7 +15,6 @@ import { buildLangchainToolFromSchema } from 'src/utils/buildZodSchema';
 import { z } from 'zod';
 
 import { BuildSystemPromptService } from '../BuildSystemPrompt/build-system-prompt.service';
-import { LoadAnalyticsToolsService } from '../LoadAnalyticsTools/load-analytics-tools.service';
 import { LoadCheckpointerService } from '../LoadCheckpointer/load-checkpointer.service';
 import { LoadDatabaseToolService } from '../LoadDatabaseTool/load-database-tool.service';
 import { LoadVectorSearchToolService } from '../LoadVectorSearchTool/load-vector-search-tool.service';
@@ -24,7 +28,11 @@ export class ResolveAgentService {
     private readonly buildSystemPromptService: BuildSystemPromptService,
     private readonly loadDatabaseToolService: LoadDatabaseToolService,
     private readonly loadCheckpointerService: LoadCheckpointerService,
-    private readonly loadAnalyticsToolsService: LoadAnalyticsToolsService,
+    private readonly exploreSchemaToolService: ExploreSchemaToolService,
+    private readonly describeTableToolService: DescribeTableToolService,
+    private readonly validateSqlToolService: ValidateSqlToolService,
+    private readonly executeSqlToolService: ExecuteSqlToolService,
+    private readonly businessContextToolService: BusinessContextToolService,
   ) {}
 
   async execute(
@@ -128,21 +136,60 @@ export class ResolveAgentService {
       );
     }
 
-    if (this.loadAnalyticsToolsService.appliesTo(dbAgent.agent_identifier)) {
-      const companyId = Number(promptVariables?.companyId);
+    const usesAnalyticsTool =
+      dbAgent.analytics_explore_schema ||
+      dbAgent.analytics_describe_table ||
+      dbAgent.analytics_validate_sql ||
+      dbAgent.analytics_execute_sql ||
+      dbAgent.analytics_business_context;
+
+    if (usesAnalyticsTool) {
+      if (!dbAgent.organization_id) {
+        throw new Error(
+          'Agente com ferramentas analíticas habilitadas precisa estar vinculado a uma organização (organization_id).',
+        );
+      }
+      const organizationId = dbAgent.organization_id;
       const threadId = String(
         promptVariables?.threadId ?? promptVariables?.sessionId ?? 'default',
       );
-      if (!Number.isFinite(companyId) || companyId <= 0) {
-        throw new Error(
-          'companyId obrigatório no promptVariables para agentes de analytics',
+
+      if (dbAgent.analytics_explore_schema) {
+        tools.push(
+          this.exploreSchemaToolService.execute({
+            organizationId,
+          }) as DynamicStructuredTool<z.ZodObject<any>>,
         );
       }
-      const analyticsTools = this.loadAnalyticsToolsService.execute(
-        dbAgent.agent_identifier as string,
-        { companyId, threadId },
-      );
-      tools.push(...analyticsTools);
+      if (dbAgent.analytics_describe_table) {
+        tools.push(
+          this.describeTableToolService.execute({
+            organizationId,
+          }) as DynamicStructuredTool<z.ZodObject<any>>,
+        );
+      }
+      if (dbAgent.analytics_validate_sql) {
+        tools.push(
+          this.validateSqlToolService.execute({
+            organizationId,
+          }) as DynamicStructuredTool<z.ZodObject<any>>,
+        );
+      }
+      if (dbAgent.analytics_execute_sql) {
+        tools.push(
+          this.executeSqlToolService.execute({
+            organizationId,
+            threadId,
+          }) as DynamicStructuredTool<z.ZodObject<any>>,
+        );
+      }
+      if (dbAgent.analytics_business_context) {
+        tools.push(
+          this.businessContextToolService.execute({
+            organizationId,
+          }) as DynamicStructuredTool<z.ZodObject<any>>,
+        );
+      }
     }
 
     return tools;

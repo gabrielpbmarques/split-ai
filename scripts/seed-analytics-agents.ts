@@ -49,6 +49,11 @@ type AgentBlueprint = {
   with_history: boolean;
   vector_search_tool: boolean;
   database_tool: boolean;
+  analytics_explore_schema: boolean;
+  analytics_describe_table: boolean;
+  analytics_validate_sql: boolean;
+  analytics_execute_sql: boolean;
+  analytics_business_context: boolean;
   parser_schema: object | null;
   parser_name: string | null;
   parser_description: string | null;
@@ -58,6 +63,90 @@ type AgentBlueprint = {
     diretrizes: string[];
   };
 };
+
+const TORO_ORG_NAME = 'Toro Result Sales';
+const TORO_EMAIL_DOMAIN = process.env.TORO_EMAIL_DOMAIN ?? 'tororesult.com.br';
+const TORO_TENANT_FILTER_VALUE =
+  process.env.TORO_TENANT_FILTER_VALUE ?? '1';
+
+async function ensureToroOrganization(client: Client): Promise<string> {
+  const existing = await client.query<{ id: string }>(
+    'SELECT id FROM organizations WHERE name = $1 LIMIT 1',
+    [TORO_ORG_NAME],
+  );
+  if (existing.rows.length > 0) {
+    console.log(
+      `organização encontrada: ${TORO_ORG_NAME} (id=${existing.rows[0].id})`,
+    );
+    return existing.rows[0].id;
+  }
+  const id = randomUUID();
+  await client.query(
+    `INSERT INTO organizations (id, name, email_domain, status, activated_at)
+     VALUES ($1, $2, $3, 'active', NOW())`,
+    [id, TORO_ORG_NAME, TORO_EMAIL_DOMAIN],
+  );
+  console.log(`organização criada: ${TORO_ORG_NAME} (id=${id})`);
+  return id;
+}
+
+async function ensureAnalyticsConfig(
+  client: Client,
+  organizationId: string,
+): Promise<void> {
+  const sqlGatewayUrl = process.env.BRAVOHUB_ANALYTICS_BASE_URL ?? '';
+  const sqlGatewayApiKey = process.env.BRAVOHUB_SQL_GATEWAY_API_KEY ?? null;
+
+  if (!sqlGatewayUrl) {
+    console.warn(
+      'AVISO: BRAVOHUB_ANALYTICS_BASE_URL não definido — configuração analítica gravada com sql_gateway_url vazio.',
+    );
+  }
+
+  const existing = await client.query<{ id: string }>(
+    'SELECT id FROM organization_analytics_config WHERE organization_id = $1 LIMIT 1',
+    [organizationId],
+  );
+  if (existing.rows.length > 0) {
+    await client.query(
+      `UPDATE organization_analytics_config
+       SET sql_gateway_url = $1, sql_gateway_api_key = $2,
+           tenant_filter_column = $3, tenant_filter_value = $4,
+           database_dialect = $5, updated_at = NOW()
+       WHERE id = $6`,
+      [
+        sqlGatewayUrl,
+        sqlGatewayApiKey,
+        'company_id',
+        TORO_TENANT_FILTER_VALUE,
+        'mysql-5.7',
+        existing.rows[0].id,
+      ],
+    );
+    console.log(
+      `configuração analítica atualizada (id=${existing.rows[0].id})`,
+    );
+  } else {
+    const id = randomUUID();
+    await client.query(
+      `INSERT INTO organization_analytics_config
+       (id, organization_id, sql_gateway_url, sql_gateway_api_key,
+        tenant_filter_column, tenant_filter_value, database_dialect,
+        created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())`,
+      [
+        id,
+        organizationId,
+        sqlGatewayUrl,
+        sqlGatewayApiKey,
+        'company_id',
+        TORO_TENANT_FILTER_VALUE,
+        'mysql-5.7',
+      ],
+    );
+    console.log(`configuração analítica criada (id=${id})`);
+  }
+}
 
 const ORACLE_SYSTEM_CONTEXT = [
   'Você é o oráculo analítico da BravoHub. A BravoHub é uma plataforma SaaS de campanhas comerciais (Rex, Sale, VSale, Gift, Discount, Affiliates, Checkout, Goal, Node).',
@@ -120,12 +209,17 @@ const RECOMMEND_DIRECTIVES = [
 const BLUEPRINTS: AgentBlueprint[] = [
   {
     agent_identifier: 'analytics-oracle',
-    name: 'Analytics Oracle (BravoHub)',
+    name: 'Analytics Oracle',
     model: 'claude-sonnet-4-6',
     temperature: 0.2,
     with_history: true,
     vector_search_tool: false,
     database_tool: false,
+    analytics_explore_schema: true,
+    analytics_describe_table: true,
+    analytics_validate_sql: true,
+    analytics_execute_sql: true,
+    analytics_business_context: true,
     parser_schema: null,
     parser_name: null,
     parser_description: null,
@@ -143,6 +237,11 @@ const BLUEPRINTS: AgentBlueprint[] = [
     with_history: false,
     vector_search_tool: false,
     database_tool: false,
+    analytics_explore_schema: false,
+    analytics_describe_table: false,
+    analytics_validate_sql: false,
+    analytics_execute_sql: false,
+    analytics_business_context: false,
     parser_schema: null,
     parser_name: null,
     parser_description: null,
@@ -161,6 +260,11 @@ const BLUEPRINTS: AgentBlueprint[] = [
     with_history: false,
     vector_search_tool: false,
     database_tool: false,
+    analytics_explore_schema: false,
+    analytics_describe_table: false,
+    analytics_validate_sql: false,
+    analytics_execute_sql: false,
+    analytics_business_context: false,
     parser_schema: null,
     parser_name: null,
     parser_description: null,
@@ -178,6 +282,9 @@ async function main() {
   const client = new Client({ connectionString: url });
   await client.connect();
 
+  const organizationId = await ensureToroOrganization(client);
+  await ensureAnalyticsConfig(client, organizationId);
+
   for (const bp of BLUEPRINTS) {
     const existing = await client.query<{ id: string }>(
       'SELECT id FROM agents WHERE agent_identifier = $1 LIMIT 1',
@@ -190,9 +297,12 @@ async function main() {
         `UPDATE agents
          SET name = $1, model = $2, temperature = $3, with_history = $4,
              vector_search_tool = $5, database_tool = $6,
-             parser_schema = $7, parser_name = $8, parser_description = $9,
-             updated_at = NOW()
-         WHERE id = $10`,
+             analytics_explore_schema = $7, analytics_describe_table = $8,
+             analytics_validate_sql = $9, analytics_execute_sql = $10,
+             analytics_business_context = $11,
+             parser_schema = $12, parser_name = $13, parser_description = $14,
+             organization_id = $15, updated_at = NOW()
+         WHERE id = $16`,
         [
           bp.name,
           bp.model,
@@ -200,9 +310,15 @@ async function main() {
           bp.with_history,
           bp.vector_search_tool,
           bp.database_tool,
+          bp.analytics_explore_schema,
+          bp.analytics_describe_table,
+          bp.analytics_validate_sql,
+          bp.analytics_execute_sql,
+          bp.analytics_business_context,
           bp.parser_schema,
           bp.parser_name,
           bp.parser_description,
+          organizationId,
           agentId,
         ],
       );
@@ -213,9 +329,12 @@ async function main() {
         `INSERT INTO agents
          (id, name, agent_identifier, model, temperature, with_history,
           vector_search_tool, database_tool,
+          analytics_explore_schema, analytics_describe_table,
+          analytics_validate_sql, analytics_execute_sql,
+          analytics_business_context,
           parser_schema, parser_name, parser_description,
           organization_id, user_id, created_at, updated_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,NULL,NULL,NOW(),NOW())`,
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,NULL,NOW(),NOW())`,
         [
           agentId,
           bp.name,
@@ -225,9 +344,15 @@ async function main() {
           bp.with_history,
           bp.vector_search_tool,
           bp.database_tool,
+          bp.analytics_explore_schema,
+          bp.analytics_describe_table,
+          bp.analytics_validate_sql,
+          bp.analytics_execute_sql,
+          bp.analytics_business_context,
           bp.parser_schema,
           bp.parser_name,
           bp.parser_description,
+          organizationId,
         ],
       );
       console.log(`criado: ${bp.agent_identifier} (id=${agentId})`);
@@ -257,6 +382,19 @@ async function main() {
   }
   await client.end();
   console.log('Seed concluído.');
+  console.log('');
+  console.log(
+    'Próximo passo: faça upload de data/docs/compiled/toro-business-knowledge.md',
+  );
+  console.log(
+    '  como fonte para o agente analytics-oracle via POST /agent/generate-source',
+  );
+  console.log(
+    '  (multipart com file=<arquivo>, agentId=analytics-oracle, sourceType=organization-knowledge).',
+  );
+  console.log(
+    '  Rode `bun run analytics:compile-toro-docs` primeiro se o arquivo ainda não existir.',
+  );
 }
 
 void main().catch((err) => {

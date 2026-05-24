@@ -53,4 +53,24 @@ export class UpdateAgentDto {
   @IsString()
   @IsOptional()
   organization_id?: string | null;
+
+  @IsBoolean()
+  @IsOptional()
+  analyticsExploreSchema?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  analyticsDescribeTable?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  analyticsValidateSql?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  analyticsExecuteSql?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  analyticsBusinessContext?: boolean;
 }

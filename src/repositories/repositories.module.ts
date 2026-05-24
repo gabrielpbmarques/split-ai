@@ -18,6 +18,7 @@ import {
   PlanEntity,
   SubscriptionEntity,
   PaymentEntity,
+  OrganizationAnalyticsConfigEntity,
 } from 'src/entities';
 import { InfrastructureModule } from 'src/infrastructure/infrastructure.module';
 
@@ -40,6 +41,7 @@ import {
   SubscriptionRepository,
   PaymentRepository,
   UniversalDataRepository,
+  OrganizationAnalyticsConfigRepository,
 } from '.';
 
 @Module({
@@ -62,6 +64,7 @@ import {
       PlanEntity,
       SubscriptionEntity,
       PaymentEntity,
+      OrganizationAnalyticsConfigEntity,
     ]),
     InfrastructureModule,
   ],
@@ -84,6 +87,7 @@ import {
     SubscriptionRepository,
     PaymentRepository,
     UniversalDataRepository,
+    OrganizationAnalyticsConfigRepository,
   ],
   exports: [
     OrganizationRepository,
@@ -104,6 +108,7 @@ import {
     SubscriptionRepository,
     PaymentRepository,
     UniversalDataRepository,
+    OrganizationAnalyticsConfigRepository,
   ],
 })
 export class RepositoriesModule {}
