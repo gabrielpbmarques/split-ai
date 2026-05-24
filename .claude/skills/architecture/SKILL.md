@@ -154,6 +154,52 @@ export class UserRepository {
 
 `RepositoriesModule` registers ALL entities via `TypeOrmModule.forFeature([...])` and provides/exports ALL repositories. Use case modules import `RepositoriesModule` to get access to any repository via DI.
 
+## Tools scope
+
+LangChain tools available to AI agents follow the same one-use-case-one-module pattern as everything else, but live under a dedicated top-level scope at `src/components/Tools/`. Each tool gets its own directory with a single service and a single module — never bundle multiple tools into one service.
+
+### Directory layout
+
+```text
+components/
+  Tools/
+    tools.module.ts                              # Scope module — imports/exports every tool module
+    <ToolName>/
+      <tool-name>-tool.module.ts                 # Tool's NestJS module
+      <tool-name>-tool.service.ts                # Exposes execute(ctx): DynamicStructuredTool<...>
+```
+
+### Tool service pattern
+
+The service is `@Injectable()`, takes its dependencies via constructor (repositories from `RepositoriesModule`, external clients from `InfrastructureModule`, sibling services), and exposes a single `execute(ctx)` method that returns a `DynamicStructuredTool`. The `ctx` carries per-request scope (typically `organizationId`, `threadId`).
+
+```typescript
+@Injectable()
+export class ExecuteSqlToolService {
+  constructor(/* shared deps via DI */) {}
+
+  execute(ctx: {
+    organizationId: string;
+    threadId: string;
+  }): DynamicStructuredTool<z.ZodObject<any>> {
+    return new DynamicStructuredTool({
+      name: 'execute_sql',
+      description: '...', // pt-BR, tenant-agnostic — no product-specific copy
+      schema: z.object({ query: z.string() }),
+      func: async (input) => {
+        /* ... */
+      },
+    });
+  }
+}
+```
+
+### How tools are wired into agents
+
+`ResolveAgent` reads per-tool boolean columns on `AgentEntity` (e.g., `analytics_execute_sql`) and assembles the toolbelt by invoking each enabled tool's `execute(ctx)`. The `agent_identifier` column is a human-readable label and does **not** gate tools.
+
+The pre-existing modules `src/components/ArtificialIntelligence/LoadCheckpointer/` and `src/components/ArtificialIntelligence/LoadVectorSearchTool/` are the reference templates for tool-module shape — copy their structure when adding a new tool.
+
 ## Entities
 
 All TypeORM entities live in `src/entities/` and are barrel-exported via `src/entities/index.ts`. Entity files use kebab-case: `user.entity.ts`, `order.entity.ts`.
@@ -254,3 +300,4 @@ Middleware implementations live in `src/middleware/`. The `MiddlewareModule` reg
 6. **DTOs use class-validator decorators** — never accept raw unvalidated input.
 7. **Services use execute() as the main method name**`execute()`.
 8. **Entity files go in src/entities/**`src/entities/`, not inside component folders.
+9. **One tool = one module under `src/components/Tools/<ToolName>/`** — never bundle multiple tools into one service; never place tool modules outside the Tools scope.

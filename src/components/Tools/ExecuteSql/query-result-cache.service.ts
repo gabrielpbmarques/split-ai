@@ -12,9 +12,9 @@ const MAX_ENTRIES = 500;
 export class QueryResultCacheService {
   private readonly store = new Map<string, Entry>();
 
-  hash(query: string, companyId: number): string {
+  hash(query: string, tenantValue: string): string {
     return createHash('sha256')
-      .update(`${companyId}::${query.trim()}`)
+      .update(`${tenantValue}::${query.trim()}`)
       .digest('hex');
   }
 

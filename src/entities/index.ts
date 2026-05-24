@@ -15,3 +15,4 @@ export * from './credit-balance.entity';
 export * from './credit-transaction.entity';
 export * from './subscription.entity';
 export * from './payment.entity';
+export * from './organization-analytics-config.entity';

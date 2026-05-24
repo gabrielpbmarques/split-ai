@@ -1,4 +1,7 @@
 import { Module } from '@nestjs/common';
+import { ApiKeyGuard } from 'src/auth/api-key.guard';
+import { AuthGuard } from 'src/auth/auth.guard';
+import { CompositeAuthGuard } from 'src/auth/composite-auth.guard';
 import { RecordChatMessageModule } from 'src/components/AIChat/RecordChatMessage/record-chat-message.module';
 import { ArtificialIntelligenceModule } from 'src/components/ArtificialIntelligence/artificial-intelligence.module';
 import { CreditsModule } from 'src/components/Credits/credits.module';
@@ -18,7 +21,14 @@ import { QuestionService } from './question.service';
     RecordChatMessageModule,
     CreditsModule,
   ],
-  providers: [QuestionService],
+  providers: [
+    QuestionService,
+    // Auth guards used by `CompositeAuthGuard` — register here so Nest can
+    // resolve their dependencies (e.g. `Reflector` for `AuthGuard`).
+    AuthGuard,
+    ApiKeyGuard,
+    CompositeAuthGuard,
+  ],
   controllers: [QuestionController],
   exports: [QuestionService],
 })

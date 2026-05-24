@@ -17,3 +17,4 @@ export * from './supabase-document.model';
 export * from './chunk.model';
 export * from './resolved-agent.model';
 export * from './document-data.model';
+export * from './stream-event.model';

@@ -48,6 +48,21 @@ export class AgentEntity {
   @Column({ type: 'boolean', nullable: true, default: true })
   database_tool: boolean | null;
 
+  @Column({ type: 'boolean', nullable: true, default: false })
+  analytics_explore_schema: boolean | null;
+
+  @Column({ type: 'boolean', nullable: true, default: false })
+  analytics_describe_table: boolean | null;
+
+  @Column({ type: 'boolean', nullable: true, default: false })
+  analytics_validate_sql: boolean | null;
+
+  @Column({ type: 'boolean', nullable: true, default: false })
+  analytics_execute_sql: boolean | null;
+
+  @Column({ type: 'boolean', nullable: true, default: false })
+  analytics_business_context: boolean | null;
+
   @Column('text', { array: true, nullable: true })
   sites: string[] | null;
 

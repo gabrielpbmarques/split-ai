@@ -1,9 +1,10 @@
-import { Controller, Post, Body, UseGuards, Res } from '@nestjs/common';
+import { Body, Controller, Post, Res, UseGuards } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
 import { ActiveOrgGuard } from 'src/auth/active-org.guard';
-import { AuthGuard } from 'src/auth/auth.guard';
+import { CompositeAuthGuard } from 'src/auth/composite-auth.guard';
 import { User as AuthUser } from 'src/decorators/user.decorator';
 import { UserEntity } from 'src/entities';
+import { StreamEvent } from 'src/types';
 
 import { QuestionDto } from './question.dto';
 import { QuestionService } from './question.service';
@@ -13,42 +14,69 @@ export class QuestionController {
   constructor(private readonly questionService: QuestionService) {}
 
   @Post('question')
-  @UseGuards(AuthGuard, ActiveOrgGuard)
+  @UseGuards(CompositeAuthGuard, ActiveOrgGuard)
   async execute(
     @Res() res: FastifyReply,
     @Body() dto: QuestionDto,
     @AuthUser() user: UserEntity,
   ): Promise<void> {
     res.hijack();
-    try {
-      res.raw.writeHead(200, {
-        'Content-Type': 'text/plain; charset=utf-8',
-        'Transfer-Encoding': 'chunked',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers':
-          'Content-Type, Authorization, X-Requested-With, Accept, Origin',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Expose-Headers': 'Content-Type',
-        'Cache-Control': 'no-store',
-        Connection: 'keep-alive',
-        'X-Accel-Buffering': 'no',
-      });
+    res.raw.writeHead(200, {
+      'Content-Type': 'application/x-ndjson; charset=utf-8',
+      'Transfer-Encoding': 'chunked',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers':
+        'Content-Type, Authorization, X-Requested-With, Accept, Origin',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Expose-Headers': 'Content-Type',
+      'Cache-Control': 'no-store',
+      Connection: 'keep-alive',
+      'X-Accel-Buffering': 'no',
+    });
 
-      await this.questionService.execute(dto, user, (chunk) => {
-        if (chunk?.content) {
-          res.raw.write(chunk.content.toString());
+    const writeEvent = (event: StreamEvent) => {
+      try {
+        res.raw.write(`${JSON.stringify(event)}\n`);
+      } catch {
+        /* socket may have been closed by the client */
+      }
+    };
+
+    let serviceTerminated = false;
+
+    try {
+      await this.questionService.execute(dto, user, (event) => {
+        if (event.type === 'done') {
+          serviceTerminated = true;
         }
+        writeEvent(event);
       });
     } catch (error: any) {
-      try {
-        const message =
+      // Errors raised BEFORE the stream loop (validation, credit check, agent
+      // resolution) reach here. Surface them as a typed pair so the client
+      // sees the same shape it expects from the rest of the stream.
+      writeEvent({
+        type: 'error',
+        message:
           typeof error?.message === 'string'
-            ? `\n${error.message}\n`
-            : '\nUnexpected error\n';
-        res.raw.write(message);
-      } catch {}
+            ? error.message
+            : 'Erro inesperado',
+      });
+      if (!serviceTerminated) {
+        writeEvent({ type: 'done' });
+        serviceTerminated = true;
+      }
     } finally {
-      res.raw.end();
+      // Defensive: ensure a terminator even if the underlying generator never
+      // yielded one (e.g., it threw synchronously in an exotic way).
+      if (!serviceTerminated) {
+        writeEvent({ type: 'done' });
+      }
+      try {
+        res.raw.end();
+      } catch {
+        /* socket already closed */
+      }
     }
   }
 }
