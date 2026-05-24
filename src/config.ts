@@ -31,9 +31,6 @@ interface IConfig {
   stripeWebhookSecret: string;
   langchainProject: string;
   langchainWorkspaceId: string;
-  bravohubAnalyticsBaseUrl: string;
-  bravohubSqlGatewayApiKey: string;
-  analyticsAskApiKey: string;
   orchestratorModel: string;
 }
 
@@ -66,8 +63,5 @@ export const config: IConfig = {
   stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
   langchainProject: process.env.LANGCHAIN_PROJECT,
   langchainWorkspaceId: process.env.LANGCHAIN_WORKSPACE_ID,
-  bravohubAnalyticsBaseUrl: process.env.BRAVOHUB_ANALYTICS_BASE_URL,
-  bravohubSqlGatewayApiKey: process.env.BRAVOHUB_SQL_GATEWAY_API_KEY,
-  analyticsAskApiKey: process.env.ANALYTICS_ASK_API_KEY,
   orchestratorModel: process.env.ORCHESTRATOR_MODEL || 'claude-sonnet-4-6',
 };

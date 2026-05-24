@@ -4,35 +4,40 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { config } from 'src/config';
+import { OrganizationRepository } from 'src/repositories';
 
 @Injectable()
 export class ApiKeyGuard implements CanActivate {
-  canActivate(context: ExecutionContext): boolean {
-    const expected = config.analyticsAskApiKey;
-    if (!expected) {
-      throw new UnauthorizedException('Serviço não configurado');
-    }
+  constructor(
+    private readonly organizationRepository: OrganizationRepository,
+  ) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<{
       headers?: Record<string, string | string[] | undefined>;
+      user?: unknown;
     }>();
     const header = (request.headers?.authorization as string | undefined) ?? '';
-    const [scheme, value] = header.split(' ');
-    if (scheme !== 'ApiKey' || !value) {
+    const [scheme, token] = header.split(' ');
+    if (scheme !== 'ApiKey' || !token) {
       throw new UnauthorizedException('API key ausente');
     }
-    if (!this.timingSafeEqual(value, expected)) {
+
+    const organization =
+      await this.organizationRepository.findActiveByEmbedToken(token);
+    if (!organization) {
       throw new UnauthorizedException('API key inválida');
     }
-    return true;
-  }
 
-  private timingSafeEqual(a: string, b: string): boolean {
-    if (a.length !== b.length) return false;
-    let diff = 0;
-    for (let i = 0; i < a.length; i++) {
-      diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-    }
-    return diff === 0;
+    request.user = {
+      id: null,
+      organization_id: organization.id,
+      organization,
+      role: 'service',
+      email: null,
+      name: 'service',
+    };
+
+    return true;
   }
 }

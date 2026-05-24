@@ -12,11 +12,9 @@ import { AuthGuard } from './auth.guard';
  * Dispatches authentication based on the `Authorization` header scheme.
  *
  * - `Authorization: Bearer <jwt>` → delegates to `AuthGuard` (JWT path).
- * - `Authorization: ApiKey <key>` → delegates to `ApiKeyGuard`. Since the
- *   `ApiKeyGuard` does not attach a `request.user`, we synthesize a minimal
- *   service-user object so downstream code can branch on `user.organization_id`
- *   (which will be `null` for API-key callers — those must pass scope via the
- *   request DTO).
+ * - `Authorization: ApiKey <token>` → delegates to `ApiKeyGuard`, which looks
+ *   up the organization by `chat_embed_token` and attaches a service-user
+ *   carrying the resolved `organization_id` to `request.user`.
  *
  * Apply per-handler: `@UseGuards(CompositeAuthGuard)`. The handler module must
  * register both `AuthGuard` and `ApiKeyGuard` as providers.
@@ -37,22 +35,7 @@ export class CompositeAuthGuard implements CanActivate {
     const [scheme] = header.split(' ');
 
     if (scheme === 'ApiKey') {
-      const ok: boolean | Promise<boolean> =
-        this.apiKeyGuard.canActivate(context);
-      const allowed = await Promise.resolve(ok);
-      if (!allowed) return false;
-      // ApiKeyGuard does not populate `request.user`; downstream code expects
-      // a stable shape, so synthesize a service-user placeholder. The
-      // `organization_id` is intentionally `null` — API-key callers must
-      // supply tenant scope via the DTO.
-      request.user = {
-        id: null,
-        organization_id: null,
-        role: 'service',
-        email: null,
-        name: 'service',
-      };
-      return true;
+      return this.apiKeyGuard.canActivate(context);
     }
 
     if (scheme === 'Bearer' || scheme === '') {

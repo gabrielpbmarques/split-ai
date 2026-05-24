@@ -52,6 +52,9 @@ export class OrganizationEntity implements Organization {
   @Column({ type: 'timestamp', nullable: true })
   deactivated_at: Date;
 
+  @Column({ type: 'text', nullable: true })
+  database_url: string | null;
+
   @ManyToOne(() => PlanEntity)
   @JoinColumn({ name: 'plan_id' })
   plan: PlanEntity;

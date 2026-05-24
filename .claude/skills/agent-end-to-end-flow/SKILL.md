@@ -59,7 +59,9 @@ Default port is **`4000`** (`src/main.ts:115`). There is **no global API prefix*
 │     POST /support/question  (streaming)  → QuestionController.execute        │
 │     POST /chat/attendant    (one-shot)   → AttendantController.handle        │
 │                                                                              │
-│     AuthGuard            (JWT *parsed only*, no signature verify)            │
+│     CompositeAuthGuard   (Bearer → AuthGuard; ApiKey → ApiKeyGuard)          │
+│         AuthGuard          (JWT *parsed only*, no signature verify)          │
+│         ApiKeyGuard        (token → org via chat_embed_token, role=service)  │
 │     ActiveOrgGuard       (rejects inactive organizations)                    │
 │     @Roles(...)          (admin/user)                                        │
 │                                                                              │
@@ -95,8 +97,9 @@ Default port is **`4000`** (`src/main.ts:115`). There is **no global API prefix*
 │         → join(docs.pageContent, ' ')                                        │
 │                                                                              │
 │     execute_sql({ query })                                                   │
-│         → sanitizeSqlQuery(query, organizationId)                            │
-│         → universalDataRepository.execute(safeQuery)                         │
+│         → sanitizeSqlQuery(query)                                            │
+│         → SqlDatabase.run(safeQuery) against org.database_url                │
+│         (feature-gated: database_connection on organization_features)        │
 │                                                                              │
 │     <parser tool>(...)  // schema-only, returns undefined                    │
 │                                                                              │
@@ -693,7 +696,7 @@ new ChatAnthropic({
 
 Safety settings are hard-coded. Adding a new category means editing this file — don't silently widen them.
 
-### 6.4 `loadTools` (lines 115-141)
+### 6.4 `loadTools`
 
 ```ts
 const tools: DynamicStructuredTool<z.ZodObject<any>>[] = [];
@@ -712,8 +715,11 @@ if (agent.vector_search_tool) {
   tools.push(await loadVectorSearchToolService.execute());
 }
 
-if (agent.database_tool) {
-  tools.push(await loadDatabaseToolService.execute(agent.organization_id));
+if (agent.database_tool && agent.organization_id) {
+  // Feature-gated: only injected when database_connection is enabled
+  // on organization_features for the agent's org AND organizations.database_url is set.
+  const tool = await this.maybeLoadDatabaseTool(agent.organization_id);
+  if (tool) tools.push(tool);
 }
 ```
 
@@ -966,32 +972,40 @@ return pairs.flatMap(([doc]) => doc); // drops scores
 
 ### 8.2 `execute_sql` (database tool)
 
-`LoadDatabaseTool/load-database-tool.service.ts`.
+`src/components/Tools/LoadDatabaseTool/load-database-tool.service.ts`. Feature-gated, per-org.
 
-**Setup (on module init):**
+**Pré-requisitos** (todos checados em `ResolveAgent.maybeLoadDatabaseTool`):
 
-- Opens a **second `DataSource`** against `config.databaseUrl` (separate from the global TypeORM connection — adjust pool sizes accordingly).
-- `SqlDatabase.fromDataSourceParams` → `getTableInfo(['reports', 'users'])`. **Only these two tables are exposed to the model.** Add more by editing this list (and re-deploying the prompt update — the schema is embedded in the tool description).
+1. `agents.database_tool = true` e `agents.organization_id` setado.
+2. Linha em `organization_features` para `(organization_id, feature_id_of_database_connection, enabled=true)`.
+3. `organizations.database_url` populado.
 
-**`execute(organizationId)`** returns a `DynamicStructuredTool` whose `func`:
+Qualquer falha → tool ausente silenciosamente.
 
-1. Calls `sanitizeSqlQuery(query, organizationId)`.
-2. `universalDataRepository.execute(safe)` — raw SQL.
-3. Returns the result `JSON.stringify`'d (or the raw string if it's already one).
+**`execute({ databaseUrl })`** (lazy, por request):
 
-**Guardrails — `sanitizeSqlQuery` (lines 87-126):**
+- Detecta dialeto pelo prefixo: `postgres://`/`postgresql://` → Postgres; `mysql://`/`mysql2://` → MySQL. Outros schemes → `BadRequestException`.
+- Cria um `DataSource` TypeORM novo e chama `await dataSource.initialize()`. Não há cache hoje — uma pool por chamada (TODO).
+- `SqlDatabase.fromDataSourceParams` → `getTableInfo()` (sem allow-list). O schema introspectado é embutido na description da tool.
+
+**`func`** (`tool({ query })`):
+
+1. `sanitizeSqlQuery(query)`.
+2. `db.run(safe)` (LangChain `SqlDatabase`).
+3. Retorna a string resultante.
+
+**Guardrails — `sanitizeSqlQuery`:**
 
 | Rule             | Throws when                                                                     |
 | ---------------- | ------------------------------------------------------------------------------- |
 | Single statement | `;` count > 1, or trailing `;` followed by content                              |
-| Tenant gate      | query does **not** contain `organizationId` as a literal substring              |
 | Verb allow-list  | first word is not `SELECT` / `INSERT` / `UPDATE` (case-insensitive)             |
 | Deny keywords    | regex `\b(DELETE\|ALTER\|DROP\|CREATE\|REPLACE\|TRUNCATE)\b` (case-insensitive) |
 | LIMIT cap        | if query has no `LIMIT n[, m]`, the sanitizer **appends ` LIMIT 5`**            |
 
-**The tenant gate is a substring check, not a parse.** An injection that embeds the org id elsewhere would pass — defense-in-depth here is informal. The tool description tells the model to use `WHERE organization_id = '<uuid>'` to satisfy it.
+**Sem tenant gate.** Cada org conecta na sua própria DB, então não há mais `WHERE organization_id = '...'` exigido — esse check sumiu junto com o modelo do Postgres local compartilhado.
 
-**Tool description prompt** dictates: UUID casting (`gen_random_uuid()`, `'...'::uuid`), enum casting (`'value'::enum_name`), `NOW()` for `created_at`/`updated_at`, mandatory `WHERE organization_id = '<orgId>'`, retry up to 3× on SQL error, prefer column lists over `SELECT *`. Editing the description changes the model's SQL style.
+**Description prompt** é dialeto-aware (label `PostgreSQL` ou `MySQL`) e embute o schema. As "REGRAS DE OURO" cobrem a allow-list de verbos, single-statement, `LIMIT 5` default e preferência por colunas explícitas no SELECT. Editar a description muda o estilo de SQL do modelo.
 
 ### 8.3 Parser tool (`parser_schema`)
 

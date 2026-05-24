@@ -9,16 +9,16 @@ description: 'Use when: editing anything under src/components/AIChat/, modifying
 
 ## Live endpoints
 
-| Route                    | Method                       | Streams?             | Auth                           | DTO                    |
-| ------------------------ | ---------------------------- | -------------------- | ------------------------------ | ---------------------- |
-| `POST /support/question` | `QuestionController.execute` | yes (Fastify hijack) | `AuthGuard` + `ActiveOrgGuard` | `QuestionDto`          |
-| `POST /chat/attendant`   | `AttendantController.handle` | no                   | `AuthGuard` + `ActiveOrgGuard` | `QuestionDto` (reused) |
+| Route                    | Method                       | Streams?             | Auth                                    | DTO                    |
+| ------------------------ | ---------------------------- | -------------------- | --------------------------------------- | ---------------------- |
+| `POST /support/question` | `QuestionController.execute` | yes (Fastify hijack) | `CompositeAuthGuard` + `ActiveOrgGuard` | `QuestionDto`          |
+| `POST /chat/attendant`   | `AttendantController.handle` | no                   | `AuthGuard` + `ActiveOrgGuard`          | `QuestionDto` (reused) |
 
-`QuestionDto` (`src/components/AIChat/Question/question.dto.ts`): `question` (required), `agentId` (required), optional `phone` and `name`. Attendant imports it from the Question folder rather than defining its own — keep them in sync.
+`QuestionDto` (`src/components/AIChat/Question/question.dto.ts`): `question` (required), `agentId` (required), optional `phone`, `name`, and `conversationId` (drives thread memory). No `organizationId`/`companyId` — those are dead since `CompositeAuthGuard` always resolves the org (from JWT or from the `chat_embed_token` looked up by `ApiKeyGuard`). Attendant imports it from the Question folder — keep them in sync.
 
 ## Question flow — orchestrator at src/components/AIChat/Question/question.service.ts
 
-1. **Credit gate.** If `user.organization_id` is set, call `consumeCreditsService.checkCredits(orgId)`; throw `ForbiddenException('Créditos insuficientes. Por favor, adquira mais créditos para continuar.')` when out. Anonymous/admin sessions with no org skip the check.
+1. **Credit gate.** A request is `billable` only when `user.organization_id` is set **and** `user.role !== 'service'` (S2S API-key callers carry `role: 'service'` so they skip billing while still being scoped to the right org). For billable requests, call `consumeCreditsService.checkCredits(orgId)`; throw `ForbiddenException('Créditos insuficientes. Por favor, adquira mais créditos para continuar.')` when out.
 2. **Session.** `createSessionIfNotExistsService.execute({ agent_id, user_id, organization_id })` — idempotent.
 3. **Resolve agent.** `resolveAgentService.execute(agentId, { sessionId })` — loads the agent and builds the runnable (see `[[ai-agent-runtime]]`). Throws `'Agent não encontrado'` (plain `Error`) if missing.
 4. **Persist user message.** `recordChatMessageService.execute(session.id, user.id, agent.id, question, 'user')` — writes to `messages` via `MessageRepository`. Failures here are swallowed and only logged — never let recording errors abort the chat.

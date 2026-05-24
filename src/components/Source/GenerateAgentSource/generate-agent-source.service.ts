@@ -266,7 +266,7 @@ export class GenerateAgentSourceService {
       this.logger.log(
         `Site processed: ${chunkCount} chunks created from ${url}`,
       );
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`Failed to process site ${url}: ${error.message}`);
       await this.sourceRepository.updateStatus(
         sourceId,

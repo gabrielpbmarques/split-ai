@@ -14,7 +14,13 @@ export class LoadVectorSearchToolService {
 
   async execute(): Promise<
     DynamicStructuredTool<
-      z.ZodObject<{ query: z.ZodString; agent_id: z.ZodString }>
+      z.ZodObject<{
+        query: z.ZodString;
+        agent_id: z.ZodString;
+        source_type: z.ZodEnum<
+          ['business_context', 'memory', 'additional_directives']
+        >;
+      }>
     >
   > {
     return new DynamicStructuredTool({
@@ -27,10 +33,14 @@ export class LoadVectorSearchToolService {
       schema: z.object({
         query: z.string().describe('Consulta semântica'),
         agent_id: z.string().describe('ID do agente'),
+        source_type: z
+          .enum(['business_context', 'memory', 'additional_directives'])
+          .describe('Tipo de fonte para busca de vetores'),
       }),
-      func: async ({ query, agent_id }) => {
+      func: async ({ query, agent_id, source_type }) => {
         const vectorStore = await this.loadVectorStoreService.execute({
           agent_id,
+          source_type,
         });
 
         const retrievedDocuments =

@@ -16,4 +16,5 @@ export * from './plan.repository';
 export * from './subscription.repository';
 export * from './payment.repository';
 export * from './universal-data.repository';
-export * from './organization-analytics-config.repository';
+export * from './feature.repository';
+export * from './organization-feature.repository';

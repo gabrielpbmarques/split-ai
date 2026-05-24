@@ -1,11 +1,4 @@
-import {
-  IsInt,
-  IsNotEmpty,
-  IsOptional,
-  IsPositive,
-  IsString,
-  IsUUID,
-} from 'class-validator';
+import { IsNotEmpty, IsObject, IsOptional, IsString } from 'class-validator';
 
 export class QuestionDto {
   @IsString()
@@ -25,31 +18,21 @@ export class QuestionDto {
   agentId: string;
 
   /**
-   * Tenant scope for API-key callers. Required when authenticating via
-   * `Authorization: ApiKey ...` (no JWT user). For JWT callers it is ignored
-   * — the organization is derived from the token's `organization_id`.
-   */
-  @IsUUID()
-  @IsOptional()
-  organizationId?: string;
-
-  /**
-   * Optional companyId (legacy numeric tenant id) — passed through to
-   * downstream tools that still resolve scope by company. Mostly used by
-   * the analytics agents when called server-to-server.
-   */
-  @IsInt()
-  @IsPositive()
-  @IsOptional()
-  companyId?: number;
-
-  /**
    * Optional conversation identifier. When provided, used to derive the
    * agent's `threadId` so memory persists across calls in the same
-   * conversation. Required for API-key analytics-style callers; for JWT
-   * callers the session id is used as a fallback.
+   * conversation. Falls back to the session id.
    */
   @IsString()
   @IsOptional()
   conversationId?: string;
+
+  /**
+   * Per-call prompt variables surfaced to the agent in the VRS block
+   * (e.g. `{ companyId: "123" }`). Server-controlled keys
+   * (`sessionId`, `conversationId`, `threadId`, `organizationId`) always
+   * override anything passed here.
+   */
+  @IsObject()
+  @IsOptional()
+  variables?: Record<string, string>;
 }

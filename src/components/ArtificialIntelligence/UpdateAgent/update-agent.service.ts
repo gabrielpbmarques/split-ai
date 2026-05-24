@@ -61,17 +61,6 @@ export class UpdateAgentService {
       }
     }
 
-    if (dto.analyticsExploreSchema !== undefined)
-      updateData.analytics_explore_schema = dto.analyticsExploreSchema;
-    if (dto.analyticsDescribeTable !== undefined)
-      updateData.analytics_describe_table = dto.analyticsDescribeTable;
-    if (dto.analyticsValidateSql !== undefined)
-      updateData.analytics_validate_sql = dto.analyticsValidateSql;
-    if (dto.analyticsExecuteSql !== undefined)
-      updateData.analytics_execute_sql = dto.analyticsExecuteSql;
-    if (dto.analyticsBusinessContext !== undefined)
-      updateData.analytics_business_context = dto.analyticsBusinessContext;
-
     if (Object.keys(updateData).length > 0) {
       await this.agentRepository.update(agent.id, updateData);
     }

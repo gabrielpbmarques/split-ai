@@ -40,10 +40,6 @@ import {
   AnthropicProvider,
   ANTHROPIC_CHAT,
 } from './providers/anthropic.provider';
-import {
-  BravohubAnalyticsProvider,
-  BRAVOHUB_ANALYTICS_SERVICE,
-} from './providers/bravohub-analytics.provider';
 
 @Module({
   imports: [ConfigModule],
@@ -57,7 +53,6 @@ import {
     ...TwilioProvider,
     ...SpiderServiceProvider,
     ...StripeProvider,
-    ...BravohubAnalyticsProvider,
   ],
   exports: [
     SUPABASE_CLIENT,
@@ -72,7 +67,6 @@ import {
     TWILIO_SERVICE,
     SPIDER_SERVICE,
     STRIPE_CLIENT,
-    BRAVOHUB_ANALYTICS_SERVICE,
   ],
 })
 export class InfrastructureModule {}

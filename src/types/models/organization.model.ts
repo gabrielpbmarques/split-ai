@@ -15,6 +15,7 @@ export interface Organization {
   activated_at?: Date;
   deactivated_at?: Date;
   plan?: PlanEntity;
+  database_url?: string | null;
   // Embeddable chat widget settings
   chat_embed_enabled?: boolean;
   chat_embed_token?: string | null;

@@ -1,6 +1,7 @@
 import { Body, Controller, Post, Res, Req } from '@nestjs/common';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { Roles } from 'src/decorators/roles.decorator';
+import { AgentSource } from 'src/types/agent-source';
 
 import { GenerateAgentSourceDto } from './generate-agent-source.dto';
 import { GenerateAgentSourceService } from './generate-agent-source.service';
@@ -13,7 +14,7 @@ export class GenerateAgentSourceController {
 
   @Post('generate-source')
   @Roles('admin')
-  async execute(
+  async handle(
     @Body() generateAgentSourceDto: GenerateAgentSourceDto,
     @Req() req: FastifyRequest,
     @Res() res: FastifyReply,
@@ -27,7 +28,7 @@ export class GenerateAgentSourceController {
         ? await file.toBuffer()
         : undefined;
 
-      const sourceType: string | undefined = hasFile
+      const sourceType: AgentSource | undefined = hasFile
         ? body.sourceType?.value || undefined
         : generateAgentSourceDto.sourceType;
 
@@ -65,7 +66,7 @@ export class GenerateAgentSourceController {
       return res
         .status(200)
         .send({ message: 'Fonte de conhecimento processada com sucesso' });
-    } catch (error) {
+    } catch (error: any) {
       return res.status(error.status || 500).send(error.message);
     }
   }

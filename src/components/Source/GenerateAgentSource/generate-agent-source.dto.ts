@@ -1,13 +1,14 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { AgentSource } from 'src/types/agent-source';
 
 export class GenerateAgentSourceDto {
   @IsString()
   @IsOptional()
   url?: string;
 
-  @IsString()
+  @IsEnum(AgentSource)
   @IsOptional()
-  sourceType?: string;
+  sourceType?: AgentSource;
 
   @IsString()
   @IsOptional()

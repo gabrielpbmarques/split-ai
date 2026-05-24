@@ -46,24 +46,4 @@ export class CreateAgentDto {
   @IsString({ each: true })
   @IsOptional()
   sites?: string[];
-
-  @IsBoolean()
-  @IsOptional()
-  analyticsExploreSchema?: boolean;
-
-  @IsBoolean()
-  @IsOptional()
-  analyticsDescribeTable?: boolean;
-
-  @IsBoolean()
-  @IsOptional()
-  analyticsValidateSql?: boolean;
-
-  @IsBoolean()
-  @IsOptional()
-  analyticsExecuteSql?: boolean;
-
-  @IsBoolean()
-  @IsOptional()
-  analyticsBusinessContext?: boolean;
 }

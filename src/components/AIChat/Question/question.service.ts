@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  ForbiddenException,
-  Injectable,
-} from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { RecordChatMessageService } from 'src/components/AIChat/RecordChatMessage/record-chat-message.service';
 import { GenerateAiResponseService } from 'src/components/ArtificialIntelligence/GenerateAIResponse/generate-ai-response.service';
 import { ResolveAgentService } from 'src/components/ArtificialIntelligence/ResolveAgent/resolve-agent.service';
@@ -18,7 +14,8 @@ const STREAM = true;
 /**
  * The auth-derived user. For JWT callers this is a real `UserEntity` shape;
  * for API-key (server-to-server) callers it is a synthetic service user with
- * `id`, `organization_id`, and `email` set to `null`.
+ * `id` and `email` set to `null` and `organization_id` resolved from the
+ * `chat_embed_token` by `ApiKeyGuard`.
  */
 type AuthenticatedUser = Pick<
   UserEntity,
@@ -43,23 +40,12 @@ export class QuestionService {
     onEvent: (event: StreamEvent) => void,
   ): Promise<void> {
     const { question, agentId } = dto;
+    const organizationId = user.organization_id ?? null;
+    const billable = !!user.organization_id && user.role !== 'service';
 
-    // Resolve effective organization scope. JWT callers carry it on the user;
-    // ApiKey callers must pass it via the DTO (organizationId or companyId).
-    const organizationId = user.organization_id ?? dto.organizationId ?? null;
-    const isServiceCaller = !user.organization_id;
-
-    if (isServiceCaller && !dto.organizationId && !dto.companyId) {
-      throw new BadRequestException(
-        'organizationId ou companyId é obrigatório quando autenticado via ApiKey.',
-      );
-    }
-
-    // Check credits only when we have a JWT-derived organization; API-key
-    // service-to-service callers do not bill.
-    if (user.organization_id) {
+    if (billable) {
       const hasCredits = await this.consumeCreditsService.checkCredits(
-        user.organization_id,
+        user.organization_id as string,
       );
       if (!hasCredits) {
         throw new ForbiddenException(
@@ -74,16 +60,13 @@ export class QuestionService {
       organization_id: organizationId ?? undefined,
     });
 
-    // Propagate optional analytics scope so `LoadAnalyticsToolsService`
-    // (which requires `companyId`) can wire its tool belt.
     const agent = await this.resolveAgentService.execute(agentId, {
+      ...(dto.variables || {}),
       sessionId: session.id,
-      companyId: dto.companyId,
       conversationId: dto.conversationId,
       threadId: dto.conversationId ?? session.id,
     });
 
-    // Record user message
     await this.recordChatMessageService.execute(
       session.id,
       user.id ?? null,
@@ -104,9 +87,6 @@ export class QuestionService {
       STREAM,
     )) as AsyncIterable<StreamEvent>;
 
-    // Accumulate `content` deltas as a fallback and capture the final text
-    // when the structured response surfaces. Either path drives both the
-    // chat-message persistence and credit consumption below.
     let contentBuffer = '';
     let finalText: string | null = null;
 
@@ -130,9 +110,9 @@ export class QuestionService {
         'agent',
       );
 
-      if (user.organization_id) {
+      if (billable) {
         await this.consumeCreditsService.execute(
-          user.organization_id,
+          user.organization_id as string,
           session.id,
           true,
         );

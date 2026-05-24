@@ -1,90 +1,86 @@
 import { SqlDatabase } from '@langchain/classic/sql_db';
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { DynamicStructuredTool, tool } from 'langchain';
-import { config } from 'src/config';
-import { UniversalDataRepository } from 'src/repositories';
 import { DataSource } from 'typeorm';
 import z from 'zod';
 
 const DENY_RE = /\b(DELETE|ALTER|DROP|CREATE|REPLACE|TRUNCATE)\b/i;
 const HAS_LIMIT_TAIL_RE = /\blimit\b\s+\d+(\s*,\s*\d+)?\s*;?\s*$/i;
 
+type SupportedDialect = 'postgres' | 'mysql';
+
 @Injectable()
-export class LoadDatabaseToolService implements OnModuleInit {
-  private dataSource: DataSource;
-  private db: SqlDatabase;
-  private schema: string;
+export class LoadDatabaseToolService {
+  async execute({
+    databaseUrl,
+  }: {
+    databaseUrl: string;
+  }): Promise<DynamicStructuredTool<z.ZodObject<{ query: z.ZodString }>>> {
+    const dialect = this.detectDialect(databaseUrl);
 
-  constructor(
-    private readonly universalDataRepository: UniversalDataRepository,
-  ) {}
-
-  onModuleInit(): void {
-    this.dataSource = new DataSource({
-      type: 'postgres',
-      url: config.databaseUrl,
+    const dataSource = new DataSource({
+      type: dialect,
+      url: databaseUrl,
     });
+    await dataSource.initialize();
 
-    this.loadDatabase();
-  }
+    const db = await SqlDatabase.fromDataSourceParams({
+      appDataSource: dataSource,
+    });
+    const schema = await db.getTableInfo();
 
-  async execute(
-    organizationId: string,
-  ): Promise<DynamicStructuredTool<z.ZodObject<{ query: z.ZodString }>>> {
-    const executeSql = tool(
+    return tool(
       async ({ query }) => {
-        const q = this.sanitizeSqlQuery(query, organizationId);
+        const q = this.sanitizeSqlQuery(query);
         try {
-          const result = await this.universalDataRepository.execute(q);
-          return typeof result === 'string'
-            ? result
-            : JSON.stringify(result, null, 2);
-        } catch (e) {
+          return await db.run(q);
+        } catch (e: any) {
           throw new Error(e?.message ?? String(e));
         }
       },
       {
         name: 'execute_sql',
-        description: `
-            --- ESQUEMA DE BANCO DE DADOS (Não invente tabelas/colunas) ---
-            ${this.schema}
-
-            --- REGRAS DE OURO PARA SQL (Siga estritamente) ---
-            1. UUIDs e IDs:
-               - Novos registros (INSERT): Use SEMPRE \`gen_random_uuid()\`.
-               - Literais UUID: Use cast explícito, ex: '123e4567-e89b...'::uuid.
-
-            2. Enums:
-               - Use SEMPRE \`'value'::enum_name\`.
-
-            3. Datas e Horários:
-               - \`created_at\` / \`updated_at\`: Use SEMPRE \`NOW()\`.
-               - Outras Datas: Converta referências como "amanhã" para datas exatas (YYYY-MM-DD HH:MM:SS).
-
-            4. Segurança e Escopo:
-               - SEMPRE adicione \`WHERE organization_id = '${organizationId}'\` em todas as queries (SELECT, UPDATE, DELETE, INSERT). falhar nisso é um erro grave de segurança.
-
-            5. Tratamento de Erros de SQL:
-               - Se receber "Error: ...", NÃO peça desculpas imediatamente.
-               - 1º: Analise a mensagem de erro (ex: type mismatch uuid vs text).
-               - 2º: Corrija a query (ex: adicione ::uuid ou use gen_random_uuid()).
-               - 3º: Tente executar novamente. Faça isso até 3 tentativas.
-
-            6. Boas Práticas:
-               - Prefira listar colunas (SELECT id, name...) em vez de SELECT *.
-          `,
+        description: this.buildDescription(dialect, schema),
         schema: z.object({
           query: z
             .string()
-            .describe('SQLite SELECT/INSERT/UPDATE query to execute.'),
+            .describe('SQL SELECT/INSERT/UPDATE query to execute.'),
         }),
       },
     );
-
-    return executeSql;
   }
 
-  private sanitizeSqlQuery(q: string, organizationId: string): string {
+  private detectDialect(url: string): SupportedDialect {
+    if (url.startsWith('postgres://') || url.startsWith('postgresql://')) {
+      return 'postgres';
+    }
+    if (url.startsWith('mysql://') || url.startsWith('mysql2://')) {
+      return 'mysql';
+    }
+    const scheme = url.split('://')[0] || url.slice(0, 20);
+    throw new BadRequestException(
+      `database_url com scheme não suportado: '${scheme}'. Apenas postgres:// e mysql:// são aceitos.`,
+    );
+  }
+
+  private buildDescription(dialect: SupportedDialect, schema: string): string {
+    const dialectLabel = dialect === 'postgres' ? 'PostgreSQL' : 'MySQL';
+    return `
+      --- ESQUEMA DE BANCO DE DADOS (${dialectLabel}) ---
+      Não invente tabelas/colunas que não estejam listadas abaixo.
+
+      ${schema}
+
+      --- REGRAS DE OURO ---
+      1. Use apenas SELECT, INSERT ou UPDATE. DELETE/ALTER/DROP/CREATE/REPLACE/TRUNCATE são bloqueados.
+      2. Uma única statement por chamada (sem múltiplos ; encadeados).
+      3. Se a query não tiver LIMIT, um \`LIMIT 5\` é aplicado automaticamente.
+      4. Prefira listar colunas explicitamente em vez de SELECT *.
+      5. Em caso de erro do banco, analise a mensagem, corrija e tente de novo (até 3 tentativas).
+    `;
+  }
+
+  private sanitizeSqlQuery(q: string): string {
     let query = String(q ?? '').trim();
 
     const semis = [...query].filter((c) => c === ';').length;
@@ -97,17 +93,12 @@ export class LoadDatabaseToolService implements OnModuleInit {
 
     query = query.replace(/;+\s*$/g, '').trim();
 
-    if (!query.includes(organizationId)) {
-      throw new Error(
-        `Security Error: Query must filter by organization_id = '${organizationId}'`,
-      );
-    }
-
+    const lower = query.toLowerCase();
     if (
       !(
-        query.toLowerCase().startsWith('select') ||
-        query.toLowerCase().startsWith('insert') ||
-        query.toLowerCase().startsWith('update')
+        lower.startsWith('select') ||
+        lower.startsWith('insert') ||
+        lower.startsWith('update')
       )
     ) {
       throw new Error('Only SELECT/INSERT/UPDATE statements are allowed');
@@ -123,13 +114,5 @@ export class LoadDatabaseToolService implements OnModuleInit {
     }
 
     return query;
-  }
-
-  private async loadDatabase(): Promise<void> {
-    this.db = await SqlDatabase.fromDataSourceParams({
-      appDataSource: this.dataSource,
-    });
-
-    this.schema = await this.db.getTableInfo(['reports', 'users']);
   }
 }

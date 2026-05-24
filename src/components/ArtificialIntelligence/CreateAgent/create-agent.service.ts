@@ -23,11 +23,6 @@ export class CreateAgentService {
       parser_description: dto.parser?.description ?? null,
       organization_id: user.role === 'admin' ? null : user.organization_id,
       user_id: user.id,
-      analytics_explore_schema: dto.analyticsExploreSchema ?? false,
-      analytics_describe_table: dto.analyticsDescribeTable ?? false,
-      analytics_validate_sql: dto.analyticsValidateSql ?? false,
-      analytics_execute_sql: dto.analyticsExecuteSql ?? false,
-      analytics_business_context: dto.analyticsBusinessContext ?? false,
     });
 
     await this.agentInstructionRepository.create({

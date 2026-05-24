@@ -13,7 +13,6 @@ import { PdfModule } from './Pdf/pdf.module';
 import { RegisterModule } from './Register/register.module';
 import { ReportModule } from './Report/report.module';
 import { SourceModule } from './Source/source.module';
-import { ToolsModule } from './Tools/tools.module';
 import { UserModule } from './User/user.module';
 import { WhatsappModule } from './Whatsapp/whatsapp.module';
 
@@ -34,7 +33,6 @@ import { WhatsappModule } from './Whatsapp/whatsapp.module';
     WhatsappModule,
     AnalyticsModule,
     SourceModule,
-    ToolsModule,
   ],
   exports: [
     AuthModule,
@@ -52,7 +50,6 @@ import { WhatsappModule } from './Whatsapp/whatsapp.module';
     WhatsappModule,
     AnalyticsModule,
     SourceModule,
-    ToolsModule,
   ],
 })
 export class ComponentsModule {}

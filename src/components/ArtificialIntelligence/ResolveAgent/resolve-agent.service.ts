@@ -2,16 +2,16 @@ import { ChatAnthropic } from '@langchain/anthropic';
 import { MemorySaver } from '@langchain/langgraph';
 import { Injectable } from '@nestjs/common';
 import { DynamicStructuredTool, createAgent } from 'langchain';
-import { BusinessContextToolService } from 'src/components/Tools/BusinessContext/business-context-tool.service';
-import { DescribeTableToolService } from 'src/components/Tools/DescribeTable/describe-table-tool.service';
-import { ExecuteSqlToolService } from 'src/components/Tools/ExecuteSql/execute-sql-tool.service';
-import { ExploreSchemaToolService } from 'src/components/Tools/ExploreSchema/explore-schema-tool.service';
 import { LoadDatabaseToolService } from 'src/components/Tools/LoadDatabaseTool/load-database-tool.service';
 import { LoadVectorSearchToolService } from 'src/components/Tools/LoadVectorSearchTool/load-vector-search-tool.service';
-import { ValidateSqlToolService } from 'src/components/Tools/ValidateSql/validate-sql-tool.service';
 import { config } from 'src/config';
 import { AgentEntity } from 'src/entities';
-import { AgentRepository, AgentInstructionRepository } from 'src/repositories';
+import {
+  AgentRepository,
+  AgentInstructionRepository,
+  OrganizationRepository,
+  OrganizationFeatureRepository,
+} from 'src/repositories';
 import { AgentFinalResponseSchema, ResolvedAgent } from 'src/types';
 import { buildLangchainToolFromSchema } from 'src/utils/buildZodSchema';
 import { z } from 'zod';
@@ -19,20 +19,19 @@ import { z } from 'zod';
 import { BuildSystemPromptService } from '../BuildSystemPrompt/build-system-prompt.service';
 import { LoadCheckpointerService } from '../LoadCheckpointer/load-checkpointer.service';
 
+const DATABASE_CONNECTION_FEATURE_KEY = 'database_connection';
+
 @Injectable()
 export class ResolveAgentService {
   constructor(
     private readonly agentRepository: AgentRepository,
     private readonly agentInstructionRepository: AgentInstructionRepository,
+    private readonly organizationRepository: OrganizationRepository,
+    private readonly organizationFeatureRepository: OrganizationFeatureRepository,
     private readonly loadVectorSearchToolService: LoadVectorSearchToolService,
     private readonly buildSystemPromptService: BuildSystemPromptService,
     private readonly loadDatabaseToolService: LoadDatabaseToolService,
     private readonly loadCheckpointerService: LoadCheckpointerService,
-    private readonly exploreSchemaToolService: ExploreSchemaToolService,
-    private readonly describeTableToolService: DescribeTableToolService,
-    private readonly validateSqlToolService: ValidateSqlToolService,
-    private readonly executeSqlToolService: ExecuteSqlToolService,
-    private readonly businessContextToolService: BusinessContextToolService,
   ) {}
 
   async execute(
@@ -61,7 +60,7 @@ export class ResolveAgentService {
 
     const [chat, tools] = await Promise.all([
       this.loadChat(agent),
-      this.loadTools(agent, promptVariables),
+      this.loadTools(agent),
     ]);
 
     const systemPrompt = await this.buildSystemPromptService.execute(
@@ -112,7 +111,6 @@ export class ResolveAgentService {
 
   private async loadTools(
     dbAgent: AgentEntity,
-    promptVariables?: any,
   ): Promise<DynamicStructuredTool<z.ZodObject<any>>[]> {
     const tools: DynamicStructuredTool<z.ZodObject<any>>[] = [];
 
@@ -130,68 +128,38 @@ export class ResolveAgentService {
       tools.push(await this.loadVectorSearchToolService.execute());
     }
 
-    if (dbAgent.database_tool) {
-      tools.push(
-        await this.loadDatabaseToolService.execute(dbAgent.organization_id),
+    if (dbAgent.database_tool && dbAgent.organization_id) {
+      const databaseTool = await this.maybeLoadDatabaseTool(
+        dbAgent.organization_id,
       );
-    }
-
-    const usesAnalyticsTool =
-      dbAgent.analytics_explore_schema ||
-      dbAgent.analytics_describe_table ||
-      dbAgent.analytics_validate_sql ||
-      dbAgent.analytics_execute_sql ||
-      dbAgent.analytics_business_context;
-
-    if (usesAnalyticsTool) {
-      if (!dbAgent.organization_id) {
-        throw new Error(
-          'Agente com ferramentas analíticas habilitadas precisa estar vinculado a uma organização (organization_id).',
-        );
-      }
-      const organizationId = dbAgent.organization_id;
-      const threadId = String(
-        promptVariables?.threadId ?? promptVariables?.sessionId ?? 'default',
-      );
-
-      if (dbAgent.analytics_explore_schema) {
-        tools.push(
-          this.exploreSchemaToolService.execute({
-            organizationId,
-          }) as DynamicStructuredTool<z.ZodObject<any>>,
-        );
-      }
-      if (dbAgent.analytics_describe_table) {
-        tools.push(
-          this.describeTableToolService.execute({
-            organizationId,
-          }) as DynamicStructuredTool<z.ZodObject<any>>,
-        );
-      }
-      if (dbAgent.analytics_validate_sql) {
-        tools.push(
-          this.validateSqlToolService.execute({
-            organizationId,
-          }) as DynamicStructuredTool<z.ZodObject<any>>,
-        );
-      }
-      if (dbAgent.analytics_execute_sql) {
-        tools.push(
-          this.executeSqlToolService.execute({
-            organizationId,
-            threadId,
-          }) as DynamicStructuredTool<z.ZodObject<any>>,
-        );
-      }
-      if (dbAgent.analytics_business_context) {
-        tools.push(
-          this.businessContextToolService.execute({
-            organizationId,
-          }) as DynamicStructuredTool<z.ZodObject<any>>,
-        );
+      if (databaseTool) {
+        tools.push(databaseTool);
       }
     }
 
     return tools;
+  }
+
+  private async maybeLoadDatabaseTool(
+    organizationId: string,
+  ): Promise<DynamicStructuredTool<z.ZodObject<any>> | null> {
+    const isEnabled =
+      await this.organizationFeatureRepository.isEnabledForOrganization(
+        organizationId,
+        DATABASE_CONNECTION_FEATURE_KEY,
+      );
+    if (!isEnabled) {
+      return null;
+    }
+
+    const organization =
+      await this.organizationRepository.findById(organizationId);
+    if (!organization?.database_url) {
+      return null;
+    }
+
+    return this.loadDatabaseToolService.execute({
+      databaseUrl: organization.database_url,
+    });
   }
 }

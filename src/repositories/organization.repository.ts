@@ -136,6 +136,14 @@ export class OrganizationRepository {
     });
   }
 
+  async findActiveByEmbedToken(
+    token: string,
+  ): Promise<OrganizationEntity | null> {
+    return this.organizationRepository.findOne({
+      where: { chat_embed_token: token, chat_embed_enabled: true },
+    });
+  }
+
   async delete(id: string): Promise<boolean> {
     const result = await this.organizationRepository.delete(id);
     return (
