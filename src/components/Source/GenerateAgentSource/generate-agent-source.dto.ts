@@ -17,6 +17,10 @@ export class GenerateAgentSourceDto {
   @IsOptional()
   fileName?: string;
 
+  @IsString()
+  @IsOptional()
+  mimeType?: string;
+
   @IsOptional()
   buffer?: any;
 }

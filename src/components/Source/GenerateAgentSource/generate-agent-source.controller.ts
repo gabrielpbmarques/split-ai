@@ -39,6 +39,14 @@ export class GenerateAgentSourceController {
         ? body.url?.value || undefined
         : generateAgentSourceDto.url;
 
+      const fileName: string | undefined = hasFile
+        ? file.filename || body.fileName?.value || undefined
+        : generateAgentSourceDto.fileName;
+
+      const mimeType: string | undefined = hasFile
+        ? file.mimetype || undefined
+        : undefined;
+
       if (!buffer && (!url || !url.trim())) {
         return res
           .status(400)
@@ -50,6 +58,8 @@ export class GenerateAgentSourceController {
         buffer,
         sourceType,
         agentId,
+        fileName,
+        mimeType,
       });
 
       return res
