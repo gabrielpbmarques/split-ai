@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { LoadVectorSearchToolModule } from 'src/components/Tools/LoadVectorSearchTool/load-vector-search-tool.module';
 
 import { TokenUsageModule } from '../TokenUsage/token-usage.module';
 
@@ -10,7 +11,6 @@ import { ExecuteSimilaritySearchModule } from './ExecuteSimilaritySearch/execute
 import { GenerateAiResponseModule } from './GenerateAIResponse/generate-ai-response.module';
 import { ListAgentsModule } from './ListAgents/list-agents.module';
 import { LoadAgentSitesModule } from './LoadAgentSites/load-agent-sites.module';
-import { LoadVectorSearchToolModule } from './LoadVectorSearchTool/load-vector-search-tool.module';
 import { LoadVectorStoreModule } from './LoadVectorStore/load-vector-store.module';
 import { NormalizePromptInstructionsModule } from './NormalizePromptInstructions/normalize-prompt-instructions.module';
 import { ResolveAgentModule } from './ResolveAgent/resolve-agent.module';

@@ -1,10 +1,9 @@
 import { DynamicStructuredTool } from '@langchain/core/tools';
 import { Injectable } from '@nestjs/common';
+import { ExecuteSimilaritySearchService } from 'src/components/ArtificialIntelligence/ExecuteSimilaritySearch/execute-similarity-search.service';
+import { LoadVectorStoreService } from 'src/components/ArtificialIntelligence/LoadVectorStore/load-vector-store.service';
 import { CustomDocument } from 'src/types';
 import { z } from 'zod';
-
-import { ExecuteSimilaritySearchService } from '../ExecuteSimilaritySearch/execute-similarity-search.service';
-import { LoadVectorStoreService } from '../LoadVectorStore/load-vector-store.service';
 
 @Injectable()
 export class LoadVectorSearchToolService {

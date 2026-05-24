@@ -6,6 +6,8 @@ import { BusinessContextToolService } from 'src/components/Tools/BusinessContext
 import { DescribeTableToolService } from 'src/components/Tools/DescribeTable/describe-table-tool.service';
 import { ExecuteSqlToolService } from 'src/components/Tools/ExecuteSql/execute-sql-tool.service';
 import { ExploreSchemaToolService } from 'src/components/Tools/ExploreSchema/explore-schema-tool.service';
+import { LoadDatabaseToolService } from 'src/components/Tools/LoadDatabaseTool/load-database-tool.service';
+import { LoadVectorSearchToolService } from 'src/components/Tools/LoadVectorSearchTool/load-vector-search-tool.service';
 import { ValidateSqlToolService } from 'src/components/Tools/ValidateSql/validate-sql-tool.service';
 import { config } from 'src/config';
 import { AgentEntity } from 'src/entities';
@@ -16,8 +18,6 @@ import { z } from 'zod';
 
 import { BuildSystemPromptService } from '../BuildSystemPrompt/build-system-prompt.service';
 import { LoadCheckpointerService } from '../LoadCheckpointer/load-checkpointer.service';
-import { LoadDatabaseToolService } from '../LoadDatabaseTool/load-database-tool.service';
-import { LoadVectorSearchToolService } from '../LoadVectorSearchTool/load-vector-search-tool.service';
 
 @Injectable()
 export class ResolveAgentService {
