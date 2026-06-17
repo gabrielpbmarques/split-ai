@@ -75,7 +75,7 @@ export class GenerateTokenService {
       return this.jwtService.verify(token, {
         secret: this.configService.get<string>('JWT_SECRET'),
       });
-    } catch (error) {
+    } catch (error: any) {
       return null;
     }
   }

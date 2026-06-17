@@ -23,7 +23,7 @@ export class ListReportsController {
     try {
       const reports = await this.listReportsService.execute(user, dto);
       return res.status(200).send(reports);
-    } catch (error) {
+    } catch (error: any) {
       return res.status(500).send(error);
     }
   }

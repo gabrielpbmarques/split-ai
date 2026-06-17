@@ -17,7 +17,7 @@ export class LoadAgentSitesController {
     try {
       await this.loadAgentSitesService.execute(body.sites, body.agentId);
       return res.status(200).send({ message: 'Sites loaded successfully' });
-    } catch (error) {
+    } catch (error: any) {
       return res.status(500).send({ message: 'Failed to load sites' });
     }
   }

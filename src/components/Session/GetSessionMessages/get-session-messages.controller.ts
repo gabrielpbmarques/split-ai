@@ -28,7 +28,7 @@ export class GetSessionMessagesController {
         sessionId,
       );
       return res.status(200).send(messages);
-    } catch (error) {
+    } catch (error: any) {
       const status = error.status || 500;
       return res.status(status).send({ error: error.message });
     }

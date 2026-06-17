@@ -16,7 +16,7 @@ export class ListUsersController {
     try {
       const result = await this.listUsersService.execute();
       return res.status(200).send(result);
-    } catch (error) {
+    } catch (error: any) {
       return res.status(500).send(error);
     }
   }

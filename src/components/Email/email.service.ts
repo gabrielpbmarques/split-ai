@@ -15,7 +15,7 @@ export class EmailService {
   async send(options: EmailOptions): Promise<void> {
     try {
       await this.emailService.send(options);
-    } catch (error) {
+    } catch (error: any) {
       throw error;
     }
   }

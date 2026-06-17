@@ -17,7 +17,7 @@ export class RecordTokenUsageService {
         output_tokens: params.output_tokens || 0,
         total_tokens: params.total_tokens || 0,
       });
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(
         `Failed to record token usage for organization ${params.organization_id}: ${error.message}`,
         error.stack,

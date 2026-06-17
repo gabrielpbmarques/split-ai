@@ -16,7 +16,7 @@ export class PublicEmbedController {
       const js = this.service.getEmbedScript();
       res.raw.setHeader('Cache-Control', 'public, max-age=300');
       return res.status(200).send(js);
-    } catch (error) {
+    } catch (error: any) {
       return res.status(500).send('// error generating script');
     }
   }
@@ -28,7 +28,7 @@ export class PublicEmbedController {
     try {
       const html = this.service.getEmbedChatHtml();
       return res.status(200).send(html);
-    } catch (error) {
+    } catch (error: any) {
       return res
         .status(500)
         .send('<!doctype html><html><body>Erro</body></html>');

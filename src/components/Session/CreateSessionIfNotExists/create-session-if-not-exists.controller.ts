@@ -26,7 +26,7 @@ export class CreateSessionIfNotExistsController {
         user_id: user.id,
       });
       return res.status(200).send('Session created successfully');
-    } catch (error) {
+    } catch (error: any) {
       return res.status(500).send(error);
     }
   }

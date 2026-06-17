@@ -33,7 +33,7 @@ export class StripeWebhookController {
       );
 
       return res.status(200).send({ received: true });
-    } catch (error) {
+    } catch (error: any) {
       const status = (error && (error.status || error.statusCode)) || 400;
       return res
         .status(status)

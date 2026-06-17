@@ -72,7 +72,7 @@ export class GenerateAiResponseService {
       );
 
       return response;
-    } catch (error) {
+    } catch (error: any) {
       return 'Desculpe, tive um problema ao processar sua mensagem. Pode tentar novamente?';
     }
   }

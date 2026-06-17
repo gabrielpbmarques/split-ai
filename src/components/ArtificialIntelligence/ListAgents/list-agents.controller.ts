@@ -18,7 +18,7 @@ export class ListAgentsController {
     try {
       const agents = await this.listAgentsService.execute(user);
       return res.status(200).send(agents);
-    } catch (error) {
+    } catch (error: any) {
       return res.status(500).send({ error: error.message });
     }
   }

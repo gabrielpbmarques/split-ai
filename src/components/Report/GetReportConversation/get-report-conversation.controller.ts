@@ -27,7 +27,7 @@ export class GetReportConversationController {
         reportId,
       );
       return res.status(200).send(conversation);
-    } catch (error) {
+    } catch (error: any) {
       const status = error.status || 500;
       return res.status(status).send({ error: error.message });
     }

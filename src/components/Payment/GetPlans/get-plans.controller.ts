@@ -14,7 +14,7 @@ export class GetPlansController {
     try {
       const plans = await this.getPlansService.execute();
       return res.status(200).send(plans);
-    } catch (error) {
+    } catch (error: any) {
       const status = (error && (error.status || error.statusCode)) || 500;
       return res.status(status).send(error.message || 'Internal server error');
     }

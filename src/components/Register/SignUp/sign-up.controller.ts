@@ -16,7 +16,7 @@ export class SignUpController {
     try {
       const result = await this.signUpService.execute(signUpDto);
       return res.status(200).send(result);
-    } catch (error) {
+    } catch (error: any) {
       console.error('SignUp Error:', error);
 
       // Log detalhado para debug

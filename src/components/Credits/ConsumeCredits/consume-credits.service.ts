@@ -55,7 +55,7 @@ export class ConsumeCreditsService {
       );
 
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error consuming credits:', error);
       return false;
     }

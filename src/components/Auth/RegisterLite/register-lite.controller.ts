@@ -16,7 +16,7 @@ export class RegisterLiteController {
     try {
       const result = await this.registerLiteService.execute(dto);
       return res.status(200).send({ success: true, data: result });
-    } catch (error) {
+    } catch (error: any) {
       return res
         .status(error.status || 500)
         .send({ success: false, message: error.message });

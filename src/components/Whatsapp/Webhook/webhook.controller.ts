@@ -13,7 +13,7 @@ export class WebhookController {
     try {
       await this.webhookService.execute(body);
       res.header('Content-Type', 'text/xml').status(200).send('<Response/>');
-    } catch (error) {
+    } catch (error: any) {
       res.header('Content-Type', 'text/xml').status(200).send('<Response/>');
     }
   }

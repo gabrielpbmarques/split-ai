@@ -19,7 +19,7 @@ export class DeleteSourceController {
     try {
       await this.deleteSourceService.execute(id);
       return res.status(204).send();
-    } catch (error) {
+    } catch (error: any) {
       return res.status(error.status || 500).send({ message: error.message });
     }
   }

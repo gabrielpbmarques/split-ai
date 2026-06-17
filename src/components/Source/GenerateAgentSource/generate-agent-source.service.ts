@@ -209,7 +209,7 @@ export class GenerateAgentSourceService {
       await this.sourceRepository.updateStatus(sourceId, 'completed');
 
       this.logger.log(`PDF processed: ${chunkCount} chunks created`);
-    } catch (error) {
+    } catch (error: any) {
       const message = error instanceof Error ? error.message : String(error);
       this.logger.error(`Failed to process PDF: ${message}`);
       await this.sourceRepository.updateStatus(sourceId, 'failed', message);
@@ -241,7 +241,7 @@ export class GenerateAgentSourceService {
       await this.sourceRepository.updateStatus(sourceId, 'completed');
 
       this.logger.log(`Text processed: ${chunkCount} chunks created`);
-    } catch (error) {
+    } catch (error: any) {
       const message = error instanceof Error ? error.message : String(error);
       this.logger.error(`Failed to process text: ${message}`);
       await this.sourceRepository.updateStatus(sourceId, 'failed', message);

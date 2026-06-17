@@ -16,7 +16,7 @@ export class LoginController {
     try {
       const result = await this.loginService.execute(loginDto);
       return res.status(200).send(result);
-    } catch (error) {
+    } catch (error: any) {
       return res.status(error.status || 500).send(error.message);
     }
   }

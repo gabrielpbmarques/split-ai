@@ -87,7 +87,7 @@ export class CepService {
         state: response.data.uf,
         complement: response.data.complemento || undefined,
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao consultar CEP:', error);
 
       return {
@@ -132,7 +132,7 @@ export class CepService {
         city: response.data.city || '',
         state: response.data.state || '',
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro em todas as APIs de CEP:', error);
 
       return {

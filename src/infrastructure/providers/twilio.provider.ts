@@ -48,7 +48,7 @@ class TwilioService implements ITwilioService {
       });
 
       return { success: true };
-    } catch (error) {
+    } catch (error: any) {
       return { success: false, message: error.message };
     }
   }
@@ -65,7 +65,7 @@ class TwilioService implements ITwilioService {
       });
 
       return { success: true };
-    } catch (error) {
+    } catch (error: any) {
       return { success: false, message: error.message };
     }
   }

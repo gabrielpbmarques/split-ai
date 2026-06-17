@@ -33,7 +33,7 @@ export class GcpStorageService {
 
       // Return the URL (access depends on bucket's IAM configuration)
       return `https://storage.googleapis.com/${this.bucketName}/${fileName}`;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading file to GCP bucket:', error);
       throw new Error(`Failed to upload file to GCP bucket: ${error.message}`);
     }
@@ -47,7 +47,7 @@ export class GcpStorageService {
     try {
       const bucket = this.storage.bucket(this.bucketName);
       await bucket.file(fileName).delete();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting file from GCP bucket:', error);
       throw new Error(
         `Failed to delete file from GCP bucket: ${error.message}`,

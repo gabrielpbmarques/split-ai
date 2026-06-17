@@ -24,7 +24,7 @@ export class ListSessionsController {
     try {
       const sessions = await this.listSessionsService.execute(user, dto);
       return res.status(200).send(sessions);
-    } catch (error) {
+    } catch (error: any) {
       return res.status(500).send({ error: error.message });
     }
   }

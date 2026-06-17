@@ -49,7 +49,7 @@ export class CreateCheckoutController {
       });
 
       return res.status(200).send(result);
-    } catch (error) {
+    } catch (error: any) {
       const status = (error && (error.status || error.statusCode)) || 500;
       return res
         .status(status)

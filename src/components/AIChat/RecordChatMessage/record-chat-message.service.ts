@@ -20,7 +20,7 @@ export class RecordChatMessageService {
         from,
         message,
       });
-    } catch (error) {
+    } catch (error: any) {
       // Log error but don't fail the chat flow
       console.error('Failed to record chat message:', error);
     }

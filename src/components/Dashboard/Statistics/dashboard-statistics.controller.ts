@@ -28,7 +28,7 @@ export class DashboardStatisticsController {
         dto,
       );
       return res.status(200).send(statistics);
-    } catch (error) {
+    } catch (error: any) {
       return res.status(500).send({ error: error.message });
     }
   }

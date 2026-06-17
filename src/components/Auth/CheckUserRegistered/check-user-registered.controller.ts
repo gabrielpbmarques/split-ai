@@ -18,7 +18,7 @@ export class CheckUserRegisteredController {
         success: true,
         data: result,
       });
-    } catch (error) {
+    } catch (error: any) {
       return res.status(500).send({
         success: false,
         error: error.message,

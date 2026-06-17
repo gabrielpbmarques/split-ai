@@ -18,7 +18,7 @@ export class GetOrganizationController {
     try {
       const result = await this.getOrganizationService.execute(id);
       return res.status(200).send(result);
-    } catch (error) {
+    } catch (error: any) {
       return res.status(500).send(error);
     }
   }

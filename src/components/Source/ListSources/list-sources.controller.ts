@@ -23,7 +23,7 @@ export class ListSourcesController {
 
       const sources = await this.listSourcesService.execute(agentId);
       return res.status(200).send(sources);
-    } catch (error) {
+    } catch (error: any) {
       return res.status(500).send({ error: 'Internal server error' });
     }
   }
