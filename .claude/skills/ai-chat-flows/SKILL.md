@@ -1,6 +1,6 @@
 ---
 name: ai-chat-flows
-description: 'Use when: editing anything under src/components/AIChat/, modifying the /support/question streaming endpoint or /chat/attendant endpoint, working with Fastify response hijacking for SSE-like chunked streaming, or wiring chat orchestration into sessions, credits, or message persistence.'
+description: 'Use for the chat orchestration: /support/question NDJSON streaming and /chat/attendant, Fastify response hijacking for chunked streaming, and wiring chat into sessions, credits, and message persistence. Scope: src/components/AIChat/.'
 ---
 
 ## Scope

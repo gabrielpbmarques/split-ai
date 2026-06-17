@@ -1,6 +1,6 @@
 ---
 name: architecture
-description: 'Use when: creating new modules, use cases, components, repositories, controllers, services, DTOs, entities, or providers. Use when: questions about project structure, directory organization, module imports/exports, dependency injection patterns. Use when: scaffolding new features or endpoints.'
+description: 'Use when scaffolding modules, use cases, controllers, services, DTOs, entities, repositories, or providers, or for questions about project structure, the scope→use-case layout, module imports/exports, and DI patterns. Pairs with the always-on Hard rules in CLAUDE.md.'
 ---
 
 ## Project Root Structure
@@ -8,7 +8,7 @@ description: 'Use when: creating new modules, use cases, components, repositorie
 ```text
 src/
   app.module.ts          # Root module — imports InfrastructureModule, ComponentsModule, MiddlewareModule
-  main.ts                # Bootstrap — Fastify adapter, global ValidationPipe, prefix "api"
+  main.ts                # Bootstrap — Fastify adapter. NOTE: no global ValidationPipe and no global "api" prefix; see CLAUDE.md "Things that bite". Validation is per-handler (@Body(new ValidationPipe())); routes mount at each @Controller(...) path.
   config.ts              # Centralized env config object (not @nestjs/config registerAs)
   auth/                  # Guards (e.g., AuthGuard, RoleGuard, DomainSpecificGuards)
   components/            # Feature modules organized by scope

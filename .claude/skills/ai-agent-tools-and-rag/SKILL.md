@@ -1,6 +1,6 @@
 ---
 name: ai-agent-tools-and-rag
-description: 'Use when: adding or modifying LangChain tools available to an agent (vector search, SQL execution, parser); changing pgvector / Supabase similarity search behavior; ingesting new sources via Spider; touching the SQL guardrails in LoadDatabaseTool; or working with embeddings, the documents table, or Voyage embedding configuration.'
+description: "Use for an agent's LangChain tools and RAG: vector_similarity_search, execute_sql and the LoadDatabaseTool SQL guardrails, the parser tool, pgvector/Supabase similarity search, Spider source ingestion, the documents table, and Voyage embeddings. Scope: src/components/Tools/ + ArtificialIntelligence/."
 ---
 
 ## Three tools an agent can carry

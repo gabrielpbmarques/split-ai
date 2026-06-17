@@ -1,6 +1,6 @@
 ---
 name: import-and-naming-conventions
-description: 'Use when: writing import statements, choosing between barrel and direct file imports, naming files/classes/variables/methods, picking the right NestJS exception type, organizing utility functions, or formatting commit messages. Use when: questions about file suffixes, casing conventions, or error-handling philosophy.'
+description: 'Use for imports (barrel vs direct), file/class/method naming and suffixes, casing conventions, choosing the right NestJS exception, organizing src/utils functions, and Conventional Commit formatting.'
 ---
 
 ### Import conventions

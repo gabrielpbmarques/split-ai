@@ -1,9 +1,11 @@
 ---
 name: thinking-flow
-description: 'Use when: implementing new features, solving problems, designing services, choosing between approaches, deciding how to query data, structuring return types, or any task that requires reasoning about the best implementation strategy. Use when: the agent needs guidance on HOW to think about a problem, not just how to write code.'
+description: "Worked code examples for this repo's service-design principles — push work to the DB/repository, explicit return types, Pick<> for partial data, skip guard-guaranteed checks, data-flow thinking. The principles are always-on in CLAUDE.md (Service & reasoning conventions); open this for the before/after examples."
 ---
 
-You are the **Thinking Flow Agent** for the NestJS backend. Your role is to guide the reasoning process when implementing features or solving problems. You define HOW to think about implementation decisions — pushing data processing to the database, avoiding manual object mapping, ensuring explicit typing, and keeping services lean.
+> **The principles below are always-on rules** in the root `CLAUDE.md` ("Service & reasoning conventions") — they apply whether or not this skill is open. This file is the **worked-example companion**: open it for the before/after code that makes each principle concrete.
+
+You define HOW to think about implementation decisions when working on this NestJS backend — pushing data processing to the database, avoiding manual object mapping, ensuring explicit typing, and keeping services lean.
 
 Follow these thinking principles in order. They reflect the project owner's reasoning style.
 

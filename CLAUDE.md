@@ -30,32 +30,39 @@ docker compose up                           # api + local Redis
 
 The dev server defaults to **port 4000** (`PORT || 4000` in `src/main.ts`). The README's NestJS-template snippets imply 3000 — ignore them.
 
-## Auto-loaded skills
+## How guidance is organized: rules, scoped-rules, skills
 
-`.claude/skills/` contains twelve SKILL.md files that auto-load when working here. They split into three groups:
+Project guidance lives at three loading tiers. Pick the right tier when adding new guidance:
 
-**General (read before scaffolding new code):**
+- **Rules — always-on.** This `CLAUDE.md` (root) is the single source of truth for universal invariants: the "Hard rules", "Things that bite", "Service & reasoning conventions", and the per-org DB feature. Skills must **point to** these, not restate them.
+- **Scoped-rules — auto-load by path.** A nested `CLAUDE.md` inside a subtree loads only when you touch files there. They stay thin: a handful of must-not-break invariants + a pointer to the deep skill. They exist so subsystem gotchas surface without the model having to remember to open a skill:
+  - `src/CLAUDE.md` — scaffolding index (points to `architecture` / `code-patterns` / `import-and-naming-conventions`).
+  - `src/components/AIChat/CLAUDE.md` — chat-streaming invariants (→ `ai-chat-flows`).
+  - `src/components/ArtificialIntelligence/CLAUDE.md` — agent config/runtime invariants (→ `ai-agent-configuration` / `ai-agent-runtime`).
+  - `src/components/Tools/CLAUDE.md` — tool + SQL-guardrail invariants (→ `ai-agent-tools-and-rag`).
+- **Skills — on-demand.** `.claude/skills/` holds eleven SKILL.md files. Only the one-line `description` is in context each turn (it competes for a small budget — keep descriptions short and trigger-led); the body loads when invoked. Use skills for depth and worked examples.
 
-- `main-instructions` — quick stack reference
+**General code skills** (the conventions also live as Hard rules above):
+
 - `architecture` — module hierarchy, scope/use-case pattern, repository/provider patterns
 - `code-patterns` — controller/service/DTO templates, error handling, parallel async
 - `import-and-naming-conventions` — paths, suffixes, casing, commit format
+- `thinking-flow` — worked examples for the "Service & reasoning conventions" rules below
 - `tech-stack` — every external integration, token, and env var
-- `thinking-flow` — how to approach problems before coding
 
-**AI pipeline (most engineering work here lives in this stack — LangChain/LangGraph + Voyage AI embeddings + Supabase pgvector):**
+**AI pipeline** (most engineering work lives here — LangChain/LangGraph + Voyage embeddings + Supabase pgvector):
 
-- `agent-end-to-end-flow` — the cross-cutting map: `POST /agent/create` and source ingestion → `POST /support/question` / `/chat/attendant` → `ResolveAgent` → `GenerateAIResponse` → LangGraph runnable → tools → pgvector → persistence/billing. **Start here for any change that crosses the AI areas below.**
+- `agent-end-to-end-flow` — the cross-cutting map: agent create + source ingestion → `/support/question` / `/chat/attendant` → `ResolveAgent` → `GenerateAIResponse` → LangGraph → tools → pgvector → persistence/billing. **Start here for any change crossing the AI areas below.**
 - `ai-agent-configuration` — agent CRUD, `AIInstructions`, prompt construction, parser schemas, `agents` / `agents_instructions` tables
 - `ai-agent-runtime` — `ResolveAgent`, `GenerateAIResponse`, LangGraph streaming, structured responses, `thread_id` memory via `PostgresSaver`, LangSmith tracing
-- `ai-agent-tools-and-rag` — LangChain tools (`vector_similarity_search`, `execute_sql` with guardrails, parser), pgvector behavior, Spider ingestion, embeddings via Voyage AI `voyage-3-large`
-- `ai-chat-flows` — `src/components/AIChat/`, the `/support/question` SSE-like streaming endpoint, `/chat/attendant`, Fastify response hijacking, session/credit/message persistence
+- `ai-agent-tools-and-rag` — LangChain tools (`vector_similarity_search`, `execute_sql` with guardrails, parser), pgvector behavior, Spider ingestion, Voyage `voyage-3-large` embeddings
+- `ai-chat-flows` — `src/components/AIChat/`, the `/support/question` NDJSON streaming endpoint, `/chat/attendant`, Fastify response hijacking, session/credit/message persistence
 
 **Model integration:**
 
-- `langchain-anthropic-integration` — how to wire `ChatAnthropic` from `@langchain/anthropic`, and how to migrate call-sites from `ChatVertexAI`. Read this before swapping the LLM provider in any agent or use case.
+- `langchain-anthropic-integration` — wiring `ChatAnthropic` from `@langchain/anthropic` and migrating call-sites from `ChatVertexAI`. Read before swapping the LLM provider. (For Claude model IDs/pricing, use the `claude-api` skill; for other library docs, prefer context7.)
 
-**Read the relevant skill before scaffolding new code.** This file intentionally doesn't restate them.
+**Read the relevant skill before scaffolding new code.** This file intentionally doesn't restate skill bodies.
 
 ## Architecture in one screen
 
@@ -92,6 +99,16 @@ migrations/                  Raw SQL migration files — applied by hand, NOT Ty
 5. User-facing error messages are in Portuguese; identifiers stay English.
 6. Every new entity must be registered in `RepositoriesModule`'s `TypeOrmModule.forFeature([...])` AND in `src/entities/index.ts`.
 
+## Service & reasoning conventions
+
+How to think about a service before writing it (worked before/after examples in the `thinking-flow` skill):
+
+1. **Push work to the database/repository.** Don't fetch full rows and discard fields in TS — add an optional `select` (or a dedicated query) so the repository returns exactly what's needed. Prefer one optimized query over in-service transformation.
+2. **Type every public method's return explicitly.** Each `execute()` declares its return type; for a strict subset of an entity, define a `Pick<>` type in `src/types/models/` and barrel-export it.
+3. **Skip checks the call chain already guarantees.** `AuthGuard` guarantees `user`; `@Body(new ValidationPipe())` guarantees required DTO fields; a prior `NotFoundException` guarantees the entity exists. Don't re-check them.
+4. **Early return; keep the happy path flat.** Validate and throw `NestJS` exceptions at the top, then proceed. Don't catch in services — let exceptions bubble to the controller's try/catch.
+5. **Parallelize independent async work.** `Promise.all` when all must succeed; `Promise.allSettled` for fire-and-forget side effects.
+
 ## Per-org database connection feature
 
 Single, opt-in mechanism for an agent to query its organization's own database. Replaces the older BravoHub-specific tool belt and the `organization_analytics_config` table. No HTTP gateway in the middle — the tool builds a TypeORM `DataSource` per request against the customer's DB directly.
@@ -119,7 +136,7 @@ Single, opt-in mechanism for an agent to query its organization's own database. 
   - `ApiKeyGuard` (`src/auth/api-key.guard.ts`) — extracts the token from `Authorization: ApiKey <token>`, looks up the org via `OrganizationRepository.findActiveByEmbedToken` (matches `chat_embed_token` AND `chat_embed_enabled=true`), and populates `request.user` with the resolved `organization_id` + `role: 'service'`. Per-org keys, no global secret.
   - `CompositeAuthGuard` (`src/auth/composite-auth.guard.ts`) — dispatches on the `Authorization` scheme to one of the above. Just delegates — `request.user` is now populated by whichever guard ran. When wiring a new endpoint, register both `AuthGuard` and `ApiKeyGuard` (which depends on `OrganizationRepository`) as providers in the use-case module; `CompositeAuthGuard` resolves them via DI.
 - **`AuthGuard` does NOT verify the JWT signature.** `parseJwt` in `src/auth/auth.guard.ts:85` just base64-decodes the payload. Any well-formed JWT is accepted. This is a real security gap — flag it if the task touches auth, but don't silently "fix" it without confirming, since downstream services may depend on the current behavior. `JWT_SECRET` and `JWT_EXPIRATION` env vars exist but aren't used by this guard. (`ApiKeyGuard` is the one place where credentials are actually checked, by exact-match lookup against `chat_embed_token`.)
-- **No global API prefix.** Routes are mounted at the path declared on each `@Controller(...)` (e.g., `/support/question`), not `/api/...`. The `main-instructions` skill says otherwise — the code wins.
+- **No global API prefix.** Routes are mounted at the path declared on each `@Controller(...)` (e.g., `/support/question`), not `/api/...`. If any doc or template snippet implies `/api/...` or a global `ValidationPipe`, the code wins.
 - **`.env` is checked in with live secrets** (Supabase service key, Stripe live keys, Twilio credentials, LangSmith keys). Don't echo, log, paste into messages, or commit changes that move them. If a task needs new secrets, edit `.env` locally but don't commit; surface the variable name in the PR description instead.
 - **TS is loose**: `strictNullChecks: false`, `noImplicitAny: false`, `@typescript-eslint/no-explicit-any: off`. Write type-safe code anyway, but don't waste time fighting `any` in existing files unless the task is a cleanup.
 - **`eslint-plugin-import` enforces order**: builtin → external → internal (`src/...`) → parent → sibling → index, alphabetized, blank line between groups. `bun run lint --fix` resolves most violations automatically.

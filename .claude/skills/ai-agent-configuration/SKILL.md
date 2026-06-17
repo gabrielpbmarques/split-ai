@@ -1,6 +1,6 @@
 ---
 name: ai-agent-configuration
-description: 'Use when: creating, updating, listing, or deleting agents; modifying the AIInstructions shape, prompt construction, parser schemas, or the agents/agents_instructions tables; adding new fields to the agent CRUD DTOs or the system-prompt template.'
+description: 'Use for agent CRUD and configuration: create/update/list/delete agents, the AIInstructions shape, prompt construction (NormalizePromptInstructions, BuildSystemPrompt), parser schemas, the agents / agents_instructions tables, and agent DTO fields. Scope: src/components/ArtificialIntelligence/.'
 ---
 
 ## Persistence shape

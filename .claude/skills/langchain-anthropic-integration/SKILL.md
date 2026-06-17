@@ -1,6 +1,6 @@
 ---
 name: langchain-anthropic-integration
-description: Integrate with the ChatAnthropic chat model using LangChain JavaScript. Use this skill to migrate from ChatVertexAI to ChatAnthropic, or to get started with ChatAnthropic in LangChain.
+description: 'Vendored LangChain JS reference for wiring ChatAnthropic. Use when configuring the ChatAnthropic model or migrating a call-site from ChatVertexAI. For Claude model IDs/pricing/limits use the claude-api skill; for other library docs prefer context7.'
 ---
 
 > ## Documentation Index

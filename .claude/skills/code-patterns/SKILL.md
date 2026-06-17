@@ -1,6 +1,6 @@
 ---
 name: code-patterns
-description: 'Use when: scaffolding new components, use cases, controllers, services, or DTOs. Use when: writing or reviewing controller error handling, request validation, service composition, or async patterns (Promise.all/allSettled). Use when: questions about endpoint structure, handler naming, or the canonical NestJS CLI commands for this project.'
+description: 'Use for controller/service/DTO templates and review: error handling, per-handler ValidationPipe, service composition, Promise.all vs allSettled, handler naming (handle/execute), and the NestJS CLI scaffolding commands.'
 ---
 
 ### Creating a new component (scope)
