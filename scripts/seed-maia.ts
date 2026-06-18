@@ -19,7 +19,7 @@ import { config } from '../src/config';
 import { OrganizationEntity, PlanEntity, UserEntity } from '../src/entities';
 import { BillingPeriod, PlanType } from '../src/entities/plan.entity';
 
-const MAIA_OWNER_EMAIL = 'ia@torors.com.br';
+const MAIA_OWNER_EMAIL = 'support@nexguard.app';
 const MAIA_OWNER_PASSWORD = process.env.MAIA_OWNER_PASSWORD ?? 'changeme-maia';
 
 async function upsertPlan(
