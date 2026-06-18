@@ -16,7 +16,7 @@
  *
  * Schema is reflected from the entities (synchronize: true), matching the app.
  */
-import bcrypt from 'bcryptjs';
+import * as bcrypt from 'bcryptjs';
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 
