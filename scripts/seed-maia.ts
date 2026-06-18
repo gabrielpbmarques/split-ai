@@ -16,11 +16,7 @@ import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 
 import { config } from '../src/config';
-import {
-  OrganizationEntity,
-  PlanEntity,
-  UserEntity,
-} from '../src/entities';
+import { OrganizationEntity, PlanEntity, UserEntity } from '../src/entities';
 import { BillingPeriod, PlanType } from '../src/entities/plan.entity';
 
 const MAIA_OWNER_EMAIL = 'ia@torors.com.br';
