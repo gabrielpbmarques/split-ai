@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AuthModule } from 'src/components/Auth/auth.module';
 import { SessionModule } from 'src/components/Session/session.module';
 
+import { AgentConnectionModule } from './AgentConnection/agent-connection.module';
 import { AIChatModule } from './AIChat/ai-chat.module';
 import { AnalyticsModule } from './Analytics/analytics.module';
 import { ApiKeyModule } from './ApiKey/api-key.module';
@@ -35,6 +36,7 @@ import { WhatsappModule } from './Whatsapp/whatsapp.module';
     AnalyticsModule,
     SourceModule,
     ApiKeyModule,
+    AgentConnectionModule,
   ],
   exports: [
     AuthModule,
@@ -53,6 +55,7 @@ import { WhatsappModule } from './Whatsapp/whatsapp.module';
     AnalyticsModule,
     SourceModule,
     ApiKeyModule,
+    AgentConnectionModule,
   ],
 })
 export class ComponentsModule {}

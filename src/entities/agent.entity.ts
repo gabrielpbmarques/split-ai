@@ -51,6 +51,12 @@ export class AgentEntity {
   @Column('text', { array: true, nullable: true })
   sites: string[] | null;
 
+  // Persisted state of this agent's Agent-Connections canvas (when it is the
+  // principal): viewport (zoom/pan) plus node positions keyed by agent id.
+  // Purely presentational — the logical links live in `agent_connections`.
+  @Column({ type: 'jsonb', nullable: true })
+  canvas_layout: any | null;
+
   @OneToMany(() => AgentInstructionEntity, (instruction) => instruction.agent)
   instructions: AgentInstructionEntity[];
 

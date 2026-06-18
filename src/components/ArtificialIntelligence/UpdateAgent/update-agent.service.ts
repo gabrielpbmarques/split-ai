@@ -1,5 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { AgentEntity } from 'src/entities';
 import { AgentInstructionRepository, AgentRepository } from 'src/repositories';
+import { User } from 'src/types';
 
 import { UpdateAgentDto } from './update-agent.dto';
 
@@ -24,9 +30,24 @@ export class UpdateAgentService {
     return await this.agentRepository.findByIdentifier(idOrIdentifier);
   }
 
-  async update(idOrIdentifier: string, dto: UpdateAgentDto) {
+  /**
+   * Platform admins (global `role: 'admin'`) may access any agent; every other
+   * user is restricted to agents within their own organization.
+   */
+  private authorizeAccess(agent: AgentEntity, user: User): void {
+    if (user.role === 'admin') {
+      return;
+    }
+    if (agent.organization_id !== user.organization_id) {
+      throw new ForbiddenException('Você não tem acesso a este agente.');
+    }
+  }
+
+  async update(idOrIdentifier: string, dto: UpdateAgentDto, user: User) {
     const agent = await this.resolveAgent(idOrIdentifier);
-    if (!agent) throw new Error('Agent não encontrado');
+    if (!agent) throw new NotFoundException('Agente não encontrado.');
+
+    this.authorizeAccess(agent, user);
 
     const updateData: any = {};
     if (dto.name !== undefined) updateData.name = dto.name;
@@ -39,14 +60,17 @@ export class UpdateAgentService {
     if (dto.sites !== undefined)
       updateData.sites = dto.sites && dto.sites.length ? dto.sites : null;
 
-    // Support organization update (admin-only at controller level). Accept both camelCase and snake_case
-    const orgFromDtoRaw = (dto as any).organization_id ?? dto.organizationId;
-    if (orgFromDtoRaw !== undefined) {
-      const normalized =
-        typeof orgFromDtoRaw === 'string' && orgFromDtoRaw.trim().length === 0
-          ? null
-          : orgFromDtoRaw;
-      updateData.organization_id = normalized ?? null;
+    // Reassigning an agent to another organization stays platform-admin-only;
+    // org members can never move an agent out of their own organization.
+    if (user.role === 'admin') {
+      const orgFromDtoRaw = (dto as any).organization_id ?? dto.organizationId;
+      if (orgFromDtoRaw !== undefined) {
+        const normalized =
+          typeof orgFromDtoRaw === 'string' && orgFromDtoRaw.trim().length === 0
+            ? null
+            : orgFromDtoRaw;
+        updateData.organization_id = normalized ?? null;
+      }
     }
 
     if (dto.parser !== undefined) {
@@ -75,9 +99,11 @@ export class UpdateAgentService {
     return { id: agent.id };
   }
 
-  async getOne(idOrIdentifier: string) {
+  async getOne(idOrIdentifier: string, user: User) {
     const agent = await this.resolveAgent(idOrIdentifier);
-    if (!agent) throw new Error('Agent não encontrado');
+    if (!agent) throw new NotFoundException('Agente não encontrado.');
+
+    this.authorizeAccess(agent, user);
 
     const latest = await this.agentInstructionRepository.findLatestByAgentId(
       agent.id,
