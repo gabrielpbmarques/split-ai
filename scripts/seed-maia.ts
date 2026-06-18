@@ -1,7 +1,12 @@
 /**
  * Idempotent seed for the MAIA playground organization plus the baseline plans.
  *
- *   bun run scripts/seed-maia.ts
+ *   bun run seed:maia
+ *
+ * Run it through the `seed:maia` npm script (ts-node + CommonJS), NOT directly
+ * via `bun run scripts/seed-maia.ts`: TypeORM entities use `emitDecoratorMetadata`
+ * with circular relations, which throws a TDZ error under bun's native ESM
+ * loader. The app itself runs as CommonJS (nest build), so ts-node matches it.
  *
  * Creates/updates:
  *   - a FREE plan (limited agents + initial credits)

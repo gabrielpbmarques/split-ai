@@ -1,4 +1,4 @@
-import { Organization, OrganizationStatus } from 'src/types';
+import type { Organization, OrganizationStatus } from 'src/types';
 import {
   Column,
   Entity,

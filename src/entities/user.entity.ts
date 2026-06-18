@@ -1,4 +1,4 @@
-import { OrgRole, UserOrigin, UserRole, UserStatus } from 'src/types';
+import type { OrgRole, UserOrigin, UserRole, UserStatus } from 'src/types';
 import {
   Column,
   CreateDateColumn,
