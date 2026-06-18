@@ -7,6 +7,7 @@ import {
 } from 'typeorm';
 
 export enum PlanType {
+  FREE = 'free',
   PAYG = 'payg',
   STARTER = 'starter',
   GROWTH = 'growth',
@@ -59,6 +60,22 @@ export class PlanEntity {
 
   @Column({ type: 'boolean', default: true })
   active: boolean;
+
+  // Whitelabel plan benefits / limits.
+  // `null` means unbounded for the numeric limits.
+  @Column({ type: 'int', nullable: true })
+  max_agents: number | null;
+
+  @Column({ type: 'int', nullable: true })
+  max_users: number | null;
+
+  // When true, the plan bypasses credit billing and all quotas (e.g. MAIA playground).
+  @Column({ type: 'boolean', default: false })
+  unlimited: boolean;
+
+  // Credits granted to the organization when it enters this plan (e.g. free tier).
+  @Column({ type: 'int', nullable: true })
+  monthly_credits: number | null;
 
   @Column({ type: 'int', nullable: true })
   min_conversations: number;

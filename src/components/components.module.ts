@@ -4,6 +4,7 @@ import { SessionModule } from 'src/components/Session/session.module';
 
 import { AIChatModule } from './AIChat/ai-chat.module';
 import { AnalyticsModule } from './Analytics/analytics.module';
+import { ApiKeyModule } from './ApiKey/api-key.module';
 import { ArtificialIntelligenceModule } from './ArtificialIntelligence/artificial-intelligence.module';
 import { DashboardModule } from './Dashboard/dashboard.module';
 import { OcrModule } from './OCR/ocr.module';
@@ -33,6 +34,7 @@ import { WhatsappModule } from './Whatsapp/whatsapp.module';
     WhatsappModule,
     AnalyticsModule,
     SourceModule,
+    ApiKeyModule,
   ],
   exports: [
     AuthModule,
@@ -50,6 +52,7 @@ import { WhatsappModule } from './Whatsapp/whatsapp.module';
     WhatsappModule,
     AnalyticsModule,
     SourceModule,
+    ApiKeyModule,
   ],
 })
 export class ComponentsModule {}

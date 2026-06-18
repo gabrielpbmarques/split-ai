@@ -18,3 +18,4 @@ export * from './chunk.model';
 export * from './resolved-agent.model';
 export * from './document-data.model';
 export * from './stream-event.model';
+export * from './api-key.model';

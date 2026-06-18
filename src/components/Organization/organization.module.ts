@@ -6,6 +6,7 @@ import { DeactivateOrganizationModule } from './DeactivateOrganization/deactivat
 import { GetEmbedSettingsModule } from './GetEmbedSettings/get-embed-settings.module';
 import { GetOrganizationModule } from './GetOrganization/get-organization.module';
 import { ListOrganizationsModule } from './ListOrganizations/list-organizations.module';
+import { MembersModule } from './Members/members.module';
 import { PublicEmbedModule } from './PublicEmbed/public-embed.module';
 import { RegenerateEmbedTokenModule } from './RegenerateEmbedToken/regenerate-embed-token.module';
 import { UpdateEmbedSettingsModule } from './UpdateEmbedSettings/update-embed-settings.module';
@@ -21,6 +22,7 @@ import { UpdateEmbedSettingsModule } from './UpdateEmbedSettings/update-embed-se
     PublicEmbedModule,
     ActivateOrganizationModule,
     DeactivateOrganizationModule,
+    MembersModule,
   ],
   exports: [
     CreateOrganizationModule,
@@ -32,6 +34,7 @@ import { UpdateEmbedSettingsModule } from './UpdateEmbedSettings/update-embed-se
     PublicEmbedModule,
     ActivateOrganizationModule,
     DeactivateOrganizationModule,
+    MembersModule,
   ],
 })
 export class OrganizationModule {}

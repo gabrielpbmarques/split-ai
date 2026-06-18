@@ -1,7 +1,8 @@
 import { Body, Controller, Post, Res, UseGuards } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
 import { AuthGuard } from 'src/auth/auth.guard';
-import { Roles } from 'src/decorators/roles.decorator';
+import { OrgRoleGuard } from 'src/auth/org-role.guard';
+import { OrgRoles } from 'src/decorators/org-roles.decorator';
 import { User as AuthUser } from 'src/decorators/user.decorator';
 import { User } from 'src/types';
 
@@ -13,8 +14,8 @@ export class CreateAgentController {
   constructor(private readonly createAgentService: CreateAgentService) {}
 
   @Post('create')
-  @Roles('admin')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, OrgRoleGuard)
+  @OrgRoles('owner', 'admin', 'member')
   async execute(
     @Body() dto: CreateAgentDto,
     @Res() res: FastifyReply,

@@ -20,6 +20,7 @@ import {
   PaymentEntity,
   FeatureEntity,
   OrganizationFeatureEntity,
+  ApiKeyEntity,
 } from 'src/entities';
 import { InfrastructureModule } from 'src/infrastructure/infrastructure.module';
 
@@ -44,6 +45,7 @@ import {
   UniversalDataRepository,
   FeatureRepository,
   OrganizationFeatureRepository,
+  ApiKeyRepository,
 } from '.';
 
 @Module({
@@ -68,6 +70,7 @@ import {
       PaymentEntity,
       FeatureEntity,
       OrganizationFeatureEntity,
+      ApiKeyEntity,
     ]),
     InfrastructureModule,
   ],
@@ -92,6 +95,7 @@ import {
     UniversalDataRepository,
     FeatureRepository,
     OrganizationFeatureRepository,
+    ApiKeyRepository,
   ],
   exports: [
     OrganizationRepository,
@@ -114,6 +118,7 @@ import {
     UniversalDataRepository,
     FeatureRepository,
     OrganizationFeatureRepository,
+    ApiKeyRepository,
   ],
 })
 export class RepositoriesModule {}

@@ -41,6 +41,7 @@ export class GenerateTokenService {
       payload = {
         ...payload,
         organization_id: user.organization_id,
+        org_role: user.org_role,
       };
     }
 

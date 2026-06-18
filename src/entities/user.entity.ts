@@ -1,4 +1,4 @@
-import { UserOrigin, UserRole, UserStatus } from 'src/types';
+import { OrgRole, UserOrigin, UserRole, UserStatus } from 'src/types';
 import {
   Column,
   CreateDateColumn,
@@ -34,6 +34,14 @@ export class UserEntity {
   })
   role: UserRole;
 
+  // Capability level within the organization (owner > admin > member).
+  @Column({
+    type: 'enum',
+    enum: ['owner', 'admin', 'member'],
+    default: 'member',
+  })
+  org_role: OrgRole;
+
   @Column({ type: 'text', nullable: true })
   phone: string;
 
@@ -43,6 +51,10 @@ export class UserEntity {
     default: 'inactive',
   })
   status: UserStatus;
+
+  // SHA-256 hash of a pending invitation token (null once the invite is accepted).
+  @Column({ type: 'text', nullable: true })
+  invite_token_hash: string | null;
 
   @Column({ type: 'uuid', nullable: true })
   organization_id: string | null;

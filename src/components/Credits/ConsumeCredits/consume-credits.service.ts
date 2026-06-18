@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DeactivateOrganizationService } from 'src/components/Organization/DeactivateOrganization/deactivate-organization.service';
 import { TransactionType } from 'src/entities/credit-transaction.entity';
+import { OrganizationRepository } from 'src/repositories';
 import { CreditBalanceRepository } from 'src/repositories/credit-balance.repository';
 
 import { ManageCreditsService } from '../ManageCredits/manage-credits.service';
@@ -14,6 +15,7 @@ export class ConsumeCreditsService {
     private readonly manageCreditsService: ManageCreditsService,
     private readonly creditBalanceRepository: CreditBalanceRepository,
     private readonly deactivateOrganizationService: DeactivateOrganizationService,
+    private readonly organizationRepository: OrganizationRepository,
   ) {}
 
   async execute(
@@ -22,6 +24,11 @@ export class ConsumeCreditsService {
     isAiResponse: boolean = true,
   ): Promise<boolean> {
     try {
+      // Unlimited plans (e.g. MAIA playground) never consume credits.
+      if (await this.organizationRepository.isUnlimited(organizationId)) {
+        return true;
+      }
+
       // Calculate credits to consume
       const creditsToConsume = isAiResponse
         ? this.CREDITS_PER_MESSAGE + this.CREDITS_PER_AI_RESPONSE
@@ -62,6 +69,11 @@ export class ConsumeCreditsService {
   }
 
   async checkCredits(organizationId: string): Promise<boolean> {
+    // Unlimited plans (e.g. MAIA playground) are never credit-gated.
+    if (await this.organizationRepository.isUnlimited(organizationId)) {
+      return true;
+    }
+
     const minCreditsRequired =
       this.CREDITS_PER_MESSAGE + this.CREDITS_PER_AI_RESPONSE;
     const hasCredits = await this.creditBalanceRepository.hasEnoughCredits(

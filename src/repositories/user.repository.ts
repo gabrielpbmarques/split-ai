@@ -24,6 +24,8 @@ export class UserRepository {
         'email',
         'phone',
         'role',
+        'org_role',
+        'organization_id',
         'origin',
         'status',
         'created_at',
@@ -43,11 +45,46 @@ export class UserRepository {
         'phone',
         'organization_id',
         'role',
+        'org_role',
         'origin',
+        'status',
+        'invite_token_hash',
+        'created_at',
+        'updated_at',
+      ],
+    });
+  }
+
+  async findByOrganization(organizationId: string): Promise<UserEntity[]> {
+    return this.userRepository.find({
+      where: { organization_id: organizationId },
+      select: [
+        'id',
+        'name',
+        'email',
+        'phone',
+        'role',
+        'org_role',
         'status',
         'created_at',
         'updated_at',
       ],
+      order: { created_at: 'ASC' },
+    });
+  }
+
+  async countByOrganization(organizationId: string): Promise<number> {
+    return this.userRepository.count({
+      where: { organization_id: organizationId },
+    });
+  }
+
+  async findByIdInOrganization(
+    id: string,
+    organizationId: string,
+  ): Promise<UserEntity | null> {
+    return this.userRepository.findOne({
+      where: { id, organization_id: organizationId },
     });
   }
 

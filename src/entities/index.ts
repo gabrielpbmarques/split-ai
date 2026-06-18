@@ -17,3 +17,4 @@ export * from './subscription.entity';
 export * from './payment.entity';
 export * from './feature.entity';
 export * from './organization-feature.entity';
+export * from './api-key.entity';

@@ -7,6 +7,7 @@ import {
   SetMetadata,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { verify } from 'jsonwebtoken';
 import { Observable } from 'rxjs';
 
 import { ROLES_KEY, UserRole } from '../decorators/roles.decorator';
@@ -37,7 +38,7 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException();
     }
 
-    const payload = parseJwt(token);
+    const payload = verifyJwt(token);
 
     // Adaptar o payload do JWT para o formato esperado pelo modelo User
     request.user = {
@@ -45,6 +46,7 @@ export class AuthGuard implements CanActivate {
       name: payload.name,
       email: payload.email,
       role: payload.role,
+      org_role: payload.org_role || 'member',
       // Campos opcionais que podem não estar no JWT
       document: payload.document || '',
       document_type: payload.document_type || '',
@@ -82,9 +84,13 @@ export class AuthGuard implements CanActivate {
   }
 }
 
-export function parseJwt(token: string): any {
+/**
+ * Verifies the JWT signature and expiry using `JWT_SECRET`, returning the
+ * decoded payload. Any malformed, tampered, or expired token is rejected.
+ */
+export function verifyJwt(token: string): any {
   try {
-    return JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+    return verify(token, process.env.JWT_SECRET);
   } catch {
     throw new UnauthorizedException();
   }

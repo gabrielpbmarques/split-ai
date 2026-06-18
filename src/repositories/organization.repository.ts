@@ -93,6 +93,18 @@ export class OrganizationRepository {
     return this.organizationRepository.findOneBy({ id });
   }
 
+  async findByIdWithPlan(id: string): Promise<OrganizationEntity | null> {
+    return this.organizationRepository.findOne({
+      where: { id },
+      relations: { plan: true },
+    });
+  }
+
+  async isUnlimited(id: string): Promise<boolean> {
+    const organization = await this.findByIdWithPlan(id);
+    return organization?.plan?.unlimited === true;
+  }
+
   async findByEmailDomain(
     emailDomain: string,
   ): Promise<OrganizationEntity | null> {
@@ -128,12 +140,6 @@ export class OrganizationRepository {
   ): Promise<OrganizationEntity | null> {
     await this.organizationRepository.update(id, data);
     return this.findById(id);
-  }
-
-  async findByEmbedToken(token: string): Promise<OrganizationEntity | null> {
-    return this.organizationRepository.findOne({
-      where: { chat_embed_token: token },
-    });
   }
 
   async findActiveByEmbedToken(
