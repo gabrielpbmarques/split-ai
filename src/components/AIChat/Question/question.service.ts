@@ -87,19 +87,16 @@ export class QuestionService {
       STREAM,
     )) as AsyncIterable<StreamEvent>;
 
-    let contentBuffer = '';
     let finalText: string | null = null;
 
     for await (const event of aiResponse) {
       onEvent(event);
-      if (event.type === 'content') {
-        contentBuffer += event.delta;
-      } else if (event.type === 'final') {
+      if (event.type === 'final') {
         finalText = event.text;
       }
     }
 
-    const fullResponse = finalText ?? contentBuffer;
+    const fullResponse = finalText;
 
     if (fullResponse) {
       await this.recordChatMessageService.execute(

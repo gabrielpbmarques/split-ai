@@ -21,31 +21,12 @@ type AgentMessage = {
 };
 
 type StreamChunk = {
-  // LangChain v1's `createAgent` names the LLM node "model_request" and emits
-  // both the new messages and any `structuredResponse` update from that same
-  // node (see node_modules/langchain/dist/agents/nodes/AgentNode.js).
   model_request?: {
     messages?: AgentMessage[];
     structuredResponse?: { finalAnswer?: string };
   };
   tools?: { messages?: Array<{ name?: string; content?: unknown }> };
 };
-
-function extractTextContent(content: unknown): string | null {
-  if (typeof content === 'string') return content;
-  if (Array.isArray(content)) {
-    const parts: string[] = [];
-    for (const part of content) {
-      if (typeof part === 'string') parts.push(part);
-      else if (part && typeof part === 'object') {
-        const p = part as { text?: unknown };
-        if (typeof p.text === 'string') parts.push(p.text);
-      }
-    }
-    return parts.length > 0 ? parts.join('') : null;
-  }
-  return null;
-}
 
 @Injectable()
 export class GenerateAiResponseService {
@@ -141,69 +122,30 @@ export class GenerateAiResponseService {
   ): AsyncGenerator<StreamEvent> {
     const recordedUsageIds = new Set<string>();
     let finalEmitted = false;
-    let lastAgentContent: string | null = null;
 
     try {
       for await (const raw of stream as AsyncIterable<StreamChunk>) {
-        const chunk = raw ?? {};
+        const modelRequest = raw?.model_request;
+        const toolMessages = raw?.tools?.messages;
 
-        if (chunk.model_request) {
-          const update = chunk.model_request;
-          if (update.messages?.length) {
-            for (const message of update.messages) {
-              if (
-                message?.usage_metadata &&
-                agent.organization_id &&
-                !(message.id && recordedUsageIds.has(message.id))
-              ) {
-                if (message.id) recordedUsageIds.add(message.id);
-                await this.recordTokenUsageService
-                  .execute({
-                    organization_id: agent.organization_id,
-                    agent_id: agent.id,
-                    user_id: metadata.user_id,
-                    input_tokens: message.usage_metadata?.input_tokens ?? 0,
-                    output_tokens: message.usage_metadata?.output_tokens ?? 0,
-                    total_tokens: message.usage_metadata?.total_tokens ?? 0,
-                    model: (agent.chat as any).model || 'unknown',
-                  })
-                  .catch(() => {
-                    /* token recording must not break the stream */
-                  });
-              }
+        if (modelRequest) {
+          for (const message of modelRequest.messages ?? []) {
+            this.recordTokenUsage(message, agent, metadata, recordedUsageIds);
 
-              if (message?.tool_calls?.length) {
-                for (const call of message.tool_calls) {
-                  if (call?.name) {
-                    yield {
-                      type: 'status',
-                      phase: 'tool_call',
-                      tool: call.name,
-                    };
-                  }
-                }
-              } else {
-                const text = extractTextContent(message?.content);
-                if (text && text.trim().length > 0) {
-                  lastAgentContent = text;
-                  yield { type: 'content', delta: text };
-                }
+            for (const call of message.tool_calls ?? []) {
+              if (call?.name) {
+                yield { type: 'status', phase: 'tool_call', tool: call.name };
               }
             }
           }
 
-          if (update.structuredResponse?.finalAnswer) {
+          const finalAnswer = modelRequest.structuredResponse?.finalAnswer;
+          if (finalAnswer && !finalEmitted) {
             finalEmitted = true;
-            yield {
-              type: 'final',
-              text: update.structuredResponse.finalAnswer,
-            };
+            yield { type: 'final', text: finalAnswer };
           }
-          continue;
-        }
-
-        if (chunk.tools?.messages?.length) {
-          for (const toolMsg of chunk.tools.messages) {
+        } else if (toolMessages?.length) {
+          for (const toolMsg of toolMessages) {
             if (toolMsg?.name) {
               yield {
                 type: 'status',
@@ -212,12 +154,7 @@ export class GenerateAiResponseService {
               };
             }
           }
-          continue;
         }
-      }
-
-      if (!finalEmitted && lastAgentContent) {
-        yield { type: 'final', text: lastAgentContent };
       }
     } catch (err) {
       const raw = err instanceof Error ? err.message : 'Erro inesperado';
@@ -228,5 +165,30 @@ export class GenerateAiResponseService {
     } finally {
       yield { type: 'done' };
     }
+  }
+
+  private recordTokenUsage(
+    message: AgentMessage,
+    agent: ResolvedAgent,
+    metadata: CustomMetadata,
+    recordedUsageIds: Set<string>,
+  ): void {
+    if (!message?.usage_metadata || !agent.organization_id) return;
+    if (message.id && recordedUsageIds.has(message.id)) return;
+    if (message.id) recordedUsageIds.add(message.id);
+
+    void this.recordTokenUsageService
+      .execute({
+        organization_id: agent.organization_id,
+        agent_id: agent.id,
+        user_id: metadata.user_id,
+        input_tokens: message.usage_metadata.input_tokens ?? 0,
+        output_tokens: message.usage_metadata.output_tokens ?? 0,
+        total_tokens: message.usage_metadata.total_tokens ?? 0,
+        model: (agent.chat as any).model || 'unknown',
+      })
+      .catch(() => {
+        /* token recording must not break the stream */
+      });
   }
 }
