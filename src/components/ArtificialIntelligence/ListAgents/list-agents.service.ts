@@ -1,26 +1,46 @@
 import { Injectable } from '@nestjs/common';
-import { AgentEntity } from 'src/entities';
-import { AgentRepository } from 'src/repositories';
+import { AgentConnectionRepository, AgentRepository } from 'src/repositories';
 import { User } from 'src/types';
+
+/**
+ * Item da lista de agentes. `is_tool` / `is_principal` são derivados das
+ * conexões (existência de qualquer linha em `agent_connections`) e dirigem o
+ * gating de "Conversar"/"Conectar" no console.
+ */
+interface AgentListItemView {
+  id: string;
+  agent_identifier: string | null;
+  name: string;
+  is_tool: boolean;
+  is_principal: boolean;
+}
 
 @Injectable()
 export class ListAgentsService {
-  constructor(private readonly agentRepository: AgentRepository) {}
+  constructor(
+    private readonly agentRepository: AgentRepository,
+    private readonly agentConnectionRepository: AgentConnectionRepository,
+  ) {}
 
-  async execute(
-    user: User,
-  ): Promise<Pick<AgentEntity, 'id' | 'agent_identifier' | 'name'>[]> {
-    if (user.role === 'admin') {
-      return this.agentRepository.find({
-        select: ['id', 'agent_identifier', 'name'],
-      });
-    }
+  async execute(user: User): Promise<AgentListItemView[]> {
+    const isAdmin = user.role === 'admin';
 
-    return this.agentRepository.find({
+    const agents = await this.agentRepository.find({
       select: ['id', 'agent_identifier', 'name'],
-      where: {
-        organization_id: user.organization_id,
-      },
+      where: isAdmin ? undefined : { organization_id: user.organization_id },
     });
+
+    const { principalIds, childIds } =
+      await this.agentConnectionRepository.getRoleFlagsByOrganization(
+        isAdmin ? undefined : user.organization_id,
+      );
+
+    return agents.map((agent) => ({
+      id: agent.id,
+      agent_identifier: agent.agent_identifier,
+      name: agent.name,
+      is_tool: childIds.has(agent.id),
+      is_principal: principalIds.has(agent.id),
+    }));
   }
 }

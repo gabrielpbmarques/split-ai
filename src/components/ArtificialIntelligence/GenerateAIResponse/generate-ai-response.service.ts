@@ -85,8 +85,6 @@ export class GenerateAiResponseService {
   ): Promise<string | AsyncGenerator<StreamEvent> | any> {
     const runnable = agent.runnable;
 
-    // NOTE: `createAgent`'s inferred Invoke input type can become overly strict
-    // depending on generic inference. Runtime accepts `{ messages: BaseMessage[] }`.
     const invokeParams = {
       messages: [new HumanMessage(question)],
     } as any;
@@ -136,20 +134,6 @@ export class GenerateAiResponseService {
     return structured.finalAnswer;
   }
 
-  /**
-   * Translates the LangGraph `updates` stream into the public `StreamEvent`
-   * contract.
-   *
-   * Event mapping per LangGraph chunk:
-   * - `chunk.model_request.messages[].tool_calls[]`  → `status` (tool_call)
-   * - `chunk.model_request.messages[].content` text  → `content` delta
-   *   (fallback used as `final` if no structuredResponse fires)
-   * - `chunk.model_request.structuredResponse.finalAnswer` → `final`
-   * - `chunk.tools.messages[].name`                  → `status` (tool_result)
-   *
-   * A `done` event always fires last. On error a `error` event fires first
-   * then `done`. Token usage continues to be persisted in the same pass.
-   */
   private async *handleStreamResponse(
     stream: AsyncGenerator<any>,
     metadata: CustomMetadata,

@@ -49,8 +49,6 @@ export class ResolveAgentService {
     memorySaver?: MemorySaver,
     connectionContext?: { depth: number; visited: string[] },
   ): Promise<ResolvedAgent> {
-    // Postgres rejects non-UUID strings when binding `id` (uuid column), so
-    // route the lookup by shape: UUID-shaped → `id`, otherwise → `agent_identifier`.
     const isUuid =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
         agentId,

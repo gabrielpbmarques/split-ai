@@ -4,7 +4,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { AgentEntity } from 'src/entities';
-import { AgentInstructionRepository, AgentRepository } from 'src/repositories';
+import {
+  AgentConnectionRepository,
+  AgentInstructionRepository,
+  AgentRepository,
+} from 'src/repositories';
 import { User } from 'src/types';
 
 import { UpdateAgentDto } from './update-agent.dto';
@@ -14,6 +18,7 @@ export class UpdateAgentService {
   constructor(
     private readonly agentRepository: AgentRepository,
     private readonly agentInstructionRepository: AgentInstructionRepository,
+    private readonly agentConnectionRepository: AgentConnectionRepository,
   ) {}
 
   private isUuid(id: string): boolean {
@@ -105,9 +110,10 @@ export class UpdateAgentService {
 
     this.authorizeAccess(agent, user);
 
-    const latest = await this.agentInstructionRepository.findLatestByAgentId(
-      agent.id,
-    );
+    const [latest, flags] = await Promise.all([
+      this.agentInstructionRepository.findLatestByAgentId(agent.id),
+      this.agentConnectionRepository.getRoleFlags(agent.id),
+    ]);
 
     return {
       id: agent.id,
@@ -126,6 +132,8 @@ export class UpdateAgentService {
           }
         : null,
       instructions: latest?.instructions || null,
+      isTool: flags.isTool,
+      isPrincipal: flags.isPrincipal,
       createdAt: agent.created_at,
       updatedAt: agent.updated_at,
     };

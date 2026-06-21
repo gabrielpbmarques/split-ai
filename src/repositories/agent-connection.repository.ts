@@ -76,6 +76,42 @@ export class AgentConnectionRepository {
     return count > 0;
   }
 
+  /**
+   * Derived role membership for a whole set of agents, by existence of any
+   * connection (enabled or not). Powers the `is_tool` / `is_principal` flags on
+   * `GET /agent/list`. Pass `organizationId` to scope to one org (regular
+   * users); omit it to span all orgs (platform admins).
+   */
+  async getRoleFlagsByOrganization(
+    organizationId?: string,
+  ): Promise<{ principalIds: Set<string>; childIds: Set<string> }> {
+    const rows = await this.repository.find({
+      where: organizationId ? { organization_id: organizationId } : undefined,
+      select: ['principal_agent_id', 'child_agent_id'],
+    });
+    const principalIds = new Set<string>();
+    const childIds = new Set<string>();
+    for (const row of rows) {
+      principalIds.add(row.principal_agent_id);
+      childIds.add(row.child_agent_id);
+    }
+    return { principalIds, childIds };
+  }
+
+  /**
+   * Derived role flags for a single agent, by existence of any connection
+   * (enabled or not). Powers `isTool` / `isPrincipal` on `GET /agent/:id`.
+   */
+  async getRoleFlags(
+    agentId: string,
+  ): Promise<{ isPrincipal: boolean; isTool: boolean }> {
+    const [asPrincipal, asChild] = await Promise.all([
+      this.repository.count({ where: { principal_agent_id: agentId } }),
+      this.repository.count({ where: { child_agent_id: agentId } }),
+    ]);
+    return { isPrincipal: asPrincipal > 0, isTool: asChild > 0 };
+  }
+
   async update(
     id: string,
     data: Partial<AgentConnectionEntity>,

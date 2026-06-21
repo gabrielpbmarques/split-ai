@@ -65,6 +65,26 @@ export class CreateAgentConnectionService {
       );
     }
 
+    // Strict 2-tier disjoint roles: an agent is a principal, a tool, or
+    // standalone — never both. A child that is already a principal (has its own
+    // tools) can't be demoted to a tool, and a principal that is already wired
+    // in as someone else's tool can't gain tools of its own. (Existence-based,
+    // matching the derived is_tool/is_principal flags.)
+    const [childFlags, principalFlags] = await Promise.all([
+      this.agentConnectionRepository.getRoleFlags(dto.childAgentId),
+      this.agentConnectionRepository.getRoleFlags(dto.principalAgentId),
+    ]);
+    if (childFlags.isPrincipal) {
+      throw new ConflictException(
+        'O agente conectado já é um agente principal (possui ferramentas próprias) e não pode ser usado como ferramenta.',
+      );
+    }
+    if (principalFlags.isTool) {
+      throw new ConflictException(
+        'O agente principal já está conectado como ferramenta de outro agente e não pode ter ferramentas próprias.',
+      );
+    }
+
     // Tool names must be unique within a principal's toolset so the LLM never
     // sees two tools with the same name.
     const siblings =
