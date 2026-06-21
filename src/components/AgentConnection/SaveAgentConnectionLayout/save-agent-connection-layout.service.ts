@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { AgentRepository } from 'src/repositories';
+import { User } from 'src/types';
 
 import { SaveAgentConnectionLayoutDto } from './save-agent-connection-layout.dto';
 
@@ -13,13 +14,17 @@ export class SaveAgentConnectionLayoutService {
 
   async execute(
     dto: SaveAgentConnectionLayoutDto,
-    organizationId: string,
+    user: User,
   ): Promise<{ success: true }> {
     const principal = await this.agentRepository.findById(dto.principalAgentId);
     if (!principal) {
       throw new NotFoundException('Agente principal não encontrado.');
     }
-    if (principal.organization_id !== organizationId) {
+    const isPlatformAdmin = user.role === 'admin';
+    if (
+      !isPlatformAdmin &&
+      principal.organization_id !== user.organization_id
+    ) {
       throw new ForbiddenException('Agente não pertence à sua organização.');
     }
 

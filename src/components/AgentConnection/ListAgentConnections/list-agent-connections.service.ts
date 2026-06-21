@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { AgentConnectionRepository, AgentRepository } from 'src/repositories';
+import { User } from 'src/types';
 
 interface AgentConnectionView {
   id: string;
@@ -31,13 +32,17 @@ export class ListAgentConnectionsService {
 
   async execute(
     principalAgentId: string,
-    organizationId: string,
+    user: User,
   ): Promise<ListAgentConnectionsResult> {
     const principal = await this.agentRepository.findById(principalAgentId);
     if (!principal) {
       throw new NotFoundException('Agente principal não encontrado.');
     }
-    if (principal.organization_id !== organizationId) {
+    const isPlatformAdmin = user.role === 'admin';
+    if (
+      !isPlatformAdmin &&
+      principal.organization_id !== user.organization_id
+    ) {
       throw new ForbiddenException('Agente não pertence à sua organização.');
     }
 

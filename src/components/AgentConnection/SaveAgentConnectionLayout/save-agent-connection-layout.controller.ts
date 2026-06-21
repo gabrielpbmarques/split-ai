@@ -33,7 +33,7 @@ export class SaveAgentConnectionLayoutController {
     try {
       const result = await this.saveAgentConnectionLayoutService.execute(
         dto,
-        user.organization_id,
+        user,
       );
       return res.status(200).send(result);
     } catch (error: any) {

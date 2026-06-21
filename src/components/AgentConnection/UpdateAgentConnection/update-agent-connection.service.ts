@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { AgentConnectionEntity } from 'src/entities';
 import { AgentConnectionRepository } from 'src/repositories';
+import { User } from 'src/types';
 
 import { UpdateAgentConnectionDto } from './update-agent-connection.dto';
 
@@ -16,13 +17,15 @@ export class UpdateAgentConnectionService {
 
   async execute(
     dto: UpdateAgentConnectionDto,
-    organizationId: string,
+    user: User,
   ): Promise<{ success: true }> {
-    const connection =
-      await this.agentConnectionRepository.findByIdForOrganization(
-        dto.id,
-        organizationId,
-      );
+    const isPlatformAdmin = user.role === 'admin';
+    const connection = isPlatformAdmin
+      ? await this.agentConnectionRepository.findById(dto.id)
+      : await this.agentConnectionRepository.findByIdForOrganization(
+          dto.id,
+          user.organization_id,
+        );
     if (!connection) {
       throw new NotFoundException('Conexão não encontrada.');
     }

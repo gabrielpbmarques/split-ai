@@ -31,10 +31,7 @@ export class CreateAgentConnectionController {
     @AuthUser() user: User,
   ): Promise<FastifyReply> {
     try {
-      const result = await this.createAgentConnectionService.execute(
-        dto,
-        user.organization_id,
-      );
+      const result = await this.createAgentConnectionService.execute(dto, user);
       return res.status(201).send(result);
     } catch (error: any) {
       return res.status(error.status || 500).send(error.message);

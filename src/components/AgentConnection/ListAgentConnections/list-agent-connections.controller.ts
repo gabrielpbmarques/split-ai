@@ -33,7 +33,7 @@ export class ListAgentConnectionsController {
     try {
       const result = await this.listAgentConnectionsService.execute(
         dto.principalAgentId,
-        user.organization_id,
+        user,
       );
       return res.status(200).send(result);
     } catch (error: any) {

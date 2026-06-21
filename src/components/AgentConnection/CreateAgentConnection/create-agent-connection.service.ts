@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { AgentConnectionRepository, AgentRepository } from 'src/repositories';
+import { User } from 'src/types';
 
 import { CreateAgentConnectionDto } from './create-agent-connection.dto';
 
@@ -18,7 +19,7 @@ export class CreateAgentConnectionService {
 
   async execute(
     dto: CreateAgentConnectionDto,
-    organizationId: string,
+    user: User,
   ): Promise<{ id: string }> {
     if (dto.principalAgentId === dto.childAgentId) {
       throw new BadRequestException(
@@ -38,9 +39,16 @@ export class CreateAgentConnectionService {
       throw new NotFoundException('Agente conectado não encontrado.');
     }
 
-    if (
-      principal.organization_id !== organizationId ||
-      child.organization_id !== organizationId
+    const isPlatformAdmin = user.role === 'admin';
+    if (isPlatformAdmin) {
+      if (principal.organization_id !== child.organization_id) {
+        throw new ForbiddenException(
+          'Os agentes pertencem a organizações diferentes.',
+        );
+      }
+    } else if (
+      principal.organization_id !== user.organization_id ||
+      child.organization_id !== user.organization_id
     ) {
       throw new ForbiddenException('Agente não pertence à sua organização.');
     }
@@ -53,8 +61,6 @@ export class CreateAgentConnectionService {
       throw new ConflictException('Esta conexão já existe.');
     }
 
-    // Reciprocal guard: A→B blocks B→A up front. Deeper/indirect cycles are
-    // bounded authoritatively at runtime by ResolveAgent's max-depth guard.
     const reciprocal = await this.agentConnectionRepository.existsByPair(
       dto.childAgentId,
       dto.principalAgentId,
@@ -65,11 +71,6 @@ export class CreateAgentConnectionService {
       );
     }
 
-    // Strict 2-tier disjoint roles: an agent is a principal, a tool, or
-    // standalone — never both. A child that is already a principal (has its own
-    // tools) can't be demoted to a tool, and a principal that is already wired
-    // in as someone else's tool can't gain tools of its own. (Existence-based,
-    // matching the derived is_tool/is_principal flags.)
     const [childFlags, principalFlags] = await Promise.all([
       this.agentConnectionRepository.getRoleFlags(dto.childAgentId),
       this.agentConnectionRepository.getRoleFlags(dto.principalAgentId),
@@ -85,8 +86,6 @@ export class CreateAgentConnectionService {
       );
     }
 
-    // Tool names must be unique within a principal's toolset so the LLM never
-    // sees two tools with the same name.
     const siblings =
       await this.agentConnectionRepository.findByPrincipalAgentId(
         dto.principalAgentId,
@@ -98,7 +97,7 @@ export class CreateAgentConnectionService {
     }
 
     const connection = await this.agentConnectionRepository.create({
-      organization_id: organizationId,
+      organization_id: principal.organization_id,
       principal_agent_id: dto.principalAgentId,
       child_agent_id: dto.childAgentId,
       tool_name: dto.toolName,

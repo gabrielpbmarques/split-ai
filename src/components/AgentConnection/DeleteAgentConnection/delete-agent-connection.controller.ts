@@ -33,7 +33,7 @@ export class DeleteAgentConnectionController {
     try {
       const result = await this.deleteAgentConnectionService.execute(
         dto.id,
-        user.organization_id,
+        user,
       );
       return res.status(200).send(result);
     } catch (error: any) {
