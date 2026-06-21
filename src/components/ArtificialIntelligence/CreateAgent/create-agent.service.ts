@@ -25,6 +25,10 @@ export class CreateAgentService {
       model: dto.model ?? 'claude-haiku-4-5-20251001',
       temperature: dto.temperature ?? 0.4,
       with_history: dto.withHistory ?? true,
+      // Coalesce to the column default (true), not null: a null here would make
+      // ResolveAgent silently skip the tool via its gating checks.
+      database_tool: dto.databaseTool ?? true,
+      vector_search_tool: dto.vectorSearchTool ?? true,
       parser_schema: dto.parser?.schema ?? null,
       parser_name: dto.parser?.name ?? null,
       parser_description: dto.parser?.description ?? null,

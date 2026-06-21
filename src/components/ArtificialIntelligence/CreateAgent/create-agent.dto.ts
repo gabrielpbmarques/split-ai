@@ -30,6 +30,14 @@ export class CreateAgentDto {
   @IsOptional()
   withHistory?: boolean;
 
+  @IsBoolean()
+  @IsOptional()
+  databaseTool?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  vectorSearchTool?: boolean;
+
   @IsObject()
   @IsOptional()
   instructions: AIInstructions;

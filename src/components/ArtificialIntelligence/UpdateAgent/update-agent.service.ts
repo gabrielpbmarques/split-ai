@@ -62,6 +62,10 @@ export class UpdateAgentService {
     if (dto.temperature !== undefined) updateData.temperature = dto.temperature;
     if (dto.withHistory !== undefined)
       updateData.with_history = dto.withHistory;
+    if (dto.databaseTool !== undefined)
+      updateData.database_tool = dto.databaseTool;
+    if (dto.vectorSearchTool !== undefined)
+      updateData.vector_search_tool = dto.vectorSearchTool;
     if (dto.sites !== undefined)
       updateData.sites = dto.sites && dto.sites.length ? dto.sites : null;
 
