@@ -13,30 +13,46 @@ type SupportedDialect = 'postgres' | 'mysql';
 export class LoadDatabaseToolService {
   async execute({
     databaseUrl,
+    includeTables,
+    sampleRows,
   }: {
     databaseUrl: string;
+    // When set, the schema (and every query) is scoped to just these tables —
+    // keeps the embedded schema small on large databases. Omitted → all tables.
+    includeTables?: string[];
+    // Rows of sample data langchain appends per table in the schema. `0` drops
+    // them (smaller prompt, no customer data leaked into it). Omitted → default.
+    sampleRows?: number;
   }): Promise<DynamicStructuredTool<z.ZodObject<{ query: z.ZodString }>>> {
     const dialect = this.detectDialect(databaseUrl);
 
-    const dataSource = new DataSource({
-      type: dialect,
-      url: databaseUrl,
-    });
-    await dataSource.initialize();
-
-    const db = await SqlDatabase.fromDataSourceParams({
-      appDataSource: dataSource,
-    });
-    const schema = await db.getTableInfo();
+    // Introspect the schema once, with a connection that is always released. The
+    // resulting string is captured for the tool description; each later query
+    // opens and closes its own connection, so no DataSource is ever leaked.
+    const schema = await this.withDatabase(
+      dialect,
+      databaseUrl,
+      includeTables,
+      sampleRows,
+      (db) => db.getTableInfo(),
+    );
 
     return tool(
       async ({ query }) => {
         const q = this.sanitizeSqlQuery(query);
-        try {
-          return await db.run(q);
-        } catch (e: any) {
-          throw new Error(e?.message ?? String(e));
-        }
+        return this.withDatabase(
+          dialect,
+          databaseUrl,
+          includeTables,
+          sampleRows,
+          async (db) => {
+            try {
+              return await db.run(q);
+            } catch (e: any) {
+              throw new Error(e?.message ?? String(e));
+            }
+          },
+        );
       },
       {
         name: 'execute_sql',
@@ -48,6 +64,36 @@ export class LoadDatabaseToolService {
         }),
       },
     );
+  }
+
+  /**
+   * Opens a TypeORM DataSource, runs `fn` against a (optionally table-scoped)
+   * SqlDatabase, and always destroys the DataSource afterwards. Each call is
+   * self-contained, so a per-request tool never leaks a connection.
+   */
+  private async withDatabase<T>(
+    dialect: SupportedDialect,
+    databaseUrl: string,
+    includeTables: string[] | undefined,
+    sampleRows: number | undefined,
+    fn: (db: SqlDatabase) => Promise<T>,
+  ): Promise<T> {
+    const dataSource = new DataSource({ type: dialect, url: databaseUrl });
+    await dataSource.initialize();
+    try {
+      const db = await SqlDatabase.fromDataSourceParams({
+        appDataSource: dataSource,
+        ...(includeTables?.length ? { includesTables: includeTables } : {}),
+        ...(sampleRows !== undefined
+          ? { sampleRowsInTableInfo: sampleRows }
+          : {}),
+      });
+      return await fn(db);
+    } finally {
+      await dataSource.destroy().catch(() => {
+        /* best-effort cleanup; never mask the original result/error */
+      });
+    }
   }
 
   private detectDialect(url: string): SupportedDialect {

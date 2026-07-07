@@ -29,6 +29,19 @@ const DATABASE_CONNECTION_FEATURE_KEY = 'database_connection';
 // cycle in the connection graph.
 const MAX_AGENT_CONNECTION_DEPTH = 1;
 
+// Claude models that reject the `temperature` (and top_p/top_k) sampling params
+// with a 400 — the adaptive-thinking-only families. `@langchain/anthropic` sends
+// `temperature` whenever it is defined and (as of 1.4.0) only guards against
+// `claude-opus-4-7`, so we must omit it ourselves for these models or the very
+// first LLM call fails. Prefix match; extend as new such models ship.
+const MODELS_WITHOUT_SAMPLING_PARAMS = [
+  'claude-opus-4-7',
+  'claude-opus-4-8',
+  'claude-sonnet-5',
+  'claude-fable-5',
+  'claude-mythos-5',
+];
+
 @Injectable()
 export class ResolveAgentService {
   constructor(
@@ -111,9 +124,21 @@ export class ResolveAgentService {
   }
 
   private async loadChat(agent: AgentEntity): Promise<ChatAnthropic> {
+    const model = agent.model || config.aiModel;
+
+    // Only send `temperature` to models that still accept it. For the
+    // adaptive-thinking-only families it must be omitted (passing `undefined`
+    // makes @langchain/anthropic drop it) — otherwise the API returns
+    // `400 temperature is deprecated for this model` and the whole run fails.
+    const acceptsSamplingParams = !MODELS_WITHOUT_SAMPLING_PARAMS.some(
+      (prefix) => model.startsWith(prefix),
+    );
+
     return new ChatAnthropic({
-      model: agent.model || config.aiModel,
-      temperature: agent.temperature ?? 0.4,
+      model,
+      temperature: acceptsSamplingParams
+        ? (agent.temperature ?? 0.4)
+        : undefined,
     });
   }
 
@@ -247,12 +272,11 @@ export class ResolveAgentService {
   private async maybeLoadDatabaseTool(
     organizationId: string,
   ): Promise<DynamicStructuredTool<z.ZodObject<any>> | null> {
-    const isEnabled =
-      await this.organizationFeatureRepository.isEnabledForOrganization(
-        organizationId,
-        DATABASE_CONNECTION_FEATURE_KEY,
-      );
-    if (!isEnabled) {
+    const feature = await this.organizationFeatureRepository.getEnabledFeature(
+      organizationId,
+      DATABASE_CONNECTION_FEATURE_KEY,
+    );
+    if (!feature) {
       return null;
     }
 
@@ -262,8 +286,20 @@ export class ResolveAgentService {
       return null;
     }
 
+    // Optional per-org scoping stored on the feature row's `config`:
+    //   { "tables": ["app_company_campaign", ...], "sampleRows": 0 }
+    // Without it the tool introspects every table (backwards compatible); on a
+    // large schema that bloats the system prompt, so prefer an allow-list.
+    const config = (feature.config ?? {}) as {
+      tables?: string[];
+      sampleRows?: number;
+    };
+
     return this.loadDatabaseToolService.execute({
       databaseUrl: organization.database_url,
+      includeTables: config.tables?.length ? config.tables : undefined,
+      sampleRows:
+        typeof config.sampleRows === 'number' ? config.sampleRows : undefined,
     });
   }
 }
