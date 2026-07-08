@@ -2,7 +2,11 @@ import { ChatAnthropic } from '@langchain/anthropic';
 import { HumanMessage } from '@langchain/core/messages';
 import { MemorySaver } from '@langchain/langgraph';
 import { Injectable } from '@nestjs/common';
-import { DynamicStructuredTool, createAgent } from 'langchain';
+import {
+  DynamicStructuredTool,
+  createAgent,
+  createMiddleware,
+} from 'langchain';
 import { LoadDatabaseToolService } from 'src/components/Tools/LoadDatabaseTool/load-database-tool.service';
 import { LoadVectorSearchToolService } from 'src/components/Tools/LoadVectorSearchTool/load-vector-search-tool.service';
 import { config } from 'src/config';
@@ -16,12 +20,28 @@ import {
 } from 'src/repositories';
 import { AgentFinalResponseSchema, ResolvedAgent } from 'src/types';
 import { buildLangchainToolFromSchema } from 'src/utils/buildZodSchema';
+import { sanitizeToolCallMessages } from 'src/utils/sanitizeToolCallMessages';
 import { z } from 'zod';
 
 import { BuildSystemPromptService } from '../BuildSystemPrompt/build-system-prompt.service';
 import { LoadCheckpointerService } from '../LoadCheckpointer/load-checkpointer.service';
 
 const DATABASE_CONNECTION_FEATURE_KEY = 'database_connection';
+
+// Repairs the checkpointed history before every model call so a partially
+// persisted turn (a run that died after the `tool_use` was saved but before its
+// `tool_result`) can never poison the thread. Without this, Anthropic rejects
+// the whole request with `tool_use` ids without `tool_result` blocks, and the
+// error repeats on every subsequent turn of the same session. Stateless — the
+// transform only affects what is sent to the model, not the stored checkpoint.
+const sanitizeHistoryMiddleware = createMiddleware({
+  name: 'sanitize-tool-call-history',
+  wrapModelCall: (request, handler) =>
+    handler({
+      ...request,
+      messages: sanitizeToolCallMessages(request.messages),
+    }),
+});
 
 // How deep agent-as-tool delegation may go. At depth 1 a principal may call its
 // directly-connected children, but those children do NOT expand their own
@@ -108,6 +128,7 @@ export class ResolveAgentService {
       tools,
       systemPrompt,
       checkpointer,
+      middleware: [sanitizeHistoryMiddleware],
       responseFormat: AgentFinalResponseSchema,
     });
 
