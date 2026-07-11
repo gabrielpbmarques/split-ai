@@ -12,6 +12,7 @@ export * from './ai-source-type.model';
 export * from './chunks.model';
 export * from './custom-document.model';
 export * from './custom-metadata.model';
+export * from './process-source-input.model';
 export * from './runnable-chat-opts.model';
 export * from './supabase-document.model';
 export * from './chunk.model';
