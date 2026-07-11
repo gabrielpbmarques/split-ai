@@ -78,7 +78,12 @@ export class LoadDatabaseToolService {
     sampleRows: number | undefined,
     fn: (db: SqlDatabase) => Promise<T>,
   ): Promise<T> {
-    const dataSource = new DataSource({ type: dialect, url: databaseUrl });
+    const database = this.parseDatabaseName(databaseUrl);
+    const dataSource = new DataSource({
+      type: dialect,
+      url: databaseUrl,
+      ...(database ? { database } : {}),
+    });
     await dataSource.initialize();
     try {
       const db = await SqlDatabase.fromDataSourceParams({
@@ -93,6 +98,23 @@ export class LoadDatabaseToolService {
       await dataSource.destroy().catch(() => {
         /* best-effort cleanup; never mask the original result/error */
       });
+    }
+  }
+
+  /**
+   * Extracts the database/schema name from a connection URL. Needed because
+   * langchain's `SqlDatabase` reads `DataSource.options.database` (not the
+   * driver's parsed value) to enumerate tables; omitting it breaks schema
+   * introspection and `includesTables` validation. Returns `undefined` for
+   * malformed URLs or a URL without a path, so the DataSource falls back to
+   * TypeORM's own parsing.
+   */
+  private parseDatabaseName(url: string): string | undefined {
+    try {
+      const name = decodeURIComponent(new URL(url).pathname.replace(/^\//, ''));
+      return name || undefined;
+    } catch {
+      return undefined;
     }
   }
 

@@ -113,14 +113,12 @@ export class ResolveAgentService {
       },
     );
 
+    const isDelegatedChild = (connectionContext?.depth ?? 0) > 0;
+
     let checkpointer;
 
-    if (runnableOpts.withHistory) {
-      if (memorySaver) {
-        checkpointer = memorySaver;
-      } else {
-        checkpointer = this.loadCheckpointerService.execute();
-      }
+    if (runnableOpts.withHistory && !isDelegatedChild) {
+      checkpointer = memorySaver ?? this.loadCheckpointerService.execute();
     }
 
     const runnable = createAgent({
@@ -243,16 +241,6 @@ export class ResolveAgentService {
     }
   }
 
-  /**
-   * Resolves and runs a connected child agent for a single delegated call. The
-   * child is given an ephemeral in-memory checkpointer so its history never
-   * collides with the parent conversation nor touches the shared Postgres
-   * saver — each delegated call is answered fresh. Failures degrade to a
-   * pt-BR fallback so a broken child never breaks the principal's run.
-   *
-   * NOTE: child token usage is not separately metered in this v1; the principal
-   * conversation is still billed once at the QuestionService level.
-   */
   private async invokeConnectedAgent(
     childAgentId: string,
     input: string,
@@ -262,7 +250,7 @@ export class ResolveAgentService {
       const childAgent = await this.execute(
         childAgentId,
         undefined,
-        new MemorySaver(),
+        undefined,
         connectionContext,
       );
 
