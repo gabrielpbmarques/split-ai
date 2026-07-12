@@ -38,7 +38,7 @@ export class QuestionController {
       try {
         res.raw.write(`${JSON.stringify(event)}\n`);
       } catch {
-        /* socket may have been closed by the client */
+        res.raw.end();
       }
     };
 
@@ -52,9 +52,6 @@ export class QuestionController {
         writeEvent(event);
       });
     } catch (error: any) {
-      // Errors raised BEFORE the stream loop (validation, credit check, agent
-      // resolution) reach here. Surface them as a typed pair so the client
-      // sees the same shape it expects from the rest of the stream.
       writeEvent({
         type: 'error',
         message:
@@ -67,16 +64,10 @@ export class QuestionController {
         serviceTerminated = true;
       }
     } finally {
-      // Defensive: ensure a terminator even if the underlying generator never
-      // yielded one (e.g., it threw synchronously in an exotic way).
       if (!serviceTerminated) {
         writeEvent({ type: 'done' });
       }
-      try {
-        res.raw.end();
-      } catch {
-        /* socket already closed */
-      }
+      res.raw.end();
     }
   }
 }

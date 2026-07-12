@@ -11,23 +11,11 @@ import { StreamEvent } from 'src/types';
 import { QuestionDto } from './question.dto';
 
 const STREAM = true;
-
-/**
- * The auth-derived user. For JWT callers this is a real `UserEntity` shape;
- * for API-key (server-to-server) callers it is a synthetic service user with
- * `id` and `email` set to `null` and `organization_id` resolved from the
- * `chat_embed_token` by `ApiKeyGuard`.
- */
 type AuthenticatedUser = Pick<
   UserEntity,
   'id' | 'organization_id' | 'name' | 'phone' | 'email'
 > & {
   role?: string;
-  /**
-   * Trusted BravoHub tenant scope, populated ONLY by the JWT bridge from a
-   * verified platform token (never from the request body). Absent for native
-   * split-ai / API-key callers.
-   */
   companyId?: number | string | null;
 };
 
@@ -46,12 +34,16 @@ export class QuestionService {
     user: AuthenticatedUser,
     onEvent: (event: StreamEvent) => void,
   ): Promise<void> {
+    console.log(
+      'QuestionService.execute called with dto:',
+      dto,
+      'and user:',
+      user,
+    );
     const { question, agentId } = dto;
     const organizationId = user.organization_id ?? null;
     const billable = !!user.organization_id && user.role !== 'service';
 
-    // Trusted, server-derived tenant scope (from the verified JWT). The client
-    // can NEVER influence which company's data is read.
     const scopedCompanyId =
       user.companyId !== undefined &&
       user.companyId !== null &&
@@ -59,9 +51,6 @@ export class QuestionService {
         ? String(user.companyId)
         : undefined;
 
-    // Fail closed: agents that read the shared multi-tenant BravoHub database
-    // must only ever run under a verified company scope. A caller without one
-    // (native JWT, API key, or a leaked embed token) can never reach that data.
     if (config.bravohubScopedAgents.includes(agentId) && !scopedCompanyId) {
       throw new ForbiddenException(
         'Escopo de empresa ausente: este agente exige um token autenticado da empresa.',
