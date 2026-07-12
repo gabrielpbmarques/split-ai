@@ -99,9 +99,18 @@ export class ResolveAgentService {
 
     const runnableOpts = { withHistory: !!agent.with_history };
 
+    // Trusted tenant scope threaded through the whole resolution (including to
+    // connected child agents). Derived from the server-forced `companyId`
+    // variable — never from anything the model produced.
+    const scopeCompanyId =
+      promptVariables?.companyId != null &&
+      `${promptVariables.companyId}` !== ''
+        ? String(promptVariables.companyId)
+        : undefined;
+
     const [chat, tools] = await Promise.all([
       this.loadChat(agent),
-      this.loadTools(agent, connectionContext),
+      this.loadTools(agent, connectionContext, scopeCompanyId),
     ]);
 
     const systemPrompt = await this.buildSystemPromptService.execute(
@@ -164,6 +173,7 @@ export class ResolveAgentService {
   private async loadTools(
     dbAgent: AgentEntity,
     connectionContext?: { depth: number; visited: string[] },
+    scopeCompanyId?: string,
   ): Promise<DynamicStructuredTool<z.ZodObject<any>>[]> {
     const tools: DynamicStructuredTool<z.ZodObject<any>>[] = [];
 
@@ -184,13 +194,20 @@ export class ResolveAgentService {
     if (dbAgent.database_tool && dbAgent.organization_id) {
       const databaseTool = await this.maybeLoadDatabaseTool(
         dbAgent.organization_id,
+        scopeCompanyId,
+        dbAgent,
       );
       if (databaseTool) {
         tools.push(databaseTool);
       }
     }
 
-    await this.appendConnectionTools(dbAgent, tools, connectionContext);
+    await this.appendConnectionTools(
+      dbAgent,
+      tools,
+      connectionContext,
+      scopeCompanyId,
+    );
 
     return tools;
   }
@@ -204,6 +221,7 @@ export class ResolveAgentService {
     dbAgent: AgentEntity,
     tools: DynamicStructuredTool<z.ZodObject<any>>[],
     connectionContext?: { depth: number; visited: string[] },
+    scopeCompanyId?: string,
   ): Promise<void> {
     const depth = connectionContext?.depth ?? 0;
     const visited = connectionContext?.visited ?? [dbAgent.id];
@@ -231,10 +249,15 @@ export class ResolveAgentService {
             if (visited.includes(connection.child_agent_id)) {
               return 'Conexão circular detectada; chamada ignorada.';
             }
-            return this.invokeConnectedAgent(connection.child_agent_id, input, {
-              depth: depth + 1,
-              visited: [...visited, connection.child_agent_id],
-            });
+            return this.invokeConnectedAgent(
+              connection.child_agent_id,
+              input,
+              {
+                depth: depth + 1,
+                visited: [...visited, connection.child_agent_id],
+              },
+              scopeCompanyId,
+            );
           },
         }),
       );
@@ -245,11 +268,14 @@ export class ResolveAgentService {
     childAgentId: string,
     input: string,
     connectionContext: { depth: number; visited: string[] },
+    scopeCompanyId?: string,
   ): Promise<string> {
     try {
+      // Propagate the tenant scope so the connected child (e.g. the SQL analyst
+      // that actually writes/executes queries) is bound to the SAME company.
       const childAgent = await this.execute(
         childAgentId,
-        undefined,
+        scopeCompanyId ? { companyId: scopeCompanyId } : undefined,
         undefined,
         connectionContext,
       );
@@ -280,6 +306,8 @@ export class ResolveAgentService {
 
   private async maybeLoadDatabaseTool(
     organizationId: string,
+    scopeCompanyId?: string,
+    agent?: AgentEntity,
   ): Promise<DynamicStructuredTool<z.ZodObject<any>> | null> {
     const feature = await this.organizationFeatureRepository.getEnabledFeature(
       organizationId,
@@ -299,16 +327,37 @@ export class ResolveAgentService {
     //   { "tables": ["app_company_campaign", ...], "sampleRows": 0 }
     // Without it the tool introspects every table (backwards compatible); on a
     // large schema that bloats the system prompt, so prefer an allow-list.
-    const config = (feature.config ?? {}) as {
+    const featureConfig = (feature.config ?? {}) as {
       tables?: string[];
       sampleRows?: number;
     };
 
+    // Agents that read the shared multi-tenant BravoHub database MUST run
+    // company-scoped and read-only. `scopeRequired` makes the tool fail closed
+    // if it is ever built without a resolved scope (belt-and-suspenders with the
+    // fail-closed gate in QuestionService).
+    const scopeRequired =
+      !!agent &&
+      (config.bravohubScopedAgents.includes(agent.id) ||
+        (!!agent.agent_identifier &&
+          config.bravohubScopedAgents.includes(agent.agent_identifier)));
+
     return this.loadDatabaseToolService.execute({
       databaseUrl: organization.database_url,
-      includeTables: config.tables?.length ? config.tables : undefined,
+      includeTables: featureConfig.tables?.length
+        ? featureConfig.tables
+        : undefined,
       sampleRows:
-        typeof config.sampleRows === 'number' ? config.sampleRows : undefined,
+        typeof featureConfig.sampleRows === 'number'
+          ? featureConfig.sampleRows
+          : undefined,
+      // Company isolation: read-only + a mandatory `company_id = <scope>`
+      // predicate, enforced at the tool layer (not just the prompt).
+      readOnly: !!scopeCompanyId || scopeRequired,
+      scope: scopeCompanyId
+        ? { column: 'company_id', value: scopeCompanyId }
+        : undefined,
+      scopeRequired,
     });
   }
 }

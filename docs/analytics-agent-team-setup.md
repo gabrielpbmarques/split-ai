@@ -249,7 +249,7 @@ No NDJSON: supervisor chama `consultar_dados_sql` → recebe dados brutos → (s
 - **Billing v1 não mede tokens dos filhos.** `invokeConnectedAgent` não reporta uso; `QuestionService` cobra créditos 1× no nível do principal. Decompor multiplica o custo Anthropic real (~2–3× na Opção A) sem refletir na fatura. Dívida explícita até v2 medir filhos. Orgs `unlimited` e chamadas `role: 'service'` já ficam fora do billing.
 - **Latência sequencial.** O Analista SQL reinicializa um `DataSource` TypeORM e roda `getTableInfo()` **a cada chamada** (sem cache). Perguntas conceituais cortam caminho (supervisor responde via vector search).
 - **`recursionLimit ~25`** (default LangGraph, sem override). O risco real está no grafo do filho SQL em queries que erram repetidas vezes — por isso o teto de 3 tentativas no prompt.
-- **`execute_sql` NÃO é read-only** — aceita INSERT/UPDATE (só bloqueia DELETE/ALTER/DROP/CREATE/REPLACE/TRUNCATE). Mitigado por prompt (gate de SELECT no Analista SQL). Para robustez real, considere uma flag read-only no `LoadDatabaseTool` (fora do escopo).
+- **`execute_sql` é read-only + company-scoped para agentes BravoHub.** Para chamadas com escopo de empresa (token BravoHub verificado), o `LoadDatabaseTool` roda em `readOnly` (bloqueia INSERT/UPDATE além de DELETE/ALTER/DROP/CREATE/REPLACE/TRUNCATE) e exige o predicado `company_id = <escopo>` (rejeita outra empresa, `IN`, faixas/desigualdades). O escopo é derivado do JWT e propagado até o Analista SQL. Detalhes: **`bravohub-analytics-integration.md`**. Para outros orgs (sem escopo), o comportamento antigo se mantém (aceita INSERT/UPDATE). Isolamento por regex é defesa-em-profundidade — não substitui um usuário de banco read-only por empresa.
 
 ---
 

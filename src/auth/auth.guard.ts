@@ -31,14 +31,49 @@ export class AuthGuard implements CanActivate {
       return true;
     }
     const request = context.switchToHttp().getRequest();
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [_, token] = request.headers.authorization?.split(' ') ?? [];
+    const [, token] = request.headers.authorization?.split(' ') ?? [];
 
     if (!token) {
       throw new UnauthorizedException();
     }
 
-    const payload = verifyJwt(token);
+    // Native split-ai token first. Only if it is NOT a valid native token do we
+    // consider a forwarded BravoHub platform token (different secret + shape).
+    let payload: any = null;
+    try {
+      payload = verifyJwt(token);
+    } catch {
+      payload = null;
+    }
+
+    if (!payload) {
+      const claim = verifyBravohubJwt(token);
+      if (!claim) {
+        throw new UnauthorizedException();
+      }
+      // BravoHub dashboard user. `companyId` is a trusted, cryptographically
+      // verified tenant scope — the ONLY source of company scoping, and it is
+      // never read from the request body. Billed as a bundled platform feature
+      // (`role: 'service'` ⇒ non-billable), attributed to the analytics org.
+      request.user = {
+        id: null,
+        name: null,
+        email: claim.user_email ?? null,
+        role: 'service',
+        org_role: 'member',
+        document: '',
+        document_type: '',
+        organization_id: process.env.BRAVOHUB_ORG_ID || null,
+        companyId: claim.company_id,
+        birth_date: null,
+        password_hash: '',
+        phone: '',
+        status: true,
+        created_at: new Date(),
+        updated_at: new Date(),
+      };
+      return true;
+    }
 
     // Adaptar o payload do JWT para o formato esperado pelo modelo User
     request.user = {
@@ -93,5 +128,46 @@ export function verifyJwt(token: string): any {
     return verify(token, process.env.JWT_SECRET);
   } catch {
     throw new UnauthorizedException();
+  }
+}
+
+/**
+ * BravoHub dashboard JWT claim (nested under `user`). Signed HS512 with
+ * bravohub-api's `JWT_SECRET`, surfaced to split-ai as `BRAVOHUB_JWT_SECRET`.
+ */
+export type BravohubUserClaim = {
+  user_id: number;
+  company_id: number;
+  user_email: string;
+  user_role: string;
+  user_status: number;
+};
+
+/**
+ * Verifies a forwarded BravoHub platform token and returns its `user` claim, or
+ * `null` when the bridge is disabled (no `BRAVOHUB_JWT_SECRET`), the signature
+ * fails, or the user is not active. A `null` return lets the caller fall back to
+ * rejecting the request — a forged token can never pass `verify`, so a returned
+ * claim is always trustworthy as the tenant scope.
+ */
+export function verifyBravohubJwt(token: string): BravohubUserClaim | null {
+  const secret = process.env.BRAVOHUB_JWT_SECRET;
+  if (!secret) {
+    return null;
+  }
+  try {
+    const payload = verify(token, secret, { algorithms: ['HS512'] }) as {
+      user?: BravohubUserClaim;
+    };
+    const claim = payload?.user;
+    if (!claim || typeof claim !== 'object') {
+      return null;
+    }
+    if (claim.user_status !== 1 || claim.company_id == null) {
+      return null;
+    }
+    return claim;
+  } catch {
+    return null;
   }
 }

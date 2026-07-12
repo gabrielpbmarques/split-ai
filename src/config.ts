@@ -32,6 +32,17 @@ interface IConfig {
   langchainProject: string;
   langchainWorkspaceId: string;
   orchestratorModel: string;
+  // --- BravoHub platform integration (analytics assistant) ---
+  // Secret used to verify the BravoHub dashboard JWT (HS512) forwarded by the
+  // platform. Must equal bravohub-api's `JWT_SECRET`. When set, the Bearer auth
+  // path also accepts a BravoHub token and derives a trusted `company_id` scope.
+  bravohubJwtSecret: string;
+  // split-ai organization that owns the analytics ("Oracle") agent — used to
+  // attribute sessions/token-usage for BravoHub platform calls.
+  bravohubOrgId: string;
+  // Agent ids/identifiers that read the shared multi-tenant BravoHub database
+  // and therefore MUST run under a verified company scope (fail-closed).
+  bravohubScopedAgents: string[];
 }
 
 export const config: IConfig = {
@@ -64,4 +75,13 @@ export const config: IConfig = {
   langchainProject: process.env.LANGCHAIN_PROJECT,
   langchainWorkspaceId: process.env.LANGCHAIN_WORKSPACE_ID,
   orchestratorModel: process.env.ORCHESTRATOR_MODEL || 'claude-sonnet-4-6',
+  bravohubJwtSecret: process.env.BRAVOHUB_JWT_SECRET,
+  bravohubOrgId: process.env.BRAVOHUB_ORG_ID,
+  bravohubScopedAgents: (
+    process.env.BRAVOHUB_SCOPED_AGENTS ||
+    'a951e928-2b86-4737-8aee-88fde5eb27d6,analytics-oracle,analytics-sql-analyst'
+  )
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean),
 };

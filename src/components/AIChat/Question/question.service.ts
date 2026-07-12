@@ -4,6 +4,7 @@ import { GenerateAiResponseService } from 'src/components/ArtificialIntelligence
 import { ResolveAgentService } from 'src/components/ArtificialIntelligence/ResolveAgent/resolve-agent.service';
 import { ConsumeCreditsService } from 'src/components/Credits/ConsumeCredits/consume-credits.service';
 import { CreateSessionIfNotExistsService } from 'src/components/Session/CreateSessionIfNotExists/create-session-if-not-exists.service';
+import { config } from 'src/config';
 import { UserEntity } from 'src/entities';
 import { StreamEvent } from 'src/types';
 
@@ -22,6 +23,12 @@ type AuthenticatedUser = Pick<
   'id' | 'organization_id' | 'name' | 'phone' | 'email'
 > & {
   role?: string;
+  /**
+   * Trusted BravoHub tenant scope, populated ONLY by the JWT bridge from a
+   * verified platform token (never from the request body). Absent for native
+   * split-ai / API-key callers.
+   */
+  companyId?: number | string | null;
 };
 
 @Injectable()
@@ -43,6 +50,24 @@ export class QuestionService {
     const organizationId = user.organization_id ?? null;
     const billable = !!user.organization_id && user.role !== 'service';
 
+    // Trusted, server-derived tenant scope (from the verified JWT). The client
+    // can NEVER influence which company's data is read.
+    const scopedCompanyId =
+      user.companyId !== undefined &&
+      user.companyId !== null &&
+      `${user.companyId}` !== ''
+        ? String(user.companyId)
+        : undefined;
+
+    // Fail closed: agents that read the shared multi-tenant BravoHub database
+    // must only ever run under a verified company scope. A caller without one
+    // (native JWT, API key, or a leaked embed token) can never reach that data.
+    if (config.bravohubScopedAgents.includes(agentId) && !scopedCompanyId) {
+      throw new ForbiddenException(
+        'Escopo de empresa ausente: este agente exige um token autenticado da empresa.',
+      );
+    }
+
     if (billable) {
       const hasCredits = await this.consumeCreditsService.checkCredits(
         user.organization_id as string,
@@ -60,8 +85,11 @@ export class QuestionService {
       organization_id: organizationId ?? undefined,
     });
 
+    // Server-controlled keys override anything the client passed. `companyId`
+    // is forced from the verified token so client `variables` cannot widen scope.
     const agent = await this.resolveAgentService.execute(agentId, {
       ...(dto.variables || {}),
+      ...(scopedCompanyId ? { companyId: scopedCompanyId } : {}),
       sessionId: session.id,
       conversationId: dto.conversationId,
       threadId: dto.conversationId ?? session.id,
