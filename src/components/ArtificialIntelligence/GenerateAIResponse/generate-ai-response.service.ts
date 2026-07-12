@@ -17,8 +17,11 @@ type AgentMessage = {
   id?: string;
   content?: unknown;
   usage_metadata?: UsageMetadata;
-  tool_calls?: Array<{ name?: string }>;
+  tool_calls?: Array<{ name?: string; args?: { finalAnswer?: unknown } }>;
 };
+
+const isStructuredOutputTool = (name?: string): boolean =>
+  !!name && /^extract(-\d+)?$/.test(name);
 
 type StreamChunk = {
   model_request?: {
@@ -122,6 +125,7 @@ export class GenerateAiResponseService {
   ): AsyncGenerator<StreamEvent> {
     const recordedUsageIds = new Set<string>();
     let finalEmitted = false;
+    let pendingFinal: string | undefined;
 
     try {
       for await (const raw of stream as AsyncIterable<StreamChunk>) {
@@ -133,6 +137,11 @@ export class GenerateAiResponseService {
             this.recordTokenUsage(message, agent, metadata, recordedUsageIds);
 
             for (const call of message.tool_calls ?? []) {
+              if (isStructuredOutputTool(call?.name)) {
+                const raw = call?.args?.finalAnswer;
+                if (typeof raw === 'string' && raw.trim()) pendingFinal = raw;
+                continue; // internal extractor — never a user-facing tool chip
+              }
               if (call?.name) {
                 yield { type: 'status', phase: 'tool_call', tool: call.name };
               }
@@ -146,7 +155,7 @@ export class GenerateAiResponseService {
           }
         } else if (toolMessages?.length) {
           for (const toolMsg of toolMessages) {
-            if (toolMsg?.name) {
+            if (toolMsg?.name && !isStructuredOutputTool(toolMsg.name)) {
               yield {
                 type: 'status',
                 phase: 'tool_result',
@@ -163,6 +172,9 @@ export class GenerateAiResponseService {
         : raw;
       yield { type: 'error', message };
     } finally {
+      if (!finalEmitted && pendingFinal) {
+        yield { type: 'final', text: pendingFinal };
+      }
       yield { type: 'done' };
     }
   }
