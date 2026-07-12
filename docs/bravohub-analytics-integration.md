@@ -12,11 +12,13 @@ Browser (dashboard, IA tab)
   │  POST /api/ask   (no auth header; httpOnly bh_token cookie rides along)
   ▼
 Next route handler  bravohub-analytic-frontend/src/app/api/ask/route.ts
-  │  Authorization: Bearer <bh_token>   → ANALYTICS_API_BASE_URL
+  │  Authorization: Bearer <bh_token>;  X-Company-Id: <active company>
+  │                                              → ANALYTICS_API_BASE_URL
   ▼
 bravohub-api  POST /api/analytics/assistant/ask   (AuthGuard verifies JWT)
-  │  Authorization: Bearer <bh_token>  (RELAYED)   → SPLIT_AI_BASE_URL
-  │  body.variables.companyId = user.company_id    (defense-in-depth)
+  │  resolveActiveCompany(X-Company-Id) → effective company (global admins only)
+  │  MINTS a 2-min HS512 token { user.company_id = effective }
+  │  Authorization: Bearer <minted token>          → SPLIT_AI_BASE_URL
   ▼
 split-ai  POST /support/question
   │  AuthGuard → verifyBravohubJwt(BRAVOHUB_JWT_SECRET) → trusted company_id
@@ -94,13 +96,14 @@ bravohub-api.
   MySQL user / security-barrier views**, or replace raw SQL with **HTTP tools that
   call bravohub-api's `/api/analytics/*` endpoints** (company enforced by
   `CompanyScopeGuard`, and answers match the dashboard by construction).
-- **Global-admin company switch not honored.** `@torors.com.br` admins who switch
-  companies via the dashboard header still get their JWT's _home_ company in the
-  AI (same as the pre-existing `assistant/ask` behavior). To support it: forward
-  the active company from the frontend (`getActiveCompanyId`) and have bravohub
-  mint a short-lived token whose `user.company_id` is the validated active company
-  (split-ai keeps deriving scope from the verified token — no trust in a raw
-  header).
+- **Global-admin company switch — SUPPORTED.** The frontend forwards the selected
+  company (`getActiveCompanyId`) as `X-Company-Id`; bravohub honors it only for
+  `@torors.com.br` admins (`resolveActiveCompany`) and **mints** a short-lived
+  HS512 token whose `user.company_id` is the effective company, which split-ai
+  verifies. Regular users are always pinned to their own company (the header is
+  ignored for them). A global admin with no company selected gets a 400
+  ("Selecione uma empresa"). Because bravohub mints the token, split-ai never
+  receives a null/absent `company_id` — which was the cause of the global-admin 401.
 
 ## Testing
 

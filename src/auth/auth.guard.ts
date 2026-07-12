@@ -2,6 +2,7 @@ import {
   CanActivate,
   ExecutionContext,
   Injectable,
+  Logger,
   UnauthorizedException,
   ForbiddenException,
   SetMetadata,
@@ -17,6 +18,8 @@ export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
 
 @Injectable()
 export class AuthGuard implements CanActivate {
+  private readonly logger = new Logger(AuthGuard.name);
+
   constructor(private reflector: Reflector) {}
 
   canActivate(
@@ -49,6 +52,9 @@ export class AuthGuard implements CanActivate {
     if (!payload) {
       const claim = verifyBravohubJwt(token);
       if (!claim) {
+        this.logger.warn(
+          'Auth rejeitada (401): o token não validou como split-ai nem como BravoHub. Verifique BRAVOHUB_JWT_SECRET (== JWT_SECRET do bravohub), expiração do token, user_status=1 e company_id presente na claim.',
+        );
         throw new UnauthorizedException();
       }
       // BravoHub dashboard user. `companyId` is a trusted, cryptographically
