@@ -55,7 +55,7 @@ Both insert into `agents` + `agents_instructions`. The differences matter:
 
 |                                        | `CreateAgentService`                                                  | `CreateAttendantAgentService`                                         |
 | -------------------------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| Model default                          | `'gemini-2.5-flash'` (hard-coded)                                     | `null` (falls back to `config.aiModel` at runtime)                    |
+| Model default                          | `'claude-haiku-4-5-20251001'` (hard-coded)                            | `null` (falls back to `config.aiModel` at runtime)                    |
 | `database_tool` / `vector_search_tool` | not set explicitly → DB defaults apply (`true`)                       | takes from DTO, defaults `false`                                      |
 | `organization_id`                      | admin → `null`, others → `user.organization_id` (no override allowed) | admin → `dto.organizationId ?? null`, others → `user.organization_id` |
 | Instructions                           | raw DTO `instructions`                                                | merged with hard-coded defaults (see below)                           |

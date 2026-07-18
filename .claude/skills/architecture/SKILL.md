@@ -9,15 +9,12 @@ description: 'Use when scaffolding modules, use cases, controllers, services, DT
 src/
   app.module.ts          # Root module — imports InfrastructureModule, ComponentsModule, MiddlewareModule
   main.ts                # Bootstrap — Fastify adapter. NOTE: no global ValidationPipe and no global "api" prefix; see CLAUDE.md "Things that bite". Validation is per-handler (@Body(new ValidationPipe())); routes mount at each @Controller(...) path.
-  config.ts              # Centralized env config object (not @nestjs/config registerAs)
+  config.ts              # Plain object reading process.env (not @nestjs/config registerAs)
   auth/                  # Guards (e.g., AuthGuard, RoleGuard, DomainSpecificGuards)
   components/            # Feature modules organized by scope
-  config/                # NestJS registerAs configs (e.g., database.config.ts, cache.config.ts)
-  constants/             # Static constants
   decorators/            # Custom decorators (@Roles, @User)
   entities/              # TypeORM entities — barrel exported via index.ts
   infrastructure/        # External service providers
-  middleware/            # NestMiddleware implementations
   repositories/          # TypeORM repository wrappers — barrel exported via index.ts
   types/                 # Type definitions — models/ sub-directory, barrel exported via index.ts
   utils/                 # Pure utility functions to reduce code duplication
@@ -171,34 +168,41 @@ components/
 
 ### Tool service pattern
 
-The service is `@Injectable()`, takes its dependencies via constructor (repositories from `RepositoriesModule`, external clients from `InfrastructureModule`, sibling services), and exposes a single `execute(ctx)` method that returns a `DynamicStructuredTool`. The `ctx` carries per-request scope (typically `organizationId`, `threadId`).
+The service is `@Injectable()`, takes any dependencies via constructor (repositories from `RepositoriesModule`, external clients from `InfrastructureModule`, sibling services), and exposes a single `execute(...)` method that returns (or resolves to) a `DynamicStructuredTool`. Its argument carries whatever per-request input the tool needs — e.g. `LoadDatabaseTool.execute({ databaseUrl, readOnly, scope })`, while `LoadVectorSearchTool.execute()` takes none.
 
 ```typescript
 @Injectable()
-export class ExecuteSqlToolService {
-  constructor(/* shared deps via DI */) {}
-
-  execute(ctx: {
-    organizationId: string;
-    threadId: string;
-  }): DynamicStructuredTool<z.ZodObject<any>> {
-    return new DynamicStructuredTool({
-      name: 'execute_sql',
-      description: '...', // pt-BR, tenant-agnostic — no product-specific copy
-      schema: z.object({ query: z.string() }),
-      func: async (input) => {
-        /* ... */
+export class LoadDatabaseToolService {
+  // No constructor deps here; other tools inject repositories/clients via DI.
+  async execute({
+    databaseUrl,
+    readOnly = false,
+    scope,
+  }: {
+    databaseUrl: string;
+    readOnly?: boolean;
+    scope?: { column: string; value: string | number };
+  }): Promise<DynamicStructuredTool<z.ZodObject<{ query: z.ZodString }>>> {
+    return tool(
+      async ({ query }) => {
+        /* sanitize (single statement, deny DELETE/DROP/…, force LIMIT 5),
+           then run against a per-request TypeORM DataSource */
       },
-    });
+      {
+        name: 'execute_sql',
+        description: '...', // pt-BR, tenant-agnostic — schema + REGRAS DE OURO
+        schema: z.object({ query: z.string() }),
+      },
+    );
   }
 }
 ```
 
 ### How tools are wired into agents
 
-`ResolveAgent` reads per-tool boolean columns on `AgentEntity` (e.g., `analytics_execute_sql`) and assembles the toolbelt by invoking each enabled tool's `execute(ctx)`. The `agent_identifier` column is a human-readable label and does **not** gate tools.
+`ResolveAgentService.loadTools` reads per-tool boolean columns on `AgentEntity` — `parser_schema`, `vector_search_tool`, and `database_tool` — and assembles the toolbelt by invoking each enabled tool's `execute(...)`. For `database_tool`, `maybeLoadDatabaseTool` first checks that the agent's org has the `database_connection` feature enabled and a `database_url` set, then injects `LoadDatabaseToolService.execute({ databaseUrl })`; any missing prerequisite → the tool is silently absent. The `agent_identifier` column is a human-readable label and does **not** gate tools. See the `ai-agent-tools-and-rag` skill / `.claude/rules/agent-tools.md` for the full gate.
 
-The pre-existing modules `src/components/ArtificialIntelligence/LoadCheckpointer/` and `src/components/ArtificialIntelligence/LoadVectorSearchTool/` are the reference templates for tool-module shape — copy their structure when adding a new tool.
+`src/components/Tools/LoadVectorSearchTool/` and `src/components/Tools/LoadDatabaseTool/` are the reference templates for tool-module shape — copy their structure when adding a new tool.
 
 ## Entities
 

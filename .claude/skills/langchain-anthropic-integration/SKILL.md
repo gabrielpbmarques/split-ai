@@ -1,6 +1,6 @@
 ---
 name: langchain-anthropic-integration
-description: 'Vendored LangChain JS reference for wiring ChatAnthropic. Use when configuring the ChatAnthropic model or migrating a call-site from ChatVertexAI. For Claude model IDs/pricing/limits use the claude-api skill; for other library docs prefer context7.'
+description: 'Vendored LangChain JS reference for ChatAnthropic — instantiation, prompt caching, citations, context management. Use when configuring or changing the ChatAnthropic model. For Claude model IDs/pricing/limits use the claude-api skill; for other library docs prefer context7.'
 ---
 
 > ## Documentation Index

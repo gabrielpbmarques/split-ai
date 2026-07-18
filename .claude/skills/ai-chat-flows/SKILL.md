@@ -14,7 +14,7 @@ description: 'Use for the chat orchestration: /support/question NDJSON streaming
 | `POST /support/question` | `QuestionController.execute` | yes (Fastify hijack) | `CompositeAuthGuard` + `ActiveOrgGuard` | `QuestionDto`          |
 | `POST /chat/attendant`   | `AttendantController.handle` | no                   | `AuthGuard` + `ActiveOrgGuard`          | `QuestionDto` (reused) |
 
-`QuestionDto` (`src/components/AIChat/Question/question.dto.ts`): `question` (required), `agentId` (required), optional `phone`, `name`, and `conversationId` (drives thread memory). No `organizationId`/`companyId` — those are dead since `CompositeAuthGuard` always resolves the org (from JWT or from the `chat_embed_token` looked up by `ApiKeyGuard`). Attendant imports it from the Question folder — keep them in sync.
+`QuestionDto` (`src/components/AIChat/Question/question.dto.ts`): `question` (required), `agentId` (required), optional `phone`, `name`, `conversationId` (drives thread memory), and `variables?: Record<string, string>` (per-call prompt variables surfaced to the agent; server-controlled keys `sessionId`/`conversationId`/`threadId`/`organizationId` always override anything passed here). No `organizationId`/`companyId` — those are dead since `CompositeAuthGuard` always resolves the org (from JWT or from the `chat_embed_token` looked up by `ApiKeyGuard`). Attendant imports it from the Question folder — keep them in sync.
 
 ## Question flow — orchestrator at src/components/AIChat/Question/question.service.ts
 
@@ -23,21 +23,24 @@ description: 'Use for the chat orchestration: /support/question NDJSON streaming
 3. **Resolve agent.** `resolveAgentService.execute(agentId, { sessionId })` — loads the agent and builds the runnable (see `[[ai-agent-runtime]]`). Throws `'Agent não encontrado'` (plain `Error`) if missing.
 4. **Persist user message.** `recordChatMessageService.execute(session.id, user.id, agent.id, question, 'user')` — writes to `messages` via `MessageRepository`. Failures here are swallowed and only logged — never let recording errors abort the chat.
 5. **Generate.** `generateAiResponseService.execute(question, { session_id, user_id, agent_id }, agent, /* stream */ true)` returns an `AsyncGenerator<AIMessageChunk>`.
-6. **Stream loop.** `for await (const chunk of aiResponse)` — push `chunk.content` through the `onMessage` callback (the controller writes it raw to the response). Concatenate into `fullResponse`.
+6. **Stream loop.** `for await (const event of aiResponse)` — pass each `StreamEvent` to the `onEvent` callback (the controller serializes it as one NDJSON line via `writeEvent`: `JSON.stringify(event) + '\n'`). The `type: 'final'` event carries the full answer `text`, captured into `fullResponse`.
 7. **Persist agent message + bill.** If `fullResponse` is non-empty: `recordChatMessageService.execute(..., 'agent')`, then `consumeCreditsService.execute(orgId, sessionId, true)`. Empty responses skip both — meaning a failed agent run never consumes a credit. Keep that property if you refactor.
 
-## Why Fastify hijack — question.controller.ts:22-52
+## Why Fastify hijack — question.controller.ts:23-71
 
 ```ts
 res.hijack();
-res.raw.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'Transfer-Encoding': 'chunked', ... 'X-Accel-Buffering': 'no' });
-await this.questionService.execute(dto, user, (chunk) => {
-  if (chunk?.content) res.raw.write(chunk.content.toString());
+res.raw.writeHead(200, { 'Content-Type': 'application/x-ndjson; charset=utf-8', 'Transfer-Encoding': 'chunked', ... 'X-Accel-Buffering': 'no' });
+
+const writeEvent = (event: StreamEvent) => res.raw.write(`${JSON.stringify(event)}\n`);
+
+await this.questionService.execute(dto, user, (event) => {
+  writeEvent(event); // one structured StreamEvent per NDJSON line
 });
 ```
 
 - `res.hijack()` takes the socket out of Nest's response pipeline so we can `res.raw.write(...)` token-by-token. Do **not** add `return res.send(...)` in this controller — it will throw because the socket is already in raw mode.
-- Headers must be written **before** the first `res.raw.write`. If you add an early validation that throws after a chunk is emitted, the client sees partial text followed by the error message — by design (see `catch` block).
+- Headers must be written **before** the first `res.raw.write`. If you add an early validation that throws after a chunk is emitted, the client sees partial NDJSON events followed by an `error` event then a `done` event — by design (see `catch` block).
 - `X-Accel-Buffering: no` defeats nginx/Cloud Run proxy buffering. Don't drop it.
 
 ## Attendant flow — src/components/AIChat/Attendant/attendant.service.ts
@@ -63,6 +66,6 @@ The controller's catch block currently returns `error.message` as the body on 50
 ## Common pitfalls
 
 - Adding `await ... .send(...)` or `return res.send(...)` in `QuestionController` after the hijack — breaks streaming with a confusing error.
-- Throwing from inside the `for await` loop after some chunks have shipped — partial output is already on the wire; you can only append, not retract. The current code writes a `\n<error message>\n` and ends the stream.
+- Throwing from inside the `for await` loop after some chunks have shipped — partial output is already on the wire; you can only append, not retract. The current code's `catch` writes an `{ type: 'error', message }` event followed by a `{ type: 'done' }` event, then ends the stream.
 - Recording user message **before** the AI call (which the code does) means a failed AI run still leaves a "user said X" row with no "agent said Y". That's intentional — preserve it so retry/replay logic stays correct.
 - Credit consumption only fires after a non-empty `fullResponse`. If you short-circuit the stream source (e.g., add a guard rail that early-returns), make sure you do not also bypass billing for legitimate, partial-but-real responses.

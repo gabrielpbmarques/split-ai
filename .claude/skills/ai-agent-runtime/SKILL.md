@@ -11,7 +11,7 @@ description: 'Use for running an agent at request time: ResolveAgent, GenerateAI
 interface ResolvedAgent {
   id?: string;
   systemPrompt: string; // already-rendered prompt with TODAY_DATE
-  chat: ChatVertexAI; // model instance
+  chat: ChatAnthropic; // model instance
   runnableOpts: { withHistory };
   tools?: DynamicStructuredTool<z.ZodObject<any>>[];
   sites?: string[];
@@ -29,11 +29,11 @@ Single public method `execute(agentId, promptVariables?, memorySaver?)`:
 1. **Lookup.** `agentRepository.findOne({ where: [{ id: agentId }, { agent_identifier: agentId }] })` — accepts either the UUID or the human-readable identifier in the same field. Throws `'Agent não encontrado'` if neither matches.
 2. **Latest instructions.** `agentInstructionRepository.findLatestByAgentId(agent.id)` — instructions are versioned in `agents_instructions`; the latest row wins.
 3. **Parallel load** of chat model and tools via `Promise.all([loadChat(agent), loadTools(agent)])`.
-   - `loadChat` returns `new ChatVertexAI({ model: agent.model || config.aiModel, temperature: agent.temperature ?? 0.4, safetySettings: [...BLOCK_ONLY_HIGH...] })`. Safety settings are hard-coded — don't bury new categories silently.
+   - `loadChat` returns `new ChatAnthropic({ model: agent.model || config.aiModel, temperature: agent.temperature ?? 0.4 })`. `temperature` is omitted (left `undefined`) for models matching `MODELS_WITHOUT_SAMPLING_PARAMS` — the adaptive-thinking-only families (prefix-matched: `claude-opus-4-7/4-8`, `claude-sonnet-5`, `claude-fable-5`, `claude-mythos-5`) that reject sampling params with a `400`; otherwise the first LLM call fails. Extend the list as new such models ship.
    - `loadTools` is gated by per-agent flags (see `[[ai-agent-tools-and-rag]]`).
 4. **System prompt.** `buildSystemPromptService.execute(latestInstructions?.instructions, tools, { ...promptVariables, organizationId: agent.organization_id })` — `organizationId` is always merged in, so prompt templates can reference it.
 5. **Checkpointer.** Only created when `agent.with_history` is `true`. Caller can inject an in-memory `MemorySaver`; otherwise `loadCheckpointerService.execute()` returns the singleton `PostgresSaver`.
-6. **Runnable.** `createAgent({ model, tools, systemPrompt, checkpointer, responseFormat: AgentFinalResponseSchema })` from `langchain` (v1 React-style agent). `model: chat as any` is needed because Vertex's typing isn't fully compatible with the `createAgent` generic.
+6. **Runnable.** `createAgent({ model, tools, systemPrompt, checkpointer, responseFormat: AgentFinalResponseSchema })` from `langchain` (v1 React-style agent). `model: chat as any` casts the `ChatAnthropic` instance because its typing isn't fully compatible with the `createAgent` generic.
 
 `promptVariables` is forwarded raw to the prompt — at minimum the chat flows pass `{ sessionId }` (from Question) or `{ agentId, userName, userPhone, userId }` (from Attendant). Add new variables here when prompt templates need them.
 

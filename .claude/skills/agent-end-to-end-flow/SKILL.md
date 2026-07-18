@@ -5,7 +5,7 @@ description: 'Use for the cross-cutting AI agent lifecycle map: agent create + s
 
 This skill is the **end-to-end map** of how a chat request becomes a streamed AI response in `split-ai`. It is intentionally redundant with the four area skills it links to — the goal is one place where the whole pipeline is visible at once. When an area skill exists, prefer it for surgical edits inside that area; come back here when a change crosses areas (e.g., adding a new prompt variable that has to flow from a use case → resolver → tool → vector store).
 
-> All paths are relative to `split-ai/`. Line numbers are accurate as of the last audit (May 2026). Re-verify before quoting them in a PR — `synchronize: true` plus auto-embedding makes incidental edits easy.
+> All paths are relative to `split-ai/`. Line numbers are approximate hints, not exact citations — they drift with every edit, so open the file and confirm before quoting one in a PR. `synchronize: true` plus auto-embedding makes incidental edits easy.
 
 ---
 
@@ -15,7 +15,7 @@ This skill is the **end-to-end map** of how a chat request becomes a streamed AI
 | ------------------- | ------------------------------------------------------------------------------- |
 | Runtime             | Node.js + Bun + Fastify (NestJS 10)                                             |
 | LLM                 | Anthropic AI (`ChatAnthropic`) via `@langchain/anthropic`                       |
-| Embeddings          | Vertex AI Embeddings (`VertexAIEmbeddings`)                                     |
+| Embeddings          | Voyage AI (`VoyageEmbeddings`) — `voyage-3-large`, 1024 dims                    |
 | Agent orchestration | `langchain` v1 `createAgent` + `@langchain/langgraph` (streamMode: `updates`)   |
 | Vector store        | Supabase pgvector on table `documents`, function `match_documents`              |
 | Relational store    | PostgreSQL on Supabase (TypeORM, `synchronize: true`)                           |
@@ -60,7 +60,7 @@ Default port is **`4000`** (`src/main.ts:115`). There is **no global API prefix*
 │     POST /chat/attendant    (one-shot)   → AttendantController.handle        │
 │                                                                              │
 │     CompositeAuthGuard   (Bearer → AuthGuard; ApiKey → ApiKeyGuard)          │
-│         AuthGuard          (JWT *parsed only*, no signature verify)          │
+│         AuthGuard          (JWT signature verified via JWT_SECRET)           │
 │         ApiKeyGuard        (token → org via chat_embed_token, role=service)  │
 │     ActiveOrgGuard       (rejects inactive organizations)                    │
 │     @Roles(...)          (admin/user)                                        │
@@ -92,7 +92,7 @@ Default port is **`4000`** (`src/main.ts:115`). There is **no global API prefix*
 │     vector_similarity_search({ query, agent_id })                            │
 │         → LoadVectorStoreService.execute({ agent_id })                       │
 │         → ExecuteSimilaritySearchService.execute(store, query)               │
-│             ↳ VertexAIEmbeddings.embedQuery(question)                        │
+│             ↳ VoyageEmbeddings.embedQuery(question)                          │
 │             ↳ store.similaritySearchVectorWithScore(vec, topK=10)            │
 │         → join(docs.pageContent, ' ')                                        │
 │                                                                              │
@@ -149,7 +149,7 @@ class CreateAgentDto {
 agentRepository.create({
   name,
   agent_identifier: agentIdentifier ?? null,
-  model: model ?? 'gemini-2.5-flash', // ⚠ hard-coded default model
+  model: model ?? 'claude-haiku-4-5-20251001', // ⚠ hard-coded default model
   temperature: temperature ?? 0.4,
   with_history: withHistory ?? true,
   parser_schema: parser?.schema ?? null,
@@ -390,7 +390,7 @@ await SupabaseVectorStore.fromDocuments(chunks, this.embeddings, {
 return chunks.length;
 ```
 
-- The injected `embeddings` is `VERTEX_AI_EMBEDDINGS` (`config.embeddingModel` env var).
+- The injected `embeddings` is `VOYAGE_EMBEDDINGS` (Voyage `voyage-3-large`, 1024 dims; `config.embeddingModel` env var).
 - **Caller metadata overrides chunk metadata** when keys collide — be aware if Spider already set `agent_id` somehow.
 - `cleanInvalidUnicode()` (`src/utils/clearInvalidUnicode.ts`) only removes NUL bytes — other invalid surrogates still slip through.
 
@@ -403,7 +403,7 @@ CREATE TABLE documents (
   id          bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
   content     text,
   metadata    jsonb,
-  embedding   vector(<dim>)        -- dim = whatever the configured Vertex embedding model emits
+  embedding   vector(1024)         -- Voyage voyage-3-large emits 1024 dims
 );
 
 -- The function follows LangChain's standard signature:
@@ -430,7 +430,7 @@ The `sources` table (also a TypeORM entity) is the catalog — one row per inges
 `AIChat/Question/question.controller.ts:16-52`:
 
 ```ts
-@UseGuards(AuthGuard, ActiveOrgGuard)
+@UseGuards(CompositeAuthGuard, ActiveOrgGuard)
 @Post()
 async execute(@Res() res, @Body(...) dto: QuestionDto, @AuthUser() user) {
   res.hijack();
@@ -495,16 +495,31 @@ The attendant model is deliberately org-scoped to the **agent**, not the caller.
 const [, token] = request.headers.authorization?.split(' ') ?? [];
 if (!token) throw new UnauthorizedException();
 
-const payload = parseJwt(token);   // ⚠ base64-decode only — NO signature verification
+// verifyJwt → jsonwebtoken.verify(token, process.env.JWT_SECRET).
+// A tampered / expired / unsigned token throws → UnauthorizedException.
+let payload = null;
+try { payload = verifyJwt(token); } catch { payload = null; }
+
+// Fallback: a forwarded BravoHub platform token (verifyBravohubJwt, HS512 with
+// BRAVOHUB_JWT_SECRET). Also cryptographically verified — a forged token can
+// never pass verify(); a returned claim is a trusted company scope.
+if (!payload) {
+  const claim = verifyBravohubJwt(token);
+  if (!claim) throw new UnauthorizedException();
+  request.user = { role: 'service', organization_id: process.env.BRAVOHUB_ORG_ID,
+                   companyId: claim.company_id, /* … */ };
+  return true;
+}
+
 request.user = mapPayloadToUser(payload);
 
-if (rolesMeta && !rolesMeta.includes(request.user.role))
+if (requiredRoles && !requiredRoles.includes(request.user.role))
   throw new ForbiddenException(`Access denied. Required roles: ${...}`);
 ```
 
-- `parseJwt` is base64 of the middle segment. Any well-formed JWT is accepted as long as the payload parses as JSON.
-- `JWT_SECRET` and `JWT_EXPIRATION` env vars exist but are not consumed by this guard.
-- This is a real security gap. Flag it on any auth-touching task — but do **not** silently "fix" it; downstream services may depend on the current behavior.
+- **The signature IS verified.** `verifyJwt` calls `jsonwebtoken.verify(token, process.env.JWT_SECRET)` — tampered, expired, or unsigned tokens are rejected with `UnauthorizedException`. `JWT_SECRET` must be set and match the issuer (`GenerateTokenService`).
+- A secondary Bearer path accepts a forwarded BravoHub dashboard token via `verifyBravohubJwt` (HS512, `BRAVOHUB_JWT_SECRET`); it derives a trusted `company_id` scope and attaches a non-billable `role: 'service'` user. Verified too.
+- **Historical note:** this guard used to base64-decode the payload without verifying the signature — a real security gap. That gap is now **closed**. Don't reintroduce an unverified decode path.
 
 User shape (`request.user`, derived from JWT claims):
 
@@ -544,7 +559,9 @@ This is how out-of-credits orgs are kept out of chat — `ConsumeCreditsService`
 ### 5.1 Credit gate (lines 32-40)
 
 ```ts
-if (user.organization_id) {
+const billable = !!user.organization_id && user.role !== 'service';
+
+if (billable) {
   const ok = await consumeCreditsService.checkCredits(user.organization_id);
   if (!ok)
     throw new ForbiddenException(
@@ -553,7 +570,7 @@ if (user.organization_id) {
 }
 ```
 
-Anonymous / admin sessions with no `organization_id` skip the check. **Do not** add a "default org" fallback unless you understand which test users this protects.
+A request is billable only when `user.organization_id` is set **and** `user.role !== 'service'` — server-to-server callers (API key / embed token) carry `role: 'service'` and are never billed. Anonymous/admin sessions with no `organization_id` also skip. On top of this predicate, `ConsumeCreditsService` short-circuits both `checkCredits` and `execute` for orgs on an `unlimited` plan (`OrganizationRepository.isUnlimited(orgId)`). **Do not** add a "default org" fallback unless you understand which test users this protects.
 
 ### 5.2 Session (lines 43-47)
 
@@ -593,7 +610,7 @@ try {
 }
 ```
 
-`RecordChatMessageService` writes via `MessageRepository.create({ session_id, user_id, agent_id, message, from })`. **Critical side-effect:** `MessageRepository.create` **embeds the message content** with `VertexAIEmbeddings.embedQuery(data.message)` and stores the vector in `messages.embedding` (jsonb). Every chat message — user or agent — incurs an embedding cost. There is no cache.
+`RecordChatMessageService` writes via `MessageRepository.create({ session_id, user_id, agent_id, message, from })`. **Critical side-effect:** `MessageRepository.create` **embeds the message content** with `VoyageEmbeddings.embedQuery(data.message)` and stores the vector in `messages.embedding` (jsonb). Every chat message — user or agent — incurs an embedding cost. There is no cache.
 
 ### 5.5 Generate (lines 62-81)
 
@@ -625,7 +642,7 @@ if (fullResponse) {
     fullResponse,
     'agent',
   );
-  if (user.organization_id) {
+  if (billable) {
     await consumeCreditsService.execute(
       user.organization_id,
       session.id,
@@ -647,7 +664,7 @@ if (fullResponse) {
 interface ResolvedAgent {
   id?: string;
   systemPrompt: string;
-  chat: ChatVertexAI;
+  chat: ChatAnthropic;
   runnableOpts: { withHistory: boolean };
   tools?: DynamicStructuredTool<z.ZodObject<any>>[];
   sites?: string[];
@@ -679,22 +696,25 @@ UUID-or-identifier lookup happens by sending both clauses through TypeORM (`wher
 const [chat, tools] = await Promise.all([loadChat(agent), loadTools(agent)]);
 ```
 
-### 6.3 `loadChat` (lines 90-112)
+### 6.3 `loadChat`
 
 ```ts
+const model = agent.model || config.aiModel;
+
+// Adaptive-thinking-only Claude families (MODELS_WITHOUT_SAMPLING_PARAMS)
+// reject `temperature` with a 400; omit it for them (passing `undefined`
+// makes @langchain/anthropic drop it) or the very first LLM call fails.
+const acceptsSamplingParams = !MODELS_WITHOUT_SAMPLING_PARAMS.some((p) =>
+  model.startsWith(p),
+);
+
 new ChatAnthropic({
-  model: agent.model || config.aiModel,
-  temperature: agent.temperature ?? 0.4,
-  safetySettings: [
-    { category: HARM_CATEGORY_HARASSMENT, threshold: BLOCK_ONLY_HIGH },
-    { category: HARM_CATEGORY_HATE_SPEECH, threshold: BLOCK_ONLY_HIGH },
-    { category: HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: BLOCK_ONLY_HIGH },
-    { category: HARM_CATEGORY_DANGEROUS_CONTENT, threshold: BLOCK_ONLY_HIGH },
-  ],
+  model,
+  temperature: acceptsSamplingParams ? (agent.temperature ?? 0.4) : undefined,
 });
 ```
 
-Safety settings are hard-coded. Adding a new category means editing this file — don't silently widen them.
+No `safetySettings` — that was a Vertex-only knob and `ChatAnthropic` takes no such field. `ANTHROPIC_API_KEY` is read from the environment by `@langchain/anthropic` automatically (never passed here).
 
 ### 6.4 `loadTools`
 
@@ -788,7 +808,7 @@ Caller-supplied `MemorySaver` (in-memory) is for transient memory in one-shot to
 
 ```ts
 const runnable = createAgent({
-  model: chat as any, // Vertex's typing isn't fully compatible with the generic
+  model: chat as any, // ChatAnthropic's typing isn't fully compatible with the generic
   tools,
   systemPrompt,
   checkpointer,
@@ -961,7 +981,7 @@ SupabaseVectorStore.fromExistingIndex(this.embeddings, {
 
 ```ts
 const topK = 10; // ⚠ hard-coded
-const vec = await this.embeddings.embedQuery(question); // VertexAI embed cost per call
+const vec = await this.embeddings.embedQuery(question); // Voyage embed cost per call
 const pairs = await store.similaritySearchVectorWithScore(vec, topK);
 return pairs.flatMap(([doc]) => doc); // drops scores
 ```
@@ -1030,7 +1050,7 @@ async execute(sessionId, userId, agentId, message, from /* 'user' | 'agent' */) 
 }
 ```
 
-`MessageRepository.create` (already shown in §5.4) auto-embeds via `embeddings.embedQuery(data.message)` → stores in `messages.embedding` (jsonb). This is **not free** — every chat turn embeds twice (user message + agent message). If you need to throttle Vertex spend, this is the first place to cache.
+`MessageRepository.create` (already shown in §5.4) auto-embeds via `embeddings.embedQuery(data.message)` → stores in `messages.embedding` (jsonb). This is **not free** — every chat turn embeds twice (user message + agent message). If you need to throttle Voyage spend, this is the first place to cache.
 
 Order matters: user message is written **before** the agent run. A failed agent run leaves an orphan "user said X" row with no "agent said Y". That's intentional — preserve under refactor (retry/replay logic correctness depends on it).
 
@@ -1082,24 +1102,28 @@ private readonly CREDITS_PER_AI_RESPONSE = 3;
 
 ## 11. Reference: every env var the flow reads
 
-From `src/config.ts:1-65`:
+Read via `src/config.ts` (or directly by an SDK where the Field column says so):
 
-| Env var                                     | Field                        | Purpose                                                           |
-| ------------------------------------------- | ---------------------------- | ----------------------------------------------------------------- |
-| `ENV` / `NODE_ENV`                          | `env`                        | tagged into LangSmith metadata; gates Sentry init                 |
-| `AI_MODEL`                                  | `aiModel`                    | default `ChatVertexAI` model when `agent.model` is null           |
-| `EMBEDDING_MODEL`                           | `embeddingModel`             | `VertexAIEmbeddings` model (must match `documents.embedding` dim) |
-| `GOOGLE_VERTEX_AI_API_KEY`                  | `googleVertexAiApiKey`       | Vertex auth                                                       |
-| `DATABASE_URL`                              | `databaseUrl`                | TypeORM + `PostgresSaver` + `LoadDatabaseTool`'s second pool      |
-| `DATABASE_HOST/PORT/USERNAME/PASSWORD/NAME` | `databaseHost`, …            | individual fields (used by some helpers)                          |
-| `SUPABASE_URL`                              | `supabaseUrl`                | Supabase REST/pgvector endpoint                                   |
-| `SUPABASE_API_KEY`                          | `supabaseKey`                | service-role key for Supabase operations                          |
-| `SUPABASE_API_PUBLIC_KEY`                   | `supabasePublishableKey`     | public key for the embedded client                                |
-| `SPIDER_API_KEY`                            | `spiderApiKey`               | site crawler                                                      |
-| `SENTRY_DSN`                                | `sentryDsn`                  | only initialized when `env === 'production'`                      |
-| `LANGCHAIN_PROJECT`                         | `langchainProject`           | `LangChainTracer` projectName                                     |
-| `LANGCHAIN_WORKSPACE_ID`                    | `langchainWorkspaceId`       | LangSmith workspace tag                                           |
-| `JWT_SECRET`, `JWT_EXPIRATION`              | `jwtSecret`, `jwtExpiration` | **read but not used by `AuthGuard`** — see §4.3                   |
+| Env var                                     | Field                    | Purpose                                                                                  |
+| ------------------------------------------- | ------------------------ | ---------------------------------------------------------------------------------------- |
+| `ENV` / `NODE_ENV`                          | `env`                    | tagged into LangSmith metadata; gates Sentry init                                        |
+| `ANTHROPIC_API_KEY`                         | — (read by SDK)          | Claude auth — read directly by `ChatAnthropic`, not via `config`                         |
+| `AI_MODEL`                                  | `aiModel`                | default `ChatAnthropic` model when `agent.model` is null                                 |
+| `ORCHESTRATOR_MODEL`                        | `orchestratorModel`      | orchestrator model; default `claude-sonnet-4-6`                                          |
+| `VOYAGEAI_API_KEY`                          | — (read by SDK)          | Voyage auth — read directly by `VoyageEmbeddings`, not via `config`                      |
+| `EMBEDDING_MODEL`                           | `embeddingModel`         | Voyage model — set to `voyage-3-large` (1024 dims; must match `documents.embedding` dim) |
+| `GOOGLE_VERTEX_AI_API_KEY`                  | `googleVertexAiApiKey`   | **legacy** — still read into `config` but unused (chat is Anthropic + Voyage now)        |
+| `DATABASE_URL`                              | `databaseUrl`            | TypeORM + `PostgresSaver` + `LoadDatabaseTool`'s second pool                             |
+| `DATABASE_HOST/PORT/USERNAME/PASSWORD/NAME` | `databaseHost`, …        | individual fields (used by some helpers)                                                 |
+| `SUPABASE_URL`                              | `supabaseUrl`            | Supabase REST/pgvector endpoint                                                          |
+| `SUPABASE_API_KEY`                          | `supabaseKey`            | service-role key for Supabase operations                                                 |
+| `SUPABASE_API_PUBLIC_KEY`                   | `supabasePublishableKey` | public key for the embedded client                                                       |
+| `SPIDER_API_KEY`                            | `spiderApiKey`           | site crawler                                                                             |
+| `SENTRY_DSN`                                | `sentryDsn`              | only initialized when `env === 'production'`                                             |
+| `LANGCHAIN_PROJECT`                         | `langchainProject`       | `LangChainTracer` projectName                                                            |
+| `LANGCHAIN_WORKSPACE_ID`                    | `langchainWorkspaceId`   | LangSmith workspace tag                                                                  |
+| `JWT_SECRET`                                | — (read by guard)        | `AuthGuard.verifyJwt` verifies the JWT signature/expiry with it — see §4.3               |
+| `BRAVOHUB_JWT_SECRET`, `BRAVOHUB_ORG_ID`    | `bravohubJwtSecret`, …   | verify the forwarded BravoHub token + attribute its org — see §4.3                       |
 
 Not used in the chat path but read by the same `config.ts`: SendGrid, Twilio, Stripe, MongoDB, Redis.
 
@@ -1116,7 +1140,7 @@ AppModule
 ├── ScheduleModule
 ├── InfrastructureModule
 │   ├── SUPABASE_CLIENT / SUPABASE_SERVICE
-│   ├── VERTEX_AI_EMBEDDINGS / VERTEX_AI_CHAT
+│   ├── VOYAGE_EMBEDDINGS / ANTHROPIC_CHAT
 │   ├── SPIDER_SERVICE
 │   └── (SendGrid, Twilio, Stripe, GCS, Google Voice — unused on chat path)
 ├── RepositoriesModule
@@ -1183,9 +1207,9 @@ If the task is to revive `ExtractDocumentData`, also remember it depends on `Gen
 ## 14. Pitfalls (the seven things that bite first)
 
 1. **`contexto` vs `context` (`create-attendant-agent.service.ts:38`).** Attendant agents render empty `CTX:` blocks in their system prompt. Fix the key spelling or extend the normalizer to accept both — and decide what to do with stored rows.
-2. **`AuthGuard` does not verify JWT signatures (`auth.guard.ts:85`).** Any well-formed token decodes. Don't silently "fix" without confirming downstream impact; multiple callers depend on the current contract.
+2. **`AuthGuard` verifies the JWT signature (`auth.guard.ts`, `verifyJwt` → `jsonwebtoken.verify(token, JWT_SECRET)`).** Tampered/expired/unsigned tokens are rejected. `JWT_SECRET` must be set in every environment and match the issuer (`GenerateTokenService`). (Historical: this guard once base64-decoded the payload without verifying — that gap is now closed; don't reintroduce it.)
 3. **`synchronize: true` on production (`app.module.ts:24`).** Entity changes alter the live Supabase schema on boot. Touching an entity is a deploy event — coordinate with the manual SQL files in `migrations/`.
-4. **`MessageRepository.create` auto-embeds.** Every message costs an embedding. No cache. High-volume agents will spend on this — first optimization target if Vertex costs spike.
+4. **`MessageRepository.create` auto-embeds.** Every message costs an embedding. No cache. High-volume agents will spend on this — first optimization target if Voyage costs spike.
 5. **Stream chunk classifier is exhaustive of two branches only.** Tool reasoning and other shapes are silently dropped. If you want to surface anything else, add a branch — do not break the existing two (`finalAnswer` is what the controller writes to the socket).
 6. **`thread_id = ${org_id}_${session_id}`.** Change this format and all existing checkpointer threads detach from their sessions — chat history "forgets" everyone.
 7. **`vector_search_tool=true` with zero chunks tagged for the agent.** The description tells the model to always retrieve, so it does — and gets back an empty join. Either ingest sources first or disable the tool until they exist.

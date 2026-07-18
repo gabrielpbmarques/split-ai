@@ -35,12 +35,13 @@ The dev server defaults to **port 4000** (`PORT || 4000` in `src/main.ts`). The 
 Project guidance lives at three loading tiers. Pick the right tier when adding new guidance:
 
 - **Rules — always-on.** This `CLAUDE.md` (root) is the single source of truth for universal invariants: the "Hard rules", "Things that bite", "Service & reasoning conventions", and the per-org DB feature. Skills must **point to** these, not restate them.
-- **Scoped-rules — auto-load by path.** A nested `CLAUDE.md` inside a subtree loads only when you touch files there. They stay thin: a handful of must-not-break invariants + a pointer to the deep skill. They exist so subsystem gotchas surface without the model having to remember to open a skill:
-  - `src/CLAUDE.md` — scaffolding index (points to `architecture` / `code-patterns` / `import-and-naming-conventions`).
-  - `src/components/AIChat/CLAUDE.md` — chat-streaming invariants (→ `ai-chat-flows`).
-  - `src/components/ArtificialIntelligence/CLAUDE.md` — agent config/runtime invariants (→ `ai-agent-configuration` / `ai-agent-runtime`).
-  - `src/components/Tools/CLAUDE.md` — tool + SQL-guardrail invariants (→ `ai-agent-tools-and-rag`).
-- **Skills — on-demand.** `.claude/skills/` holds eleven SKILL.md files. Only the one-line `description` is in context each turn (it competes for a small budget — keep descriptions short and trigger-led); the body loads when invoked. Use skills for depth and worked examples.
+- **Scoped-rules — auto-load by path.** Path-scoped rules in `.claude/rules/*.md` (YAML `paths:` glob frontmatter) re-load whenever you read a matching file and survive `/compact`. They stay thin: a handful of must-not-break invariants + a pointer to the deep skill, so subsystem gotchas surface without the model having to open a skill:
+  - `.claude/rules/src-scaffolding.md` (`src/**/*.ts`) — scaffolding index (→ `architecture` / `code-patterns` / `import-and-naming-conventions`).
+  - `.claude/rules/aichat-streaming.md` (`src/components/AIChat/**/*.ts`) — chat-streaming invariants (→ `ai-chat-flows`).
+  - `.claude/rules/ai-agent.md` (`src/components/ArtificialIntelligence/**/*.ts` + `ai-instructions.model.ts`) — agent config/runtime invariants (→ `ai-agent-configuration` / `ai-agent-runtime`).
+  - `.claude/rules/agent-tools.md` (`src/components/Tools/**/*.ts` + `buildZodSchema.ts`) — tool + SQL-guardrail invariants (→ `ai-agent-tools-and-rag`).
+  - `.claude/rules/rag-ingestion.md` (`Source/`, `OCR/`, `LoadAgentSites/`, `supabase.provider.ts`) — ingestion metadata contract: chunks must carry `agent_id` + `source_id` (→ `ai-agent-tools-and-rag`).
+- **Skills — on-demand.** `.claude/skills/` holds twelve SKILL.md files. Only the one-line `description` is in context each turn (it competes for a small budget — keep descriptions short and trigger-led); the body loads when invoked. Use skills for depth and worked examples.
 
 **General code skills** (the conventions also live as Hard rules above):
 
@@ -58,9 +59,10 @@ Project guidance lives at three loading tiers. Pick the right tier when adding n
 - `ai-agent-tools-and-rag` — LangChain tools (`vector_similarity_search`, `execute_sql` with guardrails, parser), pgvector behavior, Spider ingestion, Voyage `voyage-3-large` embeddings
 - `ai-chat-flows` — `src/components/AIChat/`, the `/support/question` NDJSON streaming endpoint, `/chat/attendant`, Fastify response hijacking, session/credit/message persistence
 
-**Model integration:**
+**Model & integration reference (knowledge bases — not always wired):**
 
-- `langchain-anthropic-integration` — wiring `ChatAnthropic` from `@langchain/anthropic` and migrating call-sites from `ChatVertexAI`. Read before swapping the LLM provider. (For Claude model IDs/pricing, use the `claude-api` skill; for other library docs, prefer context7.)
+- `langchain-anthropic-integration` — `ChatAnthropic` config reference from `@langchain/anthropic` (instantiation, prompt caching, citations, context management). The `ChatVertexAI` migration is already done — read this before changing the LLM provider config. (For Claude model IDs/pricing, use the `claude-api` skill; for other library docs, prefer context7.)
+- `eleven-labs` — ElevenLabs API reference (TTS, voice cloning, STT, sound effects, voice changer, conversational AI). Knowledge base for building **ElevenLabs-specific** voice features; **not yet wired** — the app's current voice path is Google TTS (`ConvertTextToSpeech` + `google-voice.provider.ts`).
 
 **Read the relevant skill before scaffolding new code.** This file intentionally doesn't restate skill bodies.
 
@@ -98,6 +100,7 @@ migrations/                  Raw SQL migration files — applied by hand, NOT Ty
 4. DTOs validated via `class-validator` with `@Body(new ValidationPipe())` per-handler (there is no global `ValidationPipe`).
 5. User-facing error messages are in Portuguese; identifiers stay English.
 6. Every new entity must be registered in `RepositoriesModule`'s `TypeOrmModule.forFeature([...])` AND in `src/entities/index.ts`.
+7. Inject every constructor dependency as `private readonly` — all services/controllers use constructor DI.
 
 ## Service & reasoning conventions
 
@@ -116,13 +119,12 @@ Single, opt-in mechanism for an agent to query its organization's own database. 
 - **Endpoint:** `POST /support/question` (`src/components/AIChat/Question/`) is the single entry point for all chat. It streams NDJSON via Fastify response hijacking (`application/x-ndjson`). Guarded by **`CompositeAuthGuard`** (`src/auth/composite-auth.guard.ts`), which dispatches on the `Authorization` scheme:
   - `Authorization: Bearer <jwt>` → `AuthGuard` (user-facing browser/app traffic; `request.user` is the JWT payload, including `organization_id`).
   - `Authorization: ApiKey <token>` → `ApiKeyGuard` (server-to-server). The guard resolves the token first against the `api_keys` table (hashed, revocable, expirable secret key), then falls back to a `chat_embed_token` (`chat_embed_enabled=true`, via `OrganizationRepository.findActiveByEmbedToken`), and populates `request.user` with the resolved `organization_id` plus `role: 'service'`. The `role === 'service'` carve-out in `QuestionService` keeps S2S calls **out of credit billing** while still associating them with the right org. (Orgs on an `unlimited` plan are also skipped from billing, regardless of role.)
-- **Pré-requisitos para o agente usar a tool de banco:**
-  1. `organizations.chat_embed_enabled = true` + `chat_embed_token` definido (a chave de API per-org).
+- **Pré-requisitos para o agente usar a tool de banco** (o gate real em `ResolveAgentService.maybeLoadDatabaseTool`; `chat_embed` **não** faz parte dele — é auth-path, via `ApiKeyGuard`):
+  1. Agente com `database_tool = true` e `organization_id` apontando para a org.
   2. `organizations.database_url` populado com uma conn-string (`postgres://...` ou `mysql://...`).
   3. Linha em `organization_features` ligando a org à feature `database_connection` (seedada em `migrations/create_features_tables.sql`) com `enabled = true`.
-  4. Agente com `database_tool = true` e `organization_id` apontando para a org.
 - **Tool wiring:** `ResolveAgentService.loadTools` (`resolve-agent.service.ts`) faz, para agentes com `database_tool=true`: lookup da org via `OrganizationRepository`, check da feature via `OrganizationFeatureRepository.isEnabledForOrganization(orgId, 'database_connection')`, e injeta `LoadDatabaseToolService.execute({ databaseUrl: org.database_url })`. Qualquer pré-requisito faltando → skip silencioso (a tool não aparece para o LLM).
-- **`LoadDatabaseTool`** (`src/components/Tools/LoadDatabaseTool/`) detecta o dialeto pelo prefixo da URL (`postgres://`/`postgresql://` → Postgres; `mysql://`/`mysql2://` → MySQL). Constrói o `DataSource` lazy via TypeORM por chamada. Sanitização: bloqueia DELETE/ALTER/DROP/CREATE/REPLACE/TRUNCATE, exige statement única, força `LIMIT 5` quando não há LIMIT.
+- **`LoadDatabaseTool`** (`src/components/Tools/LoadDatabaseTool/`) detecta o dialeto pelo prefixo da URL (`postgres://`/`postgresql://` → Postgres; `mysql://`/`mysql2://` → MySQL). Constrói o `DataSource` lazy via TypeORM por chamada. Sanitização: statement única; allow-list do primeiro verbo (`SELECT`/`INSERT`/`UPDATE`; em modo read-only apenas `SELECT`); deny regex `DELETE|ALTER|DROP|CREATE|REPLACE|TRUNCATE` mesmo após verbo permitido; força `LIMIT 5` quando não há LIMIT. Agentes BravoHub-scoped (`config.bravohubScopedAgents`) rodam company-scoped read-only via `scopeCompanyId`.
 - **Knowledge externo (schema do banco do cliente, docs internos):** ingerir como `Source` do agente (via `/agent/load-sites`, OCR ou outras rotas de Source). `LoadVectorSearchTool` (já existente) filtra por `agent_id` na busca semântica.
 - **pgvector migration is applied manually.** `migrations/create_documents_pgvector.sql` é aplicada via `bun run scripts/apply-pgvector-migration.ts` — `synchronize` do TypeORM não cria a extensão `vector` nem o índice cosine.
 - **Features migrations:** `migrations/create_features_tables.sql` cria as tabelas `features` + `organization_features` e seeda a feature `database_connection`. `migrations/add_organization_database_url.sql` adiciona a coluna. Aplicar manualmente nos ambientes.
