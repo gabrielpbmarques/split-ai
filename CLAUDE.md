@@ -62,7 +62,7 @@ Project guidance lives at three loading tiers. Pick the right tier when adding n
 **Model & integration reference (knowledge bases — not always wired):**
 
 - `langchain-anthropic-integration` — `ChatAnthropic` config reference from `@langchain/anthropic` (instantiation, prompt caching, citations, context management). The `ChatVertexAI` migration is already done — read this before changing the LLM provider config. (For Claude model IDs/pricing, use the `claude-api` skill; for other library docs, prefer context7.)
-- `eleven-labs` — ElevenLabs API reference (TTS, voice cloning, STT, sound effects, voice changer, conversational AI). Knowledge base for building **ElevenLabs-specific** voice features; **not yet wired** — the app's current voice path is Google TTS (`ConvertTextToSpeech` + `google-voice.provider.ts`).
+- `eleven-labs` — ElevenLabs API reference (TTS, voice cloning, STT, sound effects, voice changer, conversational AI). Knowledge base for building **ElevenLabs-specific** voice features. **Provider is wired but unused**: `eleven-labs.provider.ts` exposes `ELEVEN_LABS_SERVICE` (`textToSpeech` returns MP3 `Uint8Array`, a drop-in for the Google seam; plus `textToSpeechStream` / `speechToText`) via `@elevenlabs/elevenlabs-js`. No endpoint consumes it yet — the **active** voice path is still Google TTS (`ConvertTextToSpeech` + `google-voice.provider.ts`). Config lives in `src/config.ts` (`elevenLabs*`, key `ELEVENLABS_API_KEY`).
 
 **Read the relevant skill before scaffolding new code.** This file intentionally doesn't restate skill bodies.
 
@@ -78,7 +78,7 @@ src/
   entities/                  TypeORM entities + barrel index.ts
   repositories/              Repository wrappers + RepositoriesModule (registers ALL entities)
   infrastructure/providers/  External SDK wrappers (Voyage embeddings, GCS, Twilio, SendGrid, Stripe,
-                             Supabase, Spider, Google TTS)
+                             Supabase, Spider, Google TTS, ElevenLabs voice)
   components/                Feature modules — PascalCase Scope/ → PascalCase UseCase/ → kebab-case files
                              Notable scopes: AIChat/, ArtificialIntelligence/, Tools/ (just LoadDatabaseTool
                              + LoadVectorSearchTool — generic, tenant-agnostic), Organization/,

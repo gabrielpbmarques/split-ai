@@ -29,6 +29,14 @@ interface IConfig {
   stripeSecretKey: string;
   stripePublishableKey: string;
   stripeWebhookSecret: string;
+  // --- ElevenLabs (voice) ---
+  // API key (required to use ELEVEN_LABS_SERVICE). The voice/model/output/STT
+  // ids are optional overrides with sensible defaults below.
+  elevenLabsApiKey: string;
+  elevenLabsVoiceId: string;
+  elevenLabsModelId: string;
+  elevenLabsOutputFormat: string;
+  elevenLabsSttModelId: string;
   langchainProject: string;
   langchainWorkspaceId: string;
   orchestratorModel: string;
@@ -72,6 +80,13 @@ export const config: IConfig = {
   stripeSecretKey: process.env.STRIPE_SECRET_KEY,
   stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
   stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+  elevenLabsApiKey: process.env.ELEVENLABS_API_KEY,
+  elevenLabsVoiceId: process.env.ELEVENLABS_VOICE_ID || '21m00Tcm4TlvDq8ikWAM',
+  elevenLabsModelId:
+    process.env.ELEVENLABS_MODEL_ID || 'eleven_multilingual_v2',
+  elevenLabsOutputFormat:
+    process.env.ELEVENLABS_OUTPUT_FORMAT || 'mp3_44100_128',
+  elevenLabsSttModelId: process.env.ELEVENLABS_STT_MODEL_ID || 'scribe_v1',
   langchainProject: process.env.LANGCHAIN_PROJECT,
   langchainWorkspaceId: process.env.LANGCHAIN_WORKSPACE_ID,
   orchestratorModel: process.env.ORCHESTRATOR_MODEL || 'claude-sonnet-4-6',

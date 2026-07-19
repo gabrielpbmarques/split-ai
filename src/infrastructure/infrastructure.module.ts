@@ -1,6 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import {
+  ElevenLabsProvider,
+  ELEVEN_LABS_CLIENT,
+  ELEVEN_LABS_SERVICE,
+} from 'src/infrastructure/providers/eleven-labs.provider';
+import {
   GcpStorageProvider,
   GCP_STORAGE_SERVICE,
 } from 'src/infrastructure/providers/gcp-storage.provider';
@@ -50,6 +55,7 @@ import {
     ...SendGridProvider,
     ...GcpStorageProvider,
     ...GoogleVoiceProvider,
+    ...ElevenLabsProvider,
     ...TwilioProvider,
     ...SpiderServiceProvider,
     ...StripeProvider,
@@ -63,6 +69,8 @@ import {
     EMAIL_SERVICE,
     GCP_STORAGE_SERVICE,
     GOOGLE_VOICE_SERVICE,
+    ELEVEN_LABS_CLIENT,
+    ELEVEN_LABS_SERVICE,
     TWILIO_CLIENT,
     TWILIO_SERVICE,
     SPIDER_SERVICE,
