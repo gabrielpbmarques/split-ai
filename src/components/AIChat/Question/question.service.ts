@@ -34,12 +34,6 @@ export class QuestionService {
     user: AuthenticatedUser,
     onEvent: (event: StreamEvent) => void,
   ): Promise<void> {
-    console.log(
-      'QuestionService.execute called with dto:',
-      dto,
-      'and user:',
-      user,
-    );
     const { question, agentId } = dto;
     const organizationId = user.organization_id ?? null;
     const billable = !!user.organization_id && user.role !== 'service';
@@ -68,14 +62,20 @@ export class QuestionService {
       }
     }
 
+    // Platform-forwarded users (BravoHub tokens) carry no split-ai user row, so
+    // `user.id` is null. Passing that through leaves `user_id` undefined in the
+    // lookup, which TypeORM drops from the WHERE — every company would then
+    // match, and share, the same "active session" for this agent. Key the
+    // session on the verified company instead so tenants stay isolated.
+    const sessionOwnerKey =
+      user.id ?? (scopedCompanyId ? `company:${scopedCompanyId}` : undefined);
+
     const session = await this.createSessionIfNotExistsService.execute({
       agent_id: agentId,
-      user_id: user.id ?? undefined,
+      user_id: sessionOwnerKey,
       organization_id: organizationId ?? undefined,
     });
 
-    // Server-controlled keys override anything the client passed. `companyId`
-    // is forced from the verified token so client `variables` cannot widen scope.
     const agent = await this.resolveAgentService.execute(agentId, {
       ...(dto.variables || {}),
       ...(scopedCompanyId ? { companyId: scopedCompanyId } : {}),
@@ -96,6 +96,7 @@ export class QuestionService {
       question,
       {
         session_id: session.id,
+        conversation_id: dto.conversationId,
         user_id: user.id ?? undefined,
         agent_id: agent.id,
         organization_id: organizationId ?? undefined,

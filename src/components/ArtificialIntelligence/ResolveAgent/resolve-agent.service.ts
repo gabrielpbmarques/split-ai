@@ -28,12 +28,6 @@ import { LoadCheckpointerService } from '../LoadCheckpointer/load-checkpointer.s
 
 const DATABASE_CONNECTION_FEATURE_KEY = 'database_connection';
 
-// Repairs the checkpointed history before every model call so a partially
-// persisted turn (a run that died after the `tool_use` was saved but before its
-// `tool_result`) can never poison the thread. Without this, Anthropic rejects
-// the whole request with `tool_use` ids without `tool_result` blocks, and the
-// error repeats on every subsequent turn of the same session. Stateless — the
-// transform only affects what is sent to the model, not the stored checkpoint.
 const sanitizeHistoryMiddleware = createMiddleware({
   name: 'sanitize-tool-call-history',
   wrapModelCall: (request, handler) =>
@@ -43,24 +37,7 @@ const sanitizeHistoryMiddleware = createMiddleware({
     }),
 });
 
-// How deep agent-as-tool delegation may go. At depth 1 a principal may call its
-// directly-connected children, but those children do NOT expand their own
-// connections — a hard, deterministic bound on recursion regardless of any
-// cycle in the connection graph.
 const MAX_AGENT_CONNECTION_DEPTH = 1;
-
-// Claude models that reject the `temperature` (and top_p/top_k) sampling params
-// with a 400 — the adaptive-thinking-only families. `@langchain/anthropic` sends
-// `temperature` whenever it is defined and (as of 1.4.0) only guards against
-// `claude-opus-4-7`, so we must omit it ourselves for these models or the very
-// first LLM call fails. Prefix match; extend as new such models ship.
-const MODELS_WITHOUT_SAMPLING_PARAMS = [
-  'claude-opus-4-7',
-  'claude-opus-4-8',
-  'claude-sonnet-5',
-  'claude-fable-5',
-  'claude-mythos-5',
-];
 
 @Injectable()
 export class ResolveAgentService {
@@ -99,9 +76,6 @@ export class ResolveAgentService {
 
     const runnableOpts = { withHistory: !!agent.with_history };
 
-    // Trusted tenant scope threaded through the whole resolution (including to
-    // connected child agents). Derived from the server-forced `companyId`
-    // variable — never from anything the model produced.
     const scopeCompanyId =
       promptVariables?.companyId != null &&
       `${promptVariables.companyId}` !== ''
@@ -154,19 +128,12 @@ export class ResolveAgentService {
   private async loadChat(agent: AgentEntity): Promise<ChatAnthropic> {
     const model = agent.model || config.aiModel;
 
-    // Only send `temperature` to models that still accept it. For the
-    // adaptive-thinking-only families it must be omitted (passing `undefined`
-    // makes @langchain/anthropic drop it) — otherwise the API returns
-    // `400 temperature is deprecated for this model` and the whole run fails.
-    const acceptsSamplingParams = !MODELS_WITHOUT_SAMPLING_PARAMS.some(
-      (prefix) => model.startsWith(prefix),
-    );
-
     return new ChatAnthropic({
       model,
-      temperature: acceptsSamplingParams
-        ? (agent.temperature ?? 0.4)
-        : undefined,
+      temperature: agent.temperature ?? 0.4,
+      clientOptions: {
+        baseURL: 'https://api.deepseek.com/anthropic',
+      },
     });
   }
 
@@ -212,11 +179,6 @@ export class ResolveAgentService {
     return tools;
   }
 
-  /**
-   * Turns each enabled connection of `dbAgent` into a tool that delegates to the
-   * connected child agent. Bounded by `MAX_AGENT_CONNECTION_DEPTH` and a
-   * visited-set so the connection graph can never recurse without end.
-   */
   private async appendConnectionTools(
     dbAgent: AgentEntity,
     tools: DynamicStructuredTool<z.ZodObject<any>>[],
@@ -271,8 +233,6 @@ export class ResolveAgentService {
     scopeCompanyId?: string,
   ): Promise<string> {
     try {
-      // Propagate the tenant scope so the connected child (e.g. the SQL analyst
-      // that actually writes/executes queries) is bound to the SAME company.
       const childAgent = await this.execute(
         childAgentId,
         scopeCompanyId ? { companyId: scopeCompanyId } : undefined,
@@ -323,19 +283,11 @@ export class ResolveAgentService {
       return null;
     }
 
-    // Optional per-org scoping stored on the feature row's `config`:
-    //   { "tables": ["app_company_campaign", ...], "sampleRows": 0 }
-    // Without it the tool introspects every table (backwards compatible); on a
-    // large schema that bloats the system prompt, so prefer an allow-list.
     const featureConfig = (feature.config ?? {}) as {
       tables?: string[];
       sampleRows?: number;
     };
 
-    // Agents that read the shared multi-tenant BravoHub database MUST run
-    // company-scoped and read-only. `scopeRequired` makes the tool fail closed
-    // if it is ever built without a resolved scope (belt-and-suspenders with the
-    // fail-closed gate in QuestionService).
     const scopeRequired =
       !!agent &&
       (config.bravohubScopedAgents.includes(agent.id) ||
@@ -351,8 +303,6 @@ export class ResolveAgentService {
         typeof featureConfig.sampleRows === 'number'
           ? featureConfig.sampleRows
           : undefined,
-      // Company isolation: read-only + a mandatory `company_id = <scope>`
-      // predicate, enforced at the tool layer (not just the prompt).
       readOnly: !!scopeCompanyId || scopeRequired,
       scope: scopeCompanyId
         ? { column: 'company_id', value: scopeCompanyId }

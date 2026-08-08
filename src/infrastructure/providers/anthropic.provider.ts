@@ -15,6 +15,9 @@ export const AnthropicProvider: Provider[] = [
       return new ChatAnthropic({
         model: config.aiModel,
         temperature: 0.4,
+        clientOptions: {
+          baseURL: 'https://api.deepseek.com/anthropic',
+        },
       });
     },
   },

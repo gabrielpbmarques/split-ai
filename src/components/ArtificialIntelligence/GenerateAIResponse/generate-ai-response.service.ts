@@ -23,6 +23,27 @@ type AgentMessage = {
 const isStructuredOutputTool = (name?: string): boolean =>
   !!name && /^extract(-\d+)?$/.test(name);
 
+/**
+ * Plain text carried by an agent message, whether the provider returned a bare
+ * string or Anthropic-style content blocks. Used as the last-resort source for
+ * the final answer when no structured output was produced.
+ */
+const textOf = (content: unknown): string => {
+  if (typeof content === 'string') return content.trim();
+  if (!Array.isArray(content)) return '';
+  return content
+    .filter(
+      (block): block is { type: 'text'; text: string } =>
+        !!block &&
+        typeof block === 'object' &&
+        (block as { type?: unknown }).type === 'text' &&
+        typeof (block as { text?: unknown }).text === 'string',
+    )
+    .map((block) => block.text)
+    .join('')
+    .trim();
+};
+
 type StreamChunk = {
   model_request?: {
     messages?: AgentMessage[];
@@ -57,8 +78,23 @@ export class GenerateAiResponseService {
 
       return response;
     } catch (error: any) {
-      return 'Desculpe, tive um problema ao processar sua mensagem. Pode tentar novamente?';
+      const message =
+        'Desculpe, tive um problema ao processar sua mensagem. Pode tentar novamente?';
+      // Callers in streaming mode iterate the result with `for await`. Returning
+      // a bare string there would iterate its CHARACTERS, emitting one bogus
+      // event per letter, so hand back a stream carrying a real error event.
+      if (stream) {
+        return GenerateAiResponseService.errorStream(message);
+      }
+      return message;
     }
+  }
+
+  private static async *errorStream(
+    message: string,
+  ): AsyncGenerator<StreamEvent> {
+    yield { type: 'error', message };
+    yield { type: 'done' };
   }
 
   private async generateResponse(
@@ -73,9 +109,16 @@ export class GenerateAiResponseService {
       messages: [new HumanMessage(question)],
     } as any;
 
+    // Prefer the caller's conversation id: the session is long-lived (and, for
+    // platform-forwarded users, shared), so keying the checkpointer thread on it
+    // would splice unrelated conversations — and every tenant sharing a session —
+    // into one history. Fall back to the session only when no conversation id
+    // was supplied.
+    const threadKey = metadata.conversation_id ?? metadata.session_id;
+
     const configurable: InvokeConfigurationModel = {
       configurable: {
-        thread_id: `${agent.organization_id}_${metadata.session_id}`,
+        thread_id: `${agent.organization_id}_${threadKey}`,
       },
       callbacks: [this.tracer],
       tags: [config.env, agent.id, metadata.organization_id],
@@ -111,11 +154,15 @@ export class GenerateAiResponseService {
       });
     }
 
-    const structured = AgentFinalResponseSchema.parse(
+    // Same provider caveat as the streaming path: without a honored
+    // `tool_choice: "any"` there is no `structuredResponse`, and parsing it
+    // would throw on an answer the model did deliver as prose.
+    const structured = AgentFinalResponseSchema.safeParse(
       result.structuredResponse,
     );
+    if (structured.success) return structured.data.finalAnswer;
 
-    return structured.finalAnswer;
+    return textOf((result?.messages?.at(-1) as AIMessage)?.content);
   }
 
   private async *handleStreamResponse(
@@ -125,7 +172,9 @@ export class GenerateAiResponseService {
   ): AsyncGenerator<StreamEvent> {
     const recordedUsageIds = new Set<string>();
     let finalEmitted = false;
+    let errorEmitted = false;
     let pendingFinal: string | undefined;
+    let lastText: string | undefined;
 
     try {
       for await (const raw of stream as AsyncIterable<StreamChunk>) {
@@ -135,6 +184,9 @@ export class GenerateAiResponseService {
         if (modelRequest) {
           for (const message of modelRequest.messages ?? []) {
             this.recordTokenUsage(message, agent, metadata, recordedUsageIds);
+
+            const text = textOf(message.content);
+            if (text) lastText = text;
 
             for (const call of message.tool_calls ?? []) {
               if (isStructuredOutputTool(call?.name)) {
@@ -170,10 +222,30 @@ export class GenerateAiResponseService {
       const message = /recursion limit/i.test(raw)
         ? 'O agente explorou bastante mas não conseguiu consolidar uma resposta. Tente reformular com escopo mais específico.'
         : raw;
+      errorEmitted = true;
       yield { type: 'error', message };
     } finally {
       if (!finalEmitted && pendingFinal) {
+        finalEmitted = true;
         yield { type: 'final', text: pendingFinal };
+      }
+      // Fall back to the model's plain prose. `responseFormat` only produces a
+      // `structuredResponse` when the provider honors `tool_choice: "any"`,
+      // which LangChain forces for the `extract` tool; providers that ignore it
+      // (DeepSeek's Anthropic-compatible endpoint among them) simply answer in
+      // text and would otherwise strand the whole run with no answer at all.
+      if (!finalEmitted && lastText) {
+        finalEmitted = true;
+        yield { type: 'final', text: lastText };
+      }
+      // Neither an answer nor an error would reach the client as a bare `done`,
+      // rendering an empty bubble with nothing to act on. Fail loudly instead.
+      if (!finalEmitted && !errorEmitted) {
+        yield {
+          type: 'error',
+          message:
+            'O agente terminou sem produzir uma resposta estruturada. Verifique o modelo/provedor configurado e tente novamente.',
+        };
       }
       yield { type: 'done' };
     }
