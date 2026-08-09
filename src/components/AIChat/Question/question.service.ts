@@ -2,7 +2,6 @@ import { ForbiddenException, Injectable } from '@nestjs/common';
 import { RecordChatMessageService } from 'src/components/AIChat/RecordChatMessage/record-chat-message.service';
 import { GenerateAiResponseService } from 'src/components/ArtificialIntelligence/GenerateAIResponse/generate-ai-response.service';
 import { ResolveAgentService } from 'src/components/ArtificialIntelligence/ResolveAgent/resolve-agent.service';
-import { ConsumeCreditsService } from 'src/components/Credits/ConsumeCredits/consume-credits.service';
 import { CreateSessionIfNotExistsService } from 'src/components/Session/CreateSessionIfNotExists/create-session-if-not-exists.service';
 import { config } from 'src/config';
 import { UserEntity } from 'src/entities';
@@ -26,7 +25,6 @@ export class QuestionService {
     private readonly createSessionIfNotExistsService: CreateSessionIfNotExistsService,
     private readonly resolveAgentService: ResolveAgentService,
     private readonly recordChatMessageService: RecordChatMessageService,
-    private readonly consumeCreditsService: ConsumeCreditsService,
   ) {}
 
   async execute(
@@ -36,7 +34,6 @@ export class QuestionService {
   ): Promise<void> {
     const { question, agentId } = dto;
     const organizationId = user.organization_id ?? null;
-    const billable = !!user.organization_id && user.role !== 'service';
 
     const scopedCompanyId =
       user.companyId !== undefined &&
@@ -51,22 +48,6 @@ export class QuestionService {
       );
     }
 
-    if (billable) {
-      const hasCredits = await this.consumeCreditsService.checkCredits(
-        user.organization_id as string,
-      );
-      if (!hasCredits) {
-        throw new ForbiddenException(
-          'Créditos insuficientes. Por favor, adquira mais créditos para continuar.',
-        );
-      }
-    }
-
-    // Platform-forwarded users (BravoHub tokens) carry no split-ai user row, so
-    // `user.id` is null. Passing that through leaves `user_id` undefined in the
-    // lookup, which TypeORM drops from the WHERE — every company would then
-    // match, and share, the same "active session" for this agent. Key the
-    // session on the verified company instead so tenants stay isolated.
     const sessionOwnerKey =
       user.id ?? (scopedCompanyId ? `company:${scopedCompanyId}` : undefined);
 
@@ -124,14 +105,6 @@ export class QuestionService {
         fullResponse,
         'agent',
       );
-
-      if (billable) {
-        await this.consumeCreditsService.execute(
-          user.organization_id as string,
-          session.id,
-          true,
-        );
-      }
     }
   }
 }

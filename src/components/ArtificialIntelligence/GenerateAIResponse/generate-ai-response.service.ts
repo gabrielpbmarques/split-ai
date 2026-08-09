@@ -80,9 +80,7 @@ export class GenerateAiResponseService {
     } catch (error: any) {
       const message =
         'Desculpe, tive um problema ao processar sua mensagem. Pode tentar novamente?';
-      // Callers in streaming mode iterate the result with `for await`. Returning
-      // a bare string there would iterate its CHARACTERS, emitting one bogus
-      // event per letter, so hand back a stream carrying a real error event.
+
       if (stream) {
         return GenerateAiResponseService.errorStream(message);
       }
@@ -109,11 +107,6 @@ export class GenerateAiResponseService {
       messages: [new HumanMessage(question)],
     } as any;
 
-    // Prefer the caller's conversation id: the session is long-lived (and, for
-    // platform-forwarded users, shared), so keying the checkpointer thread on it
-    // would splice unrelated conversations — and every tenant sharing a session —
-    // into one history. Fall back to the session only when no conversation id
-    // was supplied.
     const threadKey = metadata.conversation_id ?? metadata.session_id;
 
     const configurable: InvokeConfigurationModel = {
@@ -154,9 +147,6 @@ export class GenerateAiResponseService {
       });
     }
 
-    // Same provider caveat as the streaming path: without a honored
-    // `tool_choice: "any"` there is no `structuredResponse`, and parsing it
-    // would throw on an answer the model did deliver as prose.
     const structured = AgentFinalResponseSchema.safeParse(
       result.structuredResponse,
     );
@@ -192,7 +182,7 @@ export class GenerateAiResponseService {
               if (isStructuredOutputTool(call?.name)) {
                 const raw = call?.args?.finalAnswer;
                 if (typeof raw === 'string' && raw.trim()) pendingFinal = raw;
-                continue; // internal extractor — never a user-facing tool chip
+                continue;
               }
               if (call?.name) {
                 yield { type: 'status', phase: 'tool_call', tool: call.name };
@@ -201,6 +191,7 @@ export class GenerateAiResponseService {
           }
 
           const finalAnswer = modelRequest.structuredResponse?.finalAnswer;
+
           if (finalAnswer && !finalEmitted) {
             finalEmitted = true;
             yield { type: 'final', text: finalAnswer };
@@ -229,17 +220,12 @@ export class GenerateAiResponseService {
         finalEmitted = true;
         yield { type: 'final', text: pendingFinal };
       }
-      // Fall back to the model's plain prose. `responseFormat` only produces a
-      // `structuredResponse` when the provider honors `tool_choice: "any"`,
-      // which LangChain forces for the `extract` tool; providers that ignore it
-      // (DeepSeek's Anthropic-compatible endpoint among them) simply answer in
-      // text and would otherwise strand the whole run with no answer at all.
+
       if (!finalEmitted && lastText) {
         finalEmitted = true;
         yield { type: 'final', text: lastText };
       }
-      // Neither an answer nor an error would reach the client as a bare `done`,
-      // rendering an empty bubble with nothing to act on. Fail loudly instead.
+
       if (!finalEmitted && !errorEmitted) {
         yield {
           type: 'error',
@@ -271,8 +257,6 @@ export class GenerateAiResponseService {
         total_tokens: message.usage_metadata.total_tokens ?? 0,
         model: (agent.chat as any).model || 'unknown',
       })
-      .catch(() => {
-        /* token recording must not break the stream */
-      });
+      .catch(() => {});
   }
 }

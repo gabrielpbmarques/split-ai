@@ -29,9 +29,6 @@ interface IConfig {
   stripeSecretKey: string;
   stripePublishableKey: string;
   stripeWebhookSecret: string;
-  // --- ElevenLabs (voice) ---
-  // API key (required to use ELEVEN_LABS_SERVICE). The voice/model/output/STT
-  // ids are optional overrides with sensible defaults below.
   elevenLabsApiKey: string;
   elevenLabsVoiceId: string;
   elevenLabsModelId: string;
@@ -40,16 +37,8 @@ interface IConfig {
   langchainProject: string;
   langchainWorkspaceId: string;
   orchestratorModel: string;
-  // --- BravoHub platform integration (analytics assistant) ---
-  // Secret used to verify the BravoHub dashboard JWT (HS512) forwarded by the
-  // platform. Must equal bravohub-api's `JWT_SECRET`. When set, the Bearer auth
-  // path also accepts a BravoHub token and derives a trusted `company_id` scope.
   bravohubJwtSecret: string;
-  // split-ai organization that owns the analytics ("Oracle") agent — used to
-  // attribute sessions/token-usage for BravoHub platform calls.
   bravohubOrgId: string;
-  // Agent ids/identifiers that read the shared multi-tenant BravoHub database
-  // and therefore MUST run under a verified company scope (fail-closed).
   bravohubScopedAgents: string[];
 }
 
