@@ -20,25 +20,14 @@ export class LoadDatabaseToolService {
     scopeRequired = false,
   }: {
     databaseUrl: string;
-    // When set, the schema (and every query) is scoped to just these tables —
-    // keeps the embedded schema small on large databases. Omitted → all tables.
     includeTables?: string[];
-    // Rows of sample data langchain appends per table in the schema. `0` drops
-    // them (smaller prompt, no customer data leaked into it). Omitted → default.
     sampleRows?: number;
-    // Reject anything that is not a pure SELECT (analytics is read-only).
     readOnly?: boolean;
-    // Mandatory tenant predicate. Every query must filter `column = value` and
-    // may not reference `column` with any other value / IN / range / inequality.
     scope?: { column: string; value: string | number };
-    // Fail closed: when true and `scope` is missing, the tool refuses to run.
     scopeRequired?: boolean;
   }): Promise<DynamicStructuredTool<z.ZodObject<{ query: z.ZodString }>>> {
     const dialect = this.detectDialect(databaseUrl);
 
-    // Introspect the schema once, with a connection that is always released. The
-    // resulting string is captured for the tool description; each later query
-    // opens and closes its own connection, so no DataSource is ever leaked.
     const schema = await this.withDatabase(
       dialect,
       databaseUrl,
@@ -49,8 +38,6 @@ export class LoadDatabaseToolService {
 
     return tool(
       async ({ query }) => {
-        // Fail closed: a scope-required tool with no resolved company scope must
-        // never touch the shared multi-tenant database.
         if (scopeRequired && !scope) {
           return 'Consulta bloqueada: escopo de empresa ausente. Nenhum dado pode ser lido sem uma empresa autenticada.';
         }
@@ -59,8 +46,6 @@ export class LoadDatabaseToolService {
           q = this.sanitizeSqlQuery(query, { readOnly });
           if (scope) this.assertScoped(q, scope);
         } catch (e: any) {
-          // Surface the rule violation back to the model so it can rewrite the
-          // query, instead of throwing (which would abort the whole run).
           return `Consulta rejeitada: ${e?.message ?? String(e)}`;
         }
         return this.withDatabase(
@@ -96,11 +81,6 @@ export class LoadDatabaseToolService {
     );
   }
 
-  /**
-   * Opens a TypeORM DataSource, runs `fn` against a (optionally table-scoped)
-   * SqlDatabase, and always destroys the DataSource afterwards. Each call is
-   * self-contained, so a per-request tool never leaks a connection.
-   */
   private async withDatabase<T>(
     dialect: SupportedDialect,
     databaseUrl: string,
@@ -125,20 +105,10 @@ export class LoadDatabaseToolService {
       });
       return await fn(db);
     } finally {
-      await dataSource.destroy().catch(() => {
-        /* best-effort cleanup; never mask the original result/error */
-      });
+      await dataSource.destroy().catch(() => {});
     }
   }
 
-  /**
-   * Extracts the database/schema name from a connection URL. Needed because
-   * langchain's `SqlDatabase` reads `DataSource.options.database` (not the
-   * driver's parsed value) to enumerate tables; omitting it breaks schema
-   * introspection and `includesTables` validation. Returns `undefined` for
-   * malformed URLs or a URL without a path, so the DataSource falls back to
-   * TypeORM's own parsing.
-   */
   private parseDatabaseName(url: string): string | undefined {
     try {
       const name = decodeURIComponent(new URL(url).pathname.replace(/^\//, ''));
@@ -195,8 +165,6 @@ export class LoadDatabaseToolService {
   private sanitizeSqlQuery(q: string, opts?: { readOnly?: boolean }): string {
     let query = String(q ?? '').trim();
 
-    // Reject stacked statements: after trimming a single trailing terminator,
-    // no semicolon may remain anywhere in the query (one statement per call).
     query = query.replace(/;+\s*$/g, '').trim();
     if (query.includes(';')) {
       throw new Error('multiple statements are not allowed.');
@@ -204,7 +172,6 @@ export class LoadDatabaseToolService {
 
     const lower = query.toLowerCase();
     if (opts?.readOnly) {
-      // Analytics is strictly read-only: only a pure SELECT may run.
       if (!lower.startsWith('select')) {
         throw new Error('Only read-only SELECT statements are allowed');
       }
@@ -230,18 +197,6 @@ export class LoadDatabaseToolService {
     return query;
   }
 
-  /**
-   * Enforces tenant isolation at the tool layer: the query MUST filter
-   * `<column> = <value>` (anchoring it to the caller's company) and may NOT
-   * reference `<column>` with any other value, an `IN (...)`, or a range /
-   * inequality — all of which could widen the result beyond the tenant.
-   *
-   * Defense-in-depth on top of the server-forced scope and the system-prompt
-   * guardrail; it deliberately errs toward rejection. Not a substitute for
-   * DB-level isolation (see the caveat in the write-side docs): a crafted
-   * tautology (`... OR 1=1`) is not caught here — the prompt guardrail and
-   * read-only mode are the compensating controls.
-   */
   private assertScoped(
     query: string,
     scope: { column: string; value: string | number },
@@ -252,8 +207,6 @@ export class LoadDatabaseToolService {
       throw new Error('escopo de empresa inválido.');
     }
 
-    // Optional `alias.` / `` `alias`. `` qualifier, optional backticks on the
-    // column. The lookbehind stops `parent_company_id` matching `company_id`.
     const qualifier = '(?:`?[a-z0-9_]+`?\\.)?';
     const col = `\`?${column}\`?`;
 
@@ -267,8 +220,6 @@ export class LoadDatabaseToolService {
       );
     }
 
-    // Any other use of the column widens the scope: a different literal, an
-    // IN (...), or a range / inequality operator.
     const widens = new RegExp(
       `(?<![a-z0-9_\`])${col}\\s*(?:in\\b|<>|!=|>=|<=|>|<|=\\s*(?!${value}(?![0-9]))\\d)`,
       'i',

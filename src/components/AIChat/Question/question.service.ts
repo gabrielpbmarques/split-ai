@@ -1,9 +1,8 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { RecordChatMessageService } from 'src/components/AIChat/RecordChatMessage/record-chat-message.service';
 import { GenerateAiResponseService } from 'src/components/ArtificialIntelligence/GenerateAIResponse/generate-ai-response.service';
 import { ResolveAgentService } from 'src/components/ArtificialIntelligence/ResolveAgent/resolve-agent.service';
 import { CreateSessionIfNotExistsService } from 'src/components/Session/CreateSessionIfNotExists/create-session-if-not-exists.service';
-import { config } from 'src/config';
 import { UserEntity } from 'src/entities';
 import { StreamEvent } from 'src/types';
 
@@ -35,21 +34,7 @@ export class QuestionService {
     const { question, agentId } = dto;
     const organizationId = user.organization_id ?? null;
 
-    const scopedCompanyId =
-      user.companyId !== undefined &&
-      user.companyId !== null &&
-      `${user.companyId}` !== ''
-        ? String(user.companyId)
-        : undefined;
-
-    if (config.bravohubScopedAgents.includes(agentId) && !scopedCompanyId) {
-      throw new ForbiddenException(
-        'Escopo de empresa ausente: este agente exige um token autenticado da empresa.',
-      );
-    }
-
-    const sessionOwnerKey =
-      user.id ?? (scopedCompanyId ? `company:${scopedCompanyId}` : undefined);
+    const sessionOwnerKey = user.id;
 
     const session = await this.createSessionIfNotExistsService.execute({
       agent_id: agentId,
@@ -59,7 +44,7 @@ export class QuestionService {
 
     const agent = await this.resolveAgentService.execute(agentId, {
       ...(dto.variables || {}),
-      ...(scopedCompanyId ? { companyId: scopedCompanyId } : {}),
+      ...{},
       sessionId: session.id,
       conversationId: dto.conversationId,
       threadId: dto.conversationId ?? session.id,

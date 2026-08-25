@@ -15,6 +15,8 @@ import { PdfModule } from './Pdf/pdf.module';
 import { RegisterModule } from './Register/register.module';
 import { ReportModule } from './Report/report.module';
 import { SourceModule } from './Source/source.module';
+import { LoadAgentToolsModule } from './Tools/LoadAgentTools/load-agent-tools.module';
+import { MaybeLoadDatabaseToolModule } from './Tools/MaybeLoadDatabaseTool/maybe-load-database-tool.module';
 import { UserModule } from './User/user.module';
 import { WhatsappModule } from './Whatsapp/whatsapp.module';
 
@@ -23,6 +25,8 @@ import { WhatsappModule } from './Whatsapp/whatsapp.module';
     AuthModule,
     SessionModule,
     AIChatModule,
+    LoadAgentToolsModule,
+    MaybeLoadDatabaseToolModule,
     ArtificialIntelligenceModule,
     DashboardModule,
     OcrModule,
@@ -42,6 +46,8 @@ import { WhatsappModule } from './Whatsapp/whatsapp.module';
     AuthModule,
     SessionModule,
     AIChatModule,
+    LoadAgentToolsModule,
+    MaybeLoadDatabaseToolModule,
     ArtificialIntelligenceModule,
     DashboardModule,
     OcrModule,

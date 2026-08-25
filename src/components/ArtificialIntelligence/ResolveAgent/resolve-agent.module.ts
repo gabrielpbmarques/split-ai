@@ -1,6 +1,5 @@
-import { Module } from '@nestjs/common';
-import { LoadDatabaseToolModule } from 'src/components/Tools/LoadDatabaseTool/load-database-tool.module';
-import { LoadVectorSearchToolModule } from 'src/components/Tools/LoadVectorSearchTool/load-vector-search-tool.module';
+import { Module, forwardRef } from '@nestjs/common';
+import { LoadAgentToolsModule } from 'src/components/Tools/LoadAgentTools/load-agent-tools.module';
 import { RepositoriesModule } from 'src/repositories/repositories.module';
 
 import { BuildSystemPromptModule } from '../BuildSystemPrompt/build-system-prompt.module';
@@ -11,10 +10,9 @@ import { ResolveAgentService } from './resolve-agent.service';
 @Module({
   imports: [
     RepositoriesModule,
-    LoadDatabaseToolModule,
-    LoadVectorSearchToolModule,
     BuildSystemPromptModule,
     LoadCheckpointerModule,
+    forwardRef(() => LoadAgentToolsModule),
   ],
   providers: [ResolveAgentService],
   exports: [ResolveAgentService],
