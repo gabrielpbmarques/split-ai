@@ -4,6 +4,5 @@ import { ManageCreditsModule } from './ManageCredits/manage-credits.module';
 
 @Module({
   imports: [ManageCreditsModule],
-  exports: [ManageCreditsModule],
 })
 export class CreditsModule {}

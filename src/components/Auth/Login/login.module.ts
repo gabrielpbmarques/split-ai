@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { RepositoriesModule } from 'src/repositories/repositories.module';
+import { UserRepositoryModule } from 'src/repositories/user.repository.module';
 
 import { GenerateTokenModule } from '../GenerateToken/generate-token.module';
 
@@ -7,7 +7,7 @@ import { LoginController } from './login.controller';
 import { LoginService } from './login.service';
 
 @Module({
-  imports: [GenerateTokenModule, RepositoriesModule],
+  imports: [GenerateTokenModule, UserRepositoryModule],
   controllers: [LoginController],
   providers: [LoginService],
 })

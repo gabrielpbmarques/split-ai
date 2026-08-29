@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
-import { InfrastructureModule } from 'src/infrastructure/infrastructure.module';
-import { RepositoriesModule } from 'src/repositories/repositories.module';
+import { TwilioProviderModule } from 'src/infrastructure/providers/twilio.provider.module';
+import { SmsVerificationRepositoryModule } from 'src/repositories/sms-verification.repository.module';
+import { UserRepositoryModule } from 'src/repositories/user.repository.module';
 
 import { GenerateTokenModule } from '../GenerateToken/generate-token.module';
 
@@ -8,7 +9,12 @@ import { SendSmsController } from './send-sms.controller';
 import { SendSmsService } from './send-sms.service';
 
 @Module({
-  imports: [RepositoriesModule, InfrastructureModule, GenerateTokenModule],
+  imports: [
+    GenerateTokenModule,
+    SmsVerificationRepositoryModule,
+    TwilioProviderModule,
+    UserRepositoryModule,
+  ],
   controllers: [SendSmsController],
   providers: [SendSmsService],
 })

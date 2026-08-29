@@ -16,13 +16,5 @@ import { UpdateUserModule } from './UpdateUser/update-user.module';
     GetProfileModule,
     UpdateProfileModule,
   ],
-  exports: [
-    ListUsersModule,
-    GetUserModule,
-    UpdateUserModule,
-    CreateUserModule,
-    GetProfileModule,
-    UpdateProfileModule,
-  ],
 })
 export class UserModule {}

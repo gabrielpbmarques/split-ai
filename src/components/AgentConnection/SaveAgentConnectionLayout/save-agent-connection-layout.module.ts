@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
-import { RepositoriesModule } from 'src/repositories/repositories.module';
+import { AgentRepositoryModule } from 'src/repositories/agent.repository.module';
 
 import { SaveAgentConnectionLayoutController } from './save-agent-connection-layout.controller';
 import { SaveAgentConnectionLayoutService } from './save-agent-connection-layout.service';
 
 @Module({
-  imports: [RepositoriesModule],
+  imports: [AgentRepositoryModule],
   controllers: [SaveAgentConnectionLayoutController],
   providers: [SaveAgentConnectionLayoutService],
   exports: [SaveAgentConnectionLayoutService],

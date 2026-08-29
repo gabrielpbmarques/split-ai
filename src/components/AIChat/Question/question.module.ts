@@ -3,21 +3,23 @@ import { ApiKeyGuard } from 'src/auth/api-key.guard';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { CompositeAuthGuard } from 'src/auth/composite-auth.guard';
 import { RecordChatMessageModule } from 'src/components/AIChat/RecordChatMessage/record-chat-message.module';
-import { ArtificialIntelligenceModule } from 'src/components/ArtificialIntelligence/artificial-intelligence.module';
-import { SessionModule } from 'src/components/Session/session.module';
-import { InfrastructureModule } from 'src/infrastructure/infrastructure.module';
-import { RepositoriesModule } from 'src/repositories/repositories.module';
+import { GenerateAiResponseModule } from 'src/components/ArtificialIntelligence/GenerateAIResponse/generate-ai-response.module';
+import { ResolveAgentModule } from 'src/components/ArtificialIntelligence/ResolveAgent/resolve-agent.module';
+import { CreateSessionIfNotExistsModule } from 'src/components/Session/CreateSessionIfNotExists/create-session-if-not-exists.module';
+import { ApiKeyRepositoryModule } from 'src/repositories/api-key.repository.module';
+import { OrganizationRepositoryModule } from 'src/repositories/organization.repository.module';
 
 import { QuestionController } from './question.controller';
 import { QuestionService } from './question.service';
 
 @Module({
   imports: [
-    InfrastructureModule,
-    RepositoriesModule,
-    ArtificialIntelligenceModule,
-    SessionModule,
+    ApiKeyRepositoryModule,
+    CreateSessionIfNotExistsModule,
+    GenerateAiResponseModule,
+    OrganizationRepositoryModule,
     RecordChatMessageModule,
+    ResolveAgentModule,
   ],
   providers: [QuestionService, AuthGuard, ApiKeyGuard, CompositeAuthGuard],
   controllers: [QuestionController],

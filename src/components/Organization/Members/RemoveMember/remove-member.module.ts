@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
-import { RepositoriesModule } from 'src/repositories/repositories.module';
+import { UserRepositoryModule } from 'src/repositories/user.repository.module';
 
 import { RemoveMemberController } from './remove-member.controller';
 import { RemoveMemberService } from './remove-member.service';
 
 @Module({
-  imports: [RepositoriesModule],
+  imports: [UserRepositoryModule],
   controllers: [RemoveMemberController],
   providers: [RemoveMemberService],
   exports: [RemoveMemberService],

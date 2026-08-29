@@ -6,6 +6,5 @@ import { RevokeApiKeyModule } from './RevokeApiKey/revoke-api-key.module';
 
 @Module({
   imports: [CreateApiKeyModule, ListApiKeysModule, RevokeApiKeyModule],
-  exports: [CreateApiKeyModule, ListApiKeysModule, RevokeApiKeyModule],
 })
 export class ApiKeyModule {}

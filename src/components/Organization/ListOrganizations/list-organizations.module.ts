@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
-import { RepositoriesModule } from 'src/repositories/repositories.module';
+import { OrganizationRepositoryModule } from 'src/repositories/organization.repository.module';
 
 import { ListOrganizationsController } from './list-organizations.controller';
 import { ListOrganizationsService } from './list-organizations.service';
 
 @Module({
-  imports: [RepositoriesModule],
+  imports: [OrganizationRepositoryModule],
   providers: [ListOrganizationsService],
   controllers: [ListOrganizationsController],
   exports: [ListOrganizationsService],

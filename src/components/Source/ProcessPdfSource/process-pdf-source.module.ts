@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
-import { PdfModule } from 'src/components/Pdf/pdf.module';
-import { InfrastructureModule } from 'src/infrastructure/infrastructure.module';
+import { LoadPdfModule } from 'src/components/Pdf/LoadPdf/load-pdf.module';
+import { SupabaseProviderModule } from 'src/infrastructure/providers/supabase.provider.module';
 
 import { ProcessPdfSourceService } from './process-pdf-source.service';
 
 @Module({
-  imports: [PdfModule, InfrastructureModule],
+  imports: [LoadPdfModule, SupabaseProviderModule],
   providers: [ProcessPdfSourceService],
   exports: [ProcessPdfSourceService],
 })

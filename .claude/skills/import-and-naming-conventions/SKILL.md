@@ -111,7 +111,7 @@ Rules:
 
 ## Infrastructure Service Injection
 
-When a service needs an external provider from `InfrastructureModule`:
+When a service needs an external provider:
 
 ```typescript
 import { Inject } from '@nestjs/common';
@@ -131,7 +131,8 @@ export class SendNotificationService {
 
 - Use the **injection token** (`EMAIL_SERVICE`) with `@Inject()`.
 - Import the **interface** (`IEmailService`) for typing.
-- The module imports `InfrastructureModule` as a whole.
+- The module imports **that provider's module only** — `SendGridProviderModule` for `EMAIL_SERVICE`, `StripeProviderModule` for `STRIPE_CLIENT`, and so on (`src/infrastructure/providers/<name>.provider.module.ts`). There is no catch-all `InfrastructureModule`.
+- Same for repositories: `src/repositories/<name>.repository.module.ts` exports exactly one repository; import the ones the service injects and no others.
 
 ## Commit Convention
 

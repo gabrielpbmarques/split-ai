@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
-import { RepositoriesModule } from 'src/repositories/repositories.module';
+import { AgentConnectionRepositoryModule } from 'src/repositories/agent-connection.repository.module';
 
 import { UpdateAgentConnectionController } from './update-agent-connection.controller';
 import { UpdateAgentConnectionService } from './update-agent-connection.service';
 
 @Module({
-  imports: [RepositoriesModule],
+  imports: [AgentConnectionRepositoryModule],
   controllers: [UpdateAgentConnectionController],
   providers: [UpdateAgentConnectionService],
   exports: [UpdateAgentConnectionService],

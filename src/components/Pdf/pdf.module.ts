@@ -6,6 +6,5 @@ import { ProcessPdfModule } from './ProcessPdf/process-pdf.module';
 
 @Module({
   imports: [LoadPdfModule, ProcessPdfModule, ExtractPdfChunksModule],
-  exports: [LoadPdfModule],
 })
 export class PdfModule {}

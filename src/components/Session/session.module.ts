@@ -10,10 +10,5 @@ import { ListSessionsModule } from './ListSessions/list-sessions.module';
     ListSessionsModule,
     GetSessionMessagesModule,
   ],
-  exports: [
-    CreateSessionIfNotExistsModule,
-    ListSessionsModule,
-    GetSessionMessagesModule,
-  ],
 })
 export class SessionModule {}

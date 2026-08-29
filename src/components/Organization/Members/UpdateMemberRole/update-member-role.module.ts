@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
-import { RepositoriesModule } from 'src/repositories/repositories.module';
+import { UserRepositoryModule } from 'src/repositories/user.repository.module';
 
 import { UpdateMemberRoleController } from './update-member-role.controller';
 import { UpdateMemberRoleService } from './update-member-role.service';
 
 @Module({
-  imports: [RepositoriesModule],
+  imports: [UserRepositoryModule],
   controllers: [UpdateMemberRoleController],
   providers: [UpdateMemberRoleService],
   exports: [UpdateMemberRoleService],

@@ -1,13 +1,12 @@
 import { Module } from '@nestjs/common';
-import { AuthModule } from 'src/auth/auth.module';
-import { InfrastructureModule } from 'src/infrastructure/infrastructure.module';
-import { RepositoriesModule } from 'src/repositories/repositories.module';
+import { SupabaseProviderModule } from 'src/infrastructure/providers/supabase.provider.module';
+import { SourceRepositoryModule } from 'src/repositories/source.repository.module';
 
 import { DeleteSourceController } from './delete-source.controller';
 import { DeleteSourceService } from './delete-source.service';
 
 @Module({
-  imports: [RepositoriesModule, AuthModule, InfrastructureModule],
+  imports: [SourceRepositoryModule, SupabaseProviderModule],
   controllers: [DeleteSourceController],
   providers: [DeleteSourceService],
 })

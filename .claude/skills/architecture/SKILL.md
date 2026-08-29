@@ -7,7 +7,7 @@ description: 'Use when scaffolding modules, use cases, controllers, services, DT
 
 ```text
 src/
-  app.module.ts          # Root module — imports InfrastructureModule, ComponentsModule, MiddlewareModule
+  app.module.ts          # Root module — imports TypeOrmModule.forRoot, ComponentsModule, HealthModule
   main.ts                # Bootstrap — Fastify adapter. NOTE: no global ValidationPipe and no global "api" prefix; see CLAUDE.md "Things that bite". Validation is per-handler (@Body(new ValidationPipe())); routes mount at each @Controller(...) path.
   config.ts              # Plain object reading process.env (not @nestjs/config registerAs)
   auth/                  # Guards (e.g., AuthGuard, RoleGuard, DomainSpecificGuards)
@@ -26,14 +26,17 @@ src/
 AppModule
 ├── TypeOrmModule.forRoot(...)
 ├── ScheduleModule.forRoot()
-├── InfrastructureModule        # External service providers
 ├── ComponentsModule            # All feature modules
-└── MiddlewareModule            # Global middleware
+└── HealthModule
 ```
+
+There is **no** catch-all `InfrastructureModule` / `RepositoriesModule`. Each
+repository and each external provider owns a small module of its own, and a use
+case imports only the ones it actually injects.
 
 ### ComponentsModule
 
-`components/components.module.ts` imports and re-exports all scope-level modules:
+`components/components.module.ts` imports all scope-level modules (wiring only — no `exports`):
 
 ```text
 ComponentsModule
@@ -45,7 +48,7 @@ ComponentsModule
 └── PaymentModule
 ```
 
-Each scope module (e.g., `OrderModule`) imports and re-exports its use case modules.
+Each scope module (e.g., `OrderModule`) imports its use case modules. It exists so their controllers register; it declares no `providers`, no `controllers` and **no `exports`**.
 
 ## Component Pattern (Scope → Use Cases)
 
@@ -87,7 +90,8 @@ Example: `GenerateToken` is an auxiliary use case used by `Login`. The `Generate
 
 ### Scope module pattern
 
-The scope module imports and re-exports ALL its use case modules:
+The scope module is **wiring only** — it imports its use case modules so their
+controllers register, and exports nothing:
 
 ```typescript
 @Module({
@@ -97,21 +101,26 @@ The scope module imports and re-exports ALL its use case modules:
     GetOrderModule,
     // ... all use case modules
   ],
-  exports: [
-    CreateOrderModule,
-    ListOrdersModule,
-    GetOrderModule,
-    // ... same list
-  ],
 })
 export class OrderModule {}
 ```
 
+Never add an `exports` array here. A module that wants `CreateOrderService`
+imports `CreateOrderModule` directly — importing `OrderModule` to reach one
+service drags in the whole scope.
+
 ### Use case module pattern
+
+Its `imports` array is derived mechanically: list the module that supplies each
+thing the module's own classes inject, and nothing else.
 
 ```typescript
 @Module({
-  imports: [RepositoriesModule], // Always import full RepositoriesModule
+  imports: [
+    OrderRepositoryModule, // CreateOrderService injects OrderRepository
+    StripeProviderModule, // ... and @Inject(STRIPE_CLIENT)
+    GenerateTokenModule, // ... and GenerateTokenService
+  ],
   controllers: [CreateOrderController], // Only if this use case is an endpoint
   providers: [CreateOrderService],
   exports: [CreateOrderService], // Export the service for other modules
@@ -121,10 +130,13 @@ export class CreateOrderModule {}
 
 **Key rules:**
 
-- ALWAYS import `RepositoriesModule` as a whole — NEVER import individual repositories directly.
-- If the use case needs external services, import `InfrastructureModule` as a whole.
-- If the use case depends on another use case, import that use case's module (e.g., `GenerateTokenModule`).
+- One repository → its `XRepositoryModule` (`src/repositories/<name>.repository.module.ts`).
+- One infrastructure token → its `XProviderModule` (`src/infrastructure/providers/<name>.provider.module.ts`).
+- One sibling/cross-scope service → that use case's own module (e.g. `GenerateTokenModule`), **never** the scope aggregator.
+- The `imports` must also cover what the module's `@UseGuards(...)` enhancers inject — `CompositeAuthGuard` pulls in `ApiKeyGuard`, which needs `ApiKeyRepositoryModule` + `OrganizationRepositoryModule`.
+- Mutual dependencies use `forwardRef(() => XModule)` on **both** sides, matching `@Inject(forwardRef(() => XService))` in the constructor.
 - Cross-scope dependencies are allowed: use case modules can import modules from other scopes.
+- Check your work with `bun run di:verify` (static reachability) and `bun run di:boot-check` (real Nest container, DataSource stubbed).
 
 ## Repositories
 
@@ -147,9 +159,31 @@ export class UserRepository {
 }
 ```
 
-### RepositoriesModule
+### Repository modules
 
-`RepositoriesModule` registers ALL entities via `TypeOrmModule.forFeature([...])` and provides/exports ALL repositories. Use case modules import `RepositoriesModule` to get access to any repository via DI.
+Every repository has a sibling module next to it:
+
+```text
+src/repositories/
+  order.repository.ts
+  order.repository.module.ts   -> OrderRepositoryModule
+```
+
+```typescript
+@Module({
+  imports: [TypeOrmModule.forFeature([OrderEntity])],
+  providers: [OrderRepository],
+  exports: [OrderRepository],
+})
+export class OrderRepositoryModule {}
+```
+
+`TypeOrmModule.forFeature` is **module-local**: the `Repository<OrderEntity>`
+token only exists inside the module that registered it, so each repository
+module registers its own entity. If the repository injects anything else (e.g.
+`MessageRepository` injects `VOYAGE_EMBEDDINGS`), add that provider module to
+this module's `imports` too. A repository backed by `DataSource` alone
+(`UniversalDataRepository`) needs no `forFeature` at all.
 
 ## Tools scope
 
@@ -168,7 +202,7 @@ components/
 
 ### Tool service pattern
 
-The service is `@Injectable()`, takes any dependencies via constructor (repositories from `RepositoriesModule`, external clients from `InfrastructureModule`, sibling services), and exposes a single `execute(...)` method that returns (or resolves to) a `DynamicStructuredTool`. Its argument carries whatever per-request input the tool needs — e.g. `LoadDatabaseTool.execute({ databaseUrl, readOnly, scope })`, while `LoadVectorSearchTool.execute()` takes none.
+The service is `@Injectable()`, takes any dependencies via constructor (repositories from their `XRepositoryModule`, external clients from their `XProviderModule`, sibling services), and exposes a single `execute(...)` method that returns (or resolves to) a `DynamicStructuredTool`. Its argument carries whatever per-request input the tool needs — e.g. `LoadDatabaseTool.execute({ databaseUrl, readOnly, scope })`, while `LoadVectorSearchTool.execute()` takes none.
 
 ```typescript
 @Injectable()
@@ -243,7 +277,22 @@ export const MyProvider: Provider[] = [
 ];
 ```
 
-`InfrastructureModule` spreads all provider arrays and exports all tokens. Use case modules that need external services import `InfrastructureModule` as a whole.
+Each `<name>.provider.ts` has a sibling `<name>.provider.module.ts` that spreads
+that one provider array and exports its tokens:
+
+```typescript
+@Module({
+  imports: [VoyageEmbeddingsProviderModule], // only if a factory injects its token
+  providers: [...SupabaseProvider],
+  exports: [SUPABASE_CLIENT, SUPABASE_SERVICE],
+})
+export class SupabaseProviderModule {}
+```
+
+A use case that injects `SUPABASE_SERVICE` imports `SupabaseProviderModule` — and
+nothing else from `infrastructure/`. Because `AppModule` no longer imports a
+catch-all, a provider factory only runs when some module that needs it is
+instantiated.
 
 ## Guards
 
@@ -296,10 +345,10 @@ Middleware implementations live in `src/middleware/`. The `MiddlewareModule` reg
 
 ## Rules — NEVER Violate
 
-1. **NEVER import individual repositories** — always import `RepositoriesModule`.
-2. **NEVER import individual infrastructure providers** — always import `InfrastructureModule`.
+1. **NEVER import more than the module needs** — the `imports` array is exactly the modules supplying what its own providers/controllers/guards inject.
+2. **NEVER import a scope aggregator to reach one service** — import that use case's module. Aggregators have no `exports`.
 3. **NEVER place business logic in controllers** — controllers delegate to services.
-4. **NEVER skip the scope module** — every use case module must be imported/exported in its scope module, which in turn is imported/exported in `ComponentsModule`.
+4. **NEVER skip the scope module** — every use case module must be imported in its scope module, which in turn is imported in `ComponentsModule`, or its route never registers.
 5. **Every use case gets its own module** — even auxiliary ones without endpoints.
 6. **DTOs use class-validator decorators** — never accept raw unvalidated input.
 7. **Services use execute() as the main method name**`execute()`.

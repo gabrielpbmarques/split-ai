@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
-import { RepositoriesModule } from 'src/repositories/repositories.module';
+import { OrganizationRepositoryModule } from 'src/repositories/organization.repository.module';
 
 import { RegenerateEmbedTokenController } from './regenerate-embed-token.controller';
 import { RegenerateEmbedTokenService } from './regenerate-embed-token.service';
 
 @Module({
-  imports: [RepositoriesModule],
+  imports: [OrganizationRepositoryModule],
   controllers: [RegenerateEmbedTokenController],
   providers: [RegenerateEmbedTokenService],
   exports: [RegenerateEmbedTokenService],

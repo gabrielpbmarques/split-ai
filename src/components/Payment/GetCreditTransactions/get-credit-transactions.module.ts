@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
-import { RepositoriesModule } from 'src/repositories/repositories.module';
+import { CreditTransactionRepositoryModule } from 'src/repositories/credit-transaction.repository.module';
 
 import { GetCreditTransactionsController } from './get-credit-transactions.controller';
 import { GetCreditTransactionsService } from './get-credit-transactions.service';
 
 @Module({
-  imports: [RepositoriesModule],
+  imports: [CreditTransactionRepositoryModule],
   providers: [GetCreditTransactionsService],
   controllers: [GetCreditTransactionsController],
   exports: [GetCreditTransactionsService],

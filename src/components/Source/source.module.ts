@@ -12,11 +12,5 @@ import { ListSourcesModule } from './ListSources/list-sources.module';
     DeleteSourceModule,
     GenerateAgentSourceModule,
   ],
-  exports: [
-    ListSourcesModule,
-    GetSourceModule,
-    DeleteSourceModule,
-    GenerateAgentSourceModule,
-  ],
 })
 export class SourceModule {}

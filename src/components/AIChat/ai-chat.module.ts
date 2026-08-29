@@ -5,6 +5,5 @@ import { QuestionModule } from './Question/question.module';
 
 @Module({
   imports: [QuestionModule, AttendantModule],
-  exports: [QuestionModule, AttendantModule],
 })
 export class AIChatModule {}

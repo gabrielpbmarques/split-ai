@@ -14,12 +14,5 @@ import { SendSmsModule } from './SendSms/send-sms.module';
     CheckUserRegisteredModule,
     RegisterLiteModule,
   ],
-  exports: [
-    GenerateTokenModule,
-    LoginModule,
-    SendSmsModule,
-    CheckUserRegisteredModule,
-    RegisterLiteModule,
-  ],
 })
 export class AuthModule {}

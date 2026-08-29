@@ -71,14 +71,16 @@ Project guidance lives at three loading tiers. Pick the right tier when adding n
 ```
 src/
   main.ts                    Fastify bootstrap, request/response logging, Sentry in prod
-  app.module.ts              Root — TypeOrmModule.forRoot, Components, Infrastructure, Health
+  app.module.ts              Root — TypeOrmModule.forRoot, Components, Health
   config.ts                  Plain object reading process.env (not @nestjs/config registerAs)
   auth/                      AuthGuard, ActiveOrgGuard
   decorators/                @Roles, @User (alias as AuthUser in controllers)
   entities/                  TypeORM entities + barrel index.ts
-  repositories/              Repository wrappers + RepositoriesModule (registers ALL entities)
+  repositories/              Repository wrappers, each paired with its own <name>.repository.module.ts
+                             (forFeature([Entity]) + provides/exports that one repository)
   infrastructure/providers/  External SDK wrappers (Voyage embeddings, GCS, Twilio, SendGrid, Stripe,
-                             Supabase, Spider, Google TTS, ElevenLabs voice)
+                             Supabase, Spider, Google TTS, ElevenLabs voice), each paired with its own
+                             <name>.provider.module.ts exporting that provider's tokens
   components/                Feature modules — PascalCase Scope/ → PascalCase UseCase/ → kebab-case files
                              Notable scopes: AIChat/, ArtificialIntelligence/, Tools/ (just LoadDatabaseTool
                              + LoadVectorSearchTool — generic, tenant-agnostic), Organization/,
@@ -94,13 +96,16 @@ migrations/                  Raw SQL migration files — applied by hand, NOT Ty
 
 **Hard rules** (also in skills, repeated here because they are the most common review feedback):
 
-1. Modules import `RepositoriesModule` and `InfrastructureModule` **as wholes** — never individual repositories or provider tokens at the module level.
+1. A module's `imports` array lists **exactly** the modules that supply what its own providers/controllers/guards inject — nothing more. One repository → `XRepositoryModule` (`src/repositories/<name>.repository.module.ts`); one infra token → `XProviderModule` (`src/infrastructure/providers/<name>.provider.module.ts`); one sibling service → that use case's own module. **Never** import a scope aggregator (`ArtificialIntelligenceModule`, `SessionModule`, …) to reach one service inside it, and never import a module "just in case". There is no `RepositoriesModule` / `InfrastructureModule` any more — they were deleted.
 2. One use case = one module = one controller = one endpoint. Controller handler is `handle` or `execute`; service public method is `execute`.
 3. Controllers always use `@Res() res: FastifyReply` and a try/catch — never rely on Nest's default response handling.
 4. DTOs validated via `class-validator` with `@Body(new ValidationPipe())` per-handler (there is no global `ValidationPipe`).
 5. User-facing error messages are in Portuguese; identifiers stay English.
-6. Every new entity must be registered in `RepositoriesModule`'s `TypeOrmModule.forFeature([...])` AND in `src/entities/index.ts`.
+6. Every new entity must be barrel-exported from `src/entities/index.ts`, and its repository needs a sibling `<name>.repository.module.ts` doing `TypeOrmModule.forFeature([XEntity])` + `providers`/`exports: [XRepository]`. `forFeature` is module-local: importing a module that registered an entity does **not** give you its `Repository<T>`.
 7. Inject every constructor dependency as `private readonly` — all services/controllers use constructor DI.
+8. Scope modules (`ai-chat.module.ts`, `artificial-intelligence.module.ts`, `components.module.ts`, …) are **wiring only**: `imports` of their use-case modules, no `providers`, no `controllers`, **no `exports`**. Their single job is making controllers register. To consume a service, import the use-case module that exports it.
+
+Run `bun run scripts/refactor-di/verify.ts` after touching module wiring — it walks every module and reports any injection its `imports` no longer reach, plus controllers unreachable from `AppModule`.
 
 ## Service & reasoning conventions
 

@@ -37,23 +37,5 @@ import { UpdateAgentModule } from './UpdateAgent/update-agent.module';
     InvokeConnectedAgentModule,
     AppendConnectionToolsModule,
   ],
-  exports: [
-    ConvertTextToSpeechModule,
-    ExecuteSimilaritySearchModule,
-    LoadVectorStoreModule,
-    BuildSystemPromptModule,
-    NormalizePromptInstructionsModule,
-    GenerateAiResponseModule,
-    CreateAgentModule,
-    UpdateAgentModule,
-    ListAgentsModule,
-    CreateAttendantAgentModule,
-    LoadAgentSitesModule,
-    LoadVectorSearchToolModule,
-    TokenUsageModule,
-    ResolveAgentModule,
-    InvokeConnectedAgentModule,
-    AppendConnectionToolsModule,
-  ],
 })
 export class ArtificialIntelligenceModule {}

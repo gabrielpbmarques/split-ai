@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
-import { RepositoriesModule } from 'src/repositories/repositories.module';
+import { OrganizationRepositoryModule } from 'src/repositories/organization.repository.module';
 
 import { ActivateOrganizationService } from './activate-organization.service';
 
 @Module({
-  imports: [RepositoriesModule],
+  imports: [OrganizationRepositoryModule],
   providers: [ActivateOrganizationService],
   exports: [ActivateOrganizationService],
 })

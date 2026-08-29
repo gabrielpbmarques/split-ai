@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
-import { RepositoriesModule } from 'src/repositories/repositories.module';
+import { AgentRepositoryModule } from 'src/repositories/agent.repository.module';
 
 import { ResolveSourceAgentService } from './resolve-source-agent.service';
 
 @Module({
-  imports: [RepositoriesModule],
+  imports: [AgentRepositoryModule],
   providers: [ResolveSourceAgentService],
   exports: [ResolveSourceAgentService],
 })

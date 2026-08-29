@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
-import { RepositoriesModule } from 'src/repositories/repositories.module';
+import { MessageRepositoryModule } from 'src/repositories/message.repository.module';
 
 import { RecordChatMessageService } from './record-chat-message.service';
 
 @Module({
-  imports: [RepositoriesModule],
+  imports: [MessageRepositoryModule],
   providers: [RecordChatMessageService],
   exports: [RecordChatMessageService],
 })

@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
-import { RepositoriesModule } from 'src/repositories/repositories.module';
+import { UserRepositoryModule } from 'src/repositories/user.repository.module';
 
 import { UpdateUserController } from './update-user.controller';
 import { UpdateUserService } from './update-user.service';
 
 @Module({
-  imports: [RepositoriesModule],
+  imports: [UserRepositoryModule],
   providers: [UpdateUserService],
   controllers: [UpdateUserController],
   exports: [UpdateUserService],

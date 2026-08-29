@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
-import { RepositoriesModule } from 'src/repositories/repositories.module';
+import { UserRepositoryModule } from 'src/repositories/user.repository.module';
 
 import { RegisterLiteController } from './register-lite.controller';
 import { RegisterLiteService } from './register-lite.service';
 
 @Module({
-  imports: [RepositoriesModule],
+  imports: [UserRepositoryModule],
   controllers: [RegisterLiteController],
   providers: [RegisterLiteService],
   exports: [RegisterLiteService],

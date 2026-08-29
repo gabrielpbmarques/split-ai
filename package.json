@@ -19,6 +19,10 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "seed:maia": "TS_NODE_TRANSPILE_ONLY=1 TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' node -r ts-node/register -r tsconfig-paths/register scripts/seed-maia.ts",
+    "di:analyze": "bun run scripts/refactor-di/analyze.ts",
+    "di:verify": "bun run scripts/refactor-di/verify.ts",
+    "di:document": "bun run scripts/refactor-di/document.ts",
+    "di:boot-check": "TS_NODE_TRANSPILE_ONLY=1 TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\",\"moduleResolution\":\"node\",\"esModuleInterop\":true}' node -r ts-node/register -r tsconfig-paths/register scripts/refactor-di/boot-check.ts",
     "repair:thread": "TS_NODE_TRANSPILE_ONLY=1 TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' node -r ts-node/register -r tsconfig-paths/register scripts/repair-thread-checkpoint.ts",
     "prepare": "husky install && chmod ug+x .husky/* && chmod ug+x .husky/_/*"
   },

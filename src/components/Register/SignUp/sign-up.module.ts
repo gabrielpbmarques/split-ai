@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
-import { RepositoriesModule } from 'src/repositories/repositories.module';
+import { UserRepositoryModule } from 'src/repositories/user.repository.module';
 
 import { SignUpController } from './sign-up.controller';
 import { SignUpService } from './sign-up.service';
 
 @Module({
-  imports: [RepositoriesModule],
+  imports: [UserRepositoryModule],
   controllers: [SignUpController],
   providers: [SignUpService],
   exports: [SignUpService],

@@ -14,12 +14,5 @@ import { UpdateAgentConnectionModule } from './UpdateAgentConnection/update-agen
     DeleteAgentConnectionModule,
     SaveAgentConnectionLayoutModule,
   ],
-  exports: [
-    CreateAgentConnectionModule,
-    ListAgentConnectionsModule,
-    UpdateAgentConnectionModule,
-    DeleteAgentConnectionModule,
-    SaveAgentConnectionLayoutModule,
-  ],
 })
 export class AgentConnectionModule {}

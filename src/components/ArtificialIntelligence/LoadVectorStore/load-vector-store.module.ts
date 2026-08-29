@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
-import { InfrastructureModule } from 'src/infrastructure/infrastructure.module';
+import { SupabaseProviderModule } from 'src/infrastructure/providers/supabase.provider.module';
+import { VoyageEmbeddingsProviderModule } from 'src/infrastructure/providers/voyage-embeddings.provider.module';
 
 import { LoadVectorStoreService } from './load-vector-store.service';
 
 @Module({
-  imports: [InfrastructureModule],
+  imports: [SupabaseProviderModule, VoyageEmbeddingsProviderModule],
   providers: [LoadVectorStoreService],
   exports: [LoadVectorStoreService],
 })

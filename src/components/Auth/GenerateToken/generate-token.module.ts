@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { RepositoriesModule } from 'src/repositories/repositories.module';
+import { UserTokenRepositoryModule } from 'src/repositories/user-token.repository.module';
 
 import { GenerateTokenService } from './generate-token.service';
 
 @Module({
-  imports: [RepositoriesModule, ConfigModule],
+  imports: [ConfigModule, UserTokenRepositoryModule],
   providers: [GenerateTokenService, JwtService],
   exports: [GenerateTokenService],
 })

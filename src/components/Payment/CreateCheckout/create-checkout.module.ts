@@ -1,12 +1,19 @@
 import { Module } from '@nestjs/common';
-import { InfrastructureModule } from 'src/infrastructure/infrastructure.module';
-import { RepositoriesModule } from 'src/repositories/repositories.module';
+import { StripeProviderModule } from 'src/infrastructure/providers/stripe.provider.module';
+import { OrganizationRepositoryModule } from 'src/repositories/organization.repository.module';
+import { PaymentRepositoryModule } from 'src/repositories/payment.repository.module';
+import { PlanRepositoryModule } from 'src/repositories/plan.repository.module';
 
 import { CreateCheckoutController } from './create-checkout.controller';
 import { CreateCheckoutService } from './create-checkout.service';
 
 @Module({
-  imports: [InfrastructureModule, RepositoriesModule],
+  imports: [
+    OrganizationRepositoryModule,
+    PaymentRepositoryModule,
+    PlanRepositoryModule,
+    StripeProviderModule,
+  ],
   providers: [CreateCheckoutService],
   controllers: [CreateCheckoutController],
   exports: [CreateCheckoutService],

@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { EmailService } from 'src/components/Email/email.service';
-import { InfrastructureModule } from 'src/infrastructure/infrastructure.module';
+import { SendGridProviderModule } from 'src/infrastructure/providers/sendgrid.provider.module';
 
 @Module({
-  imports: [InfrastructureModule],
+  imports: [SendGridProviderModule],
   providers: [EmailService],
   exports: [EmailService],
 })

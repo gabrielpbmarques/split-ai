@@ -5,6 +5,5 @@ import { RecordTokenUsageModule } from './RecordTokenUsage/record-token-usage.mo
 
 @Module({
   imports: [GetTokenUsageModule, RecordTokenUsageModule],
-  exports: [RecordTokenUsageModule, GetTokenUsageModule],
 })
 export class TokenUsageModule {}

@@ -6,7 +6,6 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ComponentsModule } from 'src/components/components.module';
 import { HealthModule } from 'src/health/health.module';
-import { InfrastructureModule } from 'src/infrastructure/infrastructure.module';
 
 import { config } from './config';
 @Module({
@@ -29,7 +28,6 @@ import { config } from './config';
     }),
     HealthModule,
     ComponentsModule,
-    InfrastructureModule,
     ScheduleModule.forRoot(),
   ],
   controllers: [],

@@ -6,6 +6,5 @@ import { ListReportsModule } from './ListReports/list-reports.module';
 
 @Module({
   imports: [ListReportsModule, GetReportModule, GetReportConversationModule],
-  exports: [ListReportsModule, GetReportModule, GetReportConversationModule],
 })
 export class ReportModule {}

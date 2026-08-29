@@ -24,17 +24,5 @@ import { UpdateEmbedSettingsModule } from './UpdateEmbedSettings/update-embed-se
     DeactivateOrganizationModule,
     MembersModule,
   ],
-  exports: [
-    CreateOrganizationModule,
-    ListOrganizationsModule,
-    GetOrganizationModule,
-    GetEmbedSettingsModule,
-    UpdateEmbedSettingsModule,
-    RegenerateEmbedTokenModule,
-    PublicEmbedModule,
-    ActivateOrganizationModule,
-    DeactivateOrganizationModule,
-    MembersModule,
-  ],
 })
 export class OrganizationModule {}

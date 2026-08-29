@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
-import { RepositoriesModule } from 'src/repositories/repositories.module';
+import { UserRepositoryModule } from 'src/repositories/user.repository.module';
 
 import { AcceptInviteController } from './accept-invite.controller';
 import { AcceptInviteService } from './accept-invite.service';
 
 @Module({
-  imports: [RepositoriesModule],
+  imports: [UserRepositoryModule],
   controllers: [AcceptInviteController],
   providers: [AcceptInviteService],
   exports: [AcceptInviteService],

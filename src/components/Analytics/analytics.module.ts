@@ -4,6 +4,5 @@ import { GetDashboardDataModule } from './GetDashboardData/get-dashboard-data.mo
 
 @Module({
   imports: [GetDashboardDataModule],
-  exports: [GetDashboardDataModule],
 })
 export class AnalyticsModule {}

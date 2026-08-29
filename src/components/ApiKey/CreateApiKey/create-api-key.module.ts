@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
-import { RepositoriesModule } from 'src/repositories/repositories.module';
+import { ApiKeyRepositoryModule } from 'src/repositories/api-key.repository.module';
 
 import { CreateApiKeyController } from './create-api-key.controller';
 import { CreateApiKeyService } from './create-api-key.service';
 
 @Module({
-  imports: [RepositoriesModule],
+  imports: [ApiKeyRepositoryModule],
   controllers: [CreateApiKeyController],
   providers: [CreateApiKeyService],
   exports: [CreateApiKeyService],

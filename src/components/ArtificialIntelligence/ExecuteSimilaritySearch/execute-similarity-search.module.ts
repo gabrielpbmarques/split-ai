@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
-import { InfrastructureModule } from 'src/infrastructure/infrastructure.module';
+import { VoyageEmbeddingsProviderModule } from 'src/infrastructure/providers/voyage-embeddings.provider.module';
 
 import { ExecuteSimilaritySearchService } from './execute-similarity-search.service';
 
 @Module({
-  imports: [InfrastructureModule],
+  imports: [VoyageEmbeddingsProviderModule],
   providers: [ExecuteSimilaritySearchService],
   exports: [ExecuteSimilaritySearchService],
 })

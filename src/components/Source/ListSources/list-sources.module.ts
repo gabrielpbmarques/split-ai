@@ -1,12 +1,11 @@
 import { Module } from '@nestjs/common';
-import { AuthModule } from 'src/auth/auth.module';
-import { RepositoriesModule } from 'src/repositories/repositories.module';
+import { SourceRepositoryModule } from 'src/repositories/source.repository.module';
 
 import { ListSourcesController } from './list-sources.controller';
 import { ListSourcesService } from './list-sources.service';
 
 @Module({
-  imports: [RepositoriesModule, AuthModule],
+  imports: [SourceRepositoryModule],
   controllers: [ListSourcesController],
   providers: [ListSourcesService],
 })

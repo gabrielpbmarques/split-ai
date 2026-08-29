@@ -5,6 +5,5 @@ import { DashboardStatisticsModule } from './Statistics/dashboard-statistics.mod
 
 @Module({
   imports: [DashboardStatisticsModule, DashboardChartsModule],
-  exports: [DashboardStatisticsModule, DashboardChartsModule],
 })
 export class DashboardModule {}

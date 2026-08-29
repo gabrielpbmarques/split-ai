@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
-import { InfrastructureModule } from 'src/infrastructure/infrastructure.module';
+import { SupabaseProviderModule } from 'src/infrastructure/providers/supabase.provider.module';
 
 import { ProcessTextSourceService } from './process-text-source.service';
 
 @Module({
-  imports: [InfrastructureModule],
+  imports: [SupabaseProviderModule],
   providers: [ProcessTextSourceService],
   exports: [ProcessTextSourceService],
 })

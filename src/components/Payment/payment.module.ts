@@ -18,14 +18,5 @@ import { StripeWebhookModule } from './StripeWebhook/stripe-webhook.module';
     GetCreditTransactionsModule,
     GetStripePublicKeyModule,
   ],
-  exports: [
-    CreateCheckoutModule,
-    StripeWebhookModule,
-    GetPlansModule,
-    GetCreditsModule,
-    GetPaymentHistoryModule,
-    GetCreditTransactionsModule,
-    GetStripePublicKeyModule,
-  ],
 })
 export class PaymentModule {}

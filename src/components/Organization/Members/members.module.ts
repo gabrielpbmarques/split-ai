@@ -14,12 +14,5 @@ import { UpdateMemberRoleModule } from './UpdateMemberRole/update-member-role.mo
     UpdateMemberRoleModule,
     RemoveMemberModule,
   ],
-  exports: [
-    InviteMemberModule,
-    AcceptInviteModule,
-    ListMembersModule,
-    UpdateMemberRoleModule,
-    RemoveMemberModule,
-  ],
 })
 export class MembersModule {}

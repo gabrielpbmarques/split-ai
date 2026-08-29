@@ -1136,57 +1136,64 @@ Not used in the chat path but read by the same `config.ts`: SendGrid, Twilio, St
 ```
 AppModule
 ├── TypeOrmModule.forRoot(synchronize: true, autoLoadEntities: true)
-├── ThrottlerModule (60s TTL, 10 req)
-├── ScheduleModule
-├── InfrastructureModule
-│   ├── SUPABASE_CLIENT / SUPABASE_SERVICE
-│   ├── VOYAGE_EMBEDDINGS / ANTHROPIC_CHAT
-│   ├── SPIDER_SERVICE
-│   └── (SendGrid, Twilio, Stripe, GCS, Google Voice — unused on chat path)
-├── RepositoriesModule
-│   ├── TypeOrmModule.forFeature([Agent, AgentInstruction, Session, Message,
-│   │                              TokenUsage, CreditBalance, CreditTransaction,
-│   │                              Source, ...])
-│   └── repos: AgentRepository, AgentInstructionRepository, SessionRepository,
-│              MessageRepository (auto-embeds!), TokenUsageRepository,
-│              CreditBalanceRepository, CreditTransactionRepository,
-│              SourceRepository, UniversalDataRepository, ...
-├── ComponentsModule
-│   ├── AIChatModule
+├── ThrottlerModule (60s TTL, 10 req) / ScheduleModule / DevtoolsModule
+├── ComponentsModule                        # wiring only — imports, no exports
+│   ├── AIChatModule                        # wiring only
 │   │   ├── QuestionModule
-│   │   │   imports: Infrastructure, Repositories, ArtificialIntelligence,
-│   │   │            Session, RecordChatMessage, Credits
+│   │   │   imports: ApiKeyRepositoryModule, OrganizationRepositoryModule,
+│   │   │            CreateSessionIfNotExistsModule, RecordChatMessageModule,
+│   │   │            ResolveAgentModule, GenerateAiResponseModule
+│   │   │   providers: QuestionService, AuthGuard, ApiKeyGuard, CompositeAuthGuard
+│   │   │            (the two repository modules are there for ApiKeyGuard, not the service)
 │   │   └── AttendantModule
-│   │       imports: Repositories, ArtificialIntelligence,
-│   │                Session, RecordChatMessage
-│   ├── ArtificialIntelligenceModule
+│   │       imports: CreateSessionIfNotExistsModule, RecordChatMessageModule,
+│   │                ResolveAgentModule, GenerateAiResponseModule
+│   ├── ArtificialIntelligenceModule        # wiring only
 │   │   ├── ResolveAgentModule
-│   │   │   imports: Repositories, LoadDatabaseTool, LoadVectorSearchTool,
-│   │   │            BuildSystemPrompt, LoadCheckpointer
-│   │   ├── GenerateAiResponseModule (imports: Repositories, TokenUsage)
-│   │   ├── BuildSystemPromptModule (imports: NormalizePromptInstructions)
-│   │   ├── NormalizePromptInstructionsModule
-│   │   ├── LoadVectorSearchToolModule
-│   │   │   imports: ExecuteSimilaritySearch, LoadVectorStore
-│   │   ├── ExecuteSimilaritySearchModule (imports: Infrastructure)
-│   │   ├── LoadVectorStoreModule (imports: Infrastructure)
-│   │   ├── LoadDatabaseToolModule (imports: Repositories)
-│   │   ├── LoadCheckpointerModule
-│   │   ├── LoadAgentSitesModule (imports: Infrastructure)
-│   │   ├── CreateAgentModule (imports: Repositories)
-│   │   ├── CreateAttendantAgentModule (imports: Repositories)
-│   │   ├── UpdateAgentModule (imports: Repositories)
-│   │   ├── ListAgentsModule (imports: Repositories)
-│   │   └── TokenUsageModule
-│   ├── SessionModule (CreateSessionIfNotExists, ListSessions, GetSessionMessages)
-│   ├── CreditsModule (ConsumeCredits, ManageCredits)
-│   ├── SourceModule (GenerateAgentSource, ListSources, GetSource, DeleteSource)
+│   │   │   imports: AgentRepositoryModule, AgentInstructionRepositoryModule,
+│   │   │            BuildSystemPromptModule, LoadCheckpointerModule,
+│   │   │            forwardRef(() => LoadAgentToolsModule)
+│   │   ├── GenerateAiResponseModule        imports: — (the service has an empty constructor)
+│   │   ├── BuildSystemPromptModule         imports: NormalizePromptInstructionsModule
+│   │   ├── ExecuteSimilaritySearchModule   imports: VoyageEmbeddingsProviderModule
+│   │   ├── LoadVectorStoreModule           imports: SupabaseProviderModule,
+│   │   │                                            VoyageEmbeddingsProviderModule
+│   │   ├── LoadAgentSitesModule            imports: SpiderProviderModule, SupabaseProviderModule
+│   │   ├── AppendConnectionToolsModule     imports: AgentConnectionRepositoryModule,
+│   │   │                                            forwardRef(() => InvokeConnectedAgentModule)
+│   │   ├── InvokeConnectedAgentModule      imports: forwardRef(() => ResolveAgentModule)
+│   │   ├── LoadCheckpointerModule / NormalizePromptInstructionsModule   imports: —
+│   │   └── CreateAgentModule, UpdateAgentModule, ListAgentsModule, …
+│   ├── LoadAgentToolsModule
+│   │   imports: LoadVectorSearchToolModule, MaybeLoadDatabaseToolModule,
+│   │            forwardRef(() => AppendConnectionToolsModule)
+│   ├── MaybeLoadDatabaseToolModule
+│   │   imports: LoadDatabaseToolModule, OrganizationRepositoryModule,
+│   │            OrganizationFeatureRepositoryModule
+│   ├── SessionModule, CreditsModule, SourceModule, TokenUsageModule, …   # wiring only
 │   └── … (Auth, Email, OCR, Organization, Payment, Pdf, Register, Report,
-│          TokenUsage, User, Whatsapp)
+│          User, Whatsapp, ApiKey, AgentConnection, Analytics, Dashboard)
 └── HealthModule
+
+Imported à la carte by whoever injects them:
+  src/repositories/<name>.repository.module.ts
+      forFeature([XEntity]) + provides/exports exactly one repository.
+      MessageRepositoryModule additionally imports VoyageEmbeddingsProviderModule
+      (MessageRepository auto-embeds every message on create).
+  src/infrastructure/providers/<name>.provider.module.ts
+      spreads one provider array, exports that provider's tokens.
+      SupabaseProviderModule imports VoyageEmbeddingsProviderModule (SUPABASE_SERVICE
+      injects VOYAGE_EMBEDDINGS); GcpStorage/GoogleVoice import ConfigModule.
 ```
 
-**Hard rule (from `[[architecture]]`):** modules import `RepositoriesModule` and `InfrastructureModule` **as wholes** — never individual repositories or provider tokens at the module level. Violating this is the #1 review comment.
+**Hard rule (from `[[architecture]]`):** a module's `imports` array is exactly the
+modules supplying what its own providers/controllers/**guards** inject — nothing
+more. There is no `RepositoriesModule` / `InfrastructureModule`; importing a scope
+aggregator (`ArtificialIntelligenceModule`, `SessionModule`, …) to reach one
+service inside it is the #1 review comment. Aggregators carry no `exports`.
+`AppModule` no longer imports anything from `infrastructure/`, so a provider
+factory runs only when a module that needs it is instantiated. Check wiring with
+`bun run di:verify` and `bun run di:boot-check`.
 
 ---
 

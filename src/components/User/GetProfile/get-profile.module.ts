@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
-import { RepositoriesModule } from 'src/repositories/repositories.module';
+import { UserRepositoryModule } from 'src/repositories/user.repository.module';
 
 import { GetProfileController } from './get-profile.controller';
 import { GetProfileService } from './get-profile.service';
 
 @Module({
-  imports: [RepositoriesModule],
+  imports: [UserRepositoryModule],
   controllers: [GetProfileController],
   providers: [GetProfileService],
   exports: [GetProfileService],

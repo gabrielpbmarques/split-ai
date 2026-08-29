@@ -4,20 +4,24 @@ import { ProcessDocxSourceModule } from 'src/components/Source/ProcessDocxSource
 import { ProcessPdfSourceModule } from 'src/components/Source/ProcessPdfSource/process-pdf-source.module';
 import { ProcessTextSourceModule } from 'src/components/Source/ProcessTextSource/process-text-source.module';
 import { ResolveSourceAgentModule } from 'src/components/Source/ResolveSourceAgent/resolve-source-agent.module';
-import { InfrastructureModule } from 'src/infrastructure/infrastructure.module';
-import { RepositoriesModule } from 'src/repositories/repositories.module';
+import { SpiderProviderModule } from 'src/infrastructure/providers/spider.provider.module';
+import { SupabaseProviderModule } from 'src/infrastructure/providers/supabase.provider.module';
+import { AgentRepositoryModule } from 'src/repositories/agent.repository.module';
+import { SourceRepositoryModule } from 'src/repositories/source.repository.module';
 
 import { GenerateAgentSourceController } from './generate-agent-source.controller';
 import { GenerateAgentSourceService } from './generate-agent-source.service';
 
 @Module({
   imports: [
-    ResolveSourceAgentModule,
+    AgentRepositoryModule,
+    ProcessDocxSourceModule,
     ProcessPdfSourceModule,
     ProcessTextSourceModule,
-    ProcessDocxSourceModule,
-    InfrastructureModule,
-    RepositoriesModule,
+    ResolveSourceAgentModule,
+    SourceRepositoryModule,
+    SpiderProviderModule,
+    SupabaseProviderModule,
   ],
   providers: [GenerateAgentSourceService, LoadAgentSitesService],
   controllers: [GenerateAgentSourceController],

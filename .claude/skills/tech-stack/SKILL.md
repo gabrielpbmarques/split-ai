@@ -92,14 +92,14 @@ You are the **Tech Stack Agent** for the NestJS backend. You hold the technical 
 - **Handled events**: `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.paid`, `invoice.payment_failed`.
 - **Entity**: `SubscriptionEntity` tracks subscription/payment status per user.
 
-## Kafka — Event Streaming (Configured, Not Active in InfrastructureModule)
+## Kafka — Event Streaming (Configured, No Provider Module)
 
 - **Provider**: `kafka.provider.ts`
 - **Tokens**: `KAFKA_CLIENT`, `KAFKA_SERVICE`
 - **Env vars**: `KAFKA_BROKERS`, `KAFKA_SSL`, `KAFKA_SASL`, `KAFKA_SASL_USERNAME`, `KAFKA_SASL_PASSWORD`, `KAFKA_TOPIC_PREFIX`
 - **Library**: `kafkajs`
 - **Purpose**: Event streaming for async processing (e.g., background reports, audit logging). Supports publish/subscribe patterns.
-- **Note**: The Kafka provider exists but is **NOT registered** in `InfrastructureModule` by default. It's available for scale-out use cases.
+- **Note**: The Kafka provider exists but has **no `*.provider.module.ts`**, so nothing can import it. Wiring it up means adding that module next to the provider file. It's available for scale-out use cases.
 
 ## Google Geocoding — Reverse Geocoding
 
