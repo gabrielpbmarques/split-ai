@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
-import { VoyageEmbeddingsProviderModule } from 'src/infrastructure/providers/voyage-embeddings.provider.module';
+
+import { RerankDocumentsModule } from '../RerankDocuments/rerank-documents.module';
 
 import { ExecuteSimilaritySearchService } from './execute-similarity-search.service';
 
 @Module({
-  imports: [VoyageEmbeddingsProviderModule],
+  imports: [RerankDocumentsModule],
   providers: [ExecuteSimilaritySearchService],
   exports: [ExecuteSimilaritySearchService],
 })

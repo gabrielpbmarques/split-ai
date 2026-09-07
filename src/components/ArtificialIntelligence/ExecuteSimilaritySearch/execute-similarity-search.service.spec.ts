@@ -1,20 +1,24 @@
 import { Test, TestingModule } from '@nestjs/testing';
 
+import { RerankDocumentsService } from '../RerankDocuments/rerank-documents.service';
+
 import { ExecuteSimilaritySearchService } from './execute-similarity-search.service';
 
 describe('ExecuteSimilaritySearchService', () => {
   let service: ExecuteSimilaritySearchService;
 
-  const mockEmbeddings = {
-    embedQuery: jest.fn().mockResolvedValue([]),
-    embedDocuments: jest.fn().mockResolvedValue([]),
+  const mockRerankDocumentsService = {
+    execute: jest.fn(),
   };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ExecuteSimilaritySearchService,
-        { provide: 'VOYAGE_EMBEDDINGS', useValue: mockEmbeddings },
+        {
+          provide: RerankDocumentsService,
+          useValue: mockRerankDocumentsService,
+        },
       ],
     }).compile();
 

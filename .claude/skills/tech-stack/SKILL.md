@@ -109,6 +109,30 @@ You are the **Tech Stack Agent** for the NestJS backend. You hold the technical 
 - **Purpose**: Converts coordinates (lat/lng) to human-readable addresses when registering locations or tracking events.
 - **Fallback**: If Google API is unavailable or not configured, falls back to OpenStreetMap.
 
+## Voyage AI — Embeddings & Reranking
+
+Two separate providers, one API key (`VOYAGEAI_API_KEY`), one shared rate-limit quota.
+
+| Provider   | File                                                         | Token                   | Purpose                                                                                                                                                           |
+| ---------- | ------------------------------------------------------------ | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Embeddings | `src/infrastructure/providers/voyage-embeddings.provider.ts` | `VOYAGE_EMBEDDINGS`     | `voyage-3-large`, 1024 dims (`outputDimension` hard-coded). Key is read by the SDK from the env, never passed by the factory.                                     |
+| Reranking  | `src/infrastructure/providers/voyage-rerank.provider.ts`     | `VOYAGE_RERANK_SERVICE` | Cross-encoder `rerank-2.5` via plain `fetch` on `POST https://api.voyageai.com/v1/rerank`. Returns `{ index, relevanceScore }[]`, sorted by descending relevance. |
+
+Env vars:
+
+| Variable                    | Default      | Description                                                                                                             |
+| --------------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| `VOYAGEAI_API_KEY`          | —            | Shared by both providers. Read directly from env by `VoyageEmbeddings`; read via `config.voyageApiKey` by the reranker. |
+| `EMBEDDING_MODEL`           | —            | `voyage-3-large`                                                                                                        |
+| `RERANK_MODEL`              | `rerank-2.5` | Cross-encoder model                                                                                                     |
+| `VECTOR_SEARCH_CANDIDATE_K` | `50`         | Dense candidates fetched before reranking (recall ceiling)                                                              |
+| `VECTOR_SEARCH_MIN_SCORE`   | `0.8`        | Minimum `relevance_score` to survive                                                                                    |
+| `VECTOR_SEARCH_MAX_RESULTS` | `10`         | Cap on documents returned to the LLM                                                                                    |
+
+**Rate limits are tier-based and shared.** Without a _default_ payment method on the org, every model group is capped at **3 RPM / 10K TPM**, and the 429 body says `"You have not yet added your payment method"`. Adding one (Tier 1) lifts `voyage-3-large` to 3M TPM / 2000 RPM and `rerank-2.5` to 2M TPM / 2000 RPM; ≥$100 paid doubles it (Tier 2), ≥$1000 triples it (Tier 3). Two gotchas seen in practice: a card can sit in the dashboard **without being the default** and not count, and after fixing it the dashboard flips several minutes before the API enforcement layer does — verify with a burst of concurrent calls, not with the dashboard. The 200M free rerank tokens still apply on every tier.
+
+Since retrieval reranks, **each search costs two Voyage calls** (one embed + one rerank) against the same quota.
+
 ## Environment Variables Reference
 
 ### Database
@@ -197,6 +221,8 @@ Quick lookup for which token to inject when using a service:
 | Need                    | Token                            | Interface/Class               |
 | ----------------------- | -------------------------------- | ----------------------------- |
 | Vector store operations | `VECTOR_STORE_SERVICE`           | `IVectorStoreService`         |
+| Voyage embeddings       | `VOYAGE_EMBEDDINGS`              | `VoyageEmbeddings`            |
+| Voyage reranking        | `VOYAGE_RERANK_SERVICE`          | `IVoyageRerankService`        |
 | Text-to-speech          | `GOOGLE_VOICE_SERVICE`           | `GoogleVoiceService`          |
 | File upload (GCS)       | `GCP_STORAGE_SERVICE`            | `GcpStorageService`           |
 | SMS & voice calls       | `TWILIO_SERVICE`                 | `ITwilioService`              |

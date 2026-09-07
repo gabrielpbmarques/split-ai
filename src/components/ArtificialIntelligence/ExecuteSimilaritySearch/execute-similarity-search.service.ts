@@ -1,27 +1,29 @@
+import { ContextualCompressionRetriever } from '@langchain/classic/retrievers/contextual_compression';
 import { SupabaseVectorStore } from '@langchain/community/vectorstores/supabase';
-import { Embeddings } from '@langchain/core/embeddings';
-import { Injectable, Inject } from '@nestjs/common';
+import { BaseRetrieverInterface } from '@langchain/core/retrievers';
+import { Injectable } from '@nestjs/common';
 import { Document } from 'langchain';
-import { VOYAGE_EMBEDDINGS } from 'src/infrastructure/providers/voyage-embeddings.provider';
+import { config } from 'src/config';
+
+import { RerankDocumentsService } from '../RerankDocuments/rerank-documents.service';
 
 @Injectable()
 export class ExecuteSimilaritySearchService {
   constructor(
-    @Inject(VOYAGE_EMBEDDINGS)
-    private readonly embeddings: Embeddings,
+    private readonly rerankDocumentsService: RerankDocumentsService,
   ) {}
 
   async execute(
     vectorStore: SupabaseVectorStore,
     question: string,
   ): Promise<Document<Record<string, any>>[]> {
-    const topK = 10;
-    const queryEmbeddings = await this.embeddings.embedQuery(question);
-    const similarDocs = await vectorStore.similaritySearchVectorWithScore(
-      queryEmbeddings,
-      topK,
-    );
+    const retriever = new ContextualCompressionRetriever({
+      baseRetriever: vectorStore.asRetriever({
+        k: config.vectorSearchCandidateK,
+      }) as unknown as BaseRetrieverInterface,
+      baseCompressor: this.rerankDocumentsService.execute(),
+    });
 
-    return similarDocs.flatMap((val) => val[0]);
+    return retriever.invoke(question);
   }
 }

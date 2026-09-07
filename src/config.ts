@@ -2,10 +2,21 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
+const toNumber = (value: string | undefined, fallback: number): number => {
+  const parsed = Number(value);
+
+  return value && Number.isFinite(parsed) ? parsed : fallback;
+};
+
 interface IConfig {
   env: string;
   aiModel: string;
   embeddingModel: string;
+  voyageApiKey: string;
+  rerankModel: string;
+  vectorSearchCandidateK: number;
+  vectorSearchMinScore: number;
+  vectorSearchMaxResults: number;
   googleVertexAiApiKey: string;
   mongoUri: string;
   sentryDsn: string;
@@ -46,6 +57,11 @@ export const config: IConfig = {
   env: process.env.ENV || process.env.NODE_ENV,
   aiModel: process.env.AI_MODEL,
   embeddingModel: process.env.EMBEDDING_MODEL,
+  voyageApiKey: process.env.VOYAGEAI_API_KEY,
+  rerankModel: process.env.RERANK_MODEL || 'rerank-2.5',
+  vectorSearchCandidateK: toNumber(process.env.VECTOR_SEARCH_CANDIDATE_K, 50),
+  vectorSearchMinScore: toNumber(process.env.VECTOR_SEARCH_MIN_SCORE, 0.8),
+  vectorSearchMaxResults: toNumber(process.env.VECTOR_SEARCH_MAX_RESULTS, 10),
   googleVertexAiApiKey: process.env.GOOGLE_VERTEX_AI_API_KEY,
   mongoUri: process.env.MONGO_URI || 'mongodb://localhost:27017/split-ai',
   sentryDsn: process.env.SENTRY_DSN,

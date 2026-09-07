@@ -89,12 +89,14 @@ Default port is **`4000`** (`src/main.ts:115`). There is **no global API prefix*
 │                                                                              │
 ├──────────────────────────────────────────────────────────────────────────────┤
 │  Phase E — Tool calls from inside the runnable                               │
-│     vector_similarity_search({ query, agent_id })                            │
-│         → LoadVectorStoreService.execute({ agent_id })                       │
+│     vector_similarity_search({ query, agent_id, source_type })               │
+│         → LoadVectorStoreService.execute({ agent_id, source_type })          │
 │         → ExecuteSimilaritySearchService.execute(store, query)               │
-│             ↳ VoyageEmbeddings.embedQuery(question)                          │
-│             ↳ store.similaritySearchVectorWithScore(vec, topK=10)            │
-│         → join(docs.pageContent, ' ')                                        │
+│             ↳ ContextualCompressionRetriever                                 │
+│                 ↳ asRetriever(k=50)  → candidates (recall only)              │
+│                 ↳ VoyageRerankCompressor → rerank-2.5 cross-encoder          │
+│                     ↳ keep score >= 0.8, cap 10  (may return zero)           │
+│         → join(docs.pageContent, '\n\n')                                     │
 │                                                                              │
 │     execute_sql({ query })                                                   │
 │         → sanitizeSqlQuery(query)                                            │
@@ -949,20 +951,27 @@ O agent_id é {agentId}.`,
   schema: z.object({
     query: z.string().describe('Consulta semântica'),
     agent_id: z.string().describe('ID do agente'),
+    source_type: z
+      .enum(['business_context', 'memory', 'additional_directives'])
+      .describe('Tipo de fonte para busca de vetores'),
   }),
-  func: async ({ query, agent_id }) => {
-    const store = await loadVectorStoreService.execute({ agent_id });
+  func: async ({ query, agent_id, source_type }) => {
+    const store = await loadVectorStoreService.execute({
+      agent_id,
+      source_type,
+    });
     const docs = await executeSimilaritySearchService.execute(store, query);
-    return docs.map((d) => d.pageContent).join(' ');
+    return docs.map((d) => d.pageContent).join('\n\n');
   },
 });
 ```
 
-Three things to internalize:
+Four things to internalize:
 
 1. **The description tells the model to always call it first.** Removing that line will shift agent behavior toward not retrieving. Be deliberate.
 2. **`agent_id` is filled by the model**, populated from the prompt template's `{agentId}` interpolation. If you forget to pass `agentId` through `promptVariables`, the model will guess (badly) or omit it (tool errors).
-3. **Joining with a single space loses sources and scores.** If you need citations, return a structured payload and update the LLM-side consumer (today there is none).
+3. **Retrieval is threshold-based, so the tool can return an empty string.** Nothing clearing the rerank cutoff is a designed outcome, not a failure — check the `logger.warn` from `VoyageRerankCompressor` before assuming retrieval is broken.
+4. **Joining drops sources and scores.** Chunks are separated by a blank line so the model sees boundaries, but `metadata.relevance_score` is discarded. If you need citations, return a structured payload and update the LLM-side consumer (today there is none).
 
 #### `LoadVectorStore.execute(filter)` (lines 16-31 of `load-vector-store.service.ts`)
 
@@ -977,18 +986,29 @@ SupabaseVectorStore.fromExistingIndex(this.embeddings, {
 
 `filter` is `CustomMetadata` (`session_id?`, `user_id?`, `agent_id?`, `source_type?`, `source_id?`, `organization_id?`). Vector tool passes `{ agent_id }`, so chunks ingested without `agent_id` are invisible to chat.
 
-#### `ExecuteSimilaritySearch.execute(store, question)` (lines 14-26)
+#### `ExecuteSimilaritySearch.execute(store, question)`
 
 ```ts
-const topK = 10; // ⚠ hard-coded
-const vec = await this.embeddings.embedQuery(question); // Voyage embed cost per call
-const pairs = await store.similaritySearchVectorWithScore(vec, topK);
-return pairs.flatMap(([doc]) => doc); // drops scores
+const retriever = new ContextualCompressionRetriever({
+  baseRetriever: vectorStore.asRetriever({ k: config.vectorSearchCandidateK }),
+  baseCompressor: this.rerankDocumentsService.execute(),
+});
+
+return retriever.invoke(question);
 ```
 
-- `topK` is `10`. Tune in one place if you change retrieval breadth.
-- Embedding is computed separately so you could reuse it (e.g., to log it) — there is no cache today.
-- Returns `Document[]` without scores.
+- **Dense search is candidate generation, not relevance.** `k` (default 50) is a recall ceiling; the cross-encoder decides what survives. The old `topK = 10` is gone.
+- `asRetriever` embeds internally — still one Voyage embed call per search — but a search now also costs **one rerank call**, on the same Voyage quota.
+- **Do not pass `filter` to `asRetriever`**: the store fixes `this.filter` at construction and a second filter makes `_searchSupabase` throw.
+- Import `ContextualCompressionRetriever` from `@langchain/classic`, not `langchain`. The `as unknown as BaseRetrieverInterface` cast is required by a `NodeNext` typings clash in `@langchain/community` — removing it breaks the build.
+
+#### `RerankDocuments.execute()` → `VoyageRerankCompressor`
+
+`compressDocuments(documents, query)` keeps `relevanceScore >= config.vectorSearchMinScore` (default **0.8**), caps at `config.vectorSearchMaxResults` (default 10), stamps `metadata.relevance_score`, and returns `[]` with a `logger.warn` when nothing clears the bar.
+
+The threshold sits on the cross-encoder score, never on the cosine score: `match_documents` already orders rows by `embedding <=> query_embedding`, so cutting on that same value adds nothing the ordering did not already encode, and a bi-encoder's scale is not comparable across queries. Observed pt-BR ranges: direct answer 0.87–0.96, partial match ~0.76, related-but-wrong ~0.49, off-topic 0.20–0.34.
+
+Backed by `VOYAGE_RERANK_SERVICE` (`src/infrastructure/providers/voyage-rerank.provider.ts`), a plain `fetch` wrapper over `POST https://api.voyageai.com/v1/rerank` using the same `VOYAGEAI_API_KEY` as the embeddings.
 
 ### 8.2 `execute_sql` (database tool)
 
@@ -1155,7 +1175,8 @@ AppModule
 │   │   │            forwardRef(() => LoadAgentToolsModule)
 │   │   ├── GenerateAiResponseModule        imports: — (the service has an empty constructor)
 │   │   ├── BuildSystemPromptModule         imports: NormalizePromptInstructionsModule
-│   │   ├── ExecuteSimilaritySearchModule   imports: VoyageEmbeddingsProviderModule
+│   │   ├── ExecuteSimilaritySearchModule   imports: RerankDocumentsModule
+│   │   ├── RerankDocumentsModule           imports: VoyageRerankProviderModule
 │   │   ├── LoadVectorStoreModule           imports: SupabaseProviderModule,
 │   │   │                                            VoyageEmbeddingsProviderModule
 │   │   ├── LoadAgentSitesModule            imports: SpiderProviderModule, SupabaseProviderModule

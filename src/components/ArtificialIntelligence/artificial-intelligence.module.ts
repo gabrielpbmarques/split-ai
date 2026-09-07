@@ -15,6 +15,7 @@ import { ListAgentsModule } from './ListAgents/list-agents.module';
 import { LoadAgentSitesModule } from './LoadAgentSites/load-agent-sites.module';
 import { LoadVectorStoreModule } from './LoadVectorStore/load-vector-store.module';
 import { NormalizePromptInstructionsModule } from './NormalizePromptInstructions/normalize-prompt-instructions.module';
+import { RerankDocumentsModule } from './RerankDocuments/rerank-documents.module';
 import { ResolveAgentModule } from './ResolveAgent/resolve-agent.module';
 import { UpdateAgentModule } from './UpdateAgent/update-agent.module';
 
@@ -22,6 +23,7 @@ import { UpdateAgentModule } from './UpdateAgent/update-agent.module';
   imports: [
     ConvertTextToSpeechModule,
     ExecuteSimilaritySearchModule,
+    RerankDocumentsModule,
     LoadVectorStoreModule,
     BuildSystemPromptModule,
     NormalizePromptInstructionsModule,

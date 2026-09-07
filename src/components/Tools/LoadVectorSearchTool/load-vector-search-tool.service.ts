@@ -48,7 +48,7 @@ export class LoadVectorSearchToolService {
 
         const source = retrievedDocuments
           .map((doc: CustomDocument) => doc.pageContent)
-          .join(' ');
+          .join('\n\n');
 
         return source;
       },

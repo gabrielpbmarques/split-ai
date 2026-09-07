@@ -1,6 +1,6 @@
 ---
 name: ai-agent-tools-and-rag
-description: "Use for an agent's LangChain tools and RAG: vector_similarity_search, execute_sql and the LoadDatabaseTool SQL guardrails, the parser tool, pgvector/Supabase similarity search, Spider source ingestion, the documents table, and Voyage embeddings. Scope: src/components/Tools/ + ArtificialIntelligence/."
+description: "Use for an agent's LangChain tools and RAG: vector_similarity_search, execute_sql and the LoadDatabaseTool SQL guardrails, the parser tool, pgvector/Supabase similarity search, Spider source ingestion, the documents table, Voyage embeddings, and the rerank-2.5 cross-encoder + relevance threshold. Scope: src/components/Tools/ + ArtificialIntelligence/."
 ---
 
 ## Three tools an agent can carry
@@ -30,17 +30,21 @@ buildLangchainToolFromSchema(name, description, schemaDef): DynamicStructuredToo
 new DynamicStructuredTool({
   name: 'vector_similarity_search',
   description: 'IMPORTANTE: SEMPRE use esta ferramenta antes de responder. ...',
-  schema: z.object({ query: z.string(), agent_id: z.string() }),
-  func: async ({ query, agent_id }) => {
-    const store = await loadVectorStoreService.execute({ agent_id });
+  schema: z.object({ query, agent_id, source_type }),
+  func: async ({ query, agent_id, source_type }) => {
+    const store = await loadVectorStoreService.execute({
+      agent_id,
+      source_type,
+    });
     const docs = await executeSimilaritySearchService.execute(store, query);
-    return docs.map((d) => d.pageContent).join(' ');
+    return docs.map((d) => d.pageContent).join('\n\n');
   },
 });
 ```
 
 - The description prompts the model to **always** call this tool first when the flag is on. Removing that line will shift agent behavior toward not retrieving — make the change deliberate.
-- The tool returns `pageContent` joined by a single space. Sources/scores are dropped; if you need citations, return a structured payload and update consumers (today there are none beyond the LLM).
+- The tool returns `pageContent` joined by a blank line (`\n\n`), so the model sees chunk boundaries. `metadata.relevance_score` is stamped on each surviving document by the reranker but dropped here; if you need citations, return a structured payload and update consumers (today there are none beyond the LLM).
+- **An empty string is a valid return.** Since retrieval became threshold-based, a query where nothing clears the rerank cutoff yields zero documents. That is the designed behaviour — do not "fix" it by removing the threshold.
 - `agent_id` is **filled by the model** based on the system-prompt template (which interpolates `{agentId}`). Make sure that prompt variable is set in any caller (it is for chat flows — see `[[ai-agent-runtime]]`).
 
 ## Database tool — src/components/Tools/LoadDatabaseTool/load-database-tool.service.ts
@@ -105,18 +109,34 @@ SupabaseVectorStore.fromExistingIndex(embeddings, {
 ### ExecuteSimilaritySearch — src/components/ArtificialIntelligence/ExecuteSimilaritySearch/execute-similarity-search.service.ts
 
 ```ts
-const topK = 10;
-const queryEmbeddings = await this.embeddings.embedQuery(question);
-const similarDocs = await vectorStore.similaritySearchVectorWithScore(
-  queryEmbeddings,
-  topK,
-);
-return similarDocs.flatMap((val) => val[0]); // drops scores
+const retriever = new ContextualCompressionRetriever({
+  baseRetriever: vectorStore.asRetriever({ k: config.vectorSearchCandidateK }),
+  baseCompressor: this.rerankDocumentsService.execute(),
+});
+
+return retriever.invoke(question);
 ```
 
-- `topK` is hard-coded `10`. Tune in one place if you change retrieval breadth.
-- Embeds the query separately (via `VoyageEmbeddings.embedQuery`) and passes the precomputed vector to the search. This is intentional — you can reuse the embedding if you need to log it.
-- Returns `Document[]` without scores. Add structured returns if you need source ranking downstream.
+- **The dense search only generates candidates.** `vectorSearchCandidateK` (default 50, env `VECTOR_SEARCH_CANDIDATE_K`) is a recall ceiling, not a relevance criterion — relevance is decided by the reranker below. The old hard-coded `topK = 10` is gone.
+- **Never pass `filter` to `asRetriever`.** `LoadVectorStore` fixes `this.filter` at construction, and a second filter makes `_searchSupabase` throw `"cannot provide both filter and this.filter"`.
+- `asRetriever` embeds the query internally, so this is still **one** embedding call per search. The service no longer injects `VOYAGE_EMBEDDINGS`.
+- `ContextualCompressionRetriever` comes from **`@langchain/classic`**, not `langchain` — the classic retrievers moved packages and `langchain@1.2.x` no longer exports them.
+- The `as unknown as BaseRetrieverInterface` cast on the base retriever is packaging friction, not a real mismatch: under `NodeNext`, `@langchain/community` resolves its CJS typings back to the ESM ones, so both packages see the same declaration under two identities. Removing the cast breaks `bun run build`.
+
+### RerankDocuments — src/components/ArtificialIntelligence/RerankDocuments/rerank-documents.service.ts
+
+`execute()` returns a `VoyageRerankCompressor extends BaseDocumentCompressor` (from `@langchain/classic/retrievers/document_compressors`) wrapping the `VOYAGE_RERANK_SERVICE` token.
+
+`compressDocuments(documents, query)`:
+
+1. Empty input → `[]`, without calling the API.
+2. `rerank(query, documents.map((d) => d.pageContent))` → Voyage `POST /v1/rerank`; results arrive sorted by descending relevance, so filter-then-slice preserves the ranking.
+3. Keep `relevanceScore >= config.vectorSearchMinScore` (default **0.8**), cap at `config.vectorSearchMaxResults` (default 10), stamp `metadata.relevance_score`.
+4. Nothing clears the bar → `logger.warn` with the best score seen, return `[]`.
+
+- **Why the threshold lives on the rerank score and not on the cosine score.** `match_documents` already returns rows ordered by `embedding <=> query_embedding`, so filtering on that same similarity adds no signal the ordering did not already carry — and a bi-encoder's scale is not comparable across queries. The cross-encoder scores query and document _together_, so a fixed cutoff is meaningful. Measured against pt-BR content: direct answers 0.87–0.96, partial matches ~0.76, related-but-wrong ~0.49, off-topic 0.20–0.34.
+- Tuning is **env-only** (`VECTOR_SEARCH_MIN_SCORE`, `VECTOR_SEARCH_MAX_RESULTS`, `VECTOR_SEARCH_CANDIDATE_K`) and deliberately **not** a column on `agents` — `synchronize: true` would alter the live schema on boot.
+- The reranker consumes the same Voyage quota as the embeddings, so a search now costs **two** Voyage calls instead of one.
 
 ## Site ingestion — src/components/ArtificialIntelligence/LoadAgentSites/load-agent-sites.service.ts
 
@@ -135,8 +155,8 @@ Note: the controller treats `body.sites` as a string (passed straight to Spider)
 
 ## Common pitfalls
 
-- **Re-enabling vector search but forgetting to ingest.** A fresh agent with `vector_search_tool=true` and zero chunks tagged with its `agent_id` will return empty `pageContent` joins; the model still tries to use the tool because the description tells it to. Either ingest sources first or disable the tool until they exist.
+- **Re-enabling vector search but forgetting to ingest.** A fresh agent with `vector_search_tool=true` and zero chunks tagged with its `agent_id` will return an empty join; the model still tries to use the tool because the description tells it to. Either ingest sources first or disable the tool until they exist. Note this looks identical to "nothing cleared the rerank threshold" — the `VoyageRerankCompressor` `logger.warn` fires only in the second case, so its absence points at ingestion/metadata.
 - **`database_tool=true` but no feature flag.** The tool will be silently absent. Check `organization_features` for the `database_connection` feature row and `organizations.database_url` before debugging why the LLM "ignored" the tool — it never saw it.
 - **Pool leak per request.** Each tool build opens a fresh TypeORM pool against the customer DB; nothing closes it explicitly today. Monitor connection counts on the customer side if the org gets heavy traffic.
 - **Changing the deny regex.** It's a `\b...\b` word-boundary match; an SQL identifier coincidentally containing one of those words (e.g., a column named `dropbox_id`) is fine, but be careful with stored procedures and DO blocks if you expand the allow list.
-- **Embedding cost.** `embedQuery` runs per chat call when the agent invokes the tool. There's no caching layer. High-volume agents will spend on embeddings — consider caching keyed by `(agentId, normalizedQuery)` if usage grows.
+- **Retrieval cost is two Voyage calls per invocation** — one embed (inside `asRetriever`) plus one rerank over the candidates — on the same `VOYAGEAI_API_KEY` and the same org-wide quota. There's no caching layer. `VECTOR_SEARCH_CANDIDATE_K` drives the rerank bill directly: with ~1800-char chunks (`src/utils/chunkText.ts`) 50 candidates run ~28k rerank tokens per call. High-volume agents should consider caching keyed by `(agentId, normalizedQuery)`, or a smaller `k`.
