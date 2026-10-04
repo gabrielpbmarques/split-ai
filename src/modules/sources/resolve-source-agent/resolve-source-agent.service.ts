@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import { AgentEntity } from 'src/infrastructure/database/schema/agent.entity';
+import type { AgentEntity } from 'src/infrastructure/database/schema/agent.entity';
 import { AgentRepository } from 'src/modules/agents/repositories/agent.repository';
 import { isUuid } from 'src/shared/utils/is-uuid';
 

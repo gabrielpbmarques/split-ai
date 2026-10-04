@@ -26,12 +26,6 @@ export class OrganizationFeatureRepository {
     return !!row;
   }
 
-  /**
-   * Returns the enabled `organization_features` row for a feature key — including
-   * its `config` payload — or null when the feature is absent or disabled. Lets a
-   * caller gate on the feature and read its per-org config in a single lookup
-   * (e.g. the `database_connection` table allow-list consumed by ResolveAgent).
-   */
   async getEnabledFeature(
     organizationId: string,
     featureKey: string,

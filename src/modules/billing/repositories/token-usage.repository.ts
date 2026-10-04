@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder } from 'typeorm';
+import { Repository, type SelectQueryBuilder } from 'typeorm';
 
 import { TokenUsageEntity } from 'src/infrastructure/database/schema';
 

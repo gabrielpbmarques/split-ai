@@ -4,5 +4,5 @@ export class CheckUserRegisteredDto {
   @IsNotEmpty()
   @IsString()
   @MaxLength(20)
-  phone: string;
+  phone!: string;
 }

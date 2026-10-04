@@ -1,4 +1,4 @@
-import { Document } from 'langchain';
+import type { Document } from 'langchain';
 
 export type CustomDocument =
   | Document<Record<string, unknown>>

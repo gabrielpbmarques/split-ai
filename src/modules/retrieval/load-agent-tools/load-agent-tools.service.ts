@@ -1,11 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { DynamicStructuredTool } from 'langchain';
-import { z } from 'zod';
 
-import { AgentEntity } from 'src/infrastructure/database/schema';
+import type { AgentEntity } from 'src/infrastructure/database/schema';
 import { AppendConnectionToolsService } from 'src/modules/agent-runtime/append-connection-tools/append-connection-tools.service';
 import { LoadVectorSearchToolService } from 'src/modules/retrieval/load-vector-search-tool/load-vector-search-tool.service';
 import { MaybeLoadDatabaseToolService } from 'src/modules/retrieval/maybe-load-database-tool/maybe-load-database-tool.service';
+import type { AgentTool } from 'src/shared/contracts';
 import { buildLangchainToolFromSchema } from 'src/shared/utils/build-zod-schema';
 
 @Injectable()
@@ -20,8 +19,8 @@ export class LoadAgentToolsService {
     dbAgent: AgentEntity,
     connectionContext?: { depth: number; visited: string[] },
     scopeCompanyId?: string,
-  ): Promise<DynamicStructuredTool<z.ZodObject<any>>[]> {
-    const tools: DynamicStructuredTool<z.ZodObject<any>>[] = [];
+  ): Promise<AgentTool[]> {
+    const tools: AgentTool[] = [];
 
     if (dbAgent.parser_schema) {
       tools.push(

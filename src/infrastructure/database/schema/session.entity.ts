@@ -13,32 +13,32 @@ import { MessageEntity } from 'src/infrastructure/database/schema/message.entity
 @Entity('sessions')
 export class SessionEntity {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column({ type: 'text', nullable: true })
-  user_id: string;
+  user_id!: string;
 
   @Column({ type: 'text', nullable: false })
-  agent_id: string;
+  agent_id!: string;
 
   @Column({ type: 'uuid', nullable: true })
-  organization_id: string | null;
+  organization_id!: string | null;
 
   @OneToMany(() => MessageEntity, (message) => message.session)
-  messages: MessageEntity[];
+  messages!: MessageEntity[];
 
   @Column({ type: 'timestamp', nullable: false })
-  expires_at: Date;
+  expires_at!: Date;
 
   @Column({ type: 'boolean', nullable: false, default: false })
-  expired: boolean;
+  expired!: boolean;
 
   @CreateDateColumn()
-  created_at: Date;
+  created_at!: Date;
 
   @UpdateDateColumn()
-  updated_at: Date;
+  updated_at!: Date;
 
   @DeleteDateColumn({ type: 'timestamp', nullable: true })
-  deleted_at: Date | null;
+  deleted_at!: Date | null;
 }

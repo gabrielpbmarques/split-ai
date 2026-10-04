@@ -1,6 +1,6 @@
-import { BaseChatModel } from '@langchain/core/language_models/chat_models';
+import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
 
-import { IntegrationGateway } from 'src/infrastructure/integration/integration.state';
+import type { IntegrationGateway } from 'src/infrastructure/integration/integration.state';
 
 export const CHAT_MODEL = Symbol('CHAT_MODEL');
 

@@ -1,8 +1,8 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
 
-import { UserEntity } from 'src/infrastructure/database/schema';
-import { CreateUserDto } from 'src/modules/users/create-user/create-user.dto';
+import type { UserEntity } from 'src/infrastructure/database/schema';
+import type { CreateUserDto } from 'src/modules/users/create-user/create-user.dto';
 import { UserRepository } from 'src/modules/users/repositories/user.repository';
 
 export type CreatedUser = Pick<

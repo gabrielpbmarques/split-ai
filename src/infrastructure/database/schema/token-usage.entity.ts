@@ -14,41 +14,41 @@ import { UserEntity } from 'src/infrastructure/database/schema/user.entity';
 @Entity('token_usage')
 export class TokenUsageEntity {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column({ type: 'uuid', nullable: false })
-  organization_id: string;
+  organization_id!: string;
 
   @ManyToOne(() => OrganizationEntity)
   @JoinColumn({ name: 'organization_id' })
-  organization: OrganizationEntity;
+  organization!: OrganizationEntity;
 
   @Column({ type: 'uuid', nullable: true })
-  agent_id: string | null;
+  agent_id!: string | null;
 
   @ManyToOne(() => AgentEntity)
   @JoinColumn({ name: 'agent_id' })
-  agent: AgentEntity;
+  agent!: AgentEntity;
 
   @Column({ type: 'uuid', nullable: true })
-  user_id: string | null;
+  user_id!: string | null;
 
   @ManyToOne(() => UserEntity)
   @JoinColumn({ name: 'user_id' })
-  user: UserEntity;
+  user!: UserEntity;
 
   @Column({ type: 'int', nullable: false, default: 0 })
-  input_tokens: number;
+  input_tokens!: number;
 
   @Column({ type: 'int', nullable: false, default: 0 })
-  output_tokens: number;
+  output_tokens!: number;
 
   @Column({ type: 'int', nullable: false, default: 0 })
-  total_tokens: number;
+  total_tokens!: number;
 
   @Column({ type: 'text', nullable: true })
-  model: string | null;
+  model!: string | null;
 
   @CreateDateColumn({ name: 'created_at' })
-  created_at: Date;
+  created_at!: Date;
 }

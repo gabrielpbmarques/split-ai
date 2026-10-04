@@ -1,8 +1,8 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 
-import { Executor } from 'src/infrastructure/database/database.types';
+import type { Executor } from 'src/infrastructure/database/database.types';
 import {
-  CreditTransactionEntity,
+  type CreditTransactionEntity,
   TransactionType,
   TransactionStatus,
 } from 'src/infrastructure/database/schema/credit-transaction.entity';
@@ -21,17 +21,15 @@ export class ManageCreditsService {
     credits: number,
     type: TransactionType,
     description?: string,
-    metadata?: Record<string, any>,
+    metadata?: Record<string, unknown>,
     tx?: Executor,
   ): Promise<CreditTransactionEntity> {
-    // Get current balance
     let balance = await this.creditBalanceRepository.findByOrganizationId(
       organizationId,
       tx,
     );
 
     if (!balance) {
-      // Create initial balance if doesn't exist
       balance = await this.creditBalanceRepository.create(
         {
           organization_id: organizationId,
@@ -48,7 +46,6 @@ export class ManageCreditsService {
     let balanceAfter = balanceBefore;
     let amount = credits;
 
-    // Calculate balance changes based on transaction type
     switch (type) {
       case TransactionType.PURCHASE:
       case TransactionType.BONUS:
@@ -61,15 +58,14 @@ export class ManageCreditsService {
           throw new BadRequestException('Insufficient credits');
         }
         balanceAfter = balanceBefore - credits;
-        amount = -credits; // Negative for consumption
+        amount = -credits;
         break;
 
       case TransactionType.ADJUSTMENT:
-        balanceAfter = balanceBefore + credits; // Can be positive or negative
+        balanceAfter = balanceBefore + credits;
         break;
     }
 
-    // Create transaction record
     const transaction = await this.creditTransactionRepository.create(
       {
         organization_id: organizationId,
@@ -84,7 +80,6 @@ export class ManageCreditsService {
       tx,
     );
 
-    // Update balance
     if (type === TransactionType.CONSUMPTION) {
       await this.creditBalanceRepository.consumeCredits(
         organizationId,

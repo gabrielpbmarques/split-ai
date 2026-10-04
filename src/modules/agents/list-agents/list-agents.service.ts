@@ -1,19 +1,14 @@
 import { Injectable } from '@nestjs/common';
 
-import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import type { AuthenticatedUser } from 'src/auth/authenticated-user';
 import { AgentConnectionRepository } from 'src/modules/agent-connections/repositories/agent-connection.repository';
-import { ListAgentsDto } from 'src/modules/agents/list-agents/list-agents.dto';
+import type { ListAgentsDto } from 'src/modules/agents/list-agents/list-agents.dto';
 import { AgentRepository } from 'src/modules/agents/repositories/agent.repository';
 import {
-  PaginatedResponse,
+  type PaginatedResponse,
   toPaginatedResponse,
 } from 'src/shared/contracts/pagination';
 
-/**
- * Item da lista de agentes. `is_tool` / `is_principal` são derivados das
- * conexões (existência de qualquer linha em `agent_connections`) e dirigem o
- * gating de "Conversar"/"Conectar" no console.
- */
 interface AgentListItemView {
   id: string;
   agent_identifier: string | null;
@@ -38,7 +33,11 @@ export class ListAgentsService {
     const isAdmin = user.role === 'admin';
 
     const page = await this.agentRepository.listPaginated(
-      { organizationId: isAdmin ? undefined : user.organization_id },
+      {
+        organizationId: isAdmin
+          ? undefined
+          : (user.organization_id ?? undefined),
+      },
       dto,
       AGENT_LIST_FIELDS,
     );
@@ -46,7 +45,7 @@ export class ListAgentsService {
 
     const { principalIds, childIds } =
       await this.agentConnectionRepository.getRoleFlagsByOrganization(
-        isAdmin ? undefined : user.organization_id,
+        isAdmin ? undefined : (user.organization_id ?? undefined),
       );
 
     const items = agents.map((agent) => ({

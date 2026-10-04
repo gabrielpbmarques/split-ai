@@ -1,10 +1,10 @@
 import {
   BadRequestException,
-  ValidationError,
+  type ValidationError,
   ValidationPipe,
 } from '@nestjs/common';
 
-import { ErrorDetail } from 'src/shared/contracts/error-response';
+import type { ErrorDetail } from 'src/shared/contracts/error-response';
 
 export function flattenValidationErrors(
   errors: readonly ValidationError[],

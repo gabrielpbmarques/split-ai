@@ -1,24 +1,27 @@
-import { Global, Module, Provider } from '@nestjs/common';
+import { Global, Module, type Provider } from '@nestjs/common';
 
 import { AnthropicChatModelFactory } from 'src/infrastructure/integration/anthropic/anthropic-chat-model.factory';
 import {
   CHAT_MODEL,
-  ChatModelFactory,
+  type ChatModelFactory,
 } from 'src/infrastructure/integration/chat-model.port';
 import { TypeOrmCustomerDatabaseGateway } from 'src/infrastructure/integration/customer-database/customer-database.gateway';
 import {
   CUSTOMER_DATABASE,
-  CustomerDatabaseGateway,
+  type CustomerDatabaseGateway,
 } from 'src/infrastructure/integration/customer-database.port';
 import { ElevenLabsTextToSpeechGateway } from 'src/infrastructure/integration/eleven-labs/eleven-labs-text-to-speech.gateway';
-import { EMAIL, EmailGateway } from 'src/infrastructure/integration/email.port';
+import {
+  EMAIL,
+  type EmailGateway,
+} from 'src/infrastructure/integration/email.port';
 import {
   EMBEDDINGS,
-  EmbeddingsGateway,
+  type EmbeddingsGateway,
 } from 'src/infrastructure/integration/embeddings.port';
 import {
   FILE_STORAGE,
-  FileStorage,
+  type FileStorage,
 } from 'src/infrastructure/integration/file-storage.port';
 import { GcsFileStorageGateway } from 'src/infrastructure/integration/google/gcs-file-storage.gateway';
 import { GoogleTextToSpeechGateway } from 'src/infrastructure/integration/google/google-text-to-speech.gateway';
@@ -26,7 +29,7 @@ import { GoogleVisionOcrGateway } from 'src/infrastructure/integration/google/go
 import { IntegrationHealthIndicator } from 'src/infrastructure/integration/integration.health';
 import {
   MESSAGING,
-  MessagingGateway,
+  type MessagingGateway,
 } from 'src/infrastructure/integration/messaging.port';
 import { MockChatModelFactory } from 'src/infrastructure/integration/mock/mock-chat-model.factory';
 import { MockCustomerDatabaseGateway } from 'src/infrastructure/integration/mock/mock-customer-database.gateway';
@@ -40,26 +43,26 @@ import { MockRerankerGateway } from 'src/infrastructure/integration/mock/mock-re
 import { MockSiteCrawlerGateway } from 'src/infrastructure/integration/mock/mock-site-crawler.gateway';
 import { MockTextToSpeechGateway } from 'src/infrastructure/integration/mock/mock-text-to-speech.gateway';
 import { MockVectorStoreGateway } from 'src/infrastructure/integration/mock/mock-vector-store.gateway';
-import { OCR, OcrReader } from 'src/infrastructure/integration/ocr.port';
+import { OCR, type OcrReader } from 'src/infrastructure/integration/ocr.port';
 import {
   PAYMENTS,
-  PaymentsGateway,
+  type PaymentsGateway,
 } from 'src/infrastructure/integration/payments.port';
 import {
   RERANKER,
-  RerankerGateway,
+  type RerankerGateway,
 } from 'src/infrastructure/integration/reranker.port';
 import { SendGridEmailGateway } from 'src/infrastructure/integration/sendgrid/sendgrid-email.gateway';
 import {
   SITE_CRAWLER,
-  SiteCrawler,
+  type SiteCrawler,
 } from 'src/infrastructure/integration/site-crawler.port';
 import { SpiderSiteCrawlerGateway } from 'src/infrastructure/integration/spider/spider-site-crawler.gateway';
 import { StripePaymentsGateway } from 'src/infrastructure/integration/stripe/stripe-payments.gateway';
 import { SupabaseVectorStoreGateway } from 'src/infrastructure/integration/supabase/supabase-vector-store.gateway';
 import {
   TEXT_TO_SPEECH,
-  TextToSpeech,
+  type TextToSpeech,
 } from 'src/infrastructure/integration/text-to-speech.port';
 import { TwilioMessagingGateway } from 'src/infrastructure/integration/twilio/twilio-messaging.gateway';
 import { VECTOR_STORE } from 'src/infrastructure/integration/vector-store.port';

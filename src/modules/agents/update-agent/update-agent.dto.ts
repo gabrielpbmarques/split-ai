@@ -59,7 +59,7 @@ export class UpdateAgentDto {
   parser?: {
     name: string;
     description: string;
-    schema: any;
+    schema: Record<string, unknown>;
   };
 
   @IsOptional()

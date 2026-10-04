@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 
-import { ListAllAgentsDto } from 'src/modules/agents/list-all-agents/list-all-agents.dto';
+import type { ListAllAgentsDto } from 'src/modules/agents/list-all-agents/list-all-agents.dto';
 import {
   AgentRepository,
-  AgentWithLatestInstructions,
+  type AgentWithLatestInstructions,
 } from 'src/modules/agents/repositories/agent.repository';
 import {
-  PaginatedResponse,
+  type PaginatedResponse,
   toPaginatedResponse,
 } from 'src/shared/contracts/pagination';
 

@@ -28,5 +28,5 @@ export class GenerateAgentSourceDto {
   mimeType?: string;
 
   @IsOptional()
-  buffer?: any;
+  buffer?: Buffer;
 }

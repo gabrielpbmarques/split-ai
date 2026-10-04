@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
-import { Executor } from 'src/infrastructure/database/database.types';
+import type { Executor } from 'src/infrastructure/database/database.types';
 import { CreditBalanceEntity } from 'src/infrastructure/database/schema/credit-balance.entity';
 
 @Injectable()
@@ -34,7 +35,10 @@ export class CreditBalanceRepository {
     id: string,
     data: Partial<CreditBalanceEntity>,
   ): Promise<CreditBalanceEntity | null> {
-    await this.creditBalanceRepository.update(id, data);
+    await this.creditBalanceRepository.update(
+      id,
+      data as QueryDeepPartialEntity<CreditBalanceEntity>,
+    );
     return this.creditBalanceRepository.findOne({ where: { id } });
   }
 

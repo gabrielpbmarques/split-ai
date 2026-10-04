@@ -1,15 +1,14 @@
 import { BadRequestException, ConflictException } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test, type TestingModule } from '@nestjs/testing';
 
-import { UserEntity } from 'src/infrastructure/database/schema';
-import { SignUpDto } from 'src/modules/auth-flows/sign-up/sign-up.dto';
+import type { UserEntity } from 'src/infrastructure/database/schema';
+import type { SignUpDto } from 'src/modules/auth-flows/sign-up/sign-up.dto';
 import { SignUpService } from 'src/modules/auth-flows/sign-up/sign-up.service';
 import { UserRepository } from 'src/modules/users/repositories/user.repository';
 
 describe('SignUpService', () => {
   let service: SignUpService;
 
-  // Mock repositories
   const mockUserRepository = {
     findByEmail: jest.fn(),
     create: jest.fn(),
@@ -30,7 +29,6 @@ describe('SignUpService', () => {
 
     service = module.get<SignUpService>(SignUpService);
 
-    // Reset mocks
     jest.clearAllMocks();
   });
 
@@ -49,7 +47,6 @@ describe('SignUpService', () => {
     };
 
     it('registers an active user when the e-mail is free', async () => {
-      // Mock user does not exist
       mockUserRepository.findByEmail.mockResolvedValue(null);
       mockUserRepository.create.mockResolvedValue({
         id: '1',

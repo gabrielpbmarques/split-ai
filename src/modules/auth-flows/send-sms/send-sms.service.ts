@@ -6,13 +6,13 @@ import {
   Logger,
 } from '@nestjs/common';
 
-import { UserEntity } from 'src/infrastructure/database/schema/user.entity';
+import type { UserEntity } from 'src/infrastructure/database/schema/user.entity';
 import {
   MESSAGING,
-  MessagingGateway,
+  type MessagingGateway,
 } from 'src/infrastructure/integration/messaging.port';
 import { SmsVerificationRepository } from 'src/modules/auth-flows/repositories/sms-verification.repository';
-import { SendSmsDto } from 'src/modules/auth-flows/send-sms/send-sms.dto';
+import type { SendSmsDto } from 'src/modules/auth-flows/send-sms/send-sms.dto';
 import { UserRepository } from 'src/modules/users/repositories/user.repository';
 import { cleanPhoneNumber } from 'src/shared/utils/clean-phone-number';
 

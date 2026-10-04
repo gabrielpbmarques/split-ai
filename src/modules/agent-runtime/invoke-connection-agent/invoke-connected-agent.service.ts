@@ -3,7 +3,7 @@ import { HumanMessage } from 'langchain';
 
 import {
   AGENT_RESOLVER,
-  AgentResolver,
+  type AgentResolver,
 } from 'src/modules/agent-runtime/contracts/agent-resolver.port';
 import { env } from 'src/shared/config/env';
 import { AgentFinalResponseSchema } from 'src/shared/contracts';
@@ -30,24 +30,24 @@ export class InvokeConnectedAgentService {
       );
 
       const result = await childAgent.runnable.invoke(
-        { messages: [new HumanMessage(input)] } as any,
+        { messages: [new HumanMessage(input)] },
         {
           configurable: { thread_id: `conn_${childAgent.id}` },
-          tags: [env.NODE_ENV, childAgent.id, childAgent.organization_id],
+          tags: [
+            env.NODE_ENV,
+            childAgent.id,
+            childAgent.organization_id,
+          ].filter((tag): tag is string => Boolean(tag)),
         },
       );
 
       const parsed = AgentFinalResponseSchema.safeParse(
-        (result as any)?.structuredResponse,
+        result.structuredResponse,
       );
-      if (parsed.success) {
-        return parsed.data.finalAnswer;
-      }
 
-      return (
-        (result as any)?.structuredResponse?.finalAnswer ??
-        'O agente conectado não retornou uma resposta.'
-      );
+      return parsed.success
+        ? parsed.data.finalAnswer
+        : 'O agente conectado não retornou uma resposta.';
     } catch {
       return 'O agente conectado não está disponível no momento.';
     }

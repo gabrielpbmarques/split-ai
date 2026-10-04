@@ -1,12 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
-import { Executor } from 'src/infrastructure/database/database.types';
+import type { Executor } from 'src/infrastructure/database/database.types';
 import { UserEntity } from 'src/infrastructure/database/schema';
 import {
-  PageRequest,
-  PageResult,
+  type PageRequest,
+  type PageResult,
   skipOf,
 } from 'src/shared/contracts/pagination';
 
@@ -133,7 +134,7 @@ export class UserRepository {
   ): Promise<UserEntity | null> {
     await (tx ? tx.getRepository(UserEntity) : this.userRepository).update(
       id,
-      data,
+      data as QueryDeepPartialEntity<UserEntity>,
     );
     return this.findById(id);
   }

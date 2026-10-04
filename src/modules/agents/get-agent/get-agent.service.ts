@@ -1,12 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { AccessScopeService } from 'src/auth/access-scope.service';
-import { AuthenticatedUser } from 'src/auth/authenticated-user';
-import { AgentEntity } from 'src/infrastructure/database/schema';
+import type { AuthenticatedUser } from 'src/auth/authenticated-user';
+import type { AgentEntity } from 'src/infrastructure/database/schema';
 import { AgentConnectionRepository } from 'src/modules/agent-connections/repositories/agent-connection.repository';
 import { AgentInstructionRepository } from 'src/modules/agents/repositories/agent-instruction.repository';
 import { AgentRepository } from 'src/modules/agents/repositories/agent.repository';
-import { AIInstructions } from 'src/shared/contracts';
+import type { AIInstructions } from 'src/shared/contracts';
 import { isUuid } from 'src/shared/utils/is-uuid';
 
 export interface AgentDetails {
@@ -18,7 +18,11 @@ export interface AgentDetails {
   withHistory: boolean;
   organization_id: string | null;
   sites: string[] | null;
-  parser: { name: string; description: string; schema: unknown } | null;
+  parser: {
+    name: string | null;
+    description: string | null;
+    schema: unknown;
+  } | null;
   instructions: AIInstructions | null;
   isTool: boolean;
   isPrincipal: boolean;
@@ -65,7 +69,7 @@ export class GetAgentService {
       temperature: agent.temperature,
       withHistory: agent.with_history,
       organization_id: agent.organization_id ?? null,
-      sites: (agent as any).sites ?? null,
+      sites: agent.sites ?? null,
       parser: agent.parser_schema
         ? {
             name: agent.parser_name,

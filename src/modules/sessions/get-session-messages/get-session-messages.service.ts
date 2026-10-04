@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 
 import { AccessScopeService } from 'src/auth/access-scope.service';
-import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import type { AuthenticatedUser } from 'src/auth/authenticated-user';
 import { AgentRepository } from 'src/modules/agents/repositories/agent.repository';
 import { CreditTransactionRepository } from 'src/modules/billing/repositories/credit-transaction.repository';
 import { MessageRepository } from 'src/modules/sessions/repositories/message.repository';
@@ -47,7 +47,6 @@ export class GetSessionMessagesService {
     user: AuthenticatedUser,
     sessionId: string,
   ): Promise<ConversationDetail> {
-    // Get session
     const sessionEntity = await this.sessionRepository.findById(sessionId);
 
     if (!sessionEntity) {
@@ -69,7 +68,6 @@ export class GetSessionMessagesService {
       throw new ForbiddenException('Acesso negado');
     }
 
-    // Attempt to get Agent name
     let agentName = 'Unknown Agent';
     if (sessionEntity.agent_id) {
       const agent = await this.agentRepository.findById(sessionEntity.agent_id);
@@ -78,7 +76,6 @@ export class GetSessionMessagesService {
       }
     }
 
-    // Attempt to get User info
     let userName = 'Anonymous';
     let userEmail = '';
     if (sessionEntity.user_id) {
@@ -89,13 +86,11 @@ export class GetSessionMessagesService {
       }
     }
 
-    // Get messages
     const messages = await this.messageRepository.listBySession(
       sessionId,
       MESSAGE_FIELDS,
     );
 
-    // Calculate credits used
     const creditsUsed =
       await this.creditTransactionRepository.getSessionConsumption(sessionId);
 

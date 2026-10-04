@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { AccessScopeService } from 'src/auth/access-scope.service';
-import { AuthenticatedUser } from 'src/auth/authenticated-user';
-import { SourceEntity } from 'src/infrastructure/database/schema/source.entity';
+import type { AuthenticatedUser } from 'src/auth/authenticated-user';
+import type { SourceEntity } from 'src/infrastructure/database/schema/source.entity';
 import { SourceRepository } from 'src/modules/sources/repositories/source.repository';
 
 @Injectable()

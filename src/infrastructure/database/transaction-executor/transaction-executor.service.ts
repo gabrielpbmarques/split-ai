@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 
-import { Executor } from 'src/infrastructure/database/database.types';
+import type { Executor } from 'src/infrastructure/database/database.types';
 
 @Injectable()
 export class TransactionExecutor {

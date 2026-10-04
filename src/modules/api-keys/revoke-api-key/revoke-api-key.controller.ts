@@ -9,6 +9,7 @@ import {
 import { FastifyReply } from 'fastify';
 
 import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import { requireOrganizationId } from 'src/auth/request-user';
 import { RevokeApiKeyDto } from 'src/modules/api-keys/revoke-api-key/revoke-api-key.dto';
 import { RevokeApiKeyService } from 'src/modules/api-keys/revoke-api-key/revoke-api-key.service';
 import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
@@ -32,7 +33,7 @@ export class RevokeApiKeyController {
   ): Promise<FastifyReply> {
     const result = await this.revokeApiKeyService.execute(
       dto,
-      user.organization_id,
+      requireOrganizationId(user),
     );
     return res.status(200).send(result);
   }

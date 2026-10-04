@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { ZodError } from 'zod';
 
-import {
+import type {
   ErrorCategory,
   ErrorDetail,
   ErrorResponse,

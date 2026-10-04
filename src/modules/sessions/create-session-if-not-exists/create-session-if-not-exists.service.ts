@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import moment from 'moment';
 
-import { SessionEntity } from 'src/infrastructure/database/schema';
-import { CreateSessionIfNotExistsDto } from 'src/modules/sessions/create-session-if-not-exists/create-session-if-not-exists.dto';
+import type { SessionEntity } from 'src/infrastructure/database/schema';
+import type { CreateSessionIfNotExistsDto } from 'src/modules/sessions/create-session-if-not-exists/create-session-if-not-exists.dto';
 import { SessionRepository } from 'src/modules/sessions/repositories/session.repository';
 
 @Injectable()
@@ -14,11 +14,12 @@ export class CreateSessionIfNotExistsService {
     createNew: boolean = false,
   ): Promise<SessionEntity> {
     const { agent_id, user_id, organization_id } = dto;
-    const activeSession =
-      await this.sessionRepository.findActiveSessionByUserAndAgent(
-        user_id,
-        agent_id,
-      );
+    const activeSession = user_id
+      ? await this.sessionRepository.findActiveSessionByUserAndAgent(
+          user_id,
+          agent_id,
+        )
+      : null;
 
     if (activeSession && !createNew) return activeSession;
 

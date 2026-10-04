@@ -13,13 +13,13 @@ export class VerifySmsDto {
   @Matches(/^\d{10,13}$/, {
     message: 'Telefone deve conter apenas números (10-13 dígitos)',
   })
-  phone: string;
+  phone!: string;
 
   @IsString()
   @IsNotEmpty()
   @Length(6, 6, { message: 'Código deve ter exatamente 6 dígitos' })
   @Matches(/^\d{6}$/, { message: 'Código deve conter apenas números' })
-  code: string;
+  code!: string;
 
   @IsOptional()
   @IsString()

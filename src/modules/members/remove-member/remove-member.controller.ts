@@ -9,6 +9,7 @@ import {
 import { FastifyReply } from 'fastify';
 
 import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import { requireOrganizationId } from 'src/auth/request-user';
 import { RemoveMemberDto } from 'src/modules/members/remove-member/remove-member.dto';
 import { RemoveMemberService } from 'src/modules/members/remove-member/remove-member.service';
 import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
@@ -32,7 +33,7 @@ export class RemoveMemberController {
   ): Promise<FastifyReply> {
     await this.removeMemberService.execute(
       dto,
-      user.organization_id,
+      requireOrganizationId(user),
       user.id ?? null,
     );
     return res.status(204).send();

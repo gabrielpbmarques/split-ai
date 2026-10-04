@@ -1,5 +1,5 @@
-import { RerankResult } from 'src/infrastructure/integration/reranker.port';
-import { VoyageRerankResponse } from 'src/infrastructure/integration/voyage/voyage.contracts';
+import type { RerankResult } from 'src/infrastructure/integration/reranker.port';
+import type { VoyageRerankResponse } from 'src/infrastructure/integration/voyage/voyage.contracts';
 
 export function mapRerankResponse(
   response: VoyageRerankResponse,

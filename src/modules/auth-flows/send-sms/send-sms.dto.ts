@@ -12,7 +12,7 @@ export class SendSmsDto {
   @Matches(/^\d{10,13}$/, {
     message: 'Telefone deve conter apenas números (10-13 dígitos)',
   })
-  phone: string;
+  phone!: string;
 
   @IsOptional()
   @IsString()

@@ -1,4 +1,4 @@
-import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
+import type { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
 
 import { env } from 'src/shared/config/env';
@@ -6,6 +6,8 @@ import {
   generateRequestId,
   registerRequestContext,
 } from 'src/shared/observability/correlation';
+
+type AdapterPlugin = Parameters<FastifyAdapter['register']>[0];
 
 const MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
 const MAX_UPLOAD_FILES = 5;
@@ -18,7 +20,7 @@ export async function createFastifyAdapter(): Promise<FastifyAdapter> {
   });
 
   const { default: helmet } = await import('@fastify/helmet');
-  await adapter.register(helmet as any, {
+  await adapter.register(helmet as unknown as AdapterPlugin, {
     contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false,
     crossOriginResourcePolicy: false,
@@ -26,7 +28,7 @@ export async function createFastifyAdapter(): Promise<FastifyAdapter> {
   });
 
   const { default: multipart } = await import('@fastify/multipart');
-  await adapter.register(multipart as any, {
+  await adapter.register(multipart as unknown as AdapterPlugin, {
     attachFieldsToBody: true,
     limits: { fileSize: MAX_UPLOAD_BYTES, files: MAX_UPLOAD_FILES },
   });

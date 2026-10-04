@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 
-import { AuthenticatedUser } from 'src/auth/authenticated-user';
-import { UserEntity } from 'src/infrastructure/database/schema';
+import type { AuthenticatedUser } from 'src/auth/authenticated-user';
+import type { UserEntity } from 'src/infrastructure/database/schema';
 import { GenerateAiResponseService } from 'src/modules/agent-runtime/generate-ai-response/generate-ai-response.service';
 import { ResolveAgentService } from 'src/modules/agent-runtime/resolve-agent/resolve-agent.service';
-import { QuestionDto } from 'src/modules/chat/question/question.dto';
+import type { QuestionDto } from 'src/modules/chat/question/question.dto';
 import { RecordChatMessageService } from 'src/modules/chat/record-chat-message/record-chat-message.service';
 import { CreateSessionIfNotExistsService } from 'src/modules/sessions/create-session-if-not-exists/create-session-if-not-exists.service';
 
@@ -39,10 +39,9 @@ export class AttendantService {
     const session = await this.createSessionIfNotExistsService.execute({
       agent_id: agent.id,
       user_id: user.id,
-      organization_id: agent.organization_id,
+      organization_id: agent.organization_id ?? undefined,
     });
 
-    // Record user message
     await this.recordChatMessageService.execute(
       session.id,
       user.id,
@@ -62,7 +61,6 @@ export class AttendantService {
       false,
     );
 
-    // Record agent message
     if (aiResponse) {
       await this.recordChatMessageService.execute(
         session.id,
@@ -75,6 +73,8 @@ export class AttendantService {
       );
     }
 
-    return aiResponse;
+    return typeof aiResponse === 'string'
+      ? aiResponse
+      : JSON.stringify(aiResponse);
   }
 }

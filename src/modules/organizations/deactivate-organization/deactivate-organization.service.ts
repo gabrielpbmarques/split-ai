@@ -2,7 +2,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 
 import { PrincipalResolverService } from 'src/auth/principal-resolver.service';
 import { OrganizationRepository } from 'src/modules/organizations/repositories/organization.repository';
-import { OrganizationStatus } from 'src/shared/contracts';
+import type { OrganizationStatus } from 'src/shared/contracts';
 
 @Injectable()
 export class DeactivateOrganizationService {

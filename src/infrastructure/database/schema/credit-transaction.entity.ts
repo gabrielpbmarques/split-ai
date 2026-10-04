@@ -29,63 +29,63 @@ export enum TransactionStatus {
 @Entity('credit_transactions')
 export class CreditTransactionEntity {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column({ type: 'uuid' })
-  organization_id: string;
+  organization_id!: string;
 
   @Column({ type: 'uuid', nullable: true })
-  user_id: string;
+  user_id!: string;
 
   @Column({
     type: 'enum',
     enum: TransactionType,
   })
-  type: TransactionType;
+  type!: TransactionType;
 
   @Column({ type: 'int' })
-  amount: number;
+  amount!: number;
 
   @Column({ type: 'int' })
-  balance_before: number;
+  balance_before!: number;
 
   @Column({ type: 'int' })
-  balance_after: number;
+  balance_after!: number;
 
   @Column({ type: 'text', nullable: true })
-  description: string;
+  description!: string;
 
   @Column({ type: 'jsonb', nullable: true })
-  metadata: Record<string, any>;
+  metadata!: Record<string, unknown>;
 
   @Column({
     type: 'enum',
     enum: TransactionStatus,
     default: TransactionStatus.COMPLETED,
   })
-  status: TransactionStatus;
+  status!: TransactionStatus;
 
   @Column({ type: 'uuid', nullable: true })
-  plan_id: string;
+  plan_id!: string;
 
   @Column({ type: 'uuid', nullable: true })
-  payment_id: string;
+  payment_id!: string;
 
   @Column({ type: 'uuid', nullable: true })
-  session_id: string;
+  session_id!: string;
 
   @CreateDateColumn({ name: 'created_at' })
-  created_at: Date;
+  created_at!: Date;
 
   @ManyToOne(() => OrganizationEntity)
   @JoinColumn({ name: 'organization_id' })
-  organization: OrganizationEntity;
+  organization!: OrganizationEntity;
 
   @ManyToOne(() => UserEntity, { nullable: true })
   @JoinColumn({ name: 'user_id' })
-  user: UserEntity;
+  user!: UserEntity;
 
   @ManyToOne(() => PlanEntity, { nullable: true })
   @JoinColumn({ name: 'plan_id' })
-  plan: PlanEntity;
+  plan!: PlanEntity;
 }

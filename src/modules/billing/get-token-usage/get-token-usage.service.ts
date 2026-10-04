@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import { GetTokenUsageDto } from 'src/modules/billing/get-token-usage/get-token-usage.dto';
+import type { GetTokenUsageDto } from 'src/modules/billing/get-token-usage/get-token-usage.dto';
 import { TokenUsageRepository } from 'src/modules/billing/repositories/token-usage.repository';
 
 export interface TokenUsageReport {

@@ -4,8 +4,8 @@ import { Repository } from 'typeorm';
 
 import { SourceEntity } from 'src/infrastructure/database/schema/source.entity';
 import {
-  PageRequest,
-  PageResult,
+  type PageRequest,
+  type PageResult,
   skipOf,
 } from 'src/shared/contracts/pagination';
 

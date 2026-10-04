@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-import { RecordTokenUsageDto } from 'src/modules/billing/record-token-usage/record-token-usage.dto';
+import type { RecordTokenUsageDto } from 'src/modules/billing/record-token-usage/record-token-usage.dto';
 import { TokenUsageRepository } from 'src/modules/billing/repositories/token-usage.repository';
 
 @Injectable()
@@ -17,10 +17,10 @@ export class RecordTokenUsageService {
         output_tokens: params.output_tokens || 0,
         total_tokens: params.total_tokens || 0,
       });
-    } catch (error: any) {
+    } catch (error) {
       this.logger.error(
-        `Failed to record token usage for organization ${params.organization_id}: ${error.message}`,
-        error.stack,
+        `Falha ao registrar uso de tokens da organização ${params.organization_id}`,
+        error instanceof Error ? error.stack : String(error),
       );
     }
   }

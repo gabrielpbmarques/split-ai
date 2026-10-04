@@ -19,39 +19,39 @@ import { OrganizationEntity } from 'src/infrastructure/database/schema/organizat
 })
 export class CreditBalanceEntity {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column({ type: 'uuid' })
-  organization_id: string;
+  organization_id!: string;
 
   @Column({ type: 'int', default: 0 })
-  total_credits: number;
+  total_credits!: number;
 
   @Column({ type: 'int', default: 0 })
-  used_credits: number;
+  used_credits!: number;
 
   @Column({ type: 'int', default: 0 })
-  available_credits: number;
+  available_credits!: number;
 
   @Column({ type: 'int', default: 0 })
-  reserved_credits: number;
+  reserved_credits!: number;
 
   @Column({ type: 'timestamp', nullable: true })
-  last_consumption_at: Date;
+  last_consumption_at!: Date;
 
   @Column({ type: 'timestamp', nullable: true })
-  last_purchase_at: Date;
+  last_purchase_at!: Date;
 
   @CreateDateColumn({ name: 'created_at' })
-  created_at: Date;
+  created_at!: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updated_at: Date;
+  updated_at!: Date;
 
   @DeleteDateColumn({ type: 'timestamp', nullable: true })
-  deleted_at: Date | null;
+  deleted_at!: Date | null;
 
   @OneToOne(() => OrganizationEntity)
   @JoinColumn({ name: 'organization_id' })
-  organization: OrganizationEntity;
+  organization!: OrganizationEntity;
 }

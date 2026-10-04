@@ -4,10 +4,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
-import { AuthenticatedUser } from 'src/auth/authenticated-user';
-import { AgentConnectionEntity } from 'src/infrastructure/database/schema';
+import type { AuthenticatedUser } from 'src/auth/authenticated-user';
+import { requireOrganizationId } from 'src/auth/request-user';
+import type { AgentConnectionEntity } from 'src/infrastructure/database/schema';
 import { AgentConnectionRepository } from 'src/modules/agent-connections/repositories/agent-connection.repository';
-import { UpdateAgentConnectionDto } from 'src/modules/agent-connections/update-agent-connection/update-agent-connection.dto';
+import type { UpdateAgentConnectionDto } from 'src/modules/agent-connections/update-agent-connection/update-agent-connection.dto';
 
 @Injectable()
 export class UpdateAgentConnectionService {
@@ -24,7 +25,7 @@ export class UpdateAgentConnectionService {
       ? await this.agentConnectionRepository.findById(dto.id)
       : await this.agentConnectionRepository.findByIdForOrganization(
           dto.id,
-          user.organization_id,
+          requireOrganizationId(user),
         );
     if (!connection) {
       throw new NotFoundException('Conexão não encontrada.');

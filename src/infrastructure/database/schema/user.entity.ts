@@ -13,7 +13,7 @@ import {
 
 import { AgentEntity } from 'src/infrastructure/database/schema/agent.entity';
 import { OrganizationEntity } from 'src/infrastructure/database/schema/organization.entity';
-import type {
+import {
   OrgRole,
   UserOrigin,
   UserRole,
@@ -27,69 +27,67 @@ import type {
 })
 export class UserEntity {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column({ type: 'text', nullable: true })
-  name: string;
+  name!: string;
 
   @Column({ type: 'text', nullable: true })
-  email: string;
+  email!: string;
 
   @Column({ type: 'text', nullable: true })
-  password_hash: string;
+  password_hash!: string;
 
   @Column({
     type: 'enum',
     enum: ['user', 'admin', 'guest'],
     default: 'user',
   })
-  role: UserRole;
+  role!: UserRole;
 
-  // Capability level within the organization (owner > admin > member).
   @Column({
     type: 'enum',
     enum: ['owner', 'admin', 'member'],
     default: 'member',
   })
-  org_role: OrgRole;
+  org_role!: OrgRole;
 
   @Column({ type: 'text', nullable: true })
-  phone: string;
+  phone!: string;
 
   @Column({
     type: 'enum',
     enum: ['active', 'inactive'],
     default: 'inactive',
   })
-  status: UserStatus;
+  status!: UserStatus;
 
-  // SHA-256 hash of a pending invitation token (null once the invite is accepted).
   @Column({ type: 'text', nullable: true })
-  invite_token_hash: string | null;
+  invite_token_hash!: string | null;
 
   @Column({ type: 'uuid', nullable: true })
-  organization_id: string | null;
+  organization_id!: string | null;
 
   @ManyToOne(() => OrganizationEntity, (organization) => organization.users)
   @JoinColumn({ name: 'organization_id' })
-  organization: OrganizationEntity;
+  organization!: OrganizationEntity;
 
-  @OneToMany(() => AgentEntity, (agent: any) => agent.user)
-  agents: AgentEntity[];
+  @OneToMany(() => AgentEntity, (agent) => agent.user)
+  agents!: AgentEntity[];
 
   @Column({
     type: 'enum',
     enum: ['whatsapp', 'website', 'app'],
     default: 'website',
   })
-  origin: UserOrigin;
+  origin!: UserOrigin;
 
   @CreateDateColumn({ name: 'created_at' })
-  created_at: Date;
+  created_at!: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updated_at: Date;
+  updated_at!: Date;
 
   @DeleteDateColumn({ type: 'timestamp', nullable: true })
-  deleted_at: Date | null;
+  deleted_at!: Date | null;
 }

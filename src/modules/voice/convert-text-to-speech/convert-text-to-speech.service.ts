@@ -1,16 +1,16 @@
+import { mkdir, writeFile } from 'fs/promises';
 import path from 'path';
 
 import { Injectable, Inject } from '@nestjs/common';
-import fs from 'fs-extra';
 import { v4 as uuidv4 } from 'uuid';
 
 import {
   FILE_STORAGE,
-  FileStorage,
+  type FileStorage,
 } from 'src/infrastructure/integration/file-storage.port';
 import {
   TEXT_TO_SPEECH,
-  TextToSpeech,
+  type TextToSpeech,
 } from 'src/infrastructure/integration/text-to-speech.port';
 
 export interface ConvertTextToSpeechResult {
@@ -30,12 +30,12 @@ export class ConvertTextToSpeechService {
     const audioContent = await this.textToSpeech.synthesize(text);
 
     const uploadsDir = path.join(process.cwd(), 'uploads', 'audio');
-    await fs.ensureDir(uploadsDir);
+    await mkdir(uploadsDir, { recursive: true });
 
     const fileName = `${uuidv4()}.mp3`;
     const audioPath = path.join(uploadsDir, fileName);
 
-    await fs.writeFile(audioPath, audioContent);
+    await writeFile(audioPath, audioContent);
 
     const publicUrl = await this.fileStorage.uploadAudio(audioPath, fileName);
 

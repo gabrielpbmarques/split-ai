@@ -9,6 +9,7 @@ import {
 import { FastifyReply } from 'fastify';
 
 import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import { requireOrganizationId } from 'src/auth/request-user';
 import { ListMembersDto } from 'src/modules/members/list-members/list-members.dto';
 import { ListMembersService } from 'src/modules/members/list-members/list-members.service';
 import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
@@ -31,7 +32,7 @@ export class ListMembersController {
     @Body() dto: ListMembersDto,
   ): Promise<FastifyReply> {
     const result = await this.listMembersService.execute(
-      user.organization_id,
+      requireOrganizationId(user),
       dto,
     );
     return res.status(200).send(result);

@@ -1,17 +1,17 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { DynamicStructuredTool, tool } from 'langchain';
+import { type DynamicStructuredTool, tool } from 'langchain';
 import z from 'zod';
 
 import {
   assertScoped,
   sanitizeSqlQuery,
-  SqlScope,
+  type SqlScope,
 } from 'src/infrastructure/integration/customer-database/sql-guard';
 import {
   CUSTOMER_DATABASE,
-  CustomerDatabaseGateway,
-  CustomerDatabaseOptions,
-  SqlDialect,
+  type CustomerDatabaseGateway,
+  type CustomerDatabaseOptions,
+  type SqlDialect,
 } from 'src/infrastructure/integration/customer-database.port';
 
 export interface LoadDatabaseToolInput {

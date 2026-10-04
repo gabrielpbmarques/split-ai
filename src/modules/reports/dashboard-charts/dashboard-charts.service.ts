@@ -1,16 +1,22 @@
 import { Injectable } from '@nestjs/common';
-import { Between } from 'typeorm';
 
-import { AuthenticatedUser } from 'src/auth/authenticated-user';
-import { TokenUsageRepository } from 'src/modules/billing/repositories/token-usage.repository';
+import type { AuthenticatedUser } from 'src/auth/authenticated-user';
 import {
+  type TokenUsageFilters,
+  TokenUsageRepository,
+} from 'src/modules/billing/repositories/token-usage.repository';
+import type {
   DashboardChartsDto,
   DashboardCharts,
   ChartData,
 } from 'src/modules/reports/dashboard-charts/dashboard-charts.dto';
-import { ReportRepository } from 'src/modules/reports/repositories/report.repository';
+import {
+  type ReportFilters,
+  ReportRepository,
+} from 'src/modules/reports/repositories/report.repository';
 import { MessageRepository } from 'src/modules/sessions/repositories/message.repository';
 import { SessionRepository } from 'src/modules/sessions/repositories/session.repository';
+import { scopedOrganizationId } from 'src/shared/utils/scoped-organization-id';
 
 @Injectable()
 export class DashboardChartsService {
@@ -27,7 +33,6 @@ export class DashboardChartsService {
   ): Promise<DashboardCharts> {
     const { startDate, endDate } = this.getDateRange(dto);
 
-    // Get sentiment data
     const sentimentData = await this.getSentimentData(
       user,
       startDate,
@@ -35,7 +40,6 @@ export class DashboardChartsService {
       dto.agentId,
     );
 
-    // Get conversations data
     const conversationsData = await this.getConversationsData(
       user,
       startDate,
@@ -43,7 +47,6 @@ export class DashboardChartsService {
       dto.agentId,
     );
 
-    // Get tokens data
     const tokensData = await this.getTokensData(
       user,
       startDate,
@@ -64,22 +67,9 @@ export class DashboardChartsService {
     endDate: Date,
     agentId?: string,
   ): Promise<ChartData> {
-    const where: any = {
-      created_at: Between(startDate, endDate),
-    };
-
-    if (user.role !== 'admin' && user.organization_id) {
-      where.organization_id = user.organization_id;
-    }
-
-    if (agentId) {
-      where.agent_id = agentId;
-    }
-
-    // Get sentiment counts from reports
-    const filters = {
-      organization_id: where.organization_id,
-      agent_id: where.agent_id,
+    const filters: ReportFilters = {
+      organization_id: scopedOrganizationId(user),
+      agent_id: agentId,
       startDate,
       endDate,
     };
@@ -106,10 +96,10 @@ export class DashboardChartsService {
     endDate: Date,
     agentId?: string,
   ): Promise<ChartData> {
-    const labels = [];
-    const data = [];
+    const labels: string[] = [];
+    const data: number[] = [];
+    const organizationId = scopedOrganizationId(user);
 
-    // Generate daily labels and get counts
     const currentDate = new Date(startDate);
     while (currentDate <= endDate) {
       const dayStart = new Date(currentDate);
@@ -117,21 +107,9 @@ export class DashboardChartsService {
       const dayEnd = new Date(currentDate);
       dayEnd.setHours(23, 59, 59, 999);
 
-      const where: any = {
-        created_at: Between(dayStart, dayEnd),
-      };
-
-      if (user.role !== 'admin' && user.organization_id) {
-        where.organization_id = user.organization_id;
-      }
-
-      if (agentId) {
-        where.agent_id = agentId;
-      }
-
       const count = await this.sessionRepository.countByFilter({
-        organizationId: where.organization_id,
-        agentId: where.agent_id,
+        organizationId,
+        agentId,
         createdBetween: [dayStart, dayEnd],
       });
 
@@ -143,7 +121,6 @@ export class DashboardChartsService {
       currentDate.setDate(currentDate.getDate() + 1);
     }
 
-    // Limit to last 7 days for readability
     const limitedLabels = labels.slice(-7);
     const limitedData = data.slice(-7);
 
@@ -167,10 +144,10 @@ export class DashboardChartsService {
     endDate: Date,
     agentId?: string,
   ): Promise<ChartData> {
-    const labels = [];
-    const data = [];
+    const labels: string[] = [];
+    const data: number[] = [];
+    const organizationId = scopedOrganizationId(user);
 
-    // Get monthly data for last 6 months
     const monthsToShow = 6;
     const currentDate = new Date(endDate);
     currentDate.setMonth(currentDate.getMonth() - monthsToShow + 1);
@@ -191,26 +168,19 @@ export class DashboardChartsService {
         999,
       );
 
-      // Build query with proper joins
-      const tokenFilters: any = {
+      const tokenFilters: TokenUsageFilters = {
         start_date: monthStart,
         end_date: monthEnd,
+        organization_id: organizationId,
+        agent_id: agentId,
       };
-
-      if (user.role !== 'admin' && user.organization_id) {
-        tokenFilters.organization_id = user.organization_id;
-      }
-
-      if (agentId) {
-        tokenFilters.agent_id = agentId;
-      }
 
       const tokenStats =
         await this.tokenUsageRepository.getTotals(tokenFilters);
       const tokens = tokenStats.total_tokens;
 
       labels.push(monthStart.toLocaleDateString('pt-BR', { month: 'short' }));
-      data.push(Math.round(tokens / 1000)); // Convert to thousands
+      data.push(Math.round(tokens / 1000));
 
       currentDate.setMonth(currentDate.getMonth() + 1);
     }

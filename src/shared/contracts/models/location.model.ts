@@ -18,5 +18,5 @@ export interface Location {
   number: string;
   created_by: string;
   created_at: Date;
-  geom?: any; // Tipo geometry(Point, 4326) do PostGIS
+  geom?: unknown;
 }

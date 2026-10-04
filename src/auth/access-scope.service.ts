@@ -1,7 +1,7 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 
-import { AuthenticatedUser } from 'src/auth/authenticated-user';
-import { Permission } from 'src/auth/permissions';
+import type { AuthenticatedUser } from 'src/auth/authenticated-user';
+import type { Permission } from 'src/auth/permissions';
 
 export interface OrganizationScope {
   readonly organizationId: string | null | undefined;

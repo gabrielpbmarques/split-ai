@@ -3,8 +3,6 @@ import { Injectable } from '@nestjs/common';
 @Injectable()
 export class GetEmbedScriptService {
   execute(): string {
-    // The script determines its own base URL from the script src
-    // and injects a floating button + iframe to open the chat widget.
     return `(() => {
   const script = document.currentScript;
   if (!script) return;

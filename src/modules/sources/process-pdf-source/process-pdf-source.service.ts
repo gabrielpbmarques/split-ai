@@ -2,10 +2,10 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import {
   VECTOR_STORE,
-  VectorStoreGateway,
+  type VectorStoreGateway,
 } from 'src/infrastructure/integration/vector-store.port';
 import { LoadPdfService } from 'src/modules/sources/load-pdf/load-pdf.service';
-import { ProcessSourceInput } from 'src/shared/contracts';
+import type { ProcessSourceInput } from 'src/shared/contracts';
 import { buildSourceMetadata } from 'src/shared/utils/build-source-metadata';
 
 @Injectable()

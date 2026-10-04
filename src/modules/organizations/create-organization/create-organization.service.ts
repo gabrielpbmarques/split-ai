@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { BadRequestException } from '@nestjs/common';
 
-import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import type { AuthenticatedUser } from 'src/auth/authenticated-user';
 import { TransactionType } from 'src/infrastructure/database/schema/credit-transaction.entity';
-import { OrganizationEntity } from 'src/infrastructure/database/schema/organization.entity';
+import type { OrganizationEntity } from 'src/infrastructure/database/schema/organization.entity';
 import { PlanType } from 'src/infrastructure/database/schema/plan.entity';
 import { TransactionExecutor } from 'src/infrastructure/database/transaction-executor/transaction-executor.service';
 import { ManageCreditsService } from 'src/modules/billing/manage-credits/manage-credits.service';
 import { PlanRepository } from 'src/modules/billing/repositories/plan.repository';
-import { CreateOrganizationDto } from 'src/modules/organizations/create-organization/create-organization.dto';
+import type { CreateOrganizationDto } from 'src/modules/organizations/create-organization/create-organization.dto';
 import { OrganizationRepository } from 'src/modules/organizations/repositories/organization.repository';
 import { UserRepository } from 'src/modules/users/repositories/user.repository';
 
@@ -45,7 +45,7 @@ export class CreateOrganizationService {
       email_domain: dto.email_domain,
       contact_name: dto.contact_name,
       contact_email: dto.contact_email,
-      created_by: user.id,
+      created_by: user.id ?? undefined,
       status: 'active',
       plan: plan,
     };

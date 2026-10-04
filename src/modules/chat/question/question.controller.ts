@@ -11,7 +11,7 @@ import { FastifyReply } from 'fastify';
 import { AuthenticatedUser } from 'src/auth/authenticated-user';
 import { QuestionDto } from 'src/modules/chat/question/question.dto';
 import { QuestionService } from 'src/modules/chat/question/question.service';
-import { StreamEvent } from 'src/shared/contracts';
+import type { StreamEvent } from 'src/shared/contracts';
 import { RequireActiveOrganization } from 'src/shared/decorators/active-organization.decorator';
 import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
 import { User as AuthUser } from 'src/shared/decorators/user.decorator';
@@ -64,13 +64,10 @@ export class QuestionController {
         }
         writeEvent(event);
       });
-    } catch (error: any) {
+    } catch (error) {
       writeEvent({
         type: 'error',
-        message:
-          typeof error?.message === 'string'
-            ? error.message
-            : 'Erro inesperado',
+        message: error instanceof Error ? error.message : 'Erro inesperado',
       });
       if (!serviceTerminated) {
         writeEvent({ type: 'done' });

@@ -1,9 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { AccessScopeService } from 'src/auth/access-scope.service';
-import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import type { AuthenticatedUser } from 'src/auth/authenticated-user';
 import { ReportRepository } from 'src/modules/reports/repositories/report.repository';
-import { ConversationDetail } from 'src/modules/sessions/get-session-messages/get-session-messages.service';
+import type { ConversationDetail } from 'src/modules/sessions/get-session-messages/get-session-messages.service';
 import { GetSessionMessagesService } from 'src/modules/sessions/get-session-messages/get-session-messages.service';
 
 @Injectable()
@@ -31,7 +31,6 @@ export class GetReportConversationService {
       'Acesso negado',
     );
 
-    // Get conversation messages using the session_id from report
     return this.getSessionMessagesService.execute(user, report.session_id);
   }
 }

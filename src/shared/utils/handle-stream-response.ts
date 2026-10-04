@@ -1,9 +1,9 @@
-import { StreamChunk, StreamEvent } from 'src/shared/contracts';
+import type { StreamChunk, StreamEvent } from 'src/shared/contracts';
 import { isStructuredOutputTool } from 'src/shared/utils/is-structured-output-tool';
 import { textOf } from 'src/shared/utils/text-of';
 
 export async function* handleStreamResponse(
-  stream: AsyncGenerator<any>,
+  stream: AsyncIterable<unknown>,
 ): AsyncGenerator<StreamEvent> {
   let finalEmitted = false;
   let errorEmitted = false;

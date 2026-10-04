@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 
-import { AuthenticatedUser } from 'src/auth/authenticated-user';
-import { ReportEntity } from 'src/infrastructure/database/schema/report.entity';
-import { ListReportsDto } from 'src/modules/reports/list-reports/list-reports.dto';
+import type { AuthenticatedUser } from 'src/auth/authenticated-user';
+import type { ReportEntity } from 'src/infrastructure/database/schema/report.entity';
+import type { ListReportsDto } from 'src/modules/reports/list-reports/list-reports.dto';
 import { ReportRepository } from 'src/modules/reports/repositories/report.repository';
 import {
-  PaginatedResponse,
+  type PaginatedResponse,
   toPaginatedResponse,
 } from 'src/shared/contracts/pagination';
 
@@ -20,7 +20,9 @@ export class ListReportsService {
     const page = await this.reportRepository.listPaginated(
       {
         organization_id:
-          user.role === 'admin' ? undefined : user.organization_id,
+          user.role === 'admin'
+            ? undefined
+            : (user.organization_id ?? undefined),
         sentiment: dto.sentiment,
         type: dto.type,
         agent_id: dto.agent_id,

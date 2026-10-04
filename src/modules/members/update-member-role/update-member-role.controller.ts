@@ -9,6 +9,7 @@ import {
 import { FastifyReply } from 'fastify';
 
 import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import { requireOrganizationId } from 'src/auth/request-user';
 import { UpdateMemberRoleDto } from 'src/modules/members/update-member-role/update-member-role.dto';
 import { UpdateMemberRoleService } from 'src/modules/members/update-member-role/update-member-role.service';
 import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
@@ -34,7 +35,7 @@ export class UpdateMemberRoleController {
   ): Promise<FastifyReply> {
     const result = await this.updateMemberRoleService.execute(
       dto,
-      user.organization_id,
+      requireOrganizationId(user),
     );
     return res.status(200).send(result);
   }

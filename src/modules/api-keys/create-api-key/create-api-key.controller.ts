@@ -9,6 +9,7 @@ import {
 import { FastifyReply } from 'fastify';
 
 import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import { requireOrganizationId } from 'src/auth/request-user';
 import { CreateApiKeyDto } from 'src/modules/api-keys/create-api-key/create-api-key.dto';
 import { CreateApiKeyService } from 'src/modules/api-keys/create-api-key/create-api-key.service';
 import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
@@ -32,7 +33,7 @@ export class CreateApiKeyController {
   ): Promise<FastifyReply> {
     const result = await this.createApiKeyService.execute(
       dto,
-      user.organization_id,
+      requireOrganizationId(user),
       user.id ?? null,
     );
     return res.status(201).send(result);

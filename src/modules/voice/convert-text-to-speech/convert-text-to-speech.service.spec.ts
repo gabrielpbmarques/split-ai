@@ -1,10 +1,10 @@
-import fs from 'fs-extra';
+import { writeFile } from 'fs/promises';
 
 import { ConvertTextToSpeechService } from 'src/modules/voice/convert-text-to-speech/convert-text-to-speech.service';
 
-jest.mock('fs-extra', () => ({
-  __esModule: true,
-  default: { ensureDir: jest.fn(), writeFile: jest.fn() },
+jest.mock('fs/promises', () => ({
+  mkdir: jest.fn(),
+  writeFile: jest.fn(),
 }));
 
 describe('ConvertTextToSpeechService', () => {
@@ -32,7 +32,7 @@ describe('ConvertTextToSpeechService', () => {
     const result = await service.execute('olá');
 
     expect(textToSpeech.synthesize).toHaveBeenCalledWith('olá');
-    expect(fs.writeFile).toHaveBeenCalled();
+    expect(writeFile).toHaveBeenCalled();
     expect(fileStorage.uploadAudio).toHaveBeenCalledWith(
       result.audioPath,
       result.fileName,

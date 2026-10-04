@@ -1,5 +1,5 @@
-import { IntegrationState } from 'src/infrastructure/integration/integration.state';
-import { TextToSpeech } from 'src/infrastructure/integration/text-to-speech.port';
+import type { IntegrationState } from 'src/infrastructure/integration/integration.state';
+import type { TextToSpeech } from 'src/infrastructure/integration/text-to-speech.port';
 
 export class MockTextToSpeechGateway implements TextToSpeech {
   readonly name = 'google-tts';

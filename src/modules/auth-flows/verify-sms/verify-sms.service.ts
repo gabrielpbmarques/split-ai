@@ -3,7 +3,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { UserEntity } from 'src/infrastructure/database/schema/user.entity';
 import { GenerateTokenService } from 'src/modules/auth-flows/generate-token/generate-token.service';
 import { SmsVerificationRepository } from 'src/modules/auth-flows/repositories/sms-verification.repository';
-import { VerifySmsDto } from 'src/modules/auth-flows/verify-sms/verify-sms.dto';
+import type { VerifySmsDto } from 'src/modules/auth-flows/verify-sms/verify-sms.dto';
 import { UserRepository } from 'src/modules/users/repositories/user.repository';
 import { cleanPhoneNumber } from 'src/shared/utils/clean-phone-number';
 

@@ -1,10 +1,10 @@
 import { Injectable, Inject, BadRequestException } from '@nestjs/common';
 
 import { PaymentStatus } from 'src/infrastructure/database/schema/payment.entity';
-import { PlanType } from 'src/infrastructure/database/schema/plan.entity';
+import type { PlanType } from 'src/infrastructure/database/schema/plan.entity';
 import {
   PAYMENTS,
-  PaymentsGateway,
+  type PaymentsGateway,
 } from 'src/infrastructure/integration/payments.port';
 import { PaymentRepository } from 'src/modules/billing/repositories/payment.repository';
 import { PlanRepository } from 'src/modules/billing/repositories/plan.repository';

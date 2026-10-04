@@ -1,5 +1,5 @@
 export type OrganizationStatus = 'active' | 'inactive';
-import { PlanEntity } from 'src/infrastructure/database/schema/plan.entity';
+import type { PlanEntity } from 'src/infrastructure/database/schema/plan.entity';
 
 export interface Organization {
   id?: string;
@@ -16,7 +16,7 @@ export interface Organization {
   deactivated_at?: Date;
   plan?: PlanEntity;
   database_url?: string | null;
-  // Embeddable chat widget settings
+
   chat_embed_enabled?: boolean;
   chat_embed_token?: string | null;
   chat_embed_agent_id?: string | null;

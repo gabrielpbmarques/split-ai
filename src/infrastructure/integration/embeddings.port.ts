@@ -1,4 +1,4 @@
-import { Embeddings } from '@langchain/core/embeddings';
+import type { Embeddings } from '@langchain/core/embeddings';
 
 export const EMBEDDINGS = Symbol('EMBEDDINGS');
 

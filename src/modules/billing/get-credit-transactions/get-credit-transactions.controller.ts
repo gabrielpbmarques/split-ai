@@ -9,6 +9,7 @@ import {
 import { FastifyReply } from 'fastify';
 
 import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import { requireOrganizationId } from 'src/auth/request-user';
 import { GetCreditTransactionsQueryDto } from 'src/modules/billing/get-credit-transactions/get-credit-transactions.dto';
 import { GetCreditTransactionsService } from 'src/modules/billing/get-credit-transactions/get-credit-transactions.service';
 import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
@@ -34,7 +35,7 @@ export class GetCreditTransactionsController {
     query: GetCreditTransactionsQueryDto,
   ) {
     const result = await this.getCreditTransactionsService.execute(
-      user.organization_id,
+      requireOrganizationId(user),
       query,
     );
     return res.status(200).send(result);

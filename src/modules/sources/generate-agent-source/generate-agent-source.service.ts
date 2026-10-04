@@ -1,18 +1,21 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-import {
+import type {
   SourceEntity,
   SourceType,
 } from 'src/infrastructure/database/schema/source.entity';
 import { LoadAgentSitesService } from 'src/modules/agents/load-agent-sites/load-agent-sites.service';
 import { AgentRepository } from 'src/modules/agents/repositories/agent.repository';
-import { GenerateAgentSourceDto } from 'src/modules/sources/generate-agent-source/generate-agent-source.dto';
+import type { GenerateAgentSourceDto } from 'src/modules/sources/generate-agent-source/generate-agent-source.dto';
 import { ProcessDocxSourceService } from 'src/modules/sources/process-docx-source/process-docx-source.service';
 import { ProcessPdfSourceService } from 'src/modules/sources/process-pdf-source/process-pdf-source.service';
 import { ProcessTextSourceService } from 'src/modules/sources/process-text-source/process-text-source.service';
 import { SourceRepository } from 'src/modules/sources/repositories/source.repository';
 import { ResolveSourceAgentService } from 'src/modules/sources/resolve-source-agent/resolve-source-agent.service';
-import { detectFileKind, FileKind } from 'src/shared/utils/detect-file-kind';
+import {
+  detectFileKind,
+  type FileKind,
+} from 'src/shared/utils/detect-file-kind';
 import { extractDomainName } from 'src/shared/utils/extract-domain-name';
 
 type FileSourceKind = Exclude<FileKind, 'unknown'>;
@@ -136,12 +139,6 @@ export class GenerateAgentSourceService {
     }
   }
 
-  /**
-   * Runs a source-processing job and reconciles the source row: on success it
-   * records the chunk count and marks it `completed`; on failure it marks it
-   * `failed` with the error message. Never rejects, so sibling jobs in the same
-   * `Promise.all` are unaffected.
-   */
   private async runSourceTask(
     sourceId: string,
     label: string,

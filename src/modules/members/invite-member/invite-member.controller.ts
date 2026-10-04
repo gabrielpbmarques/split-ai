@@ -9,6 +9,7 @@ import {
 import { FastifyReply } from 'fastify';
 
 import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import { requireOrganizationId } from 'src/auth/request-user';
 import { InviteMemberDto } from 'src/modules/members/invite-member/invite-member.dto';
 import { InviteMemberService } from 'src/modules/members/invite-member/invite-member.service';
 import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
@@ -32,7 +33,7 @@ export class InviteMemberController {
   ): Promise<FastifyReply> {
     const result = await this.inviteMemberService.execute(
       dto,
-      user.organization_id,
+      requireOrganizationId(user),
     );
     return res.status(201).send(result);
   }

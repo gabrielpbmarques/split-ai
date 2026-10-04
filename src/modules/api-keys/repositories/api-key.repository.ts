@@ -4,8 +4,8 @@ import { IsNull, MoreThan, Or, Repository } from 'typeorm';
 
 import { ApiKeyEntity } from 'src/infrastructure/database/schema/api-key.entity';
 import {
-  PageRequest,
-  PageResult,
+  type PageRequest,
+  type PageResult,
   skipOf,
 } from 'src/shared/contracts/pagination';
 
@@ -21,10 +21,6 @@ export class ApiKeyRepository {
     return this.apiKeyRepository.save(apiKey);
   }
 
-  /**
-   * Resolves an API key by its secret hash, returning it only when it is still
-   * usable (not revoked and not past its expiration).
-   */
   async findValidByHash(keyHash: string): Promise<ApiKeyEntity | null> {
     return this.apiKeyRepository.findOne({
       where: {

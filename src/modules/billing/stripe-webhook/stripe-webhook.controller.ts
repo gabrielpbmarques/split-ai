@@ -3,12 +3,13 @@ import {
   Controller,
   Headers,
   Post,
-  RawBodyRequest,
+  type RawBodyRequest,
   Req,
   Res,
 } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { FastifyReply, FastifyRequest } from 'fastify';
+import { FastifyReply } from 'fastify';
+import type { FastifyRequest } from 'fastify';
 
 import { StripeWebhookService } from 'src/modules/billing/stripe-webhook/stripe-webhook.service';
 import { Public } from 'src/shared/decorators/public.decorator';

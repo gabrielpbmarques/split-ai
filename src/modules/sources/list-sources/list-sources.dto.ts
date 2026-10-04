@@ -6,5 +6,5 @@ export class ListSourcesDto extends PaginationDto {
   @IsNotEmpty()
   @IsString()
   @MaxLength(64)
-  agent_id: string;
+  agent_id!: string;
 }

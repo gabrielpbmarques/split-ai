@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
 import { AgentConnectionEntity } from 'src/infrastructure/database/schema/agent-connection.entity';
 
@@ -29,10 +30,6 @@ export class AgentConnectionRepository {
     return this.repository.save(connection);
   }
 
-  /**
-   * All connections of a principal (enabled and disabled), with the child
-   * agent eagerly loaded for the visual canvas. Ordered for stable rendering.
-   */
   async existsToolName(
     principalAgentId: string,
     toolName: string,
@@ -67,11 +64,6 @@ export class AgentConnectionRepository {
       .addOrderBy('c.created_at', 'ASC')
       .getRawMany<AgentConnectionView>();
   }
-
-  /**
-   * Only the enabled connections of a principal — the runtime path that turns
-   * each connected child into a tool. Disabled connections never reach the LLM.
-   */
   async findEnabledByPrincipalAgentId(
     principalAgentId: string,
   ): Promise<AgentConnectionEntity[]> {
@@ -146,7 +138,10 @@ export class AgentConnectionRepository {
     id: string,
     data: Partial<AgentConnectionEntity>,
   ): Promise<void> {
-    await this.repository.update(id, data);
+    await this.repository.update(
+      id,
+      data as QueryDeepPartialEntity<AgentConnectionEntity>,
+    );
   }
 
   async deleteById(id: string, organizationId: string): Promise<void> {

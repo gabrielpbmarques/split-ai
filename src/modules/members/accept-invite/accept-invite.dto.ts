@@ -9,16 +9,16 @@ import {
 export class AcceptInviteDto {
   @IsNotEmpty()
   @IsEmail()
-  email: string;
+  email!: string;
 
   @IsNotEmpty()
   @IsString()
   @MaxLength(255)
-  token: string;
+  token!: string;
 
   @IsNotEmpty()
   @IsString()
   @MinLength(8)
   @MaxLength(128)
-  password: string;
+  password!: string;
 }

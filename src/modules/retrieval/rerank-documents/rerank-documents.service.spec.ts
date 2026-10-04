@@ -1,6 +1,6 @@
 import { Document } from '@langchain/core/documents';
 import { Logger } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test, type TestingModule } from '@nestjs/testing';
 
 import { RERANKER } from 'src/infrastructure/integration/reranker.port';
 import { RerankDocumentsService } from 'src/modules/retrieval/rerank-documents/rerank-documents.service';

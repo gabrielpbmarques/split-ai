@@ -1,3 +1,3 @@
-import { EntityManager } from 'typeorm';
+import type { EntityManager } from 'typeorm';
 
 export type Executor = EntityManager;

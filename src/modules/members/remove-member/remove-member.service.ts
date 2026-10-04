@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
-import { RemoveMemberDto } from 'src/modules/members/remove-member/remove-member.dto';
+import type { RemoveMemberDto } from 'src/modules/members/remove-member/remove-member.dto';
 import { UserRepository } from 'src/modules/users/repositories/user.repository';
 
 @Injectable()

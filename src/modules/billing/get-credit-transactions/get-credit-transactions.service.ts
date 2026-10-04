@@ -1,10 +1,10 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 
-import { CreditTransactionEntity } from 'src/infrastructure/database/schema';
-import { GetCreditTransactionsQueryDto } from 'src/modules/billing/get-credit-transactions/get-credit-transactions.dto';
+import type { CreditTransactionEntity } from 'src/infrastructure/database/schema';
+import type { GetCreditTransactionsQueryDto } from 'src/modules/billing/get-credit-transactions/get-credit-transactions.dto';
 import { CreditTransactionRepository } from 'src/modules/billing/repositories/credit-transaction.repository';
 import {
-  PaginatedResponse,
+  type PaginatedResponse,
   toPaginatedResponse,
 } from 'src/shared/contracts/pagination';
 

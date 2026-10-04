@@ -1,9 +1,9 @@
 import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
 
-import { GenerateTokenService } from 'src/modules/auth-flows/generate-token/generate-token.service';
+import type { GenerateTokenService } from 'src/modules/auth-flows/generate-token/generate-token.service';
 import { LoginService } from 'src/modules/auth-flows/login/login.service';
-import { UserRepository } from 'src/modules/users/repositories/user.repository';
+import type { UserRepository } from 'src/modules/users/repositories/user.repository';
 
 describe('LoginService', () => {
   const userRepository = { findByEmail: jest.fn() };

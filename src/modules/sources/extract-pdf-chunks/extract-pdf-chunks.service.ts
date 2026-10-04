@@ -1,7 +1,7 @@
 import { PDFLoader } from '@langchain/community/document_loaders/fs/pdf';
 import { Injectable } from '@nestjs/common';
 
-import { CustomDocument } from 'src/shared/contracts';
+import type { CustomDocument } from 'src/shared/contracts';
 
 @Injectable()
 export class ExtractPdfChunksService {

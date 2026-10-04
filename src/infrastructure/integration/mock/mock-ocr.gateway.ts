@@ -1,5 +1,5 @@
-import { IntegrationState } from 'src/infrastructure/integration/integration.state';
-import { OcrReader } from 'src/infrastructure/integration/ocr.port';
+import type { IntegrationState } from 'src/infrastructure/integration/integration.state';
+import type { OcrReader } from 'src/infrastructure/integration/ocr.port';
 
 export class MockOcrGateway implements OcrReader {
   readonly name = 'google-vision';

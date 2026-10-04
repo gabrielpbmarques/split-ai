@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
-import { UpdateMemberRoleDto } from 'src/modules/members/update-member-role/update-member-role.dto';
+import type { UpdateMemberRoleDto } from 'src/modules/members/update-member-role/update-member-role.dto';
 import { UserRepository } from 'src/modules/users/repositories/user.repository';
 
 @Injectable()

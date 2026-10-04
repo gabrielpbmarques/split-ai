@@ -1,16 +1,16 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { AccessScopeService } from 'src/auth/access-scope.service';
-import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import type { AuthenticatedUser } from 'src/auth/authenticated-user';
 import {
   AgentConnectionRepository,
-  AgentConnectionView,
+  type AgentConnectionView,
 } from 'src/modules/agent-connections/repositories/agent-connection.repository';
 import { AgentRepository } from 'src/modules/agents/repositories/agent.repository';
 
 interface ListAgentConnectionsResult {
   principalAgentId: string;
-  canvasLayout: any | null;
+  canvasLayout: Record<string, unknown> | null;
   connections: AgentConnectionView[];
 }
 

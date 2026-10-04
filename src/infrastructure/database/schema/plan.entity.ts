@@ -30,70 +30,66 @@ export enum BillingPeriod {
 })
 export class PlanEntity {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column({
     type: 'enum',
     enum: PlanType,
   })
-  type: PlanType;
+  type!: PlanType;
 
   @Column({ type: 'text' })
-  name: string;
+  name!: string;
 
   @Column({ type: 'text', nullable: true })
-  description: string;
+  description!: string;
 
   @Column({ type: 'int' })
-  credits: number;
+  credits!: number;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
-  price: number;
+  price!: number;
 
   @Column({ type: 'decimal', precision: 10, scale: 4 })
-  price_per_credit: number;
+  price_per_credit!: number;
 
   @Column({
     type: 'enum',
     enum: BillingPeriod,
     default: BillingPeriod.ONCE,
   })
-  billing_period: BillingPeriod;
+  billing_period!: BillingPeriod;
 
   @Column({ type: 'text', nullable: true })
-  stripe_price_id: string;
+  stripe_price_id!: string;
 
   @Column({ type: 'boolean', default: true })
-  active: boolean;
-
-  // Whitelabel plan benefits / limits.
-  // `null` means unbounded for the numeric limits.
-  @Column({ type: 'int', nullable: true })
-  max_agents: number | null;
+  active!: boolean;
 
   @Column({ type: 'int', nullable: true })
-  max_users: number | null;
+  max_agents!: number | null;
 
-  // When true, the plan bypasses credit billing and all quotas (e.g. MAIA playground).
+  @Column({ type: 'int', nullable: true })
+  max_users!: number | null;
+
   @Column({ type: 'boolean', default: false })
-  unlimited: boolean;
-
-  // Credits granted to the organization when it enters this plan (e.g. free tier).
-  @Column({ type: 'int', nullable: true })
-  monthly_credits: number | null;
+  unlimited!: boolean;
 
   @Column({ type: 'int', nullable: true })
-  min_conversations: number;
+  monthly_credits!: number | null;
 
   @Column({ type: 'int', nullable: true })
-  max_conversations: number;
+  min_conversations!: number;
+
+  @Column({ type: 'int', nullable: true })
+  max_conversations!: number;
 
   @CreateDateColumn({ name: 'created_at' })
-  created_at: Date;
+  created_at!: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updated_at: Date;
+  updated_at!: Date;
 
   @DeleteDateColumn({ type: 'timestamp', nullable: true })
-  deleted_at: Date | null;
+  deleted_at!: Date | null;
 }

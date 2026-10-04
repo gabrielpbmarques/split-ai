@@ -16,7 +16,7 @@ export class CreateAttendantAgentDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
-  name: string;
+  name!: string;
 
   @IsOptional()
   @IsString()
@@ -38,7 +38,7 @@ export class CreateAttendantAgentDto {
 
   @IsOptional()
   @IsObject()
-  instructions: AIInstructions;
+  instructions!: AIInstructions;
 
   @IsOptional()
   @IsString()

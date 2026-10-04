@@ -1,12 +1,12 @@
 import { ChatAnthropic } from '@langchain/anthropic';
-import { BaseChatModel } from '@langchain/core/language_models/chat_models';
+import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
 
-import {
+import type {
   ChatModelFactory,
   ChatModelOptions,
 } from 'src/infrastructure/integration/chat-model.port';
 import {
-  IntegrationState,
+  type IntegrationState,
   notConfigured,
 } from 'src/infrastructure/integration/integration.state';
 import { env } from 'src/shared/config/env';

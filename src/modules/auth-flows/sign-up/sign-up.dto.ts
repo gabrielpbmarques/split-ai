@@ -15,37 +15,37 @@ export class SignUpDto {
   @IsNotEmpty()
   @IsString()
   @MaxLength(255)
-  name: string;
+  name!: string;
 
   @IsNotEmpty()
   @IsEmail()
-  email: string;
+  email!: string;
 
   @IsNotEmpty()
   @IsString()
   @MaxLength(255)
-  phone: string;
+  phone!: string;
 
   @IsNotEmpty()
   @IsString()
   @MaxLength(255)
-  organization: string;
+  organization!: string;
 
   @IsNotEmpty()
   @IsString()
   @MinLength(8)
   @MaxLength(128)
-  password: string;
+  password!: string;
 
   @IsNotEmpty()
   @IsString()
   @MaxLength(128)
-  confirmPassword: string;
+  confirmPassword!: string;
 }
 
 export class VerifyEmailDto {
   @IsNotEmpty()
   @IsString()
   @MaxLength(255)
-  token: string;
+  token!: string;
 }

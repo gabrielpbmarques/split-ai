@@ -1,16 +1,22 @@
 import { Injectable } from '@nestjs/common';
-import { Between } from 'typeorm';
 
-import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import type { AuthenticatedUser } from 'src/auth/authenticated-user';
 import { AgentRepository } from 'src/modules/agents/repositories/agent.repository';
-import { TokenUsageRepository } from 'src/modules/billing/repositories/token-usage.repository';
 import {
+  type TokenUsageFilters,
+  TokenUsageRepository,
+} from 'src/modules/billing/repositories/token-usage.repository';
+import type {
   DashboardStatisticsDto,
   DashboardStatistics,
 } from 'src/modules/reports/dashboard-statistics/dashboard-statistics.dto';
-import { ReportRepository } from 'src/modules/reports/repositories/report.repository';
+import {
+  type ReportFilters,
+  ReportRepository,
+} from 'src/modules/reports/repositories/report.repository';
 import { MessageRepository } from 'src/modules/sessions/repositories/message.repository';
 import { SessionRepository } from 'src/modules/sessions/repositories/session.repository';
+import { scopedOrganizationId } from 'src/shared/utils/scoped-organization-id';
 
 @Injectable()
 export class DashboardStatisticsService {
@@ -29,7 +35,6 @@ export class DashboardStatisticsService {
     const { startDate, endDate } = this.getDateRange(dto);
     const previousPeriod = this.getPreviousPeriod(startDate, endDate);
 
-    // Get current period stats
     const currentStats = await this.getStatistics(
       user,
       startDate,
@@ -37,7 +42,6 @@ export class DashboardStatisticsService {
       dto.agentId,
     );
 
-    // Get previous period stats for comparison
     const previousStats = await this.getStatistics(
       user,
       previousPeriod.start,
@@ -45,7 +49,6 @@ export class DashboardStatisticsService {
       dto.agentId,
     );
 
-    // Calculate percentage changes
     const totalConversationsChange = this.calculateChange(
       currentStats.totalConversations,
       previousStats.totalConversations,
@@ -84,43 +87,17 @@ export class DashboardStatisticsService {
     endDate: Date,
     agentId?: string,
   ): Promise<DashboardStatistics> {
-    const where: any = {
-      created_at: Between(startDate, endDate),
-    };
+    const organizationId = scopedOrganizationId(user);
 
-    // Apply organization filter for non-admins
-    if (user.role !== 'admin' && user.organization_id) {
-      where.organization_id = user.organization_id;
-    }
-
-    // Apply agent filter if provided
-    if (agentId) {
-      where.agent_id = agentId;
-    }
-
-    // Get total conversations (unique sessions)
     const totalConversations = await this.sessionRepository.countByFilter({
-      organizationId: where.organization_id,
-      agentId: where.agent_id,
+      organizationId,
+      agentId,
       createdBetween: [startDate, endDate],
     });
 
-    // Calculate satisfaction rate from reports (ReportEntity)
-    const reportWhere: any = {
-      created_at: Between(startDate, endDate),
-    };
-
-    if (user.role !== 'admin' && user.organization_id) {
-      reportWhere.organization_id = user.organization_id;
-    }
-
-    if (agentId) {
-      reportWhere.agent_id = agentId;
-    }
-
-    const reportFilters = {
-      organization_id: reportWhere.organization_id,
-      agent_id: reportWhere.agent_id,
+    const reportFilters: ReportFilters = {
+      organization_id: organizationId,
+      agent_id: agentId,
       startDate,
       endDate,
     };
@@ -135,31 +112,20 @@ export class DashboardStatisticsService {
     const satisfactionRate =
       totalReports > 0
         ? Math.round((positiveReports / totalReports) * 100)
-        : 100; // Default to 100 if no reports, or 0? 100 matches current behavior of "perfect until proven otherwise"
+        : 100;
 
-    // Calculate tokens used from TokenUsageRepository
-    const tokenFilters: any = {
+    const tokenFilters: TokenUsageFilters = {
       start_date: startDate,
       end_date: endDate,
+      organization_id: organizationId,
+      agent_id: agentId,
     };
-
-    if (user.role !== 'admin' && user.organization_id) {
-      tokenFilters.organization_id = user.organization_id;
-    }
-
-    if (agentId) {
-      tokenFilters.agent_id = agentId;
-    }
 
     const tokenStats = await this.tokenUsageRepository.getTotals(tokenFilters);
     const tokensUsed = tokenStats.total_tokens;
 
-    // Get active agents count
-    const activeAgents = await this.agentRepository.countByOrganization(
-      user.role !== 'admin' && user.organization_id
-        ? user.organization_id
-        : undefined,
-    );
+    const activeAgents =
+      await this.agentRepository.countByOrganization(organizationId);
 
     return {
       totalConversations,
@@ -201,7 +167,6 @@ export class DashboardStatisticsService {
         endDate = dto.endDate ? new Date(dto.endDate) : new Date();
         break;
       default:
-        // Default to last 7 days
         startDate = new Date(now);
         startDate.setDate(startDate.getDate() - 7);
     }

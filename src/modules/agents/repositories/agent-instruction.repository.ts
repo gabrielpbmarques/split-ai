@@ -2,8 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import { Executor } from 'src/infrastructure/database/database.types';
+import type { Executor } from 'src/infrastructure/database/database.types';
 import { AgentInstructionEntity } from 'src/infrastructure/database/schema/agent-instruction.entity';
+import type { AIInstructions } from 'src/shared/contracts';
 
 @Injectable()
 export class AgentInstructionRepository {
@@ -37,7 +38,7 @@ export class AgentInstructionRepository {
 
   async updateLatestByAgentId(
     agentId: string,
-    instructions: any,
+    instructions: AIInstructions,
     tx?: Executor,
   ): Promise<AgentInstructionEntity> {
     const latest = await this.findLatestByAgentId(agentId);

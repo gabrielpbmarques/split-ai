@@ -28,7 +28,10 @@ for (const mod of graph.modules.values()) {
   }
 }
 
-const scopes = new Map<string, typeof graph.modules extends Map<string, infer M> ? M[] : never>();
+const scopes = new Map<
+  string,
+  typeof graph.modules extends Map<string, infer M> ? M[] : never
+>();
 for (const mod of graph.modules.values()) {
   const list = scopes.get(mod.scope) ?? [];
   list.push(mod as never);
@@ -79,7 +82,9 @@ lines.push('| módulo | entidade (`forFeature`) | exporta | imports extras |');
 lines.push('| --- | --- | --- | --- |');
 for (const mod of repoModules) {
   const feature = mod.imports.find((i) => i.text.includes('forFeature'));
-  const entity = feature ? /\[([^\]]*)\]/.exec(feature.text)?.[1] ?? '—' : '—';
+  const entity = feature
+    ? (/\[([^\]]*)\]/.exec(feature.text)?.[1] ?? '—')
+    : '—';
   const extra = mod.imports
     .filter((i) => i.name)
     .map((i) => `\`${i.name}\``)
@@ -195,10 +200,14 @@ for (const [scope, mods] of componentScopes) {
 lines.push('## Verificação');
 lines.push('');
 lines.push('```bash');
-lines.push('bun run scripts/refactor-di/analyze.ts     # 0 modules to rewrite = convergido');
-lines.push('bun run scripts/refactor-di/verify.ts      # alcançabilidade estática do grafo');
 lines.push(
-  "TS_NODE_TRANSPILE_ONLY=1 TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\",\"moduleResolution\":\"node\",\"esModuleInterop\":true}' \\",
+  'bun run scripts/refactor-di/analyze.ts     # 0 modules to rewrite = convergido',
+);
+lines.push(
+  'bun run scripts/refactor-di/verify.ts      # alcançabilidade estática do grafo',
+);
+lines.push(
+  'TS_NODE_TRANSPILE_ONLY=1 TS_NODE_COMPILER_OPTIONS=\'{"module":"commonjs","moduleResolution":"node","esModuleInterop":true}\' \\',
 );
 lines.push(
   '  node -r ts-node/register -r tsconfig-paths/register scripts/refactor-di/boot-check.ts   # container Nest completo, sem banco',

@@ -1,12 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
-import { Executor } from 'src/infrastructure/database/database.types';
+import type { Executor } from 'src/infrastructure/database/database.types';
 import { OrganizationEntity } from 'src/infrastructure/database/schema';
 import {
-  PageRequest,
-  PageResult,
+  type PageRequest,
+  type PageResult,
   skipOf,
 } from 'src/shared/contracts/pagination';
 
@@ -129,7 +130,10 @@ export class OrganizationRepository {
     data: Partial<OrganizationEntity>,
     tx?: Executor,
   ): Promise<OrganizationEntity | null> {
-    await this.repo(tx).update(id, data);
+    await this.repo(tx).update(
+      id,
+      data as QueryDeepPartialEntity<OrganizationEntity>,
+    );
     return this.repo(tx).findOne({ where: { id } });
   }
 

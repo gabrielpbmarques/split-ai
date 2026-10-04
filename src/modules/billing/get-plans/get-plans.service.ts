@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import { PlanEntity } from 'src/infrastructure/database/schema/plan.entity';
+import type { PlanEntity } from 'src/infrastructure/database/schema/plan.entity';
 import { PlanRepository } from 'src/modules/billing/repositories/plan.repository';
 
 @Injectable()

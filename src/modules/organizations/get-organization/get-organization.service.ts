@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { OrganizationRepository } from 'src/modules/organizations/repositories/organization.repository';
-import { Organization } from 'src/shared/contracts';
+import type { Organization } from 'src/shared/contracts';
 
 @Injectable()
 export class GetOrganizationService {

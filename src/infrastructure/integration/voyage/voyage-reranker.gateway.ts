@@ -2,10 +2,10 @@ import { BadGatewayException, Logger } from '@nestjs/common';
 
 import { ResilientClient } from 'src/infrastructure/integration/http-client/resilient-client';
 import {
-  IntegrationState,
+  type IntegrationState,
   notConfigured,
 } from 'src/infrastructure/integration/integration.state';
-import {
+import type {
   RerankerGateway,
   RerankResult,
 } from 'src/infrastructure/integration/reranker.port';

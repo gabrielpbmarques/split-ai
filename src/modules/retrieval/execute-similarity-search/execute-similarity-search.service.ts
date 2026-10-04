@@ -1,8 +1,8 @@
 import { ContextualCompressionRetriever } from '@langchain/classic/retrievers/contextual_compression';
-import { BaseRetrieverInterface } from '@langchain/core/retrievers';
-import { VectorStoreInterface } from '@langchain/core/vectorstores';
+import type { BaseRetrieverInterface } from '@langchain/core/retrievers';
+import type { VectorStoreInterface } from '@langchain/core/vectorstores';
 import { Injectable } from '@nestjs/common';
-import { Document } from 'langchain';
+import type { Document } from 'langchain';
 
 import { RerankDocumentsService } from 'src/modules/retrieval/rerank-documents/rerank-documents.service';
 import { env } from 'src/shared/config/env';
@@ -16,7 +16,7 @@ export class ExecuteSimilaritySearchService {
   async execute(
     vectorStore: VectorStoreInterface,
     question: string,
-  ): Promise<Document<Record<string, any>>[]> {
+  ): Promise<Document[]> {
     const retriever = new ContextualCompressionRetriever({
       baseRetriever: vectorStore.asRetriever({
         k: env.VECTOR_SEARCH_CANDIDATE_K,

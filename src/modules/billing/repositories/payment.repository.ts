@@ -1,15 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
-import { Executor } from 'src/infrastructure/database/database.types';
+import type { Executor } from 'src/infrastructure/database/database.types';
 import {
   PaymentEntity,
   PaymentStatus,
 } from 'src/infrastructure/database/schema/payment.entity';
 import {
-  PageRequest,
-  PageResult,
+  type PageRequest,
+  type PageResult,
   skipOf,
 } from 'src/shared/contracts/pagination';
 
@@ -72,7 +73,7 @@ export class PaymentRepository {
 
     await (
       tx ? tx.getRepository(PaymentEntity) : this.paymentRepository
-    ).update(id, updateData);
+    ).update(id, updateData as QueryDeepPartialEntity<PaymentEntity>);
     return this.findById(id);
   }
 

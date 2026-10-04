@@ -55,7 +55,9 @@ console.log(`modules parsed        : ${graph.modules.size}`);
 console.log(`classes parsed        : ${graph.classes.size}`);
 console.log(`modules to generate   : ${plan.generated.length}`);
 console.log(`modules to rewrite    : ${changed.length}`);
-console.log(`modules to retire     : ${plan.retired.map((r) => r.module).join(', ')}`);
+console.log(
+  `modules to retire     : ${plan.retired.map((r) => r.module).join(', ')}`,
+);
 console.log(`symbol collisions     : ${plan.collisions.length}`);
 console.log(`unresolved injections : ${unresolved.length} module(s)`);
 console.log(`re-exported symbols   : ${reExports.length}`);
@@ -117,10 +119,16 @@ if (mdOut) {
   lines.push('| métrica | valor |');
   lines.push('| --- | --- |');
   lines.push(`| modules existentes | ${graph.modules.size} |`);
-  lines.push(`| modules novos (repository) | ${plan.generated.filter((g) => g.kind === 'repository').length} |`);
-  lines.push(`| modules novos (provider) | ${plan.generated.filter((g) => g.kind === 'provider').length} |`);
+  lines.push(
+    `| modules novos (repository) | ${plan.generated.filter((g) => g.kind === 'repository').length} |`,
+  );
+  lines.push(
+    `| modules novos (provider) | ${plan.generated.filter((g) => g.kind === 'provider').length} |`,
+  );
   lines.push(`| modules reescritos | ${changed.length} |`);
-  lines.push(`| modules aposentados | ${plan.retired.map((r) => r.module).join(', ') || '—'} |`);
+  lines.push(
+    `| modules aposentados | ${plan.retired.map((r) => r.module).join(', ') || '—'} |`,
+  );
   lines.push('');
 
   lines.push('## Modules gerados');
@@ -128,7 +136,9 @@ if (mdOut) {
   lines.push('| module | arquivo | exporta |');
   lines.push('| --- | --- | --- |');
   for (const g of plan.generated) {
-    lines.push(`| \`${g.name}\` | \`${relative(g.file)}\` | ${g.exportsSymbols.map((s) => `\`${s}\``).join(', ')} |`);
+    lines.push(
+      `| \`${g.name}\` | \`${relative(g.file)}\` | ${g.exportsSymbols.map((s) => `\`${s}\``).join(', ')} |`,
+    );
   }
   lines.push('');
 
@@ -162,7 +172,9 @@ if (mdOut) {
     lines.push('## Colisões de símbolo');
     lines.push('');
     for (const c of plan.collisions) {
-      lines.push(`- \`${c.symbol}\`: ${c.modules.map((m) => `\`${m}\``).join(', ')}`);
+      lines.push(
+        `- \`${c.symbol}\`: ${c.modules.map((m) => `\`${m}\``).join(', ')}`,
+      );
     }
     lines.push('');
   }

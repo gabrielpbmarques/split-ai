@@ -13,9 +13,8 @@ export class CreateApiKeyDto {
   @IsNotEmpty()
   @IsString()
   @MaxLength(255)
-  name: string;
+  name!: string;
 
-  // Optional time-to-live in days. Omit for a non-expiring key.
   @IsOptional()
   @IsInt()
   @IsPositive()

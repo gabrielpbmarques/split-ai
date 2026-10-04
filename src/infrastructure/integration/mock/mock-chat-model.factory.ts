@@ -1,8 +1,8 @@
-import { BaseChatModel } from '@langchain/core/language_models/chat_models';
+import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import { FakeListChatModel } from '@langchain/core/utils/testing';
 
-import { ChatModelFactory } from 'src/infrastructure/integration/chat-model.port';
-import { IntegrationState } from 'src/infrastructure/integration/integration.state';
+import type { ChatModelFactory } from 'src/infrastructure/integration/chat-model.port';
+import type { IntegrationState } from 'src/infrastructure/integration/integration.state';
 
 const DEFAULT_RESPONSES = [
   JSON.stringify({ response: 'Resposta simulada do assistente.' }),

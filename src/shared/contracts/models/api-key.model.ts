@@ -1,6 +1,5 @@
-import { ApiKeyEntity } from 'src/infrastructure/database/schema/api-key.entity';
+import type { ApiKeyEntity } from 'src/infrastructure/database/schema/api-key.entity';
 
-// Safe, non-sensitive view of an API key (never exposes the secret/hash).
 export type ApiKeyListItem = Pick<
   ApiKeyEntity,
   | 'id'

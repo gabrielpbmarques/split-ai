@@ -10,58 +10,58 @@ import {
 @Entity('reports')
 export class ReportEntity {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column({ type: 'uuid', nullable: false })
-  session_id: string;
+  session_id!: string;
 
   @Column({ type: 'uuid', nullable: false })
-  agent_id: string;
+  agent_id!: string;
 
   @Column({ type: 'uuid', nullable: true })
-  organization_id: string;
+  organization_id!: string;
 
   @Column({
     type: 'enum',
     enum: ['appointment', 'order', 'faq'],
     nullable: false,
   })
-  type: 'appointment' | 'order' | 'faq';
+  type!: 'appointment' | 'order' | 'faq';
 
   @Column({
     type: 'enum',
     enum: ['positive', 'negative', 'neutral'],
     nullable: false,
   })
-  sentiment: 'positive' | 'negative' | 'neutral';
+  sentiment!: 'positive' | 'negative' | 'neutral';
 
   @Column({ type: 'text', nullable: false })
-  phone: string;
+  phone!: string;
 
   @Column({ type: 'text', nullable: false })
-  name: string;
+  name!: string;
 
   @Column({ type: 'text', nullable: false })
-  email: string;
+  email!: string;
 
   @Column({ type: 'text', nullable: false })
-  summary: string;
+  summary!: string;
 
   @Column({ type: 'text', nullable: true })
-  insights: string;
+  insights!: string;
 
   @Column({ type: 'text', nullable: true })
-  return: string;
+  return!: string;
 
   @CreateDateColumn({ nullable: true })
-  scheduled_to: Date;
+  scheduled_to!: Date;
 
   @CreateDateColumn()
-  created_at: Date;
+  created_at!: Date;
 
   @UpdateDateColumn()
-  updated_at: Date;
+  updated_at!: Date;
 
   @DeleteDateColumn({ type: 'timestamp', nullable: true })
-  deleted_at: Date | null;
+  deleted_at!: Date | null;
 }

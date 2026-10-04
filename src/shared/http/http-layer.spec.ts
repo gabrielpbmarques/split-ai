@@ -8,7 +8,7 @@ import {
   Res,
 } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
-import { NestFastifyApplication } from '@nestjs/platform-fastify';
+import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import { IsInt, IsString, MaxLength, Min } from 'class-validator';
 import { FastifyReply } from 'fastify';
@@ -23,11 +23,11 @@ import { createValidationPipe } from 'src/shared/http/validation-pipe';
 class CriarPedidoDto {
   @IsString()
   @MaxLength(10)
-  codigo: string;
+  codigo!: string;
 
   @IsInt()
   @Min(1)
-  quantidade: number;
+  quantidade!: number;
 }
 
 @Controller('pedidos')

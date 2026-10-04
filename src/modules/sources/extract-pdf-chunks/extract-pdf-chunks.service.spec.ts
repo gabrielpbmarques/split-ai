@@ -1,4 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test, type TestingModule } from '@nestjs/testing';
 
 import { ExtractPdfChunksService } from 'src/modules/sources/extract-pdf-chunks/extract-pdf-chunks.service';
 

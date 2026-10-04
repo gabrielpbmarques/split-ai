@@ -1,5 +1,5 @@
-import { FileStorage } from 'src/infrastructure/integration/file-storage.port';
-import { IntegrationState } from 'src/infrastructure/integration/integration.state';
+import type { FileStorage } from 'src/infrastructure/integration/file-storage.port';
+import type { IntegrationState } from 'src/infrastructure/integration/integration.state';
 
 export class MockFileStorageGateway implements FileStorage {
   readonly name = 'gcs';

@@ -1,21 +1,14 @@
 import { Injectable } from '@nestjs/common';
 
-import { UserEntity } from 'src/infrastructure/database/schema';
+import type { AuthenticatedUser } from 'src/auth/authenticated-user';
 import { GenerateAiResponseService } from 'src/modules/agent-runtime/generate-ai-response/generate-ai-response.service';
 import { ResolveAgentService } from 'src/modules/agent-runtime/resolve-agent/resolve-agent.service';
-import { QuestionDto } from 'src/modules/chat/question/question.dto';
+import type { QuestionDto } from 'src/modules/chat/question/question.dto';
 import { RecordChatMessageService } from 'src/modules/chat/record-chat-message/record-chat-message.service';
 import { CreateSessionIfNotExistsService } from 'src/modules/sessions/create-session-if-not-exists/create-session-if-not-exists.service';
-import { StreamEvent } from 'src/shared/contracts';
+import type { StreamEvent } from 'src/shared/contracts';
 
 const STREAM = true;
-type AuthenticatedUser = Pick<
-  UserEntity,
-  'id' | 'organization_id' | 'name' | 'phone' | 'email'
-> & {
-  role?: string;
-  companyId?: number | string | null;
-};
 
 @Injectable()
 export class QuestionService {
@@ -38,7 +31,7 @@ export class QuestionService {
 
     const session = await this.createSessionIfNotExistsService.execute({
       agent_id: agentId,
-      user_id: sessionOwnerKey,
+      user_id: sessionOwnerKey ?? undefined,
       organization_id: organizationId ?? undefined,
     });
 

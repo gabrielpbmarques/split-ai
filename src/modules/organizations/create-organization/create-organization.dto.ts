@@ -6,32 +6,32 @@ export class CreateOrganizationDto {
   @IsNotEmpty()
   @IsString()
   @MaxLength(255)
-  name: string;
+  name!: string;
 
   @IsNotEmpty()
   @IsString()
   @MaxLength(255)
-  acronym: string;
+  acronym!: string;
 
   @IsNotEmpty()
   @IsString()
   @MaxLength(255)
-  email_domain: string;
+  email_domain!: string;
 
   @IsNotEmpty()
   @IsString()
   @MaxLength(255)
-  contact_name: string;
+  contact_name!: string;
 
   @IsNotEmpty()
   @IsString()
   @MaxLength(255)
-  contact_email: string;
+  contact_email!: string;
 
   @IsNotEmpty()
   @IsString()
   @MaxLength(255)
-  created_by: string;
+  created_by!: string;
 
   @IsOptional()
   @IsString()

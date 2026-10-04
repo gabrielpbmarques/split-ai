@@ -1,8 +1,9 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 
-import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import type { AuthenticatedUser } from 'src/auth/authenticated-user';
+import { requireOrganizationId } from 'src/auth/request-user';
 import { TransactionExecutor } from 'src/infrastructure/database/transaction-executor/transaction-executor.service';
-import { CreateAgentDto } from 'src/modules/agents/create-agent/create-agent.dto';
+import type { CreateAgentDto } from 'src/modules/agents/create-agent/create-agent.dto';
 import { AgentInstructionRepository } from 'src/modules/agents/repositories/agent-instruction.repository';
 import { AgentRepository } from 'src/modules/agents/repositories/agent.repository';
 import { OrganizationRepository } from 'src/modules/organizations/repositories/organization.repository';
@@ -20,7 +21,7 @@ export class CreateAgentService {
     dto: CreateAgentDto,
     user: AuthenticatedUser,
   ): Promise<{ id: string }> {
-    await this.assertWithinAgentQuota(user.organization_id);
+    await this.assertWithinAgentQuota(requireOrganizationId(user));
 
     const agent = await this.transactionExecutor.run(async (tx) => {
       const created = await this.agentRepository.create(
@@ -30,8 +31,6 @@ export class CreateAgentService {
           model: dto.model ?? 'claude-haiku-4-5-20251001',
           temperature: dto.temperature ?? 0.4,
           with_history: dto.withHistory ?? true,
-          // Coalesce to the column default (true), not null: a null here would make
-          // ResolveAgent silently skip the tool via its gating checks.
           database_tool: dto.databaseTool ?? true,
           vector_search_tool: dto.vectorSearchTool ?? true,
           parser_schema: dto.parser?.schema ?? null,
@@ -54,11 +53,6 @@ export class CreateAgentService {
     return { id: agent.id };
   }
 
-  /**
-   * Enforces the organization plan's `max_agents` quota. Plans flagged as
-   * `unlimited` (e.g. the MAIA playground) and plans with a null `max_agents`
-   * are unbounded.
-   */
   private async assertWithinAgentQuota(organizationId: string): Promise<void> {
     const organization =
       await this.organizationRepository.findByIdWithPlan(organizationId);

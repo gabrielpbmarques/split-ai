@@ -1,8 +1,8 @@
 import { PostgresSaver } from '@langchain/langgraph-checkpoint-postgres';
 import {
   Injectable,
-  OnApplicationShutdown,
-  OnModuleInit,
+  type OnApplicationShutdown,
+  type OnModuleInit,
 } from '@nestjs/common';
 
 import { env } from 'src/shared/config/env';
@@ -13,7 +13,7 @@ const DB_URI = env.DATABASE_URL;
 export class LoadCheckpointerService
   implements OnModuleInit, OnApplicationShutdown
 {
-  private static saver: PostgresSaver;
+  private static saver?: PostgresSaver;
 
   async onModuleInit() {
     if (!LoadCheckpointerService.saver) {
@@ -23,6 +23,10 @@ export class LoadCheckpointerService
   }
 
   execute(): PostgresSaver {
+    if (!LoadCheckpointerService.saver) {
+      throw new Error('Checkpointer não inicializado');
+    }
+
     return LoadCheckpointerService.saver;
   }
 

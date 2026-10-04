@@ -21,8 +21,15 @@ import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 
 import { env } from 'src/shared/config/env';
-import { OrganizationEntity, PlanEntity, UserEntity } from 'src/infrastructure/database/schema';
-import { BillingPeriod, PlanType } from 'src/infrastructure/database/schema/plan.entity';
+import {
+  OrganizationEntity,
+  PlanEntity,
+  UserEntity,
+} from 'src/infrastructure/database/schema';
+import {
+  BillingPeriod,
+  PlanType,
+} from 'src/infrastructure/database/schema/plan.entity';
 
 const MAIA_OWNER_EMAIL = 'support@nexguard.app';
 const MAIA_OWNER_PASSWORD = process.env.MAIA_OWNER_PASSWORD ?? 'changeme-maia';

@@ -14,36 +14,36 @@ import { SessionEntity } from 'src/infrastructure/database/schema/session.entity
 @Entity('messages')
 export class MessageEntity {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column({ type: 'uuid', nullable: false })
-  session_id: string;
+  session_id!: string;
 
   @Column({ type: 'uuid', nullable: true })
-  user_id: string | null;
+  user_id!: string | null;
 
   @Column({ type: 'uuid', nullable: true })
-  agent_id: string | null;
+  agent_id!: string | null;
 
   @Column({ type: 'text', nullable: false })
-  message: string;
+  message!: string;
 
   @ManyToOne(() => SessionEntity, (session) => session.messages)
   @JoinColumn({ name: 'session_id' })
-  session: SessionEntity;
+  session!: SessionEntity;
 
   @Column({ type: 'enum', enum: ['user', 'agent'], nullable: false })
-  from: 'user' | 'agent';
+  from!: 'user' | 'agent';
 
   @Column({ type: 'jsonb', nullable: true })
   embedding?: number[] | null;
 
   @CreateDateColumn()
-  created_at: Date;
+  created_at!: Date;
 
   @UpdateDateColumn()
-  updated_at: Date;
+  updated_at!: Date;
 
   @DeleteDateColumn({ type: 'timestamp', nullable: true })
-  deleted_at: Date | null;
+  deleted_at!: Date | null;
 }

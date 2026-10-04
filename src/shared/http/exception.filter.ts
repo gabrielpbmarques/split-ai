@@ -1,6 +1,11 @@
-import { ArgumentsHost, Catch, ExceptionFilter, Logger } from '@nestjs/common';
+import {
+  type ArgumentsHost,
+  Catch,
+  type ExceptionFilter,
+  Logger,
+} from '@nestjs/common';
 import * as Sentry from '@sentry/node';
-import { FastifyReply, FastifyRequest } from 'fastify';
+import type { FastifyReply, FastifyRequest } from 'fastify';
 
 import { env } from 'src/shared/config/env';
 import { buildErrorResponse } from 'src/shared/http/error-mapper';

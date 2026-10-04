@@ -1,5 +1,5 @@
-import { IntegrationState } from 'src/infrastructure/integration/integration.state';
-import {
+import type { IntegrationState } from 'src/infrastructure/integration/integration.state';
+import type {
   InboundWhatsappMessage,
   MessagingGateway,
 } from 'src/infrastructure/integration/messaging.port';

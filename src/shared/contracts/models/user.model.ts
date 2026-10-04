@@ -2,7 +2,6 @@ export type UserRole = 'user' | 'admin' | 'guest';
 export type UserStatus = 'active' | 'inactive';
 export type UserOrigin = 'whatsapp' | 'website' | 'app';
 
-// Role of a user inside its organization (whitelabel multi-user model).
 export type OrgRole = 'owner' | 'admin' | 'member';
 
 export interface User {

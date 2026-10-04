@@ -1,4 +1,4 @@
-import { AgentMessage } from 'src/shared/contracts/agent-message';
+import type { AgentMessage } from 'src/shared/contracts/agent-message';
 
 export type StreamChunk = {
   model_request?: {

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
 import {
   SubscriptionEntity,
@@ -72,7 +73,10 @@ export class SubscriptionRepository {
       updateData.canceled_at = new Date();
     }
 
-    await this.subscriptionRepository.update(id, updateData);
+    await this.subscriptionRepository.update(
+      id,
+      updateData as QueryDeepPartialEntity<SubscriptionEntity>,
+    );
     return this.findById(id);
   }
 

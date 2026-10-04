@@ -8,7 +8,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-import type { UserRole, UserStatus } from 'src/shared/contracts';
+import { UserRole, UserStatus } from 'src/shared/contracts';
 
 @Entity('user_tokens')
 @Index('user_tokens_token_uq', ['token'], {
@@ -17,37 +17,37 @@ import type { UserRole, UserStatus } from 'src/shared/contracts';
 })
 export class UserTokenEntity {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column({ type: 'uuid' })
-  user_id: string;
+  user_id!: string;
 
   @Column({ type: 'text' })
-  token: string;
+  token!: string;
 
   @Column({
     type: 'enum',
     enum: ['user', 'admin', 'guest'],
     default: 'user',
   })
-  role: UserRole;
+  role!: UserRole;
 
   @Column({
     type: 'enum',
     enum: ['active', 'inactive'],
     default: 'inactive',
   })
-  status: UserStatus;
+  status!: UserStatus;
 
   @Column({ type: 'timestamp' })
-  expires_at: Date;
+  expires_at!: Date;
 
   @CreateDateColumn({ name: 'created_at' })
-  created_at: Date;
+  created_at!: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updated_at: Date;
+  updated_at!: Date;
 
   @DeleteDateColumn({ type: 'timestamp', nullable: true })
-  deleted_at: Date | null;
+  deleted_at!: Date | null;
 }

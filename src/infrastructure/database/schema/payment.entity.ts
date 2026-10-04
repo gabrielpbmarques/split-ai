@@ -36,78 +36,78 @@ export enum PaymentMethod {
 })
 export class PaymentEntity {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column({ type: 'uuid' })
-  organization_id: string;
+  organization_id!: string;
 
   @Column({ type: 'uuid', nullable: true })
-  plan_id: string;
+  plan_id!: string;
 
   @Column({ type: 'text' })
-  stripe_payment_intent_id: string;
+  stripe_payment_intent_id!: string;
 
   @Column({ type: 'text', nullable: true })
-  stripe_invoice_id: string;
+  stripe_invoice_id!: string;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
-  amount: number;
+  amount!: number;
 
   @Column({ type: 'text', default: 'BRL' })
-  currency: string;
+  currency!: string;
 
   @Column({ type: 'int' })
-  credits_purchased: number;
+  credits_purchased!: number;
 
   @Column({
     type: 'enum',
     enum: PaymentStatus,
     default: PaymentStatus.PENDING,
   })
-  status: PaymentStatus;
+  status!: PaymentStatus;
 
   @Column({
     type: 'enum',
     enum: PaymentMethod,
     nullable: true,
   })
-  payment_method: PaymentMethod;
+  payment_method!: PaymentMethod;
 
   @Column({ type: 'text', nullable: true })
-  description: string;
+  description!: string;
 
   @Column({ type: 'jsonb', nullable: true })
-  metadata: Record<string, any>;
+  metadata!: Record<string, unknown>;
 
   @Column({ type: 'timestamp', nullable: true })
-  paid_at: Date;
+  paid_at!: Date;
 
   @Column({ type: 'timestamp', nullable: true })
-  failed_at: Date;
+  failed_at!: Date;
 
   @Column({ type: 'text', nullable: true })
-  failure_reason: string;
+  failure_reason!: string;
 
   @Column({ type: 'text', nullable: true })
-  receipt_url: string;
+  receipt_url!: string;
 
   @Column({ type: 'uuid', nullable: true })
-  subscription_id: string;
+  subscription_id!: string;
 
   @CreateDateColumn({ name: 'created_at' })
-  created_at: Date;
+  created_at!: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updated_at: Date;
+  updated_at!: Date;
 
   @DeleteDateColumn({ type: 'timestamp', nullable: true })
-  deleted_at: Date | null;
+  deleted_at!: Date | null;
 
   @ManyToOne(() => OrganizationEntity)
   @JoinColumn({ name: 'organization_id' })
-  organization: OrganizationEntity;
+  organization!: OrganizationEntity;
 
   @ManyToOne(() => PlanEntity, { nullable: true })
   @JoinColumn({ name: 'plan_id' })
-  plan: PlanEntity;
+  plan!: PlanEntity;
 }

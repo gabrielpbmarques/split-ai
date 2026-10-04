@@ -1,4 +1,16 @@
-import { IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsDateString,
+  IsIn,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
+
+export const REPORT_SENTIMENTS = ['positive', 'negative', 'neutral'] as const;
+export const REPORT_TYPES = ['appointment', 'order', 'faq'] as const;
+
+export type ReportSentiment = (typeof REPORT_SENTIMENTS)[number];
+export type ReportType = (typeof REPORT_TYPES)[number];
 
 export class GetDashboardDataDto {
   @IsOptional()
@@ -15,12 +27,22 @@ export class GetDashboardDataDto {
   agent_ids?: string | string[];
 
   @IsOptional()
-  @IsString()
-  @MaxLength(20)
-  sentiment?: string;
+  @IsIn(REPORT_SENTIMENTS)
+  sentiment?: ReportSentiment;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(20)
-  type?: string;
+  @IsIn(REPORT_TYPES)
+  type?: ReportType;
+
+  @IsOptional()
+  @IsDateString()
+  created_at?: string;
+
+  @IsOptional()
+  @IsDateString()
+  start?: string;
+
+  @IsOptional()
+  @IsDateString()
+  end?: string;
 }

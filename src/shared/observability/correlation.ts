@@ -1,8 +1,8 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { randomUUID } from 'node:crypto';
-import { IncomingMessage } from 'node:http';
+import type { IncomingMessage } from 'node:http';
 
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 
 export interface RequestContext {
   readonly correlationId: string;

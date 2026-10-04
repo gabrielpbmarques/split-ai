@@ -9,12 +9,12 @@ import {
 export class LoginDto {
   @IsEmail()
   @IsNotEmpty()
-  email: string;
+  email!: string;
 
   @IsString()
   @IsNotEmpty()
   @MaxLength(128)
-  password: string;
+  password!: string;
 
   @IsOptional()
   @IsString()

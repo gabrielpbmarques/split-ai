@@ -1,14 +1,14 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { verify } from 'jsonwebtoken';
 
-import {
+import type {
   ApiKeyEntity,
   OrganizationEntity,
 } from 'src/infrastructure/database/schema';
 import { ApiKeyRepository } from 'src/modules/api-keys/repositories/api-key.repository';
 import { OrganizationRepository } from 'src/modules/organizations/repositories/organization.repository';
 import { env } from 'src/shared/config/env';
-import { OrgRole, UserRole } from 'src/shared/contracts';
+import type { OrgRole, UserRole } from 'src/shared/contracts';
 import { hashApiKey } from 'src/shared/utils/api-key';
 
 export interface UserTokenPayload {

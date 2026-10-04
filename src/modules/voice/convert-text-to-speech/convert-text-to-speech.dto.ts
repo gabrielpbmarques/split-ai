@@ -4,5 +4,5 @@ export class ConvertTextToSpeechDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(10000)
-  text: string;
+  text!: string;
 }

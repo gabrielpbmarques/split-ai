@@ -1,5 +1,5 @@
-import { CrawledPage } from 'src/infrastructure/integration/site-crawler.port';
-import { SpiderDocument } from 'src/infrastructure/integration/spider/spider.contracts';
+import type { CrawledPage } from 'src/infrastructure/integration/site-crawler.port';
+import type { SpiderDocument } from 'src/infrastructure/integration/spider/spider.contracts';
 
 function optionalString(value: unknown): string | undefined {
   return typeof value === 'string' && value.length > 0 ? value : undefined;

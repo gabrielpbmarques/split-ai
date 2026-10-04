@@ -23,9 +23,8 @@ export class RegenerateEmbedTokenService {
       chat_embed_token: newToken,
     });
 
-    return {
-      id: updated?.id,
-      chat_embed_token: updated?.chat_embed_token,
-    };
+    if (!updated) throw new NotFoundException('Organização não encontrada');
+
+    return { id: updated.id, chat_embed_token: newToken };
   }
 }

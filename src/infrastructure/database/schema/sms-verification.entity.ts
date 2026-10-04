@@ -10,32 +10,32 @@ import {
 @Entity('sms_verifications')
 export class SmsVerificationEntity {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column({ type: 'varchar', length: 15 })
-  phone: string;
+  phone!: string;
 
   @Column({ type: 'varchar', length: 6 })
-  code: string;
+  code!: string;
 
   @Column({ type: 'boolean', default: false })
-  verified: boolean;
+  verified!: boolean;
 
   @Column({
     type: 'timestamp',
     default: () => "CURRENT_TIMESTAMP + INTERVAL '15 MINUTE'",
   })
-  expires_at: Date;
+  expires_at!: Date;
 
   @Column({ type: 'uuid', nullable: true })
   user_id?: string;
 
   @CreateDateColumn()
-  created_at: Date;
+  created_at!: Date;
 
   @UpdateDateColumn()
-  updated_at: Date;
+  updated_at!: Date;
 
   @DeleteDateColumn({ type: 'timestamp', nullable: true })
-  deleted_at: Date | null;
+  deleted_at!: Date | null;
 }

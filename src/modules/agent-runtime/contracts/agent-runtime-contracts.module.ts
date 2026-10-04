@@ -3,7 +3,7 @@ import { ModuleRef } from '@nestjs/core';
 
 import {
   AGENT_RESOLVER,
-  AgentResolver,
+  type AgentResolver,
 } from 'src/modules/agent-runtime/contracts/agent-resolver.port';
 import { ResolveAgentService } from 'src/modules/agent-runtime/resolve-agent/resolve-agent.service';
 

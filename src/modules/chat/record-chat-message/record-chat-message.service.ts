@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 
 import {
   EMBEDDINGS,
-  EmbeddingsGateway,
+  type EmbeddingsGateway,
 } from 'src/infrastructure/integration/embeddings.port';
 import { MessageRepository } from 'src/modules/sessions/repositories/message.repository';
 
@@ -32,7 +32,7 @@ export class RecordChatMessageService {
         message,
         embedding,
       });
-    } catch (error: any) {
+    } catch (error) {
       this.logger.error('Failed to record chat message', error);
     }
   }

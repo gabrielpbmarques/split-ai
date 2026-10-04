@@ -16,7 +16,7 @@ export class CreateAgentDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
-  name: string;
+  name!: string;
 
   @IsOptional()
   @IsString()
@@ -46,14 +46,14 @@ export class CreateAgentDto {
 
   @IsOptional()
   @IsObject()
-  instructions: AIInstructions;
+  instructions!: AIInstructions;
 
   @IsOptional()
   @IsObject()
   parser?: {
     name: string;
     description: string;
-    schema: any;
+    schema: Record<string, unknown>;
   } | null;
 
   @IsOptional()

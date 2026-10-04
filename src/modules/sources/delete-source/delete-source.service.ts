@@ -1,10 +1,10 @@
 import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 
 import { AccessScopeService } from 'src/auth/access-scope.service';
-import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import type { AuthenticatedUser } from 'src/auth/authenticated-user';
 import {
   VECTOR_STORE,
-  VectorStoreGateway,
+  type VectorStoreGateway,
 } from 'src/infrastructure/integration/vector-store.port';
 import { SourceRepository } from 'src/modules/sources/repositories/source.repository';
 

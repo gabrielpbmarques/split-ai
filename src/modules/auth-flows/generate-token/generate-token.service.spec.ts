@@ -1,7 +1,7 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { verify } from 'jsonwebtoken';
 
-import { UserEntity } from 'src/infrastructure/database/schema/user.entity';
+import type { UserEntity } from 'src/infrastructure/database/schema/user.entity';
 import { GenerateTokenService } from 'src/modules/auth-flows/generate-token/generate-token.service';
 import { UserTokenRepository } from 'src/modules/auth-flows/repositories/user-token.repository';
 import { env } from 'src/shared/config/env';

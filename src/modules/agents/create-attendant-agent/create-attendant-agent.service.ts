@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 
-import { AuthenticatedUser } from 'src/auth/authenticated-user';
-import { CreateAttendantAgentDto } from 'src/modules/agents/create-attendant-agent/create-attendant-agent.dto';
+import type { AuthenticatedUser } from 'src/auth/authenticated-user';
+import type { CreateAttendantAgentDto } from 'src/modules/agents/create-attendant-agent/create-attendant-agent.dto';
 import { AgentInstructionRepository } from 'src/modules/agents/repositories/agent-instruction.repository';
 import { AgentRepository } from 'src/modules/agents/repositories/agent.repository';
+import type { AIInstructions } from 'src/shared/contracts';
 
 @Injectable()
 export class CreateAttendantAgentService {
@@ -38,12 +39,12 @@ export class CreateAttendantAgentService {
     const defaultContext = this.getDefaultContext();
     const defaultObjective = this.getDefaultObjective();
 
-    const instructions = {
-      contexto: defaultContext.join('\n'),
+    const instructions: AIInstructions = {
+      context: defaultContext.join('\n'),
       objetivo: defaultObjective.join('\n'),
       diretrizes: [
         ...defaultAttendantDirectives,
-        ...dto.instructions.diretrizes,
+        ...(dto.instructions.diretrizes ?? []),
       ],
     };
 

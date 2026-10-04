@@ -2,7 +2,7 @@ export interface UserDevice {
   id: string;
   user_id: string;
   device_token: string | null;
-  device_fingerprint?: string; // Adicionado para compatibilidade com o novo endpoint
+  device_fingerprint?: string;
   device_type: 'android' | 'ios' | 'web';
   device_name?: string;
   is_active: boolean;

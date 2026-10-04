@@ -10,7 +10,7 @@ export class CreateSessionIfNotExistsDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
-  agent_id: string;
+  agent_id!: string;
 
   @IsOptional()
   @IsString()

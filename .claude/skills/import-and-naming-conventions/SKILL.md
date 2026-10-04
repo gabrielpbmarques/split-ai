@@ -9,6 +9,7 @@ description: 'Use for imports (barrel vs direct), file/class/method naming and s
 - **Entities**: Import from `src/infrastructure/database/schema` (barrel) or specific entity files.
 - **Types/Models**: Import from `src/shared/contracts` (barrel) or `src/shared/contracts/models/<name>.model`.
 - **Integration ports**: Import token + interface from `src/infrastructure/integration/<name>.port` (`PAYMENTS` / `PaymentsGateway`, `VECTOR_STORE` / `VectorStoreGateway`, …).
+- **Type-only imports use `import type`** (or inline `import { X, type Y }`), enforced by `@typescript-eslint/consistent-type-imports` + `no-import-type-side-effects`. Exception the rule handles itself: a class injected through a decorated constructor (`constructor(private readonly repo: UserRepository)`) must stay a value import because `emitDecoratorMetadata` needs the runtime reference — never hand-write `import type` for those (PC-014).
 - **Decorators**: Import `User` as `AuthUser` in controllers to avoid conflict with the `User` type:
 
 ```typescript

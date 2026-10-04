@@ -1,10 +1,10 @@
 import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js';
 
 import {
-  IntegrationState,
+  type IntegrationState,
   notConfigured,
 } from 'src/infrastructure/integration/integration.state';
-import { TextToSpeech } from 'src/infrastructure/integration/text-to-speech.port';
+import type { TextToSpeech } from 'src/infrastructure/integration/text-to-speech.port';
 import { env } from 'src/shared/config/env';
 
 type ConvertRequest = Parameters<

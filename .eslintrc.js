@@ -30,17 +30,26 @@ module.exports = {
       files: ['src/infrastructure/database/migrations/*.ts'],
       rules: { 'check-file/filename-naming-convention': 'off' },
     },
+    {
+      files: ['src/**/*.spec.ts'],
+      rules: { '@typescript-eslint/no-explicit-any': 'off' },
+    },
   ],
   rules: {
     '@typescript-eslint/interface-name-prefix': 'off',
     '@typescript-eslint/explicit-function-return-type': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
-    '@typescript-eslint/no-explicit-any': 'off',
+    '@typescript-eslint/no-explicit-any': 'error',
+    '@typescript-eslint/consistent-type-imports': [
+      'error',
+      { prefer: 'type-imports', fixStyle: 'inline-type-imports' },
+    ],
+    '@typescript-eslint/no-import-type-side-effects': 'error',
     '@typescript-eslint/no-unused-vars': ['error'],
     '@typescript-eslint/ban-ts-comment': 'off',
     'no-console': 'error',
-    'no-inline-comments': 'warn',
-    'no-warning-comments': ['warn', { terms: ['todo', 'fixme'] }],
+    'no-inline-comments': 'error',
+    'no-warning-comments': ['error', { terms: ['todo', 'fixme'] }],
     'no-restricted-imports': [
       'error',
       {

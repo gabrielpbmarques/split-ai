@@ -4,10 +4,10 @@ import { z } from 'zod';
 
 import {
   VECTOR_STORE,
-  VectorStoreGateway,
+  type VectorStoreGateway,
 } from 'src/infrastructure/integration/vector-store.port';
 import { ExecuteSimilaritySearchService } from 'src/modules/retrieval/execute-similarity-search/execute-similarity-search.service';
-import { CustomDocument } from 'src/shared/contracts';
+import type { CustomDocument } from 'src/shared/contracts';
 
 @Injectable()
 export class LoadVectorSearchToolService {

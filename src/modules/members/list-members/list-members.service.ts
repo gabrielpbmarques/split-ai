@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 
-import { UserEntity } from 'src/infrastructure/database/schema';
-import { ListMembersDto } from 'src/modules/members/list-members/list-members.dto';
+import type { UserEntity } from 'src/infrastructure/database/schema';
+import type { ListMembersDto } from 'src/modules/members/list-members/list-members.dto';
 import { UserRepository } from 'src/modules/users/repositories/user.repository';
 import {
-  PaginatedResponse,
+  type PaginatedResponse,
   toPaginatedResponse,
 } from 'src/shared/contracts/pagination';
 

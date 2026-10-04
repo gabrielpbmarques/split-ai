@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
 
-import { AcceptInviteDto } from 'src/modules/members/accept-invite/accept-invite.dto';
+import type { AcceptInviteDto } from 'src/modules/members/accept-invite/accept-invite.dto';
 import { UserRepository } from 'src/modules/users/repositories/user.repository';
 import { hashInviteToken } from 'src/shared/utils/invite-token';
 

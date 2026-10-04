@@ -33,7 +33,9 @@ export class SmsVerificationRepository {
 
     if (existing) {
       await this.smsVerificationRepository.update(existing.id, data);
-      return this.smsVerificationRepository.findOneBy({ id: existing.id });
+      return this.smsVerificationRepository.findOneByOrFail({
+        id: existing.id,
+      });
     } else {
       const smsVerification = this.smsVerificationRepository.create(data);
       return this.smsVerificationRepository.save(smsVerification);

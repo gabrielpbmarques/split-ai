@@ -4,7 +4,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 
-import { InviteMemberDto } from 'src/modules/members/invite-member/invite-member.dto';
+import type { InviteMemberDto } from 'src/modules/members/invite-member/invite-member.dto';
 import { EmailService } from 'src/modules/notifications/email/email.service';
 import { OrganizationRepository } from 'src/modules/organizations/repositories/organization.repository';
 import { UserRepository } from 'src/modules/users/repositories/user.repository';
@@ -47,10 +47,6 @@ export class InviteMemberService {
     return { id: user.id, email: user.email, invite_token: token };
   }
 
-  /**
-   * Enforces the organization plan's `max_users` quota. Unlimited plans and
-   * plans with a null `max_users` are unbounded.
-   */
   private async assertWithinUserQuota(organizationId: string): Promise<void> {
     const organization =
       await this.organizationRepository.findByIdWithPlan(organizationId);
@@ -78,9 +74,6 @@ export class InviteMemberService {
         subject: 'Você foi convidado(a) para uma organização',
         text: `Você foi convidado(a). Use o token de convite para definir sua senha: ${token}`,
       });
-    } catch {
-      // Email delivery is best-effort; the invite token is also returned so the
-      // owner/admin can share it manually if needed.
-    }
+    } catch {}
   }
 }

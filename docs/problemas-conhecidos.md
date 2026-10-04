@@ -198,3 +198,48 @@ Registro de travas, contornos e desvios conscientes do `split-ai` em relação a
 | Tentativas descartadas | — |
 | Remover quando | Houver incidente de dependência externa travando requests (então configurar timeout/retry por SDK) ou quando uma fonte for migrada para chamada HTTP direta. |
 | Registrado em | 2026-10-04 |
+
+### PC-014 — `isolatedModules` é incompatível com `consistent-type-imports` sob `emitDecoratorMetadata`
+
+| Campo | Valor |
+| --- | --- |
+| Status | atalho |
+| Biblioteca | TypeScript 5.9, `@typescript-eslint/eslint-plugin@6.21` |
+| Sintoma | Com `isolatedModules: true` o `tsc` exige `import type` para toda interface usada em assinatura decorada (TS1272: `FastifyReply`, `AuthenticatedUser`, portas de integração). O fixer de `consistent-type-imports`, ciente de `emitDecoratorMetadata`, faz o oposto: converte esses `import type` de volta em import de valor. Os dois nunca convergem. |
+| Causa | O ESLint não distingue interface de classe nessa posição e trata todo tipo em assinatura decorada como metadata potencial. |
+| Solução | `isolatedModules` fica desligado; `import type` é imposto pelo ESLint em todo o resto. O aviso TS151002 do ts-jest ("hybrid module kind") é silenciado via `diagnostics.ignoreCodes` no `package.json`. |
+| Onde | `tsconfig.json`, `.eslintrc.js`, `package.json` (`jest.transform`) |
+| Regra dona | `02-convencoes-fundamentais.md` |
+| Tentativas descartadas | Converter os 153 imports à mão: o `lint:fix` desfaz. |
+| Remover quando | typescript-eslint tratar interfaces em assinaturas decoradas como type-only, ou o projeto deixar `emitDecoratorMetadata`. |
+| Registrado em | 2026-10-04 |
+
+### PC-015 — `Repository.update()` recusa `Partial<Entity>` com campos `Record<string, unknown>`
+
+| Campo | Valor |
+| --- | --- |
+| Status | atalho |
+| Biblioteca | `typeorm@0.3.28` |
+| Sintoma | Sob `strict`, `update(id, data)` com `data: Partial<Entity>` falha: `Partial<X>` não é atribuível a `_QueryDeepPartialEntity<X>` sempre que a entidade (ou uma relação dela) tem coluna `jsonb` tipada `Record<string, unknown>`. |
+| Causa | `QueryDeepPartialEntity` mapeia `unknown` recursivamente e o resultado não aceita `unknown` de volta. |
+| Solução | Cast local no repositório: `data as QueryDeepPartialEntity<Entity>` (import de `typeorm/query-builder/QueryPartialEntity`). Sete repositórios. |
+| Onde | `src/modules/*/repositories/*.repository.ts` |
+| Regra dona | `09-banco-de-dados.md` |
+| Tentativas descartadas | Tipar os `jsonb` como `any`: proibido pela regra `02`. |
+| Remover quando | TypeORM aceitar `unknown` em `QueryDeepPartialEntity`. |
+| Registrado em | 2026-10-04 |
+
+### PC-016 — `adapter.register(helmet)` não compila sem cast
+
+| Campo | Valor |
+| --- | --- |
+| Status | atalho |
+| Biblioteca | `@nestjs/platform-fastify@10`, `@fastify/helmet`, `@fastify/multipart`, `fastify@4/5` |
+| Sintoma | `FastifyAdapter.register` espera `FastifyPluginCallback<…, RawServerBase, …>`; os plugins são tipados contra `RawServerDefault` e `multipartErrors` na instância, e o TypeScript recusa a atribuição. |
+| Causa | Os plugins fixam generics do `FastifyInstance` que o adapter do Nest deixa abertos. |
+| Solução | `type AdapterPlugin = Parameters<FastifyAdapter['register']>[0]` e `helmet as unknown as AdapterPlugin`, em `createFastifyAdapter()` apenas. |
+| Onde | `src/shared/http/fastify-adapter.ts` |
+| Regra dona | `01-topologia.md` |
+| Tentativas descartadas | `FastifyPluginCallback` genérico: falha pelos generics de servidor. |
+| Remover quando | `@nestjs/platform-fastify` alinhar os generics de `register` com os plugins oficiais. |
+| Registrado em | 2026-10-04 |

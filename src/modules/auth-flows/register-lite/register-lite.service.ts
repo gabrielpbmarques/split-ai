@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 
-import { RegisterLiteDto } from 'src/modules/auth-flows/register-lite/register-lite.dto';
+import type { RegisterLiteDto } from 'src/modules/auth-flows/register-lite/register-lite.dto';
 import { UserRepository } from 'src/modules/users/repositories/user.repository';
 
 @Injectable()

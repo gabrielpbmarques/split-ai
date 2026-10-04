@@ -48,7 +48,7 @@ export class GetTokenUsageController {
 
     const result = await this.getTokenUsageService.execute(
       dto,
-      user.organization_id,
+      user.organization_id ?? undefined,
     );
 
     return res.status(200).send(result);

@@ -4,7 +4,7 @@ import path from 'path';
 import { Injectable } from '@nestjs/common';
 
 import { ProcessPdfService } from 'src/modules/sources/process-pdf/process-pdf.service';
-import { CustomDocument } from 'src/shared/contracts';
+import type { CustomDocument } from 'src/shared/contracts';
 
 @Injectable()
 export class LoadPdfService {

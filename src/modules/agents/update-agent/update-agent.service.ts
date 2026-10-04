@@ -1,12 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { AccessScopeService } from 'src/auth/access-scope.service';
-import { AuthenticatedUser } from 'src/auth/authenticated-user';
-import { AgentEntity } from 'src/infrastructure/database/schema';
+import type { AuthenticatedUser } from 'src/auth/authenticated-user';
+import type { AgentEntity } from 'src/infrastructure/database/schema';
 import { TransactionExecutor } from 'src/infrastructure/database/transaction-executor/transaction-executor.service';
 import { AgentInstructionRepository } from 'src/modules/agents/repositories/agent-instruction.repository';
 import { AgentRepository } from 'src/modules/agents/repositories/agent.repository';
-import { UpdateAgentDto } from 'src/modules/agents/update-agent/update-agent.dto';
+import type { UpdateAgentDto } from 'src/modules/agents/update-agent/update-agent.dto';
 import { isUuid } from 'src/shared/utils/is-uuid';
 @Injectable()
 export class UpdateAgentService {
@@ -32,7 +32,7 @@ export class UpdateAgentService {
       'Você não tem acesso a este agente.',
     );
 
-    const updateData: any = {};
+    const updateData: Partial<AgentEntity> = {};
     if (dto.name !== undefined) updateData.name = dto.name;
     if (dto.agentIdentifier !== undefined)
       updateData.agent_identifier = dto.agentIdentifier;
@@ -47,10 +47,8 @@ export class UpdateAgentService {
     if (dto.sites !== undefined)
       updateData.sites = dto.sites && dto.sites.length ? dto.sites : null;
 
-    // Reassigning an agent to another organization stays platform-admin-only;
-    // org members can never move an agent out of their own organization.
     if (user.role === 'admin') {
-      const orgFromDtoRaw = (dto as any).organization_id ?? dto.organizationId;
+      const orgFromDtoRaw = dto.organizationId;
       if (orgFromDtoRaw !== undefined) {
         const normalized =
           typeof orgFromDtoRaw === 'string' && orgFromDtoRaw.trim().length === 0

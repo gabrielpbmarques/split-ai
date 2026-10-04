@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import { CreateApiKeyDto } from 'src/modules/api-keys/create-api-key/create-api-key.dto';
+import type { CreateApiKeyDto } from 'src/modules/api-keys/create-api-key/create-api-key.dto';
 import { ApiKeyRepository } from 'src/modules/api-keys/repositories/api-key.repository';
 import { generateApiKey } from 'src/shared/utils/api-key';
 
@@ -8,7 +8,7 @@ interface CreateApiKeyResult {
   id: string;
   name: string;
   key_prefix: string;
-  // Full secret — returned only here, never retrievable again.
+
   secret: string;
   expires_at: Date | null;
 }

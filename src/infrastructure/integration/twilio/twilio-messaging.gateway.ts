@@ -1,10 +1,10 @@
 import { Twilio } from 'twilio';
 
 import {
-  IntegrationState,
+  type IntegrationState,
   notConfigured,
 } from 'src/infrastructure/integration/integration.state';
-import {
+import type {
   InboundWhatsappMessage,
   MessagingGateway,
 } from 'src/infrastructure/integration/messaging.port';

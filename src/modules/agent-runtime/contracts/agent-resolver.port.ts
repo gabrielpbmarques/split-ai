@@ -1,6 +1,6 @@
-import { MemorySaver } from '@langchain/langgraph';
+import type { MemorySaver } from '@langchain/langgraph';
 
-import { ResolvedAgent } from 'src/shared/contracts';
+import type { ResolvedAgent } from 'src/shared/contracts';
 
 export const AGENT_RESOLVER = Symbol('AGENT_RESOLVER');
 

@@ -5,19 +5,23 @@ import {
 } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
 
+import type { UserEntity } from 'src/infrastructure/database/schema';
 import {
-  SignUpDto,
+  type SignUpDto,
   UserType,
 } from 'src/modules/auth-flows/sign-up/sign-up.dto';
 import { UserRepository } from 'src/modules/users/repositories/user.repository';
+
+export interface SignUpResult {
+  message: string;
+  user: Pick<UserEntity, 'id' | 'name' | 'email' | 'phone' | 'role'>;
+}
 
 @Injectable()
 export class SignUpService {
   constructor(private userRepository: UserRepository) {}
 
-  async execute(
-    signUpDto: SignUpDto,
-  ): Promise<{ message: string; user?: any }> {
+  async execute(signUpDto: SignUpDto): Promise<SignUpResult> {
     const { email, password, confirmPassword, ...userData } = signUpDto;
 
     if (password !== confirmPassword) {

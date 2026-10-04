@@ -165,7 +165,9 @@ function collectImports(sf: ts.SourceFile): {
 }
 
 function decoratorsOf(node: ts.Node): readonly ts.Decorator[] {
-  return (ts.canHaveDecorators(node) ? ts.getDecorators(node) : undefined) ?? [];
+  return (
+    (ts.canHaveDecorators(node) ? ts.getDecorators(node) : undefined) ?? []
+  );
 }
 
 function decoratorCall(dec: ts.Decorator): ts.CallExpression | undefined {
@@ -359,7 +361,9 @@ export function buildGraph(): Graph {
           importedSpecifier,
           scope,
           useCase,
-          isGlobal: decoratorsOf(stmt).some((d) => decoratorName(d) === 'Global'),
+          isGlobal: decoratorsOf(stmt).some(
+            (d) => decoratorName(d) === 'Global',
+          ),
         });
       } else {
         classes.set(name, {

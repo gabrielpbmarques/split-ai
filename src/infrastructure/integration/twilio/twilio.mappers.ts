@@ -1,6 +1,6 @@
-import { InboundWhatsappMessage } from 'src/infrastructure/integration/messaging.port';
+import type { InboundWhatsappMessage } from 'src/infrastructure/integration/messaging.port';
 import {
-  TwilioInboundMessage,
+  type TwilioInboundMessage,
   twilioInboundMessageSchema,
 } from 'src/infrastructure/integration/twilio/twilio.contracts';
 

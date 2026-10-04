@@ -11,16 +11,16 @@ export class RegisterLiteDto {
   @IsNotEmpty()
   @IsString()
   @MaxLength(255)
-  name: string;
+  name!: string;
 
   @IsNotEmpty()
   @IsEmail()
-  email: string;
+  email!: string;
 
   @IsNotEmpty()
   @IsString()
   @Matches(/^\d{10,13}$/)
-  phone: string;
+  phone!: string;
 
   @IsOptional()
   @IsString()

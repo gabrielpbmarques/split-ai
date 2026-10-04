@@ -1,12 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { DynamicStructuredTool } from 'langchain';
-import { z } from 'zod';
 
-import { AgentEntity } from 'src/infrastructure/database/schema';
+import type { AgentEntity } from 'src/infrastructure/database/schema';
 import { OrganizationFeatureRepository } from 'src/modules/organizations/repositories/organization-feature.repository';
 import { OrganizationRepository } from 'src/modules/organizations/repositories/organization.repository';
 import { LoadDatabaseToolService } from 'src/modules/retrieval/load-database-tool/load-database-tool.service';
 import { env } from 'src/shared/config/env';
+import type { AgentTool } from 'src/shared/contracts';
 
 const DATABASE_CONNECTION_FEATURE_KEY = 'database_connection';
 
@@ -22,7 +21,7 @@ export class MaybeLoadDatabaseToolService {
     organizationId: string,
     scopeCompanyId?: string,
     agent?: AgentEntity,
-  ): Promise<DynamicStructuredTool<z.ZodObject<any>> | null> {
+  ): Promise<AgentTool | null> {
     const feature = await this.organizationFeatureRepository.getEnabledFeature(
       organizationId,
       DATABASE_CONNECTION_FEATURE_KEY,

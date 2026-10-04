@@ -16,6 +16,7 @@ export * from 'src/shared/contracts/models/process-source-input.model';
 export * from 'src/shared/contracts/models/runnable-chat-opts.model';
 export * from 'src/shared/contracts/models/supabase-document.model';
 export * from 'src/shared/contracts/models/chunk.model';
+export * from 'src/shared/contracts/models/agent-tool.model';
 export * from 'src/shared/contracts/models/resolved-agent.model';
 export * from 'src/shared/contracts/models/document-data.model';
 export * from 'src/shared/contracts/models/stream-event.model';

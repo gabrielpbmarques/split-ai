@@ -1,12 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
-import { Executor } from 'src/infrastructure/database/database.types';
+import type { Executor } from 'src/infrastructure/database/database.types';
 import { AgentEntity } from 'src/infrastructure/database/schema/agent.entity';
 import {
-  PageRequest,
-  PageResult,
+  type PageRequest,
+  type PageResult,
   skipOf,
 } from 'src/shared/contracts/pagination';
 import { isUuid } from 'src/shared/utils/is-uuid';
@@ -51,7 +52,7 @@ export class AgentRepository {
     data: Partial<AgentEntity>,
     tx?: Executor,
   ): Promise<void> {
-    await this.repo(tx).update(id, data);
+    await this.repo(tx).update(id, data as QueryDeepPartialEntity<AgentEntity>);
   }
 
   async findById(id: string): Promise<AgentEntity | null> {

@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
-import { UserEntity } from 'src/infrastructure/database/schema';
+import type { UserEntity } from 'src/infrastructure/database/schema';
 import { UserRepository } from 'src/modules/users/repositories/user.repository';
-import { UpdateUserDto } from 'src/modules/users/update-user/update-user.dto';
+import type { UpdateUserDto } from 'src/modules/users/update-user/update-user.dto';
 
 @Injectable()
 export class UpdateUserService {
@@ -15,6 +15,8 @@ export class UpdateUserService {
     }
 
     const updated = await this.userRepository.update(id, dto);
+    if (!updated) throw new NotFoundException('Usuário não encontrado');
+
     return updated;
   }
 }

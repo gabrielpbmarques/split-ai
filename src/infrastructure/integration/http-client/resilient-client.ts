@@ -7,7 +7,7 @@ import {
 import { CircuitBreaker } from 'src/infrastructure/integration/http-client/circuit-breaker';
 import {
   assertAllowedUrl,
-  SsrfGuardOptions,
+  type SsrfGuardOptions,
 } from 'src/infrastructure/integration/http-client/ssrf-guard';
 import { currentCorrelationId } from 'src/shared/observability/correlation';
 

@@ -1,4 +1,4 @@
-import { StreamEvent } from 'src/shared/contracts';
+import type { StreamEvent } from 'src/shared/contracts';
 
 export async function* errorStream(
   message: string,

@@ -5,9 +5,9 @@ import {
 } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
 
-import { UserEntity } from 'src/infrastructure/database/schema';
+import type { UserEntity } from 'src/infrastructure/database/schema';
 import { GenerateTokenService } from 'src/modules/auth-flows/generate-token/generate-token.service';
-import { LoginDto } from 'src/modules/auth-flows/login/login.dto';
+import type { LoginDto } from 'src/modules/auth-flows/login/login.dto';
 import { UserRepository } from 'src/modules/users/repositories/user.repository';
 
 export interface LoginResult {

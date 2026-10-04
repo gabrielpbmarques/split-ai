@@ -1,4 +1,4 @@
-import { OrgRole, UserRole } from 'src/shared/contracts';
+import type { OrgRole, UserRole } from 'src/shared/contracts';
 
 export type PrincipalRole = UserRole | 'service';
 

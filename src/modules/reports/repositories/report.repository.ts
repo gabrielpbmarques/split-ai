@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder } from 'typeorm';
+import { Repository, type SelectQueryBuilder } from 'typeorm';
 
 import { ReportEntity } from 'src/infrastructure/database/schema/report.entity';
 import {
-  PageRequest,
-  PageResult,
+  type PageRequest,
+  type PageResult,
   skipOf,
 } from 'src/shared/contracts/pagination';
 
@@ -40,7 +40,6 @@ export class ReportRepository {
     return await this.repository.findOne({ where: { id } });
   }
 
-  // Analytics helpers
   private applyFilters(
     qb: SelectQueryBuilder<ReportEntity>,
     filters: ReportFilters = {},
@@ -138,9 +137,9 @@ export class ReportRepository {
     >,
   ): Promise<{ date: string; count: number }[]> {
     const qb = this.repository.createQueryBuilder('r');
-    // Apply non-date filters first
+
     this.applyFilters(qb, filters);
-    // Compare on date bucket to avoid timezone drift
+
     const toYMD = (d: Date) => d.toISOString().slice(0, 10);
     const startDate = toYMD(start);
     const endDate = toYMD(end);

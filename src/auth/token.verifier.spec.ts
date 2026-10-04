@@ -61,7 +61,7 @@ describe('TokenVerifier', () => {
             user_status: 1,
           },
         },
-        env.BRAVOHUB_JWT_SECRET,
+        env.BRAVOHUB_JWT_SECRET ?? '',
         { algorithm: 'HS512' },
       );
 
@@ -82,7 +82,7 @@ describe('TokenVerifier', () => {
             user_status: 0,
           },
         },
-        env.BRAVOHUB_JWT_SECRET,
+        env.BRAVOHUB_JWT_SECRET ?? '',
         { algorithm: 'HS512' },
       );
 

@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, FindOptionsWhere, MoreThan, Repository } from 'typeorm';
+import { Between, type FindOptionsWhere, MoreThan, Repository } from 'typeorm';
 
 import { SessionEntity } from 'src/infrastructure/database/schema/session.entity';
 import {
-  PageRequest,
-  PageResult,
+  type PageRequest,
+  type PageResult,
   skipOf,
 } from 'src/shared/contracts/pagination';
 

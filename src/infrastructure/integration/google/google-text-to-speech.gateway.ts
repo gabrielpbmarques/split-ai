@@ -1,8 +1,8 @@
 import { TextToSpeechClient } from '@google-cloud/text-to-speech';
 import { BadGatewayException } from '@nestjs/common';
 
-import { IntegrationState } from 'src/infrastructure/integration/integration.state';
-import { TextToSpeech } from 'src/infrastructure/integration/text-to-speech.port';
+import type { IntegrationState } from 'src/infrastructure/integration/integration.state';
+import type { TextToSpeech } from 'src/infrastructure/integration/text-to-speech.port';
 
 export class GoogleTextToSpeechGateway implements TextToSpeech {
   readonly name = 'google-tts';

@@ -1,10 +1,10 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 
-import { PaymentEntity } from 'src/infrastructure/database/schema';
-import { GetPaymentHistoryQueryDto } from 'src/modules/billing/get-payment-history/get-payment-history.dto';
+import type { PaymentEntity } from 'src/infrastructure/database/schema';
+import type { GetPaymentHistoryQueryDto } from 'src/modules/billing/get-payment-history/get-payment-history.dto';
 import { PaymentRepository } from 'src/modules/billing/repositories/payment.repository';
 import {
-  PaginatedResponse,
+  type PaginatedResponse,
   toPaginatedResponse,
 } from 'src/shared/contracts/pagination';
 

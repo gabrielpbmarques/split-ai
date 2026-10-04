@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { DynamicStructuredTool } from 'langchain';
 
 import { NormalizePromptInstructionsService } from 'src/modules/agent-runtime/normalize-prompt-instructions/normalize-prompt-instructions.service';
-import { AIInstructions } from 'src/shared/contracts';
+import type { AgentTool, AIInstructions } from 'src/shared/contracts';
 
 @Injectable()
 export class BuildSystemPromptService {
@@ -12,8 +11,8 @@ export class BuildSystemPromptService {
 
   async execute(
     instructions: AIInstructions,
-    tools: DynamicStructuredTool[],
-    promptVariables?: Record<string, any>,
+    tools: AgentTool[],
+    promptVariables?: Record<string, unknown>,
   ): Promise<string> {
     const textPrompt = this.normalizePromptInstructionsService.execute(
       instructions,
@@ -35,12 +34,6 @@ export class BuildSystemPromptService {
     return final;
   }
 
-  /**
-   * A non-negotiable, code-level tenant-isolation directive injected whenever a
-   * `companyId` scope is present. It is independent of whatever instructions are
-   * stored for the agent in the database, so the guardrail cannot be edited away
-   * by mistake and applies uniformly to the supervisor and its SQL specialist.
-   */
   private buildCompanyScopeGuardrail(companyId: string): string {
     return [
       '=== ISOLAMENTO DE EMPRESA (REGRA DE SEGURANÇA INEGOCIÁVEL) ===',

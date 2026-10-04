@@ -1,11 +1,11 @@
 import { MemoryVectorStore } from '@langchain/classic/vectorstores/memory';
-import { Embeddings } from '@langchain/core/embeddings';
-import { VectorStoreInterface } from '@langchain/core/vectorstores';
+import type { Embeddings } from '@langchain/core/embeddings';
+import type { VectorStoreInterface } from '@langchain/core/vectorstores';
 import { Document } from 'langchain';
 
-import { IntegrationState } from 'src/infrastructure/integration/integration.state';
-import { VectorStoreGateway } from 'src/infrastructure/integration/vector-store.port';
-import { Chunks, CustomMetadata } from 'src/shared/contracts';
+import type { IntegrationState } from 'src/infrastructure/integration/integration.state';
+import type { VectorStoreGateway } from 'src/infrastructure/integration/vector-store.port';
+import type { Chunks, CustomMetadata } from 'src/shared/contracts';
 
 type StoredDocument = Document<Record<string, unknown>>;
 

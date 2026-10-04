@@ -2,8 +2,8 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import {
   EMAIL,
-  EmailGateway,
-  EmailMessage,
+  type EmailGateway,
+  type EmailMessage,
 } from 'src/infrastructure/integration/email.port';
 
 @Injectable()

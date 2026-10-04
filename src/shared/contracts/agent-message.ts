@@ -1,4 +1,4 @@
-import { UsageMetadata } from 'langsmith/schemas';
+import type { UsageMetadata } from 'langsmith/schemas';
 
 export type AgentMessage = {
   id?: string;

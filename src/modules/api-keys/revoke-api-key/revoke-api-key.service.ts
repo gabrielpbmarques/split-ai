@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { ApiKeyRepository } from 'src/modules/api-keys/repositories/api-key.repository';
-import { RevokeApiKeyDto } from 'src/modules/api-keys/revoke-api-key/revoke-api-key.dto';
+import type { RevokeApiKeyDto } from 'src/modules/api-keys/revoke-api-key/revoke-api-key.dto';
 
 @Injectable()
 export class RevokeApiKeyService {

@@ -1,4 +1,4 @@
-import { SqlDialect } from 'src/infrastructure/integration/customer-database.port';
+import type { SqlDialect } from 'src/infrastructure/integration/customer-database.port';
 
 const DENY_RE = /\b(DELETE|ALTER|DROP|CREATE|REPLACE|TRUNCATE)\b/i;
 const HAS_LIMIT_TAIL_RE = /\blimit\b\s+\d+(\s*,\s*\d+)?\s*;?\s*$/i;

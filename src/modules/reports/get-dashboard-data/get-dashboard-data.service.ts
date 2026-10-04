@@ -1,17 +1,37 @@
 import { Injectable } from '@nestjs/common';
 
-import { AuthenticatedUser } from 'src/auth/authenticated-user';
-import { GetDashboardDataDto } from 'src/modules/reports/get-dashboard-data/get-dashboard-data.dto';
-import { ReportRepository } from 'src/modules/reports/repositories/report.repository';
+import type { AuthenticatedUser } from 'src/auth/authenticated-user';
+import type {
+  GetDashboardDataDto,
+  ReportSentiment,
+  ReportType,
+} from 'src/modules/reports/get-dashboard-data/get-dashboard-data.dto';
+import {
+  type ReportFilters,
+  ReportRepository,
+} from 'src/modules/reports/repositories/report.repository';
+
+export interface DashboardData {
+  totalVolume: number;
+  byType: Record<ReportType, number>;
+  bySentiment: Record<ReportSentiment, number>;
+  appointmentConversion: {
+    totalAppointments: number;
+    scheduledAppointments: number;
+    rate: number;
+  };
+}
 
 @Injectable()
 export class GetDashboardDataService {
   constructor(private readonly reportRepository: ReportRepository) {}
 
-  private parseFilters(user: AuthenticatedUser, query: any) {
-    const filters: any = {};
+  private parseFilters(
+    user: AuthenticatedUser,
+    query: GetDashboardDataDto,
+  ): ReportFilters {
+    const filters: ReportFilters = {};
 
-    // Organization scoping
     if (user.role !== 'admin') {
       if (user.organization_id) {
         filters.organization_id = user.organization_id;
@@ -20,7 +40,6 @@ export class GetDashboardDataService {
       filters.organization_id = String(query.organization_id);
     }
 
-    // Agents (single or multiple)
     if (query.agent_ids) {
       const arr = Array.isArray(query.agent_ids)
         ? query.agent_ids
@@ -33,21 +52,19 @@ export class GetDashboardDataService {
       filters.agent_id = String(query.agent_id);
     }
 
-    // Optional categorical filters
-    if (query.sentiment) filters.sentiment = String(query.sentiment);
-    if (query.type) filters.type = String(query.type);
+    if (query.sentiment) filters.sentiment = query.sentiment;
+    if (query.type) filters.type = query.type;
 
-    // Date filters: support created_at (single day) or start/end
     if (query.created_at) {
-      const d = new Date(query.created_at as any);
+      const d = new Date(query.created_at);
       if (!isNaN(d.getTime())) filters.createdAtDay = d;
     } else {
       if (query.start) {
-        const s = new Date(query.start as any);
+        const s = new Date(query.start);
         if (!isNaN(s.getTime())) filters.startDate = s;
       }
       if (query.end) {
-        const e = new Date(query.end as any);
+        const e = new Date(query.end);
         if (!isNaN(e.getTime())) filters.endDate = e;
       }
     }
@@ -58,15 +75,13 @@ export class GetDashboardDataService {
   async execute(
     user: AuthenticatedUser,
     query: GetDashboardDataDto,
-  ): Promise<any> {
+  ): Promise<DashboardData> {
     const filters = this.parseFilters(user, query);
 
-    // 1) Volume total
     const totalVolume = await this.reportRepository.countAll(filters);
 
-    // 2) Distribuição por tipo
     const typeRows = await this.reportRepository.groupCountBy('type', filters);
-    const byType: Record<'appointment' | 'order' | 'faq', number> = {
+    const byType: Record<ReportType, number> = {
       appointment: 0,
       order: 0,
       faq: 0,
@@ -75,12 +90,11 @@ export class GetDashboardDataService {
       if (row.key in byType) byType[row.key as keyof typeof byType] = row.count;
     }
 
-    // 3) Sentimento
     const sentimentRows = await this.reportRepository.groupCountBy(
       'sentiment',
       filters,
     );
-    const bySentiment: Record<'positive' | 'negative' | 'neutral', number> = {
+    const bySentiment: Record<ReportSentiment, number> = {
       positive: 0,
       negative: 0,
       neutral: 0,
@@ -90,7 +104,6 @@ export class GetDashboardDataService {
         bySentiment[row.key as keyof typeof bySentiment] = row.count;
     }
 
-    // 4) Conversão em agendamento
     const totalAppointments =
       await this.reportRepository.countAppointments(filters);
     const scheduledAppointments = await this.reportRepository.countAppointments(

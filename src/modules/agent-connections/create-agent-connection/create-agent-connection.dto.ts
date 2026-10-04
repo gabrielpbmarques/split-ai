@@ -12,14 +12,12 @@ import {
 export class CreateAgentConnectionDto {
   @IsNotEmpty()
   @IsUUID()
-  principalAgentId: string;
+  principalAgentId!: string;
 
   @IsNotEmpty()
   @IsUUID()
-  childAgentId: string;
+  childAgentId!: string;
 
-  // Name the principal agent's LLM sees for this tool. Provider tool names
-  // accept only letters, numbers, hyphen and underscore.
   @IsNotEmpty()
   @IsString()
   @MaxLength(64)
@@ -27,12 +25,12 @@ export class CreateAgentConnectionDto {
     message:
       'toolName deve conter apenas letras, números, hífen ou underscore.',
   })
-  toolName: string;
+  toolName!: string;
 
   @IsNotEmpty()
   @IsString()
   @MaxLength(10000)
-  toolDescription: string;
+  toolDescription!: string;
 
   @IsOptional()
   @IsInt()

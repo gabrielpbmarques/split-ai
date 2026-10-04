@@ -1,10 +1,10 @@
 import { BaseDocumentCompressor } from '@langchain/classic/retrievers/document_compressors';
-import { Document, DocumentInterface } from '@langchain/core/documents';
+import { Document, type DocumentInterface } from '@langchain/core/documents';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 
 import {
   RERANKER,
-  RerankerGateway,
+  type RerankerGateway,
 } from 'src/infrastructure/integration/reranker.port';
 import { env } from 'src/shared/config/env';
 

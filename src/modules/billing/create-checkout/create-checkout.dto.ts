@@ -8,7 +8,7 @@ export class CreateCheckoutDto {
   organizationId?: string;
 
   @IsEnum(PlanType)
-  planType: PlanType;
+  planType!: PlanType;
 
   @IsOptional()
   @IsUrl({ require_tld: false })

@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 
 import {
   PlanEntity,
-  PlanType,
+  type PlanType,
 } from 'src/infrastructure/database/schema/plan.entity';
 
 @Injectable()

@@ -4,10 +4,8 @@ import { CHAT_MODEL } from 'src/infrastructure/integration/chat-model.port';
 import { CUSTOMER_DATABASE } from 'src/infrastructure/integration/customer-database.port';
 import { EMAIL } from 'src/infrastructure/integration/email.port';
 import { FILE_STORAGE } from 'src/infrastructure/integration/file-storage.port';
-import {
-  IntegrationGateway,
-  IntegrationState,
-} from 'src/infrastructure/integration/integration.state';
+import { IntegrationGateway } from 'src/infrastructure/integration/integration.state';
+import type { IntegrationState } from 'src/infrastructure/integration/integration.state';
 import { MESSAGING } from 'src/infrastructure/integration/messaging.port';
 import { OCR } from 'src/infrastructure/integration/ocr.port';
 import { PAYMENTS } from 'src/infrastructure/integration/payments.port';

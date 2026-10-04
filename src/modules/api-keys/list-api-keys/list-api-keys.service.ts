@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 
-import { ListApiKeysDto } from 'src/modules/api-keys/list-api-keys/list-api-keys.dto';
+import type { ListApiKeysDto } from 'src/modules/api-keys/list-api-keys/list-api-keys.dto';
 import { ApiKeyRepository } from 'src/modules/api-keys/repositories/api-key.repository';
-import { ApiKeyListItem } from 'src/shared/contracts';
+import type { ApiKeyListItem } from 'src/shared/contracts';
 import {
-  PaginatedResponse,
+  type PaginatedResponse,
   toPaginatedResponse,
 } from 'src/shared/contracts/pagination';
 

@@ -1,4 +1,4 @@
-import { CustomMetadata } from 'src/shared/contracts';
+import type { CustomMetadata } from 'src/shared/contracts';
 
 export function buildSourceMetadata(params: {
   sourceType?: string;

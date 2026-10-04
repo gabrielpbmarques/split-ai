@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { ExtractPdfChunksService } from 'src/modules/sources/extract-pdf-chunks/extract-pdf-chunks.service';
-import { CustomDocument } from 'src/shared/contracts';
+import type { CustomDocument } from 'src/shared/contracts';
 
 @Injectable()
 export class ProcessPdfService {

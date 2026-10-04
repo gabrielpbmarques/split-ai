@@ -9,6 +9,7 @@ import {
 import { FastifyReply } from 'fastify';
 
 import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import { requireOrganizationId } from 'src/auth/request-user';
 import { ListApiKeysDto } from 'src/modules/api-keys/list-api-keys/list-api-keys.dto';
 import { ListApiKeysService } from 'src/modules/api-keys/list-api-keys/list-api-keys.service';
 import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
@@ -31,7 +32,7 @@ export class ListApiKeysController {
     @Body() dto: ListApiKeysDto,
   ): Promise<FastifyReply> {
     const result = await this.listApiKeysService.execute(
-      user.organization_id,
+      requireOrganizationId(user),
       dto,
     );
     return res.status(200).send(result);

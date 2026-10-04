@@ -9,6 +9,7 @@ import {
 import { FastifyReply } from 'fastify';
 
 import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import { requireOrganizationId } from 'src/auth/request-user';
 import { GetCreditsService } from 'src/modules/billing/get-credits/get-credits.service';
 import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
 import { User as UserDecorator } from 'src/shared/decorators/user.decorator';
@@ -28,7 +29,9 @@ export class GetCreditsController {
     @Res() res: FastifyReply,
     @UserDecorator() user: AuthenticatedUser,
   ) {
-    const data = await this.getCreditsService.execute(user.organization_id);
+    const data = await this.getCreditsService.execute(
+      requireOrganizationId(user),
+    );
     return res.status(200).send(data);
   }
 }

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
-import { UserEntity } from 'src/infrastructure/database/schema';
+import type { UserEntity } from 'src/infrastructure/database/schema';
 import { UserRepository } from 'src/modules/users/repositories/user.repository';
 
 @Injectable()

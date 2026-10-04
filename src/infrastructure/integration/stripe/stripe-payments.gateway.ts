@@ -1,11 +1,15 @@
-import { BadRequestException, Logger } from '@nestjs/common';
+import {
+  BadGatewayException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import Stripe from 'stripe';
 
 import {
-  IntegrationState,
+  type IntegrationState,
   notConfigured,
 } from 'src/infrastructure/integration/integration.state';
-import {
+import type {
   CheckoutMode,
   CheckoutRequest,
   CheckoutSession,
@@ -101,6 +105,10 @@ export class StripePaymentsGateway implements PaymentsGateway {
       (typeof session.payment_intent === 'string' && session.payment_intent) ||
       (typeof session.subscription === 'string' && session.subscription) ||
       session.id;
+
+    if (!session.url) {
+      throw new BadGatewayException('Stripe não devolveu a URL do checkout');
+    }
 
     return { sessionId: session.id, url: session.url, paymentReference, mode };
   }

@@ -1,17 +1,17 @@
-import { BaseChatModel } from '@langchain/core/language_models/chat_models';
-import type { createAgent, DynamicStructuredTool } from 'langchain';
-import { z } from 'zod';
+import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
+import type { createAgent } from 'langchain';
 
-import { RunnableChatOpts } from 'src/shared/contracts/models/runnable-chat-opts.model';
+import type { AgentTool } from 'src/shared/contracts/models/agent-tool.model';
+import type { RunnableChatOpts } from 'src/shared/contracts/models/runnable-chat-opts.model';
 
 export type AgentRunnable = ReturnType<typeof createAgent>;
 
 export interface ResolvedAgent {
-  id?: string;
+  id: string;
   systemPrompt: string;
   chat: BaseChatModel;
   runnableOpts: RunnableChatOpts;
-  tools?: DynamicStructuredTool<z.ZodObject<any>>[];
+  tools?: AgentTool[];
   sites?: string[];
   organization_id?: string;
   runnable: AgentRunnable;

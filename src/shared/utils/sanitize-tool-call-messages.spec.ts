@@ -1,6 +1,6 @@
 import {
   AIMessage,
-  BaseMessage,
+  type BaseMessage,
   HumanMessage,
   ToolMessage,
   isAIMessage,
@@ -9,8 +9,6 @@ import {
 
 import { sanitizeToolCallMessages } from 'src/shared/utils/sanitize-tool-call-messages';
 
-/** Recomputes the invariant Anthropic enforces: every tool_use id has a
- *  tool_result and every tool_result maps to a surviving tool_use. */
 function assertNoDangling(messages: BaseMessage[]): void {
   const toolUseIds = new Set<string>();
   const toolResultIds = new Set<string>();
@@ -148,7 +146,7 @@ describe('sanitizeToolCallMessages', () => {
     const result = sanitizeToolCallMessages(messages);
 
     const ai = result.find((m) => isAIMessage(m)) as AIMessage;
-    expect(ai.tool_calls.map((c) => c.id)).toEqual(['ok']);
+    expect(ai.tool_calls?.map((c) => c.id)).toEqual(['ok']);
     expect(
       result.some(
         (m) => isToolMessage(m) && (m as ToolMessage).tool_call_id === 'ok',

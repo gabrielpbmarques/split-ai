@@ -12,7 +12,7 @@ import {
 export class UpdateAgentConnectionDto {
   @IsNotEmpty()
   @IsUUID()
-  id: string;
+  id!: string;
 
   @IsOptional()
   @IsString()

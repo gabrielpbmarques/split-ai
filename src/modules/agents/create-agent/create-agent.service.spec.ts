@@ -1,6 +1,6 @@
 import { ForbiddenException } from '@nestjs/common';
 
-import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import type { AuthenticatedUser } from 'src/auth/authenticated-user';
 import { CreateAgentService } from 'src/modules/agents/create-agent/create-agent.service';
 
 describe('CreateAgentService', () => {

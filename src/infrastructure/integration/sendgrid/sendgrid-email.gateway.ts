@@ -1,11 +1,11 @@
 import SendGrid from '@sendgrid/mail';
 
-import {
+import type {
   EmailGateway,
   EmailMessage,
 } from 'src/infrastructure/integration/email.port';
 import {
-  IntegrationState,
+  type IntegrationState,
   notConfigured,
 } from 'src/infrastructure/integration/integration.state';
 import { env } from 'src/shared/config/env';
@@ -20,7 +20,7 @@ export class SendGridEmailGateway implements EmailGateway {
       env.SENDGRID_API_KEY && env.SENDGRID_EMAIL_DEFAULT_FROM,
     );
 
-    if (this.configured) {
+    if (env.SENDGRID_API_KEY && this.configured) {
       SendGrid.setApiKey(env.SENDGRID_API_KEY);
     }
   }

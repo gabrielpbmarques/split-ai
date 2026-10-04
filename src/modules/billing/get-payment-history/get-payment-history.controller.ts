@@ -9,6 +9,7 @@ import {
 import { FastifyReply } from 'fastify';
 
 import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import { requireOrganizationId } from 'src/auth/request-user';
 import { GetPaymentHistoryQueryDto } from 'src/modules/billing/get-payment-history/get-payment-history.dto';
 import { GetPaymentHistoryService } from 'src/modules/billing/get-payment-history/get-payment-history.service';
 import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
@@ -34,7 +35,7 @@ export class GetPaymentHistoryController {
     query: GetPaymentHistoryQueryDto,
   ) {
     const result = await this.getPaymentHistoryService.execute(
-      user.organization_id,
+      requireOrganizationId(user),
       query,
     );
     return res.status(200).send(result);

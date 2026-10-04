@@ -1,18 +1,18 @@
 import {
-  CanActivate,
-  ExecutionContext,
+  type CanActivate,
+  type ExecutionContext,
   ForbiddenException,
   Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { FastifyRequest } from 'fastify';
+import type { FastifyRequest } from 'fastify';
 
 import {
   IS_PUBLIC_KEY,
   REQUIRED_PERMISSIONS_KEY,
   REQUIRE_ACTIVE_ORGANIZATION_KEY,
 } from 'src/auth/auth.constants';
-import { Permission } from 'src/auth/permissions';
+import type { Permission } from 'src/auth/permissions';
 import { requireUser } from 'src/auth/request-user';
 
 export const INACTIVE_ORGANIZATION_MESSAGE =

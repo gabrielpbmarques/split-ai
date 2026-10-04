@@ -1,4 +1,4 @@
-import { IncomingMessage, ServerResponse } from 'node:http';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 
 import { Module } from '@nestjs/common';
 import { LoggerModule } from 'nestjs-pino';

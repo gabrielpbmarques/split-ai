@@ -6,7 +6,7 @@ import {
   detectDialect,
   UnsupportedDialectError,
 } from 'src/infrastructure/integration/customer-database/sql-guard';
-import {
+import type {
   CustomerDatabaseConnection,
   CustomerDatabaseGateway,
   CustomerDatabaseOptions,
@@ -16,7 +16,7 @@ import {
   assertAllowedHost,
   SsrfBlockedError,
 } from 'src/infrastructure/integration/http-client/ssrf-guard';
-import { IntegrationState } from 'src/infrastructure/integration/integration.state';
+import type { IntegrationState } from 'src/infrastructure/integration/integration.state';
 import { env } from 'src/shared/config/env';
 
 export class TypeOrmCustomerDatabaseGateway implements CustomerDatabaseGateway {

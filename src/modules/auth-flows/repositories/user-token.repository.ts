@@ -64,7 +64,9 @@ export class UserTokenRepository {
   async createUniqueToken(
     data: Partial<UserTokenEntity>,
   ): Promise<UserTokenEntity> {
-    await this.deactivateAllUserTokens(data.user_id);
+    if (data.user_id) {
+      await this.deactivateAllUserTokens(data.user_id);
+    }
 
     const userToken = this.userTokenRepository.create(data);
     return this.userTokenRepository.save(userToken);

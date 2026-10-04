@@ -1,10 +1,10 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 
-import { UserEntity } from 'src/infrastructure/database/schema';
+import type { UserEntity } from 'src/infrastructure/database/schema';
 import {
-  InboundWhatsappMessage,
+  type InboundWhatsappMessage,
   MESSAGING,
-  MessagingGateway,
+  type MessagingGateway,
 } from 'src/infrastructure/integration/messaging.port';
 import { UserRepository } from 'src/modules/users/repositories/user.repository';
 

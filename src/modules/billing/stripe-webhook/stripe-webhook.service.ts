@@ -5,8 +5,8 @@ import { PaymentStatus } from 'src/infrastructure/database/schema/payment.entity
 import { TransactionExecutor } from 'src/infrastructure/database/transaction-executor/transaction-executor.service';
 import {
   PAYMENTS,
-  PaymentEvent,
-  PaymentsGateway,
+  type PaymentEvent,
+  type PaymentsGateway,
 } from 'src/infrastructure/integration/payments.port';
 import { ManageCreditsService } from 'src/modules/billing/manage-credits/manage-credits.service';
 import { PaymentRepository } from 'src/modules/billing/repositories/payment.repository';
@@ -74,7 +74,7 @@ export class StripeWebhookService {
       await this.paymentRepository.updateStatus(
         payment.id,
         PaymentStatus.SUCCEEDED,
-        { receipt_url: event.receiptUrl },
+        { receipt_url: event.receiptUrl ?? undefined },
         tx,
       );
 

@@ -2,11 +2,11 @@ import { Injectable, Inject } from '@nestjs/common';
 
 import {
   SITE_CRAWLER,
-  SiteCrawler,
+  type SiteCrawler,
 } from 'src/infrastructure/integration/site-crawler.port';
 import {
   VECTOR_STORE,
-  VectorStoreGateway,
+  type VectorStoreGateway,
 } from 'src/infrastructure/integration/vector-store.port';
 
 const CRAWL_LIMIT = 20;

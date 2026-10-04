@@ -15,7 +15,7 @@ import {
 import { FastifyReply, FastifyRequest } from 'fastify';
 
 import { GenerateAgentSourceService } from 'src/modules/sources/generate-agent-source/generate-agent-source.service';
-import { AgentSource } from 'src/shared/contracts/agent-source';
+import type { AgentSource } from 'src/shared/contracts/agent-source';
 import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
 
 interface MultipartField {
@@ -65,9 +65,9 @@ export class GenerateAgentSourceController {
     @Res() res: FastifyReply,
   ): Promise<FastifyReply> {
     const body = (req.body ?? {}) as GenerateAgentSourceBody;
-    const file = body.file;
-    const hasFile = Boolean(file && typeof file.toBuffer === 'function');
-    const buffer = hasFile ? await file.toBuffer() : undefined;
+    const file =
+      typeof body.file?.toBuffer === 'function' ? body.file : undefined;
+    const buffer = file ? await file.toBuffer() : undefined;
     const url = fieldValue(body, 'url');
 
     if (!buffer && (!url || !url.trim())) {
@@ -81,10 +81,8 @@ export class GenerateAgentSourceController {
       buffer,
       sourceType: fieldValue(body, 'sourceType') as AgentSource | undefined,
       agentId: fieldValue(body, 'agentId'),
-      fileName: hasFile
-        ? file.filename || fieldValue(body, 'fileName')
-        : fieldValue(body, 'fileName'),
-      mimeType: hasFile ? file.mimetype : undefined,
+      fileName: file?.filename || fieldValue(body, 'fileName'),
+      mimeType: file?.mimetype,
     });
 
     return res

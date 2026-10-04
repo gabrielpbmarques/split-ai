@@ -1,7 +1,7 @@
 import { Storage } from '@google-cloud/storage';
 
-import { FileStorage } from 'src/infrastructure/integration/file-storage.port';
-import { IntegrationState } from 'src/infrastructure/integration/integration.state';
+import type { FileStorage } from 'src/infrastructure/integration/file-storage.port';
+import type { IntegrationState } from 'src/infrastructure/integration/integration.state';
 import { env } from 'src/shared/config/env';
 
 export class GcsFileStorageGateway implements FileStorage {

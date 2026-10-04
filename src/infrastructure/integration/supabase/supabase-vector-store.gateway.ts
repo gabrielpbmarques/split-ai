@@ -1,17 +1,20 @@
-import { SupabaseVectorStore } from '@langchain/community/vectorstores/supabase';
-import { Embeddings } from '@langchain/core/embeddings';
-import { VectorStoreInterface } from '@langchain/core/vectorstores';
+import {
+  type SupabaseLibArgs,
+  SupabaseVectorStore,
+} from '@langchain/community/vectorstores/supabase';
+import type { Embeddings } from '@langchain/core/embeddings';
+import type { VectorStoreInterface } from '@langchain/core/vectorstores';
 import { Logger } from '@nestjs/common';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { Document } from 'langchain';
 
 import {
-  IntegrationState,
+  type IntegrationState,
   notConfigured,
 } from 'src/infrastructure/integration/integration.state';
-import { VectorStoreGateway } from 'src/infrastructure/integration/vector-store.port';
+import type { VectorStoreGateway } from 'src/infrastructure/integration/vector-store.port';
 import { env } from 'src/shared/config/env';
-import { Chunks, CustomMetadata } from 'src/shared/contracts';
+import type { Chunks, CustomMetadata } from 'src/shared/contracts';
 import { cleanInvalidUnicode } from 'src/shared/utils/clear-invalid-unicode';
 
 const TABLE_NAME = 'documents';
@@ -55,7 +58,7 @@ export class SupabaseVectorStoreGateway implements VectorStoreGateway {
     );
 
     await SupabaseVectorStore.fromDocuments(documents, this.embeddings, {
-      client: client as unknown as any,
+      client: client as unknown as SupabaseLibArgs['client'],
       tableName: TABLE_NAME,
       queryName: QUERY_NAME,
       filter: metadata,
@@ -68,7 +71,7 @@ export class SupabaseVectorStoreGateway implements VectorStoreGateway {
     const client = this.client ?? notConfigured(this.name);
 
     const store = await SupabaseVectorStore.fromExistingIndex(this.embeddings, {
-      client: client as unknown as any,
+      client: client as unknown as SupabaseLibArgs['client'],
       tableName: TABLE_NAME,
       queryName: QUERY_NAME,
       filter,

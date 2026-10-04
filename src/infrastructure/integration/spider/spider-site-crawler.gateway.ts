@@ -2,10 +2,10 @@ import { SpiderLoader } from '@langchain/community/document_loaders/web/spider';
 import { BadGatewayException, Logger } from '@nestjs/common';
 
 import {
-  IntegrationState,
+  type IntegrationState,
   notConfigured,
 } from 'src/infrastructure/integration/integration.state';
-import {
+import type {
   CrawledPage,
   CrawlOptions,
   SiteCrawler,

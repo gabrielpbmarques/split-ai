@@ -7,8 +7,8 @@ import {
 } from '@nestjs/common';
 
 import { AccessScopeService } from 'src/auth/access-scope.service';
-import { AuthenticatedUser } from 'src/auth/authenticated-user';
-import { CreateAgentConnectionDto } from 'src/modules/agent-connections/create-agent-connection/create-agent-connection.dto';
+import type { AuthenticatedUser } from 'src/auth/authenticated-user';
+import type { CreateAgentConnectionDto } from 'src/modules/agent-connections/create-agent-connection/create-agent-connection.dto';
 import { AgentConnectionRepository } from 'src/modules/agent-connections/repositories/agent-connection.repository';
 import { AgentRepository } from 'src/modules/agents/repositories/agent.repository';
 
@@ -106,7 +106,7 @@ export class CreateAgentConnectionService {
     }
 
     const connection = await this.agentConnectionRepository.create({
-      organization_id: principal.organization_id,
+      organization_id: principal.organization_id ?? undefined,
       principal_agent_id: dto.principalAgentId,
       child_agent_id: dto.childAgentId,
       tool_name: dto.toolName,

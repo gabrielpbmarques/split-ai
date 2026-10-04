@@ -2,9 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { DynamicStructuredTool } from 'langchain';
 import { z } from 'zod';
 
-import { AgentEntity } from 'src/infrastructure/database/schema';
+import type { AgentEntity } from 'src/infrastructure/database/schema';
 import { AgentConnectionRepository } from 'src/modules/agent-connections/repositories/agent-connection.repository';
 import { InvokeConnectedAgentService } from 'src/modules/agent-runtime/invoke-connection-agent/invoke-connected-agent.service';
+import type { AgentTool } from 'src/shared/contracts';
 
 const MAX_AGENT_CONNECTION_DEPTH = 1;
 
@@ -17,7 +18,7 @@ export class AppendConnectionToolsService {
 
   async execute(
     dbAgent: AgentEntity,
-    tools: DynamicStructuredTool<z.ZodObject<any>>[],
+    tools: AgentTool[],
     connectionContext?: { depth: number; visited: string[] },
     scopeCompanyId?: string,
   ): Promise<void> {
@@ -43,7 +44,7 @@ export class AppendConnectionToolsService {
               .string()
               .describe('Pergunta ou tarefa a delegar ao agente conectado.'),
           }),
-          func: async ({ input }) => {
+          func: async ({ input }: { input: string }) => {
             if (visited.includes(connection.child_agent_id)) {
               return 'Conexão circular detectada; chamada ignorada.';
             }

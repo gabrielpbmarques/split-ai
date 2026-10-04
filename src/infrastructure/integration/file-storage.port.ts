@@ -1,4 +1,4 @@
-import { IntegrationGateway } from 'src/infrastructure/integration/integration.state';
+import type { IntegrationGateway } from 'src/infrastructure/integration/integration.state';
 
 export const FILE_STORAGE = Symbol('FILE_STORAGE');
 
