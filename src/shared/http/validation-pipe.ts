@@ -3,6 +3,7 @@ import {
   ValidationError,
   ValidationPipe,
 } from '@nestjs/common';
+
 import { ErrorDetail } from 'src/shared/contracts/error-response';
 
 export function flattenValidationErrors(

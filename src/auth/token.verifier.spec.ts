@@ -1,9 +1,9 @@
 import { UnauthorizedException } from '@nestjs/common';
 import { sign } from 'jsonwebtoken';
-import { env } from 'src/shared/config/env';
-import { hashApiKey } from 'src/utils/apiKey';
 
-import { TokenVerifier } from './token.verifier';
+import { TokenVerifier } from 'src/auth/token.verifier';
+import { env } from 'src/shared/config/env';
+import { hashApiKey } from 'src/shared/utils/api-key';
 
 jest.mock('src/shared/config/env', () => ({
   env: { JWT_SECRET: 'native-secret', BRAVOHUB_JWT_SECRET: 'bravohub-secret' },

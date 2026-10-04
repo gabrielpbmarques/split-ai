@@ -1,5 +1,6 @@
 import { UnauthorizedException } from '@nestjs/common';
 import { FastifyRequest } from 'fastify';
+
 import { AuthenticatedUser } from 'src/auth/authenticated-user';
 
 export function requireUser(request: FastifyRequest): AuthenticatedUser {

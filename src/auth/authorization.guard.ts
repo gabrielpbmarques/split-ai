@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
+
 import {
   IS_PUBLIC_KEY,
   REQUIRED_PERMISSIONS_KEY,

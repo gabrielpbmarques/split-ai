@@ -1,19 +1,19 @@
 ---
 name: import-and-naming-conventions
-description: 'Use for imports (barrel vs direct), file/class/method naming and suffixes, casing conventions, choosing the right NestJS exception, organizing src/utils functions, and Conventional Commit formatting.'
+description: 'Use for imports (barrel vs direct), file/class/method naming and suffixes, casing conventions, choosing the right NestJS exception, organizing src/shared/utils functions, and Conventional Commit formatting.'
 ---
 
 ### Import conventions
 
-- **Repositories**: Import from `src/repositories/<name>.repository` (specific files) — NOT from the barrel `src/repositories/index.ts` in services.
-- **Entities**: Import from `src/entities` (barrel) or specific entity files.
-- **Types/Models**: Import from `src/types` (barrel) or `src/types/models/<name>.model`.
-- **Infrastructure tokens**: Import from `src/infrastructure/providers/<name>.provider`.
+- **Repositories**: Import from `src/modules/users/repositories/<name>.repository` (specific files) — NOT from the barrel `src/modules/users/repositories/index.ts` in services.
+- **Entities**: Import from `src/infrastructure/database/schema` (barrel) or specific entity files.
+- **Types/Models**: Import from `src/shared/contracts` (barrel) or `src/shared/contracts/models/<name>.model`.
+- **Infrastructure tokens**: Import from `src/infrastructure/voyage-rerank/<name>.provider`.
 - **Decorators**: Import `User` as `AuthUser` in controllers to avoid conflict with the `User` type:
 
 ```typescript
 import { User as AuthUser } from 'src/decorators/user.decorator';
-import { User } from 'src/types/models/user.model';
+import { User } from 'src/shared/contracts/models/user.model';
 ```
 
 - **Use absolute paths** (`src/...`) for cross-module imports, **relative paths** (`./`, `../`) for same-module imports.
@@ -63,7 +63,7 @@ All classes use **PascalCase** with a descriptive suffix:
 
 ## Utility Functions
 
-Utilities in `src/utils/` are **pure exported functions** (not classes, not injectable):
+Utilities in `src/shared/utils/` are **pure exported functions** (not classes, not injectable):
 
 ```typescript
 export function formatCreatedAt(createdAt: Date): string {
@@ -118,7 +118,7 @@ import { Inject } from '@nestjs/common';
 import {
   EMAIL_SERVICE,
   IEmailService,
-} from 'src/infrastructure/providers/email.provider';
+} from 'src/infrastructure/voyage-rerank/email.provider';
 
 @Injectable()
 export class SendNotificationService {
@@ -131,8 +131,8 @@ export class SendNotificationService {
 
 - Use the **injection token** (`EMAIL_SERVICE`) with `@Inject()`.
 - Import the **interface** (`IEmailService`) for typing.
-- The module imports **that provider's module only** — `SendGridProviderModule` for `EMAIL_SERVICE`, `StripeProviderModule` for `STRIPE_CLIENT`, and so on (`src/infrastructure/providers/<name>.provider.module.ts`). There is no catch-all `InfrastructureModule`.
-- Same for repositories: `src/repositories/<name>.repository.module.ts` exports exactly one repository; import the ones the service injects and no others.
+- The module imports **that provider's module only** — `SendGridProviderModule` for `EMAIL_SERVICE`, `StripeProviderModule` for `STRIPE_CLIENT`, and so on (`src/infrastructure/voyage-rerank/<name>.provider.module.ts`). There is no catch-all `InfrastructureModule`.
+- Same for repositories: `src/modules/users/repositories/<name>.repository.module.ts` exports exactly one repository; import the ones the service injects and no others.
 
 ## Commit Convention
 

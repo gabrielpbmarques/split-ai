@@ -5,7 +5,10 @@ import {
 } from '@nestjs/common';
 import { z } from 'zod';
 
-import { buildErrorResponse, categoryForStatus } from './error-mapper';
+import {
+  buildErrorResponse,
+  categoryForStatus,
+} from 'src/shared/http/error-mapper';
 
 const context = {
   correlationId: 'corr-1',

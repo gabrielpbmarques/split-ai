@@ -43,19 +43,17 @@ Antes de abrir PR: `format:check`, `lint`, `typecheck`, `test` e `build` limpos.
 ```
 src/
   main.ts                    bootstrap Fastify
-  app.module.ts              TypeORM + módulos de componentes + health
+  app.module.ts              logger + TypeORM + auth + health + um agregador por domínio
   shared/config/env.ts       schema Zod do ambiente (único lugar que lê process.env)
   shared/http/               adapter Fastify, pipe de validação global, filtro de exceção, health (/health/{startup,live,ready})
-  shared/observability/      correlação de request (x-request-id) e logger pino
-  shared/contracts/          ErrorResponse
-  auth/                      guards globais (autenticação + autorização por permissão), TokenVerifier, AccessScopeService
+  shared/observability/      correlação de request (x-request-id), logger pino, Sentry
+  shared/contracts/          tipos compartilhados (barrel) e ErrorResponse
   shared/decorators/         @Public, @RequirePermissions, @RequireActiveOrganization, @User
-  components/<Scope>/<UseCase>/   um caso de uso = um módulo = um controller = um endpoint
-  repositories/              wrappers TypeORM, um módulo por repositório
-  entities/                  entidades TypeORM
-  infrastructure/providers/  SDKs externos (Voyage, Supabase, Stripe, Twilio, SendGrid, GCS, Spider, Google TTS, ElevenLabs)
-  types/models/              tipos compartilhados
-  utils/                     funções puras
+  shared/utils/              funções puras
+  auth/                      guards globais (autenticação + autorização por permissão), TokenVerifier, AccessScopeService
+  modules/<dominio>/         domínios de negócio: <dominio>.module.ts (agregador), <caso-de-uso>/, repositories/, contracts/
+  infrastructure/database/schema/  entidades TypeORM + ENTITIES
+  infrastructure/<recurso>/  SDKs externos (stripe, twilio, sendgrid, supabase, spider, anthropic, voyage-*, gcp-storage, google-voice, eleven-labs)
 ```
 
 Guia completo para quem trabalha no código: `CLAUDE.md`. Plano de refatoração em andamento: `docs/plano-refatoracao-backend-rules.md`.

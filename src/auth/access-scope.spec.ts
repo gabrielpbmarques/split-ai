@@ -1,8 +1,8 @@
 import { ForbiddenException } from '@nestjs/common';
 
-import { AccessScopeService } from './access-scope.service';
-import { AuthenticatedUser } from './authenticated-user';
-import { effectivePermissions } from './permissions';
+import { AccessScopeService } from 'src/auth/access-scope.service';
+import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import { effectivePermissions } from 'src/auth/permissions';
 
 const userOf = (
   role: AuthenticatedUser['role'],

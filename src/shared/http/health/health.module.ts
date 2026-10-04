@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+
 import { DatabaseHealthIndicator } from 'src/shared/http/health/database.health';
 import { HealthLiveController } from 'src/shared/http/health/health-live.controller';
 import { HealthReadyController } from 'src/shared/http/health/health-ready.controller';

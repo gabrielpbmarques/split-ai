@@ -3,19 +3,19 @@ import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import { FastifyReply } from 'fastify';
+
+import { AccessScopeService } from 'src/auth/access-scope.service';
+import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import { AuthenticationGuard } from 'src/auth/authentication.guard';
+import { AuthorizationGuard } from 'src/auth/authorization.guard';
+import { PrincipalResolverService } from 'src/auth/principal-resolver.service';
+import { TokenVerifier } from 'src/auth/token.verifier';
 import { RequireActiveOrganization } from 'src/shared/decorators/active-organization.decorator';
 import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
 import { Public } from 'src/shared/decorators/public.decorator';
 import { User } from 'src/shared/decorators/user.decorator';
 import { GlobalExceptionFilter } from 'src/shared/http/exception.filter';
 import { createFastifyAdapter } from 'src/shared/http/fastify-adapter';
-
-import { AccessScopeService } from './access-scope.service';
-import { AuthenticatedUser } from './authenticated-user';
-import { AuthenticationGuard } from './authentication.guard';
-import { AuthorizationGuard } from './authorization.guard';
-import { PrincipalResolverService } from './principal-resolver.service';
-import { TokenVerifier } from './token.verifier';
 
 jest.mock('src/shared/config/env', () => ({
   env: {

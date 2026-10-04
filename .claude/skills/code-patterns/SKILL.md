@@ -41,7 +41,7 @@ import { FastifyReply } from 'fastify';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { Roles } from 'src/decorators/roles.decorator';
 import { User as AuthUser } from 'src/decorators/user.decorator';
-import { User } from 'src/types/models/user.model';
+import { User } from 'src/shared/contracts/models/user.model';
 
 import { CreateOrderDto } from './create-order.dto';
 import { CreateOrderService } from './create-order.service';
@@ -91,7 +91,7 @@ Nothing in the controller. `GlobalExceptionFilter` (`src/shared/http/exception.f
 
 ```typescript
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { OrderRepository } from 'src/repositories/order.repository';
+import { OrderRepository } from 'src/modules/users/repositories/order.repository';
 
 import { MyDto } from './my.dto';
 
@@ -192,7 +192,7 @@ export class LoginDto {
 3. `@IsOptional()`**@IsOptional() for optional fields**: Combine with the type decorator.
 4. **Use @Type(() => Number) from class-transformer**`@Type(() => Number)``class-transformer` for query params that need numeric conversion.
 5. **Enums can be defined in the DTO file** when they are specific to that DTO.
-6. **Import shared types from src/types**`src/types` for reused types.
+6. **Import shared types from src/shared/contracts**`src/shared/contracts` for reused types.
 
 ## Import Style
 

@@ -1,6 +1,6 @@
 import { ValidationError } from '@nestjs/common';
 
-import { flattenValidationErrors } from './validation-pipe';
+import { flattenValidationErrors } from 'src/shared/http/validation-pipe';
 
 describe('flattenValidationErrors', () => {
   it('produces one detail per constraint, with nested paths joined by dots', () => {

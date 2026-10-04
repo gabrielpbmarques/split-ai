@@ -103,12 +103,12 @@ When a use case returns a **subset of an entity's fields**, create a dedicated t
 
 ### Where to define it
 
-In `src/types/models/`, in the same file as the base type — or in its own file if it represents a distinct concept.
+In `src/shared/contracts/models/`, in the same file as the base type — or in its own file if it represents a distinct concept.
 
 ### Pattern
 
 ```typescript
-// In src/types/models/user.model.ts
+// In src/shared/contracts/models/user.model.ts
 export interface User {
   id: string;
   name: string;
@@ -144,8 +144,8 @@ export type UserProfile = Pick<
 
 After adding a new type, ensure it's exported through the barrel:
 
-- `src/types/models/index.ts` re-exports the file
-- `src/types/index.ts` re-exports `models/`
+- `src/shared/contracts/models/index.ts` re-exports the file
+- `src/shared/contracts/index.ts` re-exports `models/`
 
 ## Principle 4: Avoid Redundant Safety Checks
 

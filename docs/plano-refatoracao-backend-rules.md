@@ -168,6 +168,8 @@ Dono das regras: `01`, `02`, `03`, `06`.
 
 Pronto quando: `src/` tem só `main.ts`, `app.module.ts`, `auth/`, `infrastructure/`, `modules/`, `shared/`, `types/`; `bun run di:verify` verde; lint de kebab-case e imports absolutos em `error`.
 
+**Status: concluída.** Desvios: `src/types/models` foi para `src/shared/contracts/` (barrel único) em vez de `models/` por domínio, porque os tipos serão redesenhados como `Pick<>` de entidade na Fase 5 e movê-los duas vezes é desperdício; `src/utils` foi inteiro para `src/shared/utils/` em kebab-case pelo mesmo motivo; nomes de classe não mudaram (só caminhos); `Dashboard/Charts` e `Dashboard/Statistics` viraram `reports/dashboard-charts` e `reports/dashboard-statistics`; `UniversalDataRepository` e `NotificationRepository` foram removidos por não terem consumidor; o único ciclo real (`ResolveAgent → LoadAgentTools → AppendConnectionTools → InvokeConnectedAgent → ResolveAgent`) foi cortado em `InvokeConnectedAgent` com o port `AGENT_RESOLVER`, publicado por um módulo `@Global()` com lookup lazy via `ModuleRef` em vez de `useExisting` (PC-008); tokens de infraestrutura viraram `Symbol` em `<recurso>.tokens.ts`; `LoadCheckpointerService` fecha o pool do `PostgresSaver` em `onApplicationShutdown`; a regra `import/no-relative-parent-imports` foi trocada por `no-restricted-imports` com padrões `./*` e `../*`, porque com o resolver TypeScript ela acusava os próprios imports absolutos `src/...`; `scripts/refactor-di` foi atualizado para a topologia nova e para módulos `@Global()`.
+
 ### Fase 4 — Caso de uso = endpoint; controller, service e DTO
 
 Dono das regras: `02`, `04`, `05`.

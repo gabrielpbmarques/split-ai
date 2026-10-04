@@ -130,8 +130,8 @@ export class CreateOrderModule {}
 
 **Key rules:**
 
-- One repository → its `XRepositoryModule` (`src/repositories/<name>.repository.module.ts`).
-- One infrastructure token → its `XProviderModule` (`src/infrastructure/providers/<name>.provider.module.ts`).
+- One repository → its `XRepositoryModule` (`src/modules/users/repositories/<name>.repository.module.ts`).
+- One infrastructure token → its `XProviderModule` (`src/infrastructure/voyage-rerank/<name>.provider.module.ts`).
 - One sibling/cross-scope service → that use case's own module (e.g. `GenerateTokenModule`), **never** the scope aggregator.
 - A service that calls `AccessScopeService` imports `AuthModule` (`src/auth/auth.module.ts`), which exports it together with `PrincipalResolverService`.
 - Mutual dependencies use `forwardRef(() => XModule)` on **both** sides, matching `@Inject(forwardRef(() => XService))` in the constructor.
@@ -140,7 +140,7 @@ export class CreateOrderModule {}
 
 ## Repositories
 
-All repositories live in `src/repositories/`. Each wraps a TypeORM `Repository<Entity>`.
+All repositories live in `src/modules/users/repositories/`. Each wraps a TypeORM `Repository<Entity>`.
 
 ### Repository pattern
 
@@ -164,7 +164,7 @@ export class UserRepository {
 Every repository has a sibling module next to it:
 
 ```text
-src/repositories/
+src/modules/users/repositories/
   order.repository.ts
   order.repository.module.ts   -> OrderRepositoryModule
 ```
@@ -187,7 +187,7 @@ this module's `imports` too. A repository backed by `DataSource` alone
 
 ## Tools scope
 
-LangChain tools available to AI agents follow the same one-use-case-one-module pattern as everything else, but live under a dedicated top-level scope at `src/components/Tools/`. Each tool gets its own directory with a single service and a single module — never bundle multiple tools into one service.
+LangChain tools available to AI agents follow the same one-use-case-one-module pattern as everything else, but live under a dedicated top-level scope at `src/modules/Tools/`. Each tool gets its own directory with a single service and a single module — never bundle multiple tools into one service.
 
 ### Directory layout
 
@@ -236,23 +236,23 @@ export class LoadDatabaseToolService {
 
 `ResolveAgentService.loadTools` reads per-tool boolean columns on `AgentEntity` — `parser_schema`, `vector_search_tool`, and `database_tool` — and assembles the toolbelt by invoking each enabled tool's `execute(...)`. For `database_tool`, `maybeLoadDatabaseTool` first checks that the agent's org has the `database_connection` feature enabled and a `database_url` set, then injects `LoadDatabaseToolService.execute({ databaseUrl })`; any missing prerequisite → the tool is silently absent. The `agent_identifier` column is a human-readable label and does **not** gate tools. See the `ai-agent-tools-and-rag` skill / `.claude/rules/agent-tools.md` for the full gate.
 
-`src/components/Tools/LoadVectorSearchTool/` and `src/components/Tools/LoadDatabaseTool/` are the reference templates for tool-module shape — copy their structure when adding a new tool.
+`src/modules/retrieval/load-vector-search-tool/` and `src/modules/retrieval/load-database-tool/` are the reference templates for tool-module shape — copy their structure when adding a new tool.
 
 ## Entities
 
-All TypeORM entities live in `src/entities/` and are barrel-exported via `src/entities/index.ts`. Entity files use kebab-case: `user.entity.ts`, `order.entity.ts`.
+All TypeORM entities live in `src/infrastructure/database/schema/` and are barrel-exported via `src/infrastructure/database/schema/index.ts`. Entity files use kebab-case: `user.entity.ts`, `order.entity.ts`.
 
 Entities use decorators from `typeorm`: `@Entity`, `@Column`, `@PrimaryGeneratedColumn('uuid')`, etc.
 
 ## Types / Models
 
-Type definitions live in `src/types/models/`. Each model file defines interfaces/types and is barrel-exported through `src/types/models/index.ts` → `src/types/index.ts`.
+Type definitions live in `src/shared/contracts/models/`. Each model file defines interfaces/types and is barrel-exported through `src/shared/contracts/models/index.ts` → `src/shared/contracts/index.ts`.
 
-Import types from `src/types` (barrel), not from individual model files.
+Import types from `src/shared/contracts` (barrel), not from individual model files.
 
 ## Infrastructure (External Providers)
 
-External service integrations live in `src/infrastructure/providers/`. Each provider file exports:
+External service integrations live in `src/infrastructure/voyage-rerank/`. Each provider file exports:
 
 1. An injection token constant (e.g., `PAYMENT_GATEWAY_CLIENT`, `PUSH_NOTIFICATION_SERVICE`)
 2. A service class (if needed)
@@ -355,5 +355,5 @@ Middleware implementations live in `src/middleware/`. The `MiddlewareModule` reg
 5. **Every use case gets its own module** — even auxiliary ones without endpoints.
 6. **DTOs use class-validator decorators** — never accept raw unvalidated input.
 7. **Services use execute() as the main method name**`execute()`.
-8. **Entity files go in src/entities/**`src/entities/`, not inside component folders.
-9. **One tool = one module under `src/components/Tools/<ToolName>/`** — never bundle multiple tools into one service; never place tool modules outside the Tools scope.
+8. **Entity files go in src/infrastructure/database/schema/**`src/infrastructure/database/schema/`, not inside component folders.
+9. **One tool = one module under `src/modules/Tools/<ToolName>/`** — never bundle multiple tools into one service; never place tool modules outside the Tools scope.

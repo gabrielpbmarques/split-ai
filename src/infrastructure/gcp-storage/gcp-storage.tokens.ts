@@ -1,0 +1,1 @@
+export const GCP_STORAGE_SERVICE = Symbol('GCP_STORAGE_SERVICE');

@@ -5,6 +5,7 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
+
 import { Public } from 'src/shared/decorators/public.decorator';
 import { DatabaseHealthIndicator } from 'src/shared/http/health/database.health';
 

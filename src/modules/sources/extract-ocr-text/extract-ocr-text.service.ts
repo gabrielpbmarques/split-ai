@@ -1,0 +1,57 @@
+import { ImageAnnotatorClient } from '@google-cloud/vision';
+import { Injectable } from '@nestjs/common';
+
+import { GenerateAiResponseService } from 'src/modules/agent-runtime/generate-ai-response/generate-ai-response.service';
+import { ResolveAgentService } from 'src/modules/agent-runtime/resolve-agent/resolve-agent.service';
+import { DocumentData } from 'src/shared/contracts';
+
+export interface ExtractOcrTextResponse extends Pick<
+  DocumentData,
+  'documentNumber' | 'cpf' | 'name' | 'birthDate' | 'issueDate' | 'errors'
+> {}
+
+@Injectable()
+export class ExtractOcrTextService {
+  constructor(
+    private client: ImageAnnotatorClient,
+    private generateAiResponseService: GenerateAiResponseService,
+    private resolveAgentService: ResolveAgentService,
+  ) {}
+
+  async execute(
+    frontImage: Buffer,
+    backImage: Buffer,
+  ): Promise<ExtractOcrTextResponse> {
+    const requests: any = [frontImage, backImage].map((buffer) => ({
+      image: { content: buffer.toString('base64') },
+      features: [{ type: 'DOCUMENT_TEXT_DETECTION' }],
+    }));
+
+    const [response] = await this.client.batchAnnotateImages({ requests });
+
+    const texts = response.responses.map((res) => {
+      const [annotation] = res.textAnnotations || [];
+      return annotation ? annotation.description.trim() : '';
+    });
+
+    const fullText = texts.join(' ');
+    const result = await this.extractDocumentData(fullText);
+
+    return result;
+  }
+
+  private async extractDocumentData(
+    text: string,
+  ): Promise<ExtractOcrTextResponse> {
+    const agent = await this.resolveAgentService.execute('extract_document');
+    return this.generateAiResponseService.execute(
+      text,
+      {
+        session_id: '',
+        agent_id: agent.id,
+      },
+      agent,
+      false,
+    );
+  }
+}

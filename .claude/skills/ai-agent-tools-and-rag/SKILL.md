@@ -1,21 +1,21 @@
 ---
 name: ai-agent-tools-and-rag
-description: "Use for an agent's LangChain tools and RAG: vector_similarity_search, execute_sql and the LoadDatabaseTool SQL guardrails, the parser tool, pgvector/Supabase similarity search, Spider source ingestion, the documents table, Voyage embeddings, and the rerank-2.5 cross-encoder + relevance threshold. Scope: src/components/Tools/ + ArtificialIntelligence/."
+description: "Use for an agent's LangChain tools and RAG: vector_similarity_search, execute_sql and the LoadDatabaseTool SQL guardrails, the parser tool, pgvector/Supabase similarity search, Spider source ingestion, the documents table, Voyage embeddings, and the rerank-2.5 cross-encoder + relevance threshold. Scope: src/modules/Tools/ + ArtificialIntelligence/."
 ---
 
 ## Three tools an agent can carry
 
-`ResolveAgent.loadTools(dbAgent)` (`src/components/ArtificialIntelligence/ResolveAgent/resolve-agent.service.ts`) reads three columns on `agents` and appends a tool for each:
+`ResolveAgent.loadTools(dbAgent)` (`src/modules/agent-runtime/resolve-agent/resolve-agent.service.ts`) reads three columns on `agents` and appends a tool for each:
 
 | Flag / column                     | Tool                                       | Built by                                                                                    |
 | --------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------- |
-| `parser_schema` (jsonb, presence) | dynamic parser (no-op `func`, schema-only) | `buildLangchainToolFromSchema` in `src/utils/buildZodSchema.ts`                             |
+| `parser_schema` (jsonb, presence) | dynamic parser (no-op `func`, schema-only) | `buildLangchainToolFromSchema` in `src/shared/utils/buildZodSchema.ts`                             |
 | `vector_search_tool` (bool)       | `vector_similarity_search`                 | `LoadVectorSearchToolService.execute()`                                                     |
 | `database_tool` (bool)            | `execute_sql`                              | `LoadDatabaseToolService.execute({ databaseUrl })` — gated by `database_connection` feature |
 
 Tools are returned as `DynamicStructuredTool<z.ZodObject<any>>[]` and threaded into `createAgent({ tools, ... })`. The same `tools` array is also rendered into the system prompt by `NormalizePromptInstructions` (`Name: ... / Description: ...`), so a model sees both the tool descriptors **and** a textual list.
 
-## Parser tool — src/utils/buildZodSchema.ts
+## Parser tool — src/shared/utils/buildZodSchema.ts
 
 ```ts
 buildLangchainToolFromSchema(name, description, schemaDef): DynamicStructuredTool
@@ -24,7 +24,7 @@ buildLangchainToolFromSchema(name, description, schemaDef): DynamicStructuredToo
 - `schemaDef` is a custom JSON DSL (`type`, `optional`, `enum`, `default`, `description`, nested `properties`, array `items`) — compiled into a Zod schema by `buildZodSchema`.
 - The tool's `func` is `async () => {}` — invocation returns `undefined`. This is by design: the parser tool exists only so the model can emit a structured argument matching the schema. Use it when you want the agent to produce JSON in a specific shape during reasoning. **Do not** add side-effects here without first changing the contract — many call sites assume parser tools are inert.
 
-## Vector search tool — src/components/Tools/LoadVectorSearchTool/load-vector-search-tool.service.ts
+## Vector search tool — src/modules/retrieval/load-vector-search-tool/load-vector-search-tool.service.ts
 
 ```ts
 new DynamicStructuredTool({
@@ -47,7 +47,7 @@ new DynamicStructuredTool({
 - **An empty string is a valid return.** Since retrieval became threshold-based, a query where nothing clears the rerank cutoff yields zero documents. That is the designed behaviour — do not "fix" it by removing the threshold.
 - `agent_id` is **filled by the model** based on the system-prompt template (which interpolates `{agentId}`). Make sure that prompt variable is set in any caller (it is for chat flows — see `[[ai-agent-runtime]]`).
 
-## Database tool — src/components/Tools/LoadDatabaseTool/load-database-tool.service.ts
+## Database tool — src/modules/retrieval/load-database-tool/load-database-tool.service.ts
 
 A SQL-execution tool with **heavy guardrails**, scoped to the **customer's own DB** (per-organization). The tool is feature-gated: `ResolveAgent` only injects it when:
 
@@ -91,7 +91,7 @@ The tool's `description` is dialect-aware (PostgreSQL vs MySQL label) and embeds
 
 ## Vector store layer
 
-### LoadVectorStore — src/components/ArtificialIntelligence/LoadVectorStore/load-vector-store.service.ts
+### LoadVectorStore — src/modules/retrieval/load-vector-store/load-vector-store.service.ts
 
 ```ts
 SupabaseVectorStore.fromExistingIndex(embeddings, {
@@ -104,9 +104,9 @@ SupabaseVectorStore.fromExistingIndex(embeddings, {
 
 - Default table is `documents`; the matching Postgres function is `match_documents`. A second table would need its own SQL function with the same signature.
 - `filter` is a `CustomMetadata` object (`{ session_id?, user_id?, agent_id?, source_type?, source_id?, organization_id? }`) — pgvector scopes vectors by this metadata. The vector-search-tool above passes `{ agent_id }`, so chunks ingested without `agent_id` are invisible to chat.
-- `embeddings` is `VoyageEmbeddings` provided via `VOYAGE_EMBEDDINGS` token from `src/infrastructure/providers/voyage-embeddings.provider.ts`. Don't `new` it inline — DI it.
+- `embeddings` is `VoyageEmbeddings` provided via `VOYAGE_EMBEDDINGS` token from `src/infrastructure/voyage-rerank/voyage-embeddings.provider.ts`. Don't `new` it inline — DI it.
 
-### ExecuteSimilaritySearch — src/components/ArtificialIntelligence/ExecuteSimilaritySearch/execute-similarity-search.service.ts
+### ExecuteSimilaritySearch — src/modules/retrieval/execute-similarity-search/execute-similarity-search.service.ts
 
 ```ts
 const retriever = new ContextualCompressionRetriever({
@@ -123,7 +123,7 @@ return retriever.invoke(question);
 - `ContextualCompressionRetriever` comes from **`@langchain/classic`**, not `langchain` — the classic retrievers moved packages and `langchain@1.2.x` no longer exports them.
 - The `as unknown as BaseRetrieverInterface` cast on the base retriever is packaging friction, not a real mismatch: under `NodeNext`, `@langchain/community` resolves its CJS typings back to the ESM ones, so both packages see the same declaration under two identities. Removing the cast breaks `bun run build`.
 
-### RerankDocuments — src/components/ArtificialIntelligence/RerankDocuments/rerank-documents.service.ts
+### RerankDocuments — src/modules/retrieval/rerank-documents/rerank-documents.service.ts
 
 `execute()` returns a `VoyageRerankCompressor extends BaseDocumentCompressor` (from `@langchain/classic/retrievers/document_compressors`) wrapping the `VOYAGE_RERANK_SERVICE` token.
 
@@ -138,7 +138,7 @@ return retriever.invoke(question);
 - Tuning is **env-only** (`VECTOR_SEARCH_MIN_SCORE`, `VECTOR_SEARCH_MAX_RESULTS`, `VECTOR_SEARCH_CANDIDATE_K`) and deliberately **not** a column on `agents` — `synchronize: true` would alter the live schema on boot.
 - The reranker consumes the same Voyage quota as the embeddings, so a search now costs **two** Voyage calls instead of one.
 
-## Site ingestion — src/components/ArtificialIntelligence/LoadAgentSites/load-agent-sites.service.ts
+## Site ingestion — src/modules/agents/load-agent-sites/load-agent-sites.service.ts
 
 Endpoint `POST /agent/load-sites` (admin-only). Body: `{ sites: string, agentId: string }`.
 
@@ -151,7 +151,7 @@ Note: the controller treats `body.sites` as a string (passed straight to Spider)
 
 ## Adjacent: text-to-speech
 
-`ConvertTextToSpeech` (`src/components/ArtificialIntelligence/ConvertTextToSpeech/convert-text-to-speech.service.ts`) is not a chat tool — it's a standalone use case (`POST` under its own controller) that calls Google TTS, writes the mp3 to `uploads/audio/<uuid>.mp3`, then uploads to GCS and returns `{ audioPath, fileName, publicUrl }`. Reach for it from outside this skill's scope; mentioned here only so you don't confuse it with an agent tool.
+`ConvertTextToSpeech` (`src/modules/voice/convert-text-to-speech/convert-text-to-speech.service.ts`) is not a chat tool — it's a standalone use case (`POST` under its own controller) that calls Google TTS, writes the mp3 to `uploads/audio/<uuid>.mp3`, then uploads to GCS and returns `{ audioPath, fileName, publicUrl }`. Reach for it from outside this skill's scope; mentioned here only so you don't confuse it with an agent tool.
 
 ## Common pitfalls
 
@@ -159,4 +159,4 @@ Note: the controller treats `body.sites` as a string (passed straight to Spider)
 - **`database_tool=true` but no feature flag.** The tool will be silently absent. Check `organization_features` for the `database_connection` feature row and `organizations.database_url` before debugging why the LLM "ignored" the tool — it never saw it.
 - **Pool leak per request.** Each tool build opens a fresh TypeORM pool against the customer DB; nothing closes it explicitly today. Monitor connection counts on the customer side if the org gets heavy traffic.
 - **Changing the deny regex.** It's a `\b...\b` word-boundary match; an SQL identifier coincidentally containing one of those words (e.g., a column named `dropbox_id`) is fine, but be careful with stored procedures and DO blocks if you expand the allow list.
-- **Retrieval cost is two Voyage calls per invocation** — one embed (inside `asRetriever`) plus one rerank over the candidates — on the same `VOYAGEAI_API_KEY` and the same org-wide quota. There's no caching layer. `VECTOR_SEARCH_CANDIDATE_K` drives the rerank bill directly: with ~1800-char chunks (`src/utils/chunkText.ts`) 50 candidates run ~28k rerank tokens per call. High-volume agents should consider caching keyed by `(agentId, normalizedQuery)`, or a smaller `k`.
+- **Retrieval cost is two Voyage calls per invocation** — one embed (inside `asRetriever`) plus one rerank over the candidates — on the same `VOYAGEAI_API_KEY` and the same org-wide quota. There's no caching layer. `VECTOR_SEARCH_CANDIDATE_K` drives the rerank bill directly: with ~1800-char chunks (`src/shared/utils/chunkText.ts`) 50 candidates run ~28k rerank tokens per call. High-volume agents should consider caching keyed by `(agentId, normalizedQuery)`, or a smaller `k`.

@@ -1,4 +1,4 @@
-import { PrincipalResolverService } from './principal-resolver.service';
+import { PrincipalResolverService } from 'src/auth/principal-resolver.service';
 
 jest.mock('src/shared/config/env', () => ({
   env: { BRAVOHUB_ORG_ID: 'bravohub-org', AUTH_PRINCIPAL_CACHE_TTL_MS: 60_000 },

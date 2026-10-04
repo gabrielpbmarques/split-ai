@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
+
 import { AuthenticatedUser } from 'src/auth/authenticated-user';
 import { effectivePermissions } from 'src/auth/permissions';
 import { Principal } from 'src/auth/token.verifier';
-import { OrganizationRepository } from 'src/repositories/organization.repository';
+import { OrganizationRepository } from 'src/modules/organizations/repositories/organization.repository';
 import { env } from 'src/shared/config/env';
-import { OrganizationStatus } from 'src/types';
+import { OrganizationStatus } from 'src/shared/contracts';
 
 interface CachedStatus {
   readonly status: OrganizationStatus | null;

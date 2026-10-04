@@ -1,4 +1,4 @@
-import { effectivePermissions } from './permissions';
+import { effectivePermissions } from 'src/auth/permissions';
 
 describe('effectivePermissions', () => {
   it('gives platform admins management permissions and everything staff has', () => {

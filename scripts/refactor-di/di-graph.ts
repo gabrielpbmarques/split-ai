@@ -64,6 +64,8 @@ export interface ModuleInfo {
   scope: string;
   /** Use-case folder name, e.g. `Question`, or '' for scope-level modules. */
   useCase: string;
+  /** Decorated with `@Global()`: its exports are visible to every module. */
+  isGlobal: boolean;
 }
 
 export interface Dep {
@@ -235,10 +237,10 @@ function moduleDecoratorArg(
 function scopeOf(file: string): { scope: string; useCase: string } {
   const rel = path.relative(SRC, file);
   const parts = rel.split(path.sep);
-  if (parts[0] !== 'components') return { scope: `__${parts[0]}__`, useCase: '' };
-  // components/<Scope>/[<Sub>/]<UseCase>/file.ts  |  components/<Scope>/file.ts
+  if (parts[0] !== 'modules') return { scope: `__${parts[0]}__`, useCase: '' };
+  // modules/<domain>/<use-case>/file.ts  |  modules/<domain>/<domain>.module.ts
   const dirs = parts.slice(1, -1);
-  if (dirs.length === 0) return { scope: '__components__', useCase: '' };
+  if (dirs.length === 0) return { scope: '__modules__', useCase: '' };
   return {
     scope: dirs[0],
     useCase: dirs.length > 1 ? dirs.slice(1).join('/') : '',
@@ -357,6 +359,7 @@ export function buildGraph(): Graph {
           importedSpecifier,
           scope,
           useCase,
+          isGlobal: decoratorsOf(stmt).some((d) => decoratorName(d) === 'Global'),
         });
       } else {
         classes.set(name, {

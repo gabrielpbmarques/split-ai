@@ -1,5 +1,5 @@
 import { Permission, PrincipalRole } from 'src/auth/permissions';
-import { OrgRole, OrganizationStatus } from 'src/types';
+import { OrgRole, OrganizationStatus } from 'src/shared/contracts';
 
 export type PrincipalKind = 'user' | 'service' | 'bravohub';
 

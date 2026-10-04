@@ -1,6 +1,9 @@
 import { IncomingMessage } from 'node:http';
 
-import { extractTraceId, generateRequestId } from './correlation';
+import {
+  extractTraceId,
+  generateRequestId,
+} from 'src/shared/observability/correlation';
 
 const requestWith = (headers: Record<string, string>): IncomingMessage =>
   ({ headers }) as unknown as IncomingMessage;

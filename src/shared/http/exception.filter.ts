@@ -1,6 +1,7 @@
 import { ArgumentsHost, Catch, ExceptionFilter, Logger } from '@nestjs/common';
 import * as Sentry from '@sentry/node';
 import { FastifyReply, FastifyRequest } from 'fastify';
+
 import { env } from 'src/shared/config/env';
 import { buildErrorResponse } from 'src/shared/http/error-mapper';
 import { currentCorrelationId } from 'src/shared/observability/correlation';

@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
+
 import { IS_PUBLIC_KEY } from 'src/auth/auth.constants';
 import { PrincipalResolverService } from 'src/auth/principal-resolver.service';
 import { AuthScheme, TokenVerifier } from 'src/auth/token.verifier';

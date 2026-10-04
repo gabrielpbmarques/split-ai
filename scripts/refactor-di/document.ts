@@ -58,10 +58,10 @@ lines.push(
   '| provider externo | `src/infrastructure/providers/<x>.provider.module.ts` → `XProviderModule` | os tokens declarados em `<x>.provider.ts` |',
 );
 lines.push(
-  '| use case | `src/components/<Scope>/<UseCase>/<x>.module.ts` | o service do use case |',
+  '| use case | `src/modules/<domain>/<use-case>/<x>.module.ts` | o service do use case |',
 );
 lines.push(
-  '| agregador | `src/components/<Scope>/<scope>.module.ts` | nada — só importa os use cases para registrar rotas |',
+  '| agregador | `src/modules/<domain>/<domain>.module.ts` | nada — só importa os use cases para registrar rotas |',
 );
 lines.push('');
 

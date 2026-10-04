@@ -2,6 +2,7 @@ import { IncomingMessage, ServerResponse } from 'node:http';
 
 import { Module } from '@nestjs/common';
 import { LoggerModule } from 'nestjs-pino';
+
 import { env } from 'src/shared/config/env';
 
 const IGNORED_PREFIXES = ['/health'];

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+
 import { HealthIndicatorResult } from 'src/shared/http/health/database.health';
 
 const MAX_HEAP_RATIO = 0.95;

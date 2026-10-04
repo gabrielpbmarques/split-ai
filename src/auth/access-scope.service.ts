@@ -1,4 +1,5 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
+
 import { AuthenticatedUser } from 'src/auth/authenticated-user';
 import { Permission } from 'src/auth/permissions';
 

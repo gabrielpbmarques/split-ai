@@ -123,7 +123,7 @@ Default port is **`4000`** (`src/main.ts:115`). There is **no global API prefix*
 
 | Item           | Value                                                                          |
 | -------------- | ------------------------------------------------------------------------------ |
-| Controller     | `src/components/ArtificialIntelligence/CreateAgent/create-agent.controller.ts` |
+| Controller     | `src/modules/agents/create-agent/create-agent.controller.ts` |
 | Handler        | `CreateAgentController.execute`                                                |
 | Guards         | global; `@RequirePermissions('agent.write')`                                   |
 | Service        | `CreateAgentService.execute(dto, user)`                                        |
@@ -231,7 +231,7 @@ Two separate list endpoints with different scopes coexist on purpose — don't m
 
 ### 2.5 Entities
 
-#### `agents` — `src/entities/agent.entity.ts`
+#### `agents` — `src/infrastructure/database/schema/agent.entity.ts`
 
 | Column                    | Type      | Nullable | Default    | Notes                                                                |
 | ------------------------- | --------- | -------- | ---------- | -------------------------------------------------------------------- |
@@ -253,7 +253,7 @@ Two separate list endpoints with different scopes coexist on purpose — don't m
 
 OneToMany → `AgentInstructionEntity`.
 
-#### `agents_instructions` — `src/entities/agent-instruction.entity.ts`
+#### `agents_instructions` — `src/infrastructure/database/schema/agent-instruction.entity.ts`
 
 | Column                    | Type      | Notes                             |
 | ------------------------- | --------- | --------------------------------- |
@@ -264,7 +264,7 @@ OneToMany → `AgentInstructionEntity`.
 
 **Versioned**. `AgentInstructionRepository.findLatestByAgentId(agentId)` returns the row with the largest `created_at`. `updateLatestByAgentId(agentId, instructions)` mutates the latest row in place (does **not** create a new version unless the agent has none). If you want true versioning, switch `update` to `create`.
 
-### 2.6 `AIInstructions` shape — `src/types/models/ai-instructions.model.ts`
+### 2.6 `AIInstructions` shape — `src/shared/contracts/models/ai-instructions.model.ts`
 
 ```ts
 export type AIInstructions = {
@@ -278,7 +278,7 @@ Field-name mixing is intentional. `NormalizePromptInstructions` reads these lite
 
 ### 2.7 Parser tool: `parser_schema` → Zod → `DynamicStructuredTool`
 
-`src/utils/buildZodSchema.ts` compiles a custom JSON DSL into a Zod schema and wraps it as a tool whose `func: async () => {}` returns `undefined`. It exists **only to advertise its schema to the model** so the model can emit a structured argument matching the shape. Inserting side-effects here will surprise callers — many assume parser tools are inert.
+`src/shared/utils/buildZodSchema.ts` compiles a custom JSON DSL into a Zod schema and wraps it as a tool whose `func: async () => {}` returns `undefined`. It exists **only to advertise its schema to the model** so the model can emit a structured argument matching the shape. Inserting side-effects here will surprise callers — many assume parser tools are inert.
 
 ```ts
 type SchemaDef = {
@@ -370,7 +370,7 @@ The pgvector wipe is **tied to `source_id`** in metadata. If a source was ingest
 
 ### 3.4 `SupabaseService.createVectorStore` — the write path
 
-`src/infrastructure/providers/supabase.provider.ts:22-47`:
+`src/infrastructure/voyage-rerank/supabase.provider.ts:22-47`:
 
 ```ts
 const chunks = docs.map(
@@ -393,7 +393,7 @@ return chunks.length;
 
 - The injected `embeddings` is `VOYAGE_EMBEDDINGS` (Voyage `voyage-3-large`, 1024 dims; `config.embeddingModel` env var).
 - **Caller metadata overrides chunk metadata** when keys collide — be aware if Spider already set `agent_id` somehow.
-- `cleanInvalidUnicode()` (`src/utils/clearInvalidUnicode.ts`) only removes NUL bytes — other invalid surrogates still slip through.
+- `cleanInvalidUnicode()` (`src/shared/utils/clearInvalidUnicode.ts`) only removes NUL bytes — other invalid surrogates still slip through.
 
 ### 3.5 The `documents` table and `match_documents` function
 
@@ -894,7 +894,7 @@ return AgentFinalResponseSchema.parse(result.structuredResponse).finalAnswer;
 
 **Parsing throws** if the model returns an off-schema response. Wrapped by the outer `try`, so the user sees the generic pt-BR error.
 
-### 7.5 `AgentFinalResponseSchema` — `src/types/agent-response.ts`
+### 7.5 `AgentFinalResponseSchema` — `src/shared/contracts/agent-response.ts`
 
 ```ts
 export const AgentFinalResponseSchema = z.object({
@@ -1008,11 +1008,11 @@ return retriever.invoke(question);
 
 The threshold sits on the cross-encoder score, never on the cosine score: `match_documents` already orders rows by `embedding <=> query_embedding`, so cutting on that same value adds nothing the ordering did not already encode, and a bi-encoder's scale is not comparable across queries. Observed pt-BR ranges: direct answer 0.87–0.96, partial match ~0.76, related-but-wrong ~0.49, off-topic 0.20–0.34.
 
-Backed by `VOYAGE_RERANK_SERVICE` (`src/infrastructure/providers/voyage-rerank.provider.ts`), a plain `fetch` wrapper over `POST https://api.voyageai.com/v1/rerank` using the same `VOYAGEAI_API_KEY` as the embeddings.
+Backed by `VOYAGE_RERANK_SERVICE` (`src/infrastructure/voyage-rerank/voyage-rerank.provider.ts`), a plain `fetch` wrapper over `POST https://api.voyageai.com/v1/rerank` using the same `VOYAGEAI_API_KEY` as the embeddings.
 
 ### 8.2 `execute_sql` (database tool)
 
-`src/components/Tools/LoadDatabaseTool/load-database-tool.service.ts`. Feature-gated, per-org.
+`src/modules/retrieval/load-database-tool/load-database-tool.service.ts`. Feature-gated, per-org.
 
 **Pré-requisitos** (todos checados em `ResolveAgent.maybeLoadDatabaseTool`):
 
@@ -1195,11 +1195,11 @@ AppModule
 └── HealthModule
 
 Imported à la carte by whoever injects them:
-  src/repositories/<name>.repository.module.ts
+  src/modules/users/repositories/<name>.repository.module.ts
       forFeature([XEntity]) + provides/exports exactly one repository.
       MessageRepositoryModule additionally imports VoyageEmbeddingsProviderModule
       (MessageRepository auto-embeds every message on create).
-  src/infrastructure/providers/<name>.provider.module.ts
+  src/infrastructure/voyage-rerank/<name>.provider.module.ts
       spreads one provider array, exports that provider's tokens.
       SupabaseProviderModule imports VoyageEmbeddingsProviderModule (SUPABASE_SERVICE
       injects VOYAGE_EMBEDDINGS); GcpStorage/GoogleVoice import ConfigModule.

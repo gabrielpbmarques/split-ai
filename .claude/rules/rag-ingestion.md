@@ -1,9 +1,8 @@
 ---
 paths:
-  - 'src/components/Source/**/*.ts'
-  - 'src/components/OCR/**/*.ts'
-  - 'src/components/ArtificialIntelligence/LoadAgentSites/**/*.ts'
-  - 'src/infrastructure/providers/supabase.provider.ts'
+  - 'src/modules/sources/**/*.ts'
+  - 'src/modules/agents/load-agent-sites/**/*.ts'
+  - 'src/infrastructure/supabase/supabase.provider.ts'
 ---
 
 # Scoped rule — RAG ingestion & vector store

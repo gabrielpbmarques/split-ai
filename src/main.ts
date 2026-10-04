@@ -3,14 +3,15 @@ import { NestFactory } from '@nestjs/core';
 import { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Logger } from 'nestjs-pino';
+
 import { AppModule } from 'src/app.module';
-import { initSentryIo } from 'src/observability/sentry.provider';
 import { env } from 'src/shared/config/env';
 import {
   createCorsOptions,
   createFastifyAdapter,
 } from 'src/shared/http/fastify-adapter';
 import { createValidationPipe } from 'src/shared/http/validation-pipe';
+import { initSentryIo } from 'src/shared/observability/sentry';
 
 async function bootstrap(): Promise<void> {
   if (env.isProduction) {

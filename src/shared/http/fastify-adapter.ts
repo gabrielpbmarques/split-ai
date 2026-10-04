@@ -1,5 +1,6 @@
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
+
 import { env } from 'src/shared/config/env';
 import {
   generateRequestId,

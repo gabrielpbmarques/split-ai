@@ -153,7 +153,7 @@ function repositoryModules(
     const lines: string[] = ["import { Module } from '@nestjs/common';"];
     if (entities.length) {
       lines.push("import { TypeOrmModule } from '@nestjs/typeorm';");
-      lines.push(`import { ${entities.join(', ')} } from 'src/entities';`);
+      lines.push(`import { ${entities.join(', ')} } from 'src/infrastructure/database/schema';`);
     }
     lines.push('');
     for (const [name, target] of [...extraModules.entries()].sort()) {

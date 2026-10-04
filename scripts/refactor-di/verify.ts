@@ -62,8 +62,14 @@ function forFeatureEntities(mod: ModuleInfo): Set<string> {
   return entities;
 }
 
+const globalSymbols = new Set<string>();
+for (const mod of graph.modules.values()) {
+  if (!mod.isGlobal) continue;
+  for (const sym of exposedBy(mod.name)) globalSymbols.add(sym);
+}
+
 function visibleTo(mod: ModuleInfo): Set<string> {
-  const visible = new Set<string>();
+  const visible = new Set<string>(globalSymbols);
   for (const p of [...mod.providers, ...mod.controllers]) {
     if (p.name) visible.add(p.name);
     if (p.provide) visible.add(p.provide);

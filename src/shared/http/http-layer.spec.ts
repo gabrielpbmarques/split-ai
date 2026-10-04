@@ -13,9 +13,12 @@ import { Test } from '@nestjs/testing';
 import { IsInt, IsString, MaxLength, Min } from 'class-validator';
 import { FastifyReply } from 'fastify';
 
-import { GlobalExceptionFilter } from './exception.filter';
-import { createCorsOptions, createFastifyAdapter } from './fastify-adapter';
-import { createValidationPipe } from './validation-pipe';
+import { GlobalExceptionFilter } from 'src/shared/http/exception.filter';
+import {
+  createCorsOptions,
+  createFastifyAdapter,
+} from 'src/shared/http/fastify-adapter';
+import { createValidationPipe } from 'src/shared/http/validation-pipe';
 
 class CriarPedidoDto {
   @IsString()

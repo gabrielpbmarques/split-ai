@@ -1,5 +1,6 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { FastifyRequest } from 'fastify';
+
 import { AuthenticatedUser } from 'src/auth/authenticated-user';
 import { requireUser } from 'src/auth/request-user';
 

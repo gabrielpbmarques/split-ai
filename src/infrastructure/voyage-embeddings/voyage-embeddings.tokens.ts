@@ -1,0 +1,1 @@
+export const VOYAGE_EMBEDDINGS = Symbol('VOYAGE_EMBEDDINGS');

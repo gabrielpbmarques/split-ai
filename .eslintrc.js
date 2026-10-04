@@ -16,6 +16,17 @@ module.exports = {
     jest: true,
   },
   ignorePatterns: ['.eslintrc.js'],
+  settings: {
+    'import/resolver': {
+      typescript: { project: `${__dirname}/tsconfig.json` },
+    },
+  },
+  overrides: [
+    {
+      files: ['src/infrastructure/database/schema/**/*.ts'],
+      rules: { 'no-restricted-imports': 'off' },
+    },
+  ],
   rules: {
     '@typescript-eslint/interface-name-prefix': 'off',
     '@typescript-eslint/explicit-function-return-type': 'off',
@@ -26,13 +37,23 @@ module.exports = {
     'no-console': 'error',
     'no-inline-comments': 'warn',
     'no-warning-comments': ['warn', { terms: ['todo', 'fixme'] }],
-    'import/no-relative-parent-imports': 'warn',
+    'no-restricted-imports': [
+      'error',
+      {
+        patterns: [
+          {
+            group: ['./*', '../*'],
+            message: 'Use imports absolutos a partir de src/ (ex.: src/modules/...).',
+          },
+        ],
+      },
+    ],
     'check-file/filename-naming-convention': [
-      'warn',
+      'error',
       { 'src/**/*.ts': 'KEBAB_CASE' },
       { ignoreMiddleExtensions: true },
     ],
-    'check-file/folder-naming-convention': ['warn', { 'src/**/': 'KEBAB_CASE' }],
+    'check-file/folder-naming-convention': ['error', { 'src/**/': 'KEBAB_CASE' }],
     'import/order': [
       'error',
       {

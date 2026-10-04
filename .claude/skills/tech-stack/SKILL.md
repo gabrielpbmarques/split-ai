@@ -22,7 +22,7 @@ You are the **Tech Stack Agent** for the NestJS backend. You hold the technical 
 
 - **Connection**: Configured directly in `AppModule` via `TypeOrmModule.forRoot()` with environment variables (`DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`, `DATABASE_NAME`).
 - **PostGIS**: Used for geospatial queries (`ST_DWithin`, `ST_Distance`, `ST_MakePoint`) — finding nearby drivers, stores, or delivery zones within a radius.
-- **Entities**: Auto-loaded from `src/entities/` via `entities: [__dirname + '/**/*.entity{.ts,.js}']`.
+- **Entities**: Auto-loaded from `src/infrastructure/database/schema/` via `entities: [__dirname + '/**/*.entity{.ts,.js}']`.
 - **Synchronize**: Enabled (`synchronize: true` for dev, false for prod) — schema auto-syncs with entities.
 
 ## Google Text-to-Speech — Voice Generation
@@ -76,7 +76,7 @@ You are the **Tech Stack Agent** for the NestJS backend. You hold the technical 
 
 ## Socket.IO — Real-time WebSocket
 
-- **Not an infrastructure provider** — implemented as a NestJS WebSocket Gateway in `src/components/Notification/WebSocketNotification/`.
+- **Not an infrastructure provider** — implemented as a NestJS WebSocket Gateway in `src/modules/Notification/WebSocketNotification/`.
 - **Library**: `@nestjs/websockets` + `socket.io`
 - **Env vars**: `WEBSOCKET_CORS_ORIGINS`, `WEBSOCKET_NAMESPACE` (default: `/notifications`)
 - **Purpose**: Real-time communication with web clients or dashboards. Pushes live data updates, chat messages, and status changes.
@@ -115,8 +115,8 @@ Two separate providers, one API key (`VOYAGEAI_API_KEY`), one shared rate-limit 
 
 | Provider   | File                                                         | Token                   | Purpose                                                                                                                                                           |
 | ---------- | ------------------------------------------------------------ | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Embeddings | `src/infrastructure/providers/voyage-embeddings.provider.ts` | `VOYAGE_EMBEDDINGS`     | `voyage-3-large`, 1024 dims (`outputDimension` hard-coded). Key is read by the SDK from the env, never passed by the factory.                                     |
-| Reranking  | `src/infrastructure/providers/voyage-rerank.provider.ts`     | `VOYAGE_RERANK_SERVICE` | Cross-encoder `rerank-2.5` via plain `fetch` on `POST https://api.voyageai.com/v1/rerank`. Returns `{ index, relevanceScore }[]`, sorted by descending relevance. |
+| Embeddings | `src/infrastructure/voyage-rerank/voyage-embeddings.provider.ts` | `VOYAGE_EMBEDDINGS`     | `voyage-3-large`, 1024 dims (`outputDimension` hard-coded). Key is read by the SDK from the env, never passed by the factory.                                     |
+| Reranking  | `src/infrastructure/voyage-rerank/voyage-rerank.provider.ts`     | `VOYAGE_RERANK_SERVICE` | Cross-encoder `rerank-2.5` via plain `fetch` on `POST https://api.voyageai.com/v1/rerank`. Returns `{ index, relevanceScore }[]`, sorted by descending relevance. |
 
 Env vars:
 

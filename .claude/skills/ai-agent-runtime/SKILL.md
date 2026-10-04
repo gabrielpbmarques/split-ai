@@ -1,11 +1,11 @@
 ---
 name: ai-agent-runtime
-description: 'Use for running an agent at request time: ResolveAgent, GenerateAIResponse, LangGraph streaming, structured responses (AgentFinalResponseSchema), thread_id memory via PostgresSaver, LangSmith tracing, token-usage rows. Also for debugging empty replies or lost memory. Scope: src/components/ArtificialIntelligence/.'
+description: 'Use for running an agent at request time: ResolveAgent, GenerateAIResponse, LangGraph streaming, structured responses (AgentFinalResponseSchema), thread_id memory via PostgresSaver, LangSmith tracing, token-usage rows. Also for debugging empty replies or lost memory. Scope: src/modules/ArtificialIntelligence/.'
 ---
 
 ## What a "resolved agent" is
 
-`ResolvedAgent` (`src/types/models/resolved-agent.model.ts`) is the in-memory bundle every chat use case operates on:
+`ResolvedAgent` (`src/shared/contracts/models/resolved-agent.model.ts`) is the in-memory bundle every chat use case operates on:
 
 ```ts
 interface ResolvedAgent {
@@ -22,7 +22,7 @@ interface ResolvedAgent {
 
 `runnable` is the only field invoked at chat time. The rest is metadata.
 
-## ResolveAgent — src/components/ArtificialIntelligence/ResolveAgent/resolve-agent.service.ts
+## ResolveAgent — src/modules/agent-runtime/resolve-agent/resolve-agent.service.ts
 
 Single public method `execute(agentId, promptVariables?, memorySaver?)`:
 
@@ -37,7 +37,7 @@ Single public method `execute(agentId, promptVariables?, memorySaver?)`:
 
 `promptVariables` is forwarded raw to the prompt — at minimum the chat flows pass `{ sessionId }` (from Question) or `{ agentId, userName, userPhone, userId }` (from Attendant). Add new variables here when prompt templates need them.
 
-## LoadCheckpointer — src/components/ArtificialIntelligence/LoadCheckpointer/load-checkpointer.service.ts
+## LoadCheckpointer — src/modules/agent-runtime/load-checkpointer/load-checkpointer.service.ts
 
 ```ts
 @Injectable()
@@ -59,7 +59,7 @@ export class LoadCheckpointerService implements OnModuleInit {
 - The saver is the **same** Supabase Postgres instance as TypeORM. Tables live alongside your entities. Don't accidentally drop or rename them in migrations.
 - Caller-supplied `MemorySaver` (in-memory) is used in places that need transient memory (e.g., one-shot tool invocations) — pass it explicitly to `resolveAgentService.execute(..., memorySaver)`.
 
-## GenerateAIResponse — src/components/ArtificialIntelligence/GenerateAIResponse/generate-ai-response.service.ts
+## GenerateAIResponse — src/modules/agent-runtime/generate-ai-response/generate-ai-response.service.ts
 
 ```ts
 execute(question, metadata: CustomMetadata, agent: ResolvedAgent, stream: boolean = false)
@@ -85,7 +85,7 @@ const configurable = {
 
 ### Non-stream path (lines 80-101)
 
-`runnable.invoke(invokeParams, configurable)` → `result.messages.at(-1).usage_metadata` → call `recordTokenUsageService.execute({...})` with `model: (agent.chat as any).model`. Then `AgentFinalResponseSchema.parse(result.structuredResponse).finalAnswer` is returned as a plain string. **Parsing will throw** if the model returns an off-schema response — see `AgentFinalResponseSchema` in `src/types/agent-response.ts`.
+`runnable.invoke(invokeParams, configurable)` → `result.messages.at(-1).usage_metadata` → call `recordTokenUsageService.execute({...})` with `model: (agent.chat as any).model`. Then `AgentFinalResponseSchema.parse(result.structuredResponse).finalAnswer` is returned as a plain string. **Parsing will throw** if the model returns an off-schema response — see `AgentFinalResponseSchema` in `src/shared/contracts/agent-response.ts`.
 
 ### Stream path (lines 72-78, handler at 104-129)
 
@@ -104,7 +104,7 @@ So a streamed reply only emits final-answer prose; intermediate tool reasoning i
 - Upstream callers never see stack traces from inside the model run. Log/observe via LangSmith and Sentry, not via thrown errors.
 - If you want a hard failure mode (e.g., to skip credit consumption on certain errors), you must surface it through a different channel — the current contract is "always returns a value".
 
-## AgentFinalResponseSchema — src/types/agent-response.ts
+## AgentFinalResponseSchema — src/shared/contracts/agent-response.ts
 
 ```ts
 z.object({
@@ -120,7 +120,7 @@ Only `finalAnswer` is wired through to chat callers today. The other fields are 
 
 ## Token usage
 
-`RecordTokenUsageService` (in `src/components/TokenUsage/RecordTokenUsage/`) is called on every successful response with `{ organization_id, agent_id, user_id, input_tokens, output_tokens, total_tokens, model }`. It writes to the `token_usage` table. It is only invoked when `agent.organization_id` is truthy — admin/global agents (with `organization_id = null`) do not produce usage rows.
+`RecordTokenUsageService` (in `src/modules/billing/record-token-usage/`) is called on every successful response with `{ organization_id, agent_id, user_id, input_tokens, output_tokens, total_tokens, model }`. It writes to the `token_usage` table. It is only invoked when `agent.organization_id` is truthy — admin/global agents (with `organization_id = null`) do not produce usage rows.
 
 ## Common pitfalls
 

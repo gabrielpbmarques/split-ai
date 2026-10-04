@@ -12,8 +12,8 @@ Registro de travas, contornos e desvios conscientes do `split-ai` em relação a
 | Biblioteca | `jsonwebtoken@9.0.3` |
 | Sintoma | `POST /auth/login`, `/auth/register-lite`, `/auth/send-sms`, `/auth/verify-sms` e `/sign-up` emitem tokens; `GenerateTokenService` assina com `env.JWT_SECRET`. |
 | Causa | O produto não tem IdP externo; o backend é o emissor. |
-| Solução | Manter a emissão em `src/components/Auth/`. A verificação continua concentrada em `TokenVerifier` (`src/auth/token.verifier.ts`), que é a única classe que conhece o formato do token. Nunca criar flag ou variável que desligue a verificação. |
-| Onde | `src/auth/token.verifier.ts`, `src/components/Auth/GenerateToken/` |
+| Solução | Manter a emissão em `src/modules/Auth/`. A verificação continua concentrada em `TokenVerifier` (`src/auth/token.verifier.ts`), que é a única classe que conhece o formato do token. Nunca criar flag ou variável que desligue a verificação. |
+| Onde | `src/auth/token.verifier.ts`, `src/modules/auth-flows/generate-token/` |
 | Regra dona | `08-autenticacao-autorizacao.md` |
 | Tentativas descartadas | — |
 | Remover quando | Houver IdP externo (Auth0, Cognito, Supabase Auth) emitindo os tokens. |
@@ -43,7 +43,7 @@ Registro de travas, contornos e desvios conscientes do `split-ai` em relação a
 | Sintoma | Depois de `res.hijack()` e `writeHead(200)`, uma exceção não pode virar `ErrorResponse`: os headers já foram enviados. |
 | Causa | `POST /support/question` envia NDJSON em chunks e precisa do socket cru. |
 | Solução | `QuestionController` mantém o único `try/catch` do projeto e escreve um evento `{ type: 'error' }` seguido de `{ type: 'done' }`. `GlobalExceptionFilter` ignora respostas com `headersSent`. |
-| Onde | `src/components/AIChat/Question/question.controller.ts`, `src/shared/http/exception.filter.ts` |
+| Onde | `src/modules/chat/question/question.controller.ts`, `src/shared/http/exception.filter.ts` |
 | Regra dona | `07-interceptors-decorators.md` |
 | Tentativas descartadas | — |
 | Remover quando | O streaming migrar para SSE nativo do Nest com um interceptor de erro próprio. |
@@ -73,7 +73,7 @@ Registro de travas, contornos e desvios conscientes do `split-ai` em relação a
 | Sintoma | `Module '"langchain"' has no exported member 'ContextualCompressionRetriever'`; e sem o cast `as unknown as BaseRetrieverInterface` o `bun run build` falha porque `@langchain/community` resolve as tipagens CJS para as ESM sob `NodeNext`. |
 | Causa | Os retrievers clássicos mudaram de pacote na v1; duas identidades do mesmo tipo. |
 | Solução | Importar de `@langchain/classic` e manter o cast em `execute-similarity-search.service.ts`. |
-| Onde | `src/components/ArtificialIntelligence/ExecuteSimilaritySearch/execute-similarity-search.service.ts` |
+| Onde | `src/modules/retrieval/execute-similarity-search/execute-similarity-search.service.ts` |
 | Regra dona | — |
 | Tentativas descartadas | Remover o cast: quebra o build. |
 | Remover quando | `@langchain/community` publicar tipagens ESM/CJS unificadas. |
@@ -103,8 +103,23 @@ Registro de travas, contornos e desvios conscientes do `split-ai` em relação a
 | Sintoma | 429 com corpo `"You have not yet added your payment method"`; cada busca custa duas chamadas (embed + rerank) na mesma chave. |
 | Causa | Limite por organização Voyage; um cartão cadastrado sem ser o padrão não conta. |
 | Solução | Definir cartão padrão na conta Voyage e validar com rajada de chamadas concorrentes, não pelo dashboard. |
-| Onde | `src/infrastructure/providers/voyage-*.provider.ts` |
+| Onde | `src/infrastructure/voyage-rerank/voyage-*.provider.ts` |
 | Regra dona | `10-integracoes-externas.md` |
 | Tentativas descartadas | — |
 | Remover quando | — |
+| Registrado em | 2026-10-04 |
+
+### PC-008 — `useExisting` em porta não quebra ciclo de instanciação do Nest
+
+| Campo | Valor |
+| --- | --- |
+| Status | atalho |
+| Biblioteca | `@nestjs/core@10.4.22` |
+| Sintoma | Mesmo sem ciclo entre módulos, `{ provide: AGENT_RESOLVER, useExisting: ResolveAgentService }` reabre o ciclo na instanciação (`ResolveAgentService → LoadAgentToolsService → AppendConnectionToolsService → InvokeConnectedAgentService → AGENT_RESOLVER → ResolveAgentService`) e o Nest exige `forwardRef`. |
+| Causa | O grafo de objetos do pipeline de agentes conectados é cíclico por construção: um agente resolve seus sub-agentes com o mesmo serviço. |
+| Solução | A porta é provida por `useFactory` com `ModuleRef` e resolve `ResolveAgentService` só no momento da chamada (`moduleRef.get(..., { strict: false })`), em módulo `@Global()`. O consumidor injeta pelo token e tipa pela interface; nenhum `forwardRef` sobra. |
+| Onde | `src/modules/agent-runtime/contracts/agent-runtime-contracts.module.ts` |
+| Regra dona | `06-injecao-dependencia.md` |
+| Tentativas descartadas | `useExisting`: erro de dependência circular no boot. `forwardRef` nos dois lados: proibido pela regra e esconde o acoplamento. |
+| Remover quando | A resolução do sub-agente for feita por um orquestrador acima de `ResolveAgentService`, eliminando a recursão. |
 | Registrado em | 2026-10-04 |

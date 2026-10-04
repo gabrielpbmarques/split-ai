@@ -1,10 +1,11 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
+import { ZodError } from 'zod';
+
 import {
   ErrorCategory,
   ErrorDetail,
   ErrorResponse,
 } from 'src/shared/contracts/error-response';
-import { ZodError } from 'zod';
 
 export interface ErrorContext {
   readonly correlationId: string;
