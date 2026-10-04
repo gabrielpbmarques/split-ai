@@ -243,3 +243,33 @@ Registro de travas, contornos e desvios conscientes do `split-ai` em relação a
 | Tentativas descartadas | `FastifyPluginCallback` genérico: falha pelos generics de servidor. |
 | Remover quando | `@nestjs/platform-fastify` alinhar os generics de `register` com os plugins oficiais. |
 | Registrado em | 2026-10-04 |
+
+### PC-017 — Não existe migration baseline: o banco de teste é sincronizado, não migrado
+
+| Campo | Valor |
+| --- | --- |
+| Status | atalho |
+| Biblioteca | `typeorm@0.3.28` |
+| Sintoma | As três migrations do repo são deltas sobre o schema que o `synchronize` produziu em produção; rodá-las num banco vazio falha (`ALTER TABLE` em tabela inexistente). Os e2e precisam de um banco limpo por execução. |
+| Causa | A Fase 5 não gerou baseline porque produção já tinha o schema e uma baseline com `CREATE TABLE` quebraria o `db:migrate` lá. |
+| Solução | `scripts/test/prepare-database.ts` faz `dropSchema` + `synchronize` a partir das entidades e insere as linhas da tabela `migrations` com os nomes das classes, para `/health/startup` responder 200. O `db:check` contra um espelho de produção continua sendo a verificação de paridade. |
+| Onde | `scripts/test/prepare-database.ts`, `test/global-setup.ts` |
+| Regra dona | `09-banco-de-dados.md`, `05-controllers-services-dtos.md` |
+| Tentativas descartadas | Rodar `MIGRATIONS` no setup: falha no banco vazio. |
+| Remover quando | Existir uma baseline gerada contra um banco vazio e marcada como aplicada em produção (`INSERT` manual na tabela `migrations`). |
+| Registrado em | 2026-10-04 |
+
+### PC-018 — `DevtoolsModule` deixa um timer vivo e derruba o teardown do Jest
+
+| Campo | Valor |
+| --- | --- |
+| Status | atalho |
+| Biblioteca | `@nestjs/devtools-integration` |
+| Sintoma | Mesmo com `http: false`, `DevtoolsHttpServerHost` agenda um `setTimeout` que imprime o token da sessão via `chalk`; depois de `app.close()` o Jest reporta "You are trying to import a file after the Jest environment has been torn down" e `template is not a function`. |
+| Causa | O módulo registra o timer no construtor, independente da opção `http`. |
+| Solução | `AppModule` só inclui `DevtoolsModule` quando `!env.isTest` (spread condicional em `imports`). |
+| Onde | `src/app.module.ts` |
+| Regra dona | `03-modulo-nest.md` |
+| Tentativas descartadas | `http: false`: o timer continua. |
+| Remover quando | A integração aceitar ser desligada por opção ou o projeto deixar de usá-la. |
+| Registrado em | 2026-10-04 |

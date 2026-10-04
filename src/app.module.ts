@@ -52,9 +52,9 @@ import { AppLoggerModule } from 'src/shared/observability/logger.module';
         keepAlive: true,
       },
     }),
-    DevtoolsModule.register({
-      http: !env.isProduction,
-    }),
+    ...(env.isTest
+      ? []
+      : [DevtoolsModule.register({ http: !env.isProduction })]),
     IntegrationModule,
     AuthModule,
     HealthModule,

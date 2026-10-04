@@ -50,7 +50,7 @@ export class UpdateAgentDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  @MaxLength(2048)
+  @MaxLength(2048, { each: true })
   @ArrayMaxSize(50)
   sites?: string[] | null;
 

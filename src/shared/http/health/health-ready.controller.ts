@@ -32,11 +32,14 @@ export class HealthReadyController {
       integrations: this.integrations.check(),
     };
 
-    if (database.status === 'down' || memory.status === 'down') {
-      throw new ServiceUnavailableException({
-        message: 'Dependências indisponíveis',
-        checks,
-      });
+    const down = Object.entries({ database, memory })
+      .filter(([, check]) => check.status === 'down')
+      .map(([name]) => name);
+
+    if (down.length > 0) {
+      throw new ServiceUnavailableException(
+        `Dependências indisponíveis: ${down.join(', ')}`,
+      );
     }
 
     return res.status(200).send({ status: 'ok', checks });
