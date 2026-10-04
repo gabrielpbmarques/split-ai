@@ -1,7 +1,6 @@
-import { Controller, Get, Query, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, Res } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
-import { AuthGuard } from 'src/auth/auth.guard';
-import { Roles } from 'src/decorators/roles.decorator';
+import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
 
 import { ListOrganizationsService } from './list-organizations.service';
 
@@ -12,8 +11,7 @@ export class ListOrganizationsController {
   ) {}
 
   @Get()
-  @UseGuards(AuthGuard)
-  @Roles('admin')
+  @RequirePermissions('organization.manage')
   async handle(
     @Query()
     query: {

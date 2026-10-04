@@ -1,37 +1,30 @@
-import {
-  Injectable,
-  ForbiddenException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { AccessScopeService } from 'src/auth/access-scope.service';
+import { AuthenticatedUser } from 'src/auth/authenticated-user';
 import { GetSessionMessagesService } from 'src/components/Session/GetSessionMessages/get-session-messages.service';
 import { ReportRepository } from 'src/repositories';
-
-interface AuthUser {
-  id: string;
-  role: string;
-  organization_id: string;
-}
 
 @Injectable()
 export class GetReportConversationService {
   constructor(
     private readonly reportRepository: ReportRepository,
     private readonly getSessionMessagesService: GetSessionMessagesService,
+    private readonly accessScope: AccessScopeService,
   ) {}
 
-  async execute(user: AuthUser, reportId: string) {
+  async execute(user: AuthenticatedUser, reportId: string) {
     const report = await this.reportRepository.findById(reportId);
 
     if (!report) {
       throw new NotFoundException('Relatório não encontrado');
     }
 
-    if (
-      user.role !== 'admin' &&
-      report.organization_id !== user.organization_id
-    ) {
-      throw new ForbiddenException('Acesso negado');
-    }
+    this.accessScope.ensureCan(
+      user,
+      'report.read',
+      { organizationId: report.organization_id },
+      'Acesso negado',
+    );
 
     // Get conversation messages using the session_id from report
     return this.getSessionMessagesService.execute(user, report.session_id);

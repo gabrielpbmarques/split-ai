@@ -1,10 +1,9 @@
-import { Controller, Get, Query, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, Res } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
-import { ActiveOrgGuard } from 'src/auth/active-org.guard';
-import { AuthGuard } from 'src/auth/auth.guard';
-import { Roles } from 'src/decorators/roles.decorator';
-import { User } from 'src/decorators/user.decorator';
-import { UserEntity } from 'src/entities';
+import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import { RequireActiveOrganization } from 'src/shared/decorators/active-organization.decorator';
+import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
+import { User } from 'src/shared/decorators/user.decorator';
 
 import { ListSessionsDto } from './list-sessions.dto';
 import { ListSessionsService } from './list-sessions.service';
@@ -14,11 +13,11 @@ export class ListSessionsController {
   constructor(private readonly listSessionsService: ListSessionsService) {}
 
   @Get('sessions')
-  @UseGuards(AuthGuard, ActiveOrgGuard)
-  @Roles('admin', 'user')
+  @RequirePermissions('session.read')
+  @RequireActiveOrganization()
   async handle(
     @Query() dto: ListSessionsDto,
-    @User() user: UserEntity,
+    @User() user: AuthenticatedUser,
     @Res() res: FastifyReply,
   ): Promise<FastifyReply> {
     const sessions = await this.listSessionsService.execute(user, dto);

@@ -1,4 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { PrincipalResolverService } from 'src/auth/principal-resolver.service';
 import { OrganizationRepository } from 'src/repositories/organization.repository';
 import { OrganizationStatus } from 'src/types';
 
@@ -8,6 +9,7 @@ export class ActivateOrganizationService {
 
   constructor(
     private readonly organizationRepository: OrganizationRepository,
+    private readonly principalResolver: PrincipalResolverService,
   ) {}
 
   async execute(organizationId: string): Promise<void> {
@@ -29,6 +31,8 @@ export class ActivateOrganizationService {
       status: 'active' as OrganizationStatus,
       activated_at: new Date(),
     });
+
+    this.principalResolver.invalidateOrganization(organizationId);
 
     this.logger.log(`Organization ${organizationId} activated`);
   }

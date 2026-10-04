@@ -1,19 +1,8 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Patch,
-  Res,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Res } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
-import { AuthGuard } from 'src/auth/auth.guard';
-import { OrgRoleGuard } from 'src/auth/org-role.guard';
-import { OrgRoles } from 'src/decorators/org-roles.decorator';
-import { Roles } from 'src/decorators/roles.decorator';
-import { User as AuthUser } from 'src/decorators/user.decorator';
-import { User } from 'src/types';
+import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
+import { User as AuthUser } from 'src/shared/decorators/user.decorator';
 
 import { UpdateAgentDto } from './update-agent.dto';
 import { UpdateAgentService } from './update-agent.service';
@@ -24,33 +13,30 @@ export class UpdateAgentController {
 
   // Platform-wide listing of every agent across organizations — admin only.
   @Get()
-  @UseGuards(AuthGuard)
-  @Roles('admin')
+  @RequirePermissions('agent.manage')
   async list(@Res() res: FastifyReply): Promise<FastifyReply> {
     const data = await this.updateAgentService.list();
     return res.status(200).send({ data });
   }
 
   @Get(':id')
-  @UseGuards(AuthGuard, OrgRoleGuard)
-  @OrgRoles('owner', 'admin', 'member')
+  @RequirePermissions('agent.read')
   async getOne(
     @Param('id') id: string,
     @Res() res: FastifyReply,
-    @AuthUser() user: User,
+    @AuthUser() user: AuthenticatedUser,
   ): Promise<FastifyReply> {
     const data = await this.updateAgentService.getOne(id, user);
     return res.status(200).send({ data });
   }
 
   @Patch(':id')
-  @UseGuards(AuthGuard, OrgRoleGuard)
-  @OrgRoles('owner', 'admin', 'member')
+  @RequirePermissions('agent.write')
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateAgentDto,
     @Res() res: FastifyReply,
-    @AuthUser() user: User,
+    @AuthUser() user: AuthenticatedUser,
   ): Promise<FastifyReply> {
     const data = await this.updateAgentService.update(id, dto, user);
     return res.status(200).send({ data });

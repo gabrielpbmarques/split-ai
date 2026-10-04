@@ -6,7 +6,7 @@ import {
   Res,
 } from '@nestjs/common';
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { Roles } from 'src/decorators/roles.decorator';
+import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
 import { AgentSource } from 'src/types/agent-source';
 
 import { GenerateAgentSourceService } from './generate-agent-source.service';
@@ -47,7 +47,7 @@ export class GenerateAgentSourceController {
   ) {}
 
   @Post('generate-source')
-  @Roles('admin')
+  @RequirePermissions('agent.manage')
   async handle(
     @Req() req: FastifyRequest,
     @Res() res: FastifyReply,

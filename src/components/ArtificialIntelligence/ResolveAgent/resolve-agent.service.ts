@@ -1,6 +1,12 @@
 import { ChatAnthropic } from '@langchain/anthropic';
 import { MemorySaver } from '@langchain/langgraph';
-import { Inject, Injectable, forwardRef } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotFoundException,
+  forwardRef,
+} from '@nestjs/common';
 import { createAgent, createMiddleware } from 'langchain';
 import { LoadAgentToolsService } from 'src/components/Tools/LoadAgentTools/load-agent-tools.service';
 import { AgentEntity } from 'src/entities';
@@ -44,10 +50,17 @@ export class ResolveAgentService {
       );
     const agent = await this.agentRepository.findOne({
       where: isUuid ? { id: agentId } : { agent_identifier: agentId },
+      relations: ['organization'],
     });
 
     if (!agent) {
-      throw new Error('Agent não encontrado');
+      throw new NotFoundException('Agente não encontrado');
+    }
+
+    if (agent.organization?.status === 'inactive') {
+      throw new ForbiddenException(
+        'A organização responsável por este agente está inativa.',
+      );
     }
 
     const latestInstructions =

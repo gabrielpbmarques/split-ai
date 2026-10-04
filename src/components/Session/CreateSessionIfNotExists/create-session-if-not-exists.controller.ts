@@ -1,8 +1,8 @@
-import { Body, Controller, Post, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, Res } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
-import { AuthGuard } from 'src/auth/auth.guard';
-import { User as AuthUser } from 'src/decorators/user.decorator';
-import { UserEntity } from 'src/entities';
+import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
+import { User as AuthUser } from 'src/shared/decorators/user.decorator';
 
 import { CreateSessionIfNotExistsDto } from './create-session-if-not-exists.dto';
 import { CreateSessionIfNotExistsService } from './create-session-if-not-exists.service';
@@ -14,9 +14,9 @@ export class CreateSessionIfNotExistsController {
   ) {}
 
   @Post()
-  @UseGuards(AuthGuard)
+  @RequirePermissions('account.access')
   async handle(
-    @AuthUser() user: UserEntity,
+    @AuthUser() user: AuthenticatedUser,
     @Res() res: FastifyReply,
     @Body() body: CreateSessionIfNotExistsDto,
   ) {

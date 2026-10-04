@@ -3,9 +3,9 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { AuthenticatedUser } from 'src/auth/authenticated-user';
 import { AgentConnectionEntity } from 'src/entities';
 import { AgentConnectionRepository } from 'src/repositories';
-import { User } from 'src/types';
 
 import { UpdateAgentConnectionDto } from './update-agent-connection.dto';
 
@@ -17,7 +17,7 @@ export class UpdateAgentConnectionService {
 
   async execute(
     dto: UpdateAgentConnectionDto,
-    user: User,
+    user: AuthenticatedUser,
   ): Promise<{ success: true }> {
     const isPlatformAdmin = user.role === 'admin';
     const connection = isPlatformAdmin

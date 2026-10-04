@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { AuthenticatedUser } from 'src/auth/authenticated-user';
 import {
   SessionRepository,
   MessageRepository,
@@ -6,7 +7,6 @@ import {
   ReportRepository,
   TokenUsageRepository,
 } from 'src/repositories';
-import { User } from 'src/types';
 import { Between } from 'typeorm';
 
 import {
@@ -25,7 +25,7 @@ export class DashboardStatisticsService {
   ) {}
 
   async execute(
-    user: User,
+    user: AuthenticatedUser,
     dto: DashboardStatisticsDto,
   ): Promise<DashboardStatistics> {
     const { startDate, endDate } = this.getDateRange(dto);
@@ -81,7 +81,7 @@ export class DashboardStatisticsService {
   }
 
   private async getStatistics(
-    user: User,
+    user: AuthenticatedUser,
     startDate: Date,
     endDate: Date,
     agentId?: string,

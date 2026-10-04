@@ -1,17 +1,8 @@
-import {
-  Body,
-  Controller,
-  Post,
-  Res,
-  UseGuards,
-  ValidationPipe,
-} from '@nestjs/common';
+import { Body, Controller, Post, Res, ValidationPipe } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
-import { AuthGuard } from 'src/auth/auth.guard';
-import { OrgRoleGuard } from 'src/auth/org-role.guard';
-import { OrgRoles } from 'src/decorators/org-roles.decorator';
-import { User as AuthUser } from 'src/decorators/user.decorator';
-import { User } from 'src/types';
+import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
+import { User as AuthUser } from 'src/shared/decorators/user.decorator';
 
 import { InviteMemberDto } from './invite-member.dto';
 import { InviteMemberService } from './invite-member.service';
@@ -21,12 +12,11 @@ export class InviteMemberController {
   constructor(private readonly inviteMemberService: InviteMemberService) {}
 
   @Post('invite')
-  @UseGuards(AuthGuard, OrgRoleGuard)
-  @OrgRoles('owner', 'admin')
+  @RequirePermissions('member.manage')
   async handle(
     @Res() res: FastifyReply,
     @Body(new ValidationPipe()) dto: InviteMemberDto,
-    @AuthUser() user: User,
+    @AuthUser() user: AuthenticatedUser,
   ): Promise<FastifyReply> {
     const result = await this.inviteMemberService.execute(
       dto,

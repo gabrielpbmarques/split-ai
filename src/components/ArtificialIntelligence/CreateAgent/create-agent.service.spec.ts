@@ -1,5 +1,5 @@
 import { ForbiddenException } from '@nestjs/common';
-import { User } from 'src/types';
+import { AuthenticatedUser } from 'src/auth/authenticated-user';
 
 import { CreateAgentService } from './create-agent.service';
 
@@ -12,7 +12,7 @@ describe('CreateAgentService', () => {
   const user = {
     id: 'user-1',
     organization_id: 'org-1',
-  } as unknown as User;
+  } as unknown as AuthenticatedUser;
 
   const dto: any = { name: 'Agent', instructions: { diretrizes: [] } };
 

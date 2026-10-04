@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
+import { AuthenticatedUser } from 'src/auth/authenticated-user';
 import { QuestionDto } from 'src/components/AIChat/Question/question.dto';
 import { RecordChatMessageService } from 'src/components/AIChat/RecordChatMessage/record-chat-message.service';
 import { GenerateAiResponseService } from 'src/components/ArtificialIntelligence/GenerateAIResponse/generate-ai-response.service';
 import { ResolveAgentService } from 'src/components/ArtificialIntelligence/ResolveAgent/resolve-agent.service';
 import { CreateSessionIfNotExistsService } from 'src/components/Session/CreateSessionIfNotExists/create-session-if-not-exists.service';
 import { UserEntity } from 'src/entities';
-import { User } from 'src/types';
 
 @Injectable()
 export class AttendantService {
@@ -16,7 +16,10 @@ export class AttendantService {
     private readonly recordChatMessageService: RecordChatMessageService,
   ) {}
 
-  async execute(dto: QuestionDto, loggedUser: User): Promise<string> {
+  async execute(
+    dto: QuestionDto,
+    loggedUser: AuthenticatedUser,
+  ): Promise<string> {
     const user: UserEntity = loggedUser as unknown as UserEntity;
     const { question, agentId } = dto;
 

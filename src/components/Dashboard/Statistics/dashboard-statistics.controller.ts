@@ -1,9 +1,8 @@
-import { Controller, Get, Query, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, Res } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
-import { AuthGuard } from 'src/auth/auth.guard';
-import { Roles } from 'src/decorators/roles.decorator';
-import { User as AuthUser } from 'src/decorators/user.decorator';
-import { User } from 'src/types';
+import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
+import { User as AuthUser } from 'src/shared/decorators/user.decorator';
 
 import { DashboardStatisticsDto } from './dashboard-statistics.dto';
 import { DashboardStatisticsService } from './dashboard-statistics.service';
@@ -15,12 +14,11 @@ export class DashboardStatisticsController {
   ) {}
 
   @Get('statistics')
-  @UseGuards(AuthGuard)
-  @Roles('admin', 'user')
+  @RequirePermissions('analytics.read')
   async getStatistics(
     @Res() res: FastifyReply,
     @Query() dto: DashboardStatisticsDto,
-    @AuthUser() user: User,
+    @AuthUser() user: AuthenticatedUser,
   ) {
     const statistics = await this.dashboardStatisticsService.execute(user, dto);
     return res.status(200).send(statistics);

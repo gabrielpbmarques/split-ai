@@ -8,8 +8,8 @@ import {
   Res,
 } from '@nestjs/common';
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { Public } from 'src/auth/auth.guard';
 import { env } from 'src/shared/config/env';
+import { Public } from 'src/shared/decorators/public.decorator';
 
 import { StripeWebhookService } from './stripe-webhook.service';
 

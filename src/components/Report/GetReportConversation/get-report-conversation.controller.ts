@@ -1,9 +1,8 @@
-import { Controller, Get, Param, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Res } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
-import { AuthGuard } from 'src/auth/auth.guard';
-import { Roles } from 'src/decorators/roles.decorator';
-import { User } from 'src/decorators/user.decorator';
-import { UserEntity } from 'src/entities';
+import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
+import { User } from 'src/shared/decorators/user.decorator';
 
 import { GetReportConversationService } from './get-report-conversation.service';
 
@@ -14,11 +13,10 @@ export class GetReportConversationController {
   ) {}
 
   @Get(':reportId/conversation')
-  @UseGuards(AuthGuard)
-  @Roles('admin', 'user')
+  @RequirePermissions('report.read')
   async handle(
     @Param('reportId') reportId: string,
-    @User() user: UserEntity,
+    @User() user: AuthenticatedUser,
     @Res() res: FastifyReply,
   ): Promise<FastifyReply> {
     const conversation = await this.getReportConversationService.execute(

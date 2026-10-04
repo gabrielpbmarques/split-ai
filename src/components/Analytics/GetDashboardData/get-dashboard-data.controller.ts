@@ -1,9 +1,8 @@
-import { Controller, Get, Query, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, Res } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
-import { AuthGuard } from 'src/auth/auth.guard';
-import { Roles } from 'src/decorators/roles.decorator';
-import { User as UserDecorator } from 'src/decorators/user.decorator';
-import { User } from 'src/types';
+import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
+import { User as UserDecorator } from 'src/shared/decorators/user.decorator';
 
 import { GetDashboardDataService } from './get-dashboard-data.service';
 
@@ -14,12 +13,11 @@ export class GetDashboardDataController {
   ) {}
 
   @Get('dashboard-data')
-  @UseGuards(AuthGuard)
-  @Roles('user', 'admin')
+  @RequirePermissions('analytics.read')
   async handle(
     @Res() res: FastifyReply,
     @Query() query: any,
-    @UserDecorator() user: User,
+    @UserDecorator() user: AuthenticatedUser,
   ) {
     const data = await this.getDashboardDataService.execute(user, query);
     return res.status(200).send(data);

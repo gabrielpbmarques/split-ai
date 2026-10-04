@@ -5,8 +5,9 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { AccessScopeService } from 'src/auth/access-scope.service';
+import { AuthenticatedUser } from 'src/auth/authenticated-user';
 import { AgentConnectionRepository, AgentRepository } from 'src/repositories';
-import { User } from 'src/types';
 
 import { CreateAgentConnectionDto } from './create-agent-connection.dto';
 
@@ -15,11 +16,12 @@ export class CreateAgentConnectionService {
   constructor(
     private readonly agentConnectionRepository: AgentConnectionRepository,
     private readonly agentRepository: AgentRepository,
+    private readonly accessScope: AccessScopeService,
   ) {}
 
   async execute(
     dto: CreateAgentConnectionDto,
-    user: User,
+    user: AuthenticatedUser,
   ): Promise<{ id: string }> {
     if (dto.principalAgentId === dto.childAgentId) {
       throw new BadRequestException(
@@ -39,18 +41,24 @@ export class CreateAgentConnectionService {
       throw new NotFoundException('Agente conectado não encontrado.');
     }
 
-    const isPlatformAdmin = user.role === 'admin';
-    if (isPlatformAdmin) {
-      if (principal.organization_id !== child.organization_id) {
-        throw new ForbiddenException(
-          'Os agentes pertencem a organizações diferentes.',
-        );
-      }
-    } else if (
-      principal.organization_id !== user.organization_id ||
-      child.organization_id !== user.organization_id
-    ) {
-      throw new ForbiddenException('Agente não pertence à sua organização.');
+    const scopeMessage = 'Agente não pertence à sua organização.';
+    this.accessScope.ensureCan(
+      user,
+      'agent-connection.manage',
+      { organizationId: principal.organization_id },
+      scopeMessage,
+    );
+    this.accessScope.ensureCan(
+      user,
+      'agent-connection.manage',
+      { organizationId: child.organization_id },
+      scopeMessage,
+    );
+
+    if (principal.organization_id !== child.organization_id) {
+      throw new ForbiddenException(
+        'Os agentes pertencem a organizações diferentes.',
+      );
     }
 
     const duplicate = await this.agentConnectionRepository.existsByPair(

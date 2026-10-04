@@ -3,6 +3,8 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
+import { AccessScopeService } from 'src/auth/access-scope.service';
+import { AuthenticatedUser } from 'src/auth/authenticated-user';
 import {
   MessageRepository,
   SessionRepository,
@@ -10,12 +12,6 @@ import {
   AgentRepository,
   UserRepository,
 } from 'src/repositories';
-
-interface AuthUser {
-  id: string;
-  role: string;
-  organization_id: string;
-}
 
 export interface ConversationDetail {
   session: {
@@ -43,10 +39,11 @@ export class GetSessionMessagesService {
     private creditTransactionRepository: CreditTransactionRepository,
     private agentRepository: AgentRepository,
     private userRepository: UserRepository,
+    private readonly accessScope: AccessScopeService,
   ) {}
 
   async execute(
-    user: AuthUser,
+    user: AuthenticatedUser,
     sessionId: string,
   ): Promise<ConversationDetail> {
     // Get session
@@ -58,17 +55,19 @@ export class GetSessionMessagesService {
       throw new NotFoundException('Sessão não encontrada');
     }
 
-    // Check permission
-    if (user.role !== 'admin') {
-      if (sessionEntity.organization_id) {
-        if (sessionEntity.organization_id !== user.organization_id) {
-          throw new ForbiddenException('Acesso negado');
-        }
-      } else {
-        if (sessionEntity.user_id && sessionEntity.user_id !== user.id) {
-          throw new ForbiddenException('Acesso negado');
-        }
-      }
+    if (sessionEntity.organization_id) {
+      this.accessScope.ensureCan(
+        user,
+        'session.read',
+        { organizationId: sessionEntity.organization_id },
+        'Acesso negado',
+      );
+    } else if (
+      user.role !== 'admin' &&
+      sessionEntity.user_id &&
+      sessionEntity.user_id !== user.id
+    ) {
+      throw new ForbiddenException('Acesso negado');
     }
 
     // Attempt to get Agent name

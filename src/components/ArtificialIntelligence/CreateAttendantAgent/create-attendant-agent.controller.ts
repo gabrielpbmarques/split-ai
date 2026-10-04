@@ -1,9 +1,8 @@
-import { Body, Controller, Post, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, Res } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
-import { AuthGuard } from 'src/auth/auth.guard';
-import { Roles } from 'src/decorators/roles.decorator';
-import { User as AuthUser } from 'src/decorators/user.decorator';
-import { User } from 'src/types';
+import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
+import { User as AuthUser } from 'src/shared/decorators/user.decorator';
 
 import { CreateAttendantAgentDto } from './create-attendant-agent.dto';
 import { CreateAttendantAgentService } from './create-attendant-agent.service';
@@ -15,12 +14,11 @@ export class CreateAttendantAgentController {
   ) {}
 
   @Post('/create/attendant')
-  @UseGuards(AuthGuard)
-  @Roles('admin', 'user')
+  @RequirePermissions('agent.write')
   async handle(
     @Res() res: FastifyReply,
     @Body() dto: CreateAttendantAgentDto,
-    @AuthUser() user: User,
+    @AuthUser() user: AuthenticatedUser,
   ) {
     const result = await this.createAttendantAgentService.execute(dto, user);
     return res.status(200).send(result);

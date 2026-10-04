@@ -1,5 +1,6 @@
 import { Body, Controller, Post, Res } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
+import { Public } from 'src/shared/decorators/public.decorator';
 
 import { CheckUserRegisteredService } from './check-user-registered.service';
 
@@ -10,6 +11,7 @@ export class CheckUserRegisteredController {
   ) {}
 
   @Post('check-user-registered')
+  @Public()
   async handle(@Res() res: FastifyReply, @Body() body: { phone: string }) {
     const result = await this.checkUserRegisteredService.execute(body.phone);
 

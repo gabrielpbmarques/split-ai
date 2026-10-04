@@ -153,7 +153,7 @@ Before adding a null/undefined check, ask: **"Is this value already guaranteed b
 
 ### Context awareness checklist
 
-1. **Is the user authenticated?** If `@UseGuards(AuthGuard)` + `@AuthUser()` are used, the user object is guaranteed.
+1. **Is the user authenticated?** On any route without `@Public()`, the global guards guarantee `request.user`; `@AuthUser()` never returns undefined.
 2. **Is the input validated?** If `@Body(new ValidationPipe())` is used with a DTO, required fields are guaranteed to exist.
 3. **Is the entity guaranteed to exist?** If a previous step in the same `execute()` already threw `NotFoundException`, subsequent code can trust the entity exists.
 

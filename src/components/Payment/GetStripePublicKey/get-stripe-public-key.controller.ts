@@ -1,6 +1,6 @@
 import { Controller, Get, Res } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
-import { Public } from 'src/auth/auth.guard';
+import { Public } from 'src/shared/decorators/public.decorator';
 
 import { GetStripePublicKeyService } from './get-stripe-public-key.service';
 

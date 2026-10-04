@@ -1,15 +1,8 @@
-import {
-  Body,
-  Controller,
-  Patch,
-  Res,
-  UseGuards,
-  ValidationPipe,
-} from '@nestjs/common';
+import { Body, Controller, Patch, Res, ValidationPipe } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
-import { AuthGuard } from 'src/auth/auth.guard';
-import { User as AuthUser } from 'src/decorators/user.decorator';
-import { User } from 'src/types';
+import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
+import { User as AuthUser } from 'src/shared/decorators/user.decorator';
 
 import { UpdateProfileDto } from './update-profile.dto';
 import { UpdateProfileService } from './update-profile.service';
@@ -19,11 +12,11 @@ export class UpdateProfileController {
   constructor(private readonly updateProfileService: UpdateProfileService) {}
 
   @Patch()
-  @UseGuards(AuthGuard)
+  @RequirePermissions('account.access')
   async handle(
     @Res() res: FastifyReply,
     @Body(new ValidationPipe()) dto: UpdateProfileDto,
-    @AuthUser() user: User,
+    @AuthUser() user: AuthenticatedUser,
   ): Promise<FastifyReply> {
     const result = await this.updateProfileService.execute(user.id, dto);
     return res.status(200).send(result);

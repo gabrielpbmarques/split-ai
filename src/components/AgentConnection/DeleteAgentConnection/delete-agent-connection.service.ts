@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { AuthenticatedUser } from 'src/auth/authenticated-user';
 import { AgentConnectionRepository } from 'src/repositories';
-import { User } from 'src/types';
 
 @Injectable()
 export class DeleteAgentConnectionService {
@@ -8,7 +8,10 @@ export class DeleteAgentConnectionService {
     private readonly agentConnectionRepository: AgentConnectionRepository,
   ) {}
 
-  async execute(id: string, user: User): Promise<{ success: true }> {
+  async execute(
+    id: string,
+    user: AuthenticatedUser,
+  ): Promise<{ success: true }> {
     // Platform admins may delete any organization's connection; everyone else
     // is restricted to connections inside their own organization.
     const isPlatformAdmin = user.role === 'admin';

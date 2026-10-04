@@ -2,14 +2,13 @@ import {
   Controller,
   Get,
   Query,
-  UseGuards,
   ForbiddenException,
   Res,
 } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
-import { AuthGuard } from 'src/auth/auth.guard';
-import { User as AuthUser } from 'src/decorators/user.decorator';
-import { UserEntity } from 'src/entities';
+import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
+import { User as AuthUser } from 'src/shared/decorators/user.decorator';
 
 import { GetTokenUsageDto } from './get-token-usage.dto';
 import { GetTokenUsageService } from './get-token-usage.service';
@@ -19,10 +18,10 @@ export class GetTokenUsageController {
   constructor(private readonly getTokenUsageService: GetTokenUsageService) {}
 
   @Get()
-  @UseGuards(AuthGuard)
+  @RequirePermissions('account.access')
   async execute(
     @Query() dto: GetTokenUsageDto,
-    @AuthUser() user: UserEntity,
+    @AuthUser() user: AuthenticatedUser,
     @Res() res: FastifyReply,
   ) {
     const isAdmin = user.role === 'admin';

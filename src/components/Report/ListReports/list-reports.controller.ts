@@ -1,9 +1,8 @@
-import { Controller, Get, Query, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, Res } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
-import { AuthGuard } from 'src/auth/auth.guard';
-import { Roles } from 'src/decorators/roles.decorator';
-import { User as AuthUser } from 'src/decorators/user.decorator';
-import { User } from 'src/types';
+import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
+import { User as AuthUser } from 'src/shared/decorators/user.decorator';
 
 import { ListReportsDto } from './list-reports.dto';
 import { ListReportsService } from './list-reports.service';
@@ -13,12 +12,11 @@ export class ListReportsController {
   constructor(private readonly listReportsService: ListReportsService) {}
 
   @Get()
-  @UseGuards(AuthGuard)
-  @Roles('admin', 'user')
+  @RequirePermissions('report.read')
   async execute(
     @Res() res: FastifyReply,
     @Query() dto: ListReportsDto,
-    @AuthUser() user: User,
+    @AuthUser() user: AuthenticatedUser,
   ) {
     const reports = await this.listReportsService.execute(user, dto);
     return res.status(200).send(reports);

@@ -1,6 +1,6 @@
 import { Body, Controller, Post, Res, ValidationPipe } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
-import { Public } from 'src/auth/auth.guard';
+import { Public } from 'src/shared/decorators/public.decorator';
 
 import { AcceptInviteDto } from './accept-invite.dto';
 import { AcceptInviteService } from './accept-invite.service';

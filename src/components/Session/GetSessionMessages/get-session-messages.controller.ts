@@ -1,10 +1,9 @@
-import { Controller, Get, Param, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Res } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
-import { ActiveOrgGuard } from 'src/auth/active-org.guard';
-import { AuthGuard } from 'src/auth/auth.guard';
-import { Roles } from 'src/decorators/roles.decorator';
-import { User } from 'src/decorators/user.decorator';
-import { UserEntity } from 'src/entities';
+import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import { RequireActiveOrganization } from 'src/shared/decorators/active-organization.decorator';
+import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
+import { User } from 'src/shared/decorators/user.decorator';
 
 import { GetSessionMessagesService } from './get-session-messages.service';
 
@@ -15,11 +14,11 @@ export class GetSessionMessagesController {
   ) {}
 
   @Get('sessions/:sessionId/messages')
-  @UseGuards(AuthGuard, ActiveOrgGuard)
-  @Roles('admin', 'user')
+  @RequirePermissions('session.read')
+  @RequireActiveOrganization()
   async handle(
     @Param('sessionId') sessionId: string,
-    @User() user: UserEntity,
+    @User() user: AuthenticatedUser,
     @Res() res: FastifyReply,
   ): Promise<FastifyReply> {
     const messages = await this.getSessionMessagesService.execute(

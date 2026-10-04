@@ -1,8 +1,8 @@
-import { Controller, Get, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Res } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
-import { AuthGuard } from 'src/auth/auth.guard';
-import { User as AuthUser } from 'src/decorators/user.decorator';
-import { User } from 'src/types';
+import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
+import { User as AuthUser } from 'src/shared/decorators/user.decorator';
 
 import { GetProfileService } from './get-profile.service';
 
@@ -11,10 +11,10 @@ export class GetProfileController {
   constructor(private readonly getProfileService: GetProfileService) {}
 
   @Get()
-  @UseGuards(AuthGuard)
+  @RequirePermissions('account.access')
   async handle(
     @Res() res: FastifyReply,
-    @AuthUser() user: User,
+    @AuthUser() user: AuthenticatedUser,
   ): Promise<FastifyReply> {
     const result = await this.getProfileService.execute(user.id);
     return res.status(200).send(result);

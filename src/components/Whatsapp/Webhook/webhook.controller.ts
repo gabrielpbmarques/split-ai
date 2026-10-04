@@ -1,5 +1,6 @@
 import { Body, Controller, Logger, Post, Res } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
+import { Public } from 'src/shared/decorators/public.decorator';
 
 import { WebhookDto } from './webhook.dto';
 import { WebhookService } from './webhook.service';
@@ -13,6 +14,7 @@ export class WebhookController {
   constructor(private readonly webhookService: WebhookService) {}
 
   @Post('webhook')
+  @Public()
   async handle(
     @Res() res: FastifyReply,
     @Body() body: Record<string, string>,

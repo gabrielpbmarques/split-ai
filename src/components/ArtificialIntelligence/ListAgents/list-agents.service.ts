@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import { AuthenticatedUser } from 'src/auth/authenticated-user';
 import { AgentConnectionRepository, AgentRepository } from 'src/repositories';
-import { User } from 'src/types';
 
 /**
  * Item da lista de agentes. `is_tool` / `is_principal` são derivados das
@@ -22,7 +22,7 @@ export class ListAgentsService {
     private readonly agentConnectionRepository: AgentConnectionRepository,
   ) {}
 
-  async execute(user: User): Promise<AgentListItemView[]> {
+  async execute(user: AuthenticatedUser): Promise<AgentListItemView[]> {
     const isAdmin = user.role === 'admin';
 
     const agents = await this.agentRepository.find({

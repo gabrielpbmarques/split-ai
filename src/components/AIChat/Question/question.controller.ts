@@ -1,9 +1,9 @@
-import { Body, Controller, Post, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, Res } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
-import { ActiveOrgGuard } from 'src/auth/active-org.guard';
-import { CompositeAuthGuard } from 'src/auth/composite-auth.guard';
-import { User as AuthUser } from 'src/decorators/user.decorator';
-import { UserEntity } from 'src/entities';
+import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import { RequireActiveOrganization } from 'src/shared/decorators/active-organization.decorator';
+import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
+import { User as AuthUser } from 'src/shared/decorators/user.decorator';
 import { StreamEvent } from 'src/types';
 
 import { QuestionDto } from './question.dto';
@@ -14,11 +14,12 @@ export class QuestionController {
   constructor(private readonly questionService: QuestionService) {}
 
   @Post('question')
-  @UseGuards(CompositeAuthGuard, ActiveOrgGuard)
+  @RequirePermissions('chat.ask')
+  @RequireActiveOrganization()
   async execute(
     @Res() res: FastifyReply,
     @Body() dto: QuestionDto,
-    @AuthUser() user: UserEntity,
+    @AuthUser() user: AuthenticatedUser,
   ): Promise<void> {
     res.hijack();
     res.raw.writeHead(200, {

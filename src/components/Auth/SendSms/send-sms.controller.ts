@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { FastifyReply } from 'fastify';
+import { Public } from 'src/shared/decorators/public.decorator';
 
 import { SendSmsDto, VerifySmsDto } from './send-sms.dto';
 import { SendSmsService } from './send-sms.service';
@@ -18,6 +19,7 @@ export class SendSmsController {
   constructor(private readonly sendSmsService: SendSmsService) {}
 
   @Post('send-sms')
+  @Public()
   async sendSms(
     @Body(new ValidationPipe()) sendSmsDto: SendSmsDto,
     @Res() res: FastifyReply,
@@ -27,6 +29,7 @@ export class SendSmsController {
   }
 
   @Post('verify-sms')
+  @Public()
   async verifySms(
     @Body(new ValidationPipe()) verifySmsDto: VerifySmsDto,
     @Res() res: FastifyReply,

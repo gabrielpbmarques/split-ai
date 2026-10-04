@@ -12,7 +12,7 @@ src/
   shared/config/env.ts   # Zod-validated frozen env object (only place that reads process.env)
   auth/                  # Guards (e.g., AuthGuard, RoleGuard, DomainSpecificGuards)
   components/            # Feature modules organized by scope
-  decorators/            # Custom decorators (@Roles, @User)
+  shared/decorators/     # @Public, @RequirePermissions, @RequireActiveOrganization, @User
   entities/              # TypeORM entities — barrel exported via index.ts
   infrastructure/        # External service providers
   repositories/          # TypeORM repository wrappers — barrel exported via index.ts
@@ -133,7 +133,7 @@ export class CreateOrderModule {}
 - One repository → its `XRepositoryModule` (`src/repositories/<name>.repository.module.ts`).
 - One infrastructure token → its `XProviderModule` (`src/infrastructure/providers/<name>.provider.module.ts`).
 - One sibling/cross-scope service → that use case's own module (e.g. `GenerateTokenModule`), **never** the scope aggregator.
-- The `imports` must also cover what the module's `@UseGuards(...)` enhancers inject — `CompositeAuthGuard` pulls in `ApiKeyGuard`, which needs `ApiKeyRepositoryModule` + `OrganizationRepositoryModule`.
+- A service that calls `AccessScopeService` imports `AuthModule` (`src/auth/auth.module.ts`), which exports it together with `PrincipalResolverService`.
 - Mutual dependencies use `forwardRef(() => XModule)` on **both** sides, matching `@Inject(forwardRef(() => XService))` in the constructor.
 - Cross-scope dependencies are allowed: use case modules can import modules from other scopes.
 - Check your work with `bun run di:verify` (static reachability) and `bun run di:boot-check` (real Nest container, DataSource stubbed).
@@ -296,19 +296,22 @@ instantiated.
 
 ## Guards
 
-Guards live in `src/auth/`:
+Auth lives in `src/auth/` and is global (two `APP_GUARD`s registered by `AuthModule`):
 
-- `AuthGuard` — JWT validation, role checking via `@Roles()` decorator, attaches `user` to request.
-- Domain-specific guards — Implement business logic validations (e.g., Subscription checks, Access control policies).
+- `AuthenticationGuard` — reads `@Public()`, parses `Authorization` (`Bearer` or `ApiKey`), delegates to `TokenVerifier`, and sets `request.user` from `PrincipalResolverService`.
+- `AuthorizationGuard` — compares `@RequirePermissions(...)` metadata with `request.user.permissions` (no I/O) and enforces `@RequireActiveOrganization()`.
+- `AccessScopeService` — per-resource check in services: `ensureCan(user, permission, { organizationId })`.
 
-Guards are applied per-endpoint using `@UseGuards(AuthGuard)`. The `@Public()` decorator marks endpoints as publicly accessible.
+No controller uses `@UseGuards`. Permission keys are the catalog in `src/auth/permissions.ts`.
 
 ## Decorators
 
-Custom decorators live in `src/decorators/`:
+Custom decorators live in `src/shared/decorators/`:
 
-- `@Roles(...roles)` — Sets required roles metadata for `AuthGuard`
-- `@User(field?)` — Extracts authenticated user (or a specific field) from the request
+- `@Public()` — exempts the route from both guards
+- `@RequirePermissions(...keys)` — required permissions (any of the listed; class and method levels are both enforced)
+- `@RequireActiveOrganization()` — rejects users whose organization is inactive
+- `@User(field?)` — Extracts the `AuthenticatedUser` (or a specific field) from the request
 
 ## Middleware
 

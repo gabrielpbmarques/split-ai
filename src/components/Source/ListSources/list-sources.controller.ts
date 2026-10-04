@@ -1,7 +1,6 @@
-import { Controller, Get, Query, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, Res } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
-import { AuthGuard } from 'src/auth/auth.guard';
-import { Roles } from 'src/decorators/roles.decorator';
+import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
 
 import { ListSourcesService } from './list-sources.service';
 
@@ -10,8 +9,7 @@ export class ListSourcesController {
   constructor(private readonly listSourcesService: ListSourcesService) {}
 
   @Get()
-  @UseGuards(AuthGuard)
-  @Roles('admin', 'user')
+  @RequirePermissions('source.read')
   async handle(
     @Query('agent_id') agentId: string,
     @Res() res: FastifyReply,

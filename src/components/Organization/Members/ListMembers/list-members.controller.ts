@@ -1,10 +1,8 @@
-import { Controller, Post, Res, UseGuards } from '@nestjs/common';
+import { Controller, Post, Res } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
-import { AuthGuard } from 'src/auth/auth.guard';
-import { OrgRoleGuard } from 'src/auth/org-role.guard';
-import { OrgRoles } from 'src/decorators/org-roles.decorator';
-import { User as AuthUser } from 'src/decorators/user.decorator';
-import { User } from 'src/types';
+import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
+import { User as AuthUser } from 'src/shared/decorators/user.decorator';
 
 import { ListMembersService } from './list-members.service';
 
@@ -13,11 +11,10 @@ export class ListMembersController {
   constructor(private readonly listMembersService: ListMembersService) {}
 
   @Post('list')
-  @UseGuards(AuthGuard, OrgRoleGuard)
-  @OrgRoles('owner', 'admin')
+  @RequirePermissions('member.manage')
   async handle(
     @Res() res: FastifyReply,
-    @AuthUser() user: User,
+    @AuthUser() user: AuthenticatedUser,
   ): Promise<FastifyReply> {
     const result = await this.listMembersService.execute(user.organization_id);
     return res.status(200).send(result);

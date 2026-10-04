@@ -1,15 +1,8 @@
-import {
-  Controller,
-  Get,
-  Query,
-  Res,
-  UseGuards,
-  ValidationPipe,
-} from '@nestjs/common';
+import { Controller, Get, Query, Res, ValidationPipe } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
-import { AuthGuard } from 'src/auth/auth.guard';
-import { User as UserDecorator } from 'src/decorators/user.decorator';
-import { User } from 'src/types';
+import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
+import { User as UserDecorator } from 'src/shared/decorators/user.decorator';
 
 import { GetCreditTransactionsQueryDto } from './get-credit-transactions.dto';
 import { GetCreditTransactionsService } from './get-credit-transactions.service';
@@ -21,10 +14,10 @@ export class GetCreditTransactionsController {
   ) {}
 
   @Get('transactions')
-  @UseGuards(AuthGuard)
+  @RequirePermissions('account.access')
   async handle(
     @Res() res: FastifyReply,
-    @UserDecorator() user: User,
+    @UserDecorator() user: AuthenticatedUser,
     @Query(new ValidationPipe({ transform: true }))
     query: GetCreditTransactionsQueryDto,
   ) {

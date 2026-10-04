@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
+import { AuthenticatedUser } from 'src/auth/authenticated-user';
 import { ReportRepository } from 'src/repositories';
-import { User } from 'src/types';
 
 @Injectable()
 export class GetDashboardDataService {
   constructor(private readonly reportRepository: ReportRepository) {}
 
-  private parseFilters(user: User, query: any) {
+  private parseFilters(user: AuthenticatedUser, query: any) {
     const filters: any = {};
 
     // Organization scoping
@@ -53,7 +53,7 @@ export class GetDashboardDataService {
     return filters;
   }
 
-  async execute(user: User, query: any): Promise<any> {
+  async execute(user: AuthenticatedUser, query: any): Promise<any> {
     const filters = this.parseFilters(user, query);
 
     // 1) Volume total

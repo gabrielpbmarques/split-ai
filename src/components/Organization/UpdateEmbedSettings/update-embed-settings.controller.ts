@@ -1,7 +1,6 @@
-import { Body, Controller, Param, Patch, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Param, Patch, Res } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
-import { AuthGuard } from 'src/auth/auth.guard';
-import { Roles } from 'src/decorators/roles.decorator';
+import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
 
 import { UpdateEmbedSettingsDto } from './update-embed-settings.dto';
 import { UpdateEmbedSettingsService } from './update-embed-settings.service';
@@ -11,8 +10,7 @@ export class UpdateEmbedSettingsController {
   constructor(private readonly service: UpdateEmbedSettingsService) {}
 
   @Patch(':id/embed-settings')
-  @UseGuards(AuthGuard)
-  @Roles('admin')
+  @RequirePermissions('organization.manage')
   async handle(
     @Param('id') id: string,
     @Body() dto: UpdateEmbedSettingsDto,

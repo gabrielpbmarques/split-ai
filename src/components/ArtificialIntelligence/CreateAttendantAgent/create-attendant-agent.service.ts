@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import { AuthenticatedUser } from 'src/auth/authenticated-user';
 import { AgentInstructionRepository, AgentRepository } from 'src/repositories';
-import { User } from 'src/types';
 
 import { CreateAttendantAgentDto } from './create-attendant-agent.dto';
 
@@ -11,7 +11,7 @@ export class CreateAttendantAgentService {
     private readonly agentInstructionRepository: AgentInstructionRepository,
   ) {}
 
-  async execute(dto: CreateAttendantAgentDto, user: User) {
+  async execute(dto: CreateAttendantAgentDto, user: AuthenticatedUser) {
     const orgIdToSave =
       user.role === 'admin'
         ? (dto.organizationId ?? null)

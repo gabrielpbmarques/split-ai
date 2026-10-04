@@ -1,7 +1,6 @@
-import { Body, Controller, Param, Patch, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Param, Patch, Res } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
-import { AuthGuard } from 'src/auth/auth.guard';
-import { Roles } from 'src/decorators/roles.decorator';
+import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
 
 import { UpdateUserDto } from './update-user.dto';
 import { UpdateUserService } from './update-user.service';
@@ -11,8 +10,7 @@ export class UpdateUserController {
   constructor(private readonly updateUserService: UpdateUserService) {}
 
   @Patch(':id')
-  @UseGuards(AuthGuard)
-  @Roles('admin')
+  @RequirePermissions('user.manage')
   async handle(
     @Param('id') id: string,
     @Body() dto: UpdateUserDto,

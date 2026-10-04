@@ -3,15 +3,14 @@ import {
   Controller,
   Post,
   Res,
-  UseGuards,
   ValidationPipe,
   BadRequestException,
 } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
-import { AuthGuard } from 'src/auth/auth.guard';
-import { User as UserDecorator } from 'src/decorators/user.decorator';
+import { AuthenticatedUser } from 'src/auth/authenticated-user';
 import { env } from 'src/shared/config/env';
-import { User } from 'src/types';
+import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
+import { User as UserDecorator } from 'src/shared/decorators/user.decorator';
 
 import { CreateCheckoutDto } from './create-checkout.dto';
 import { CreateCheckoutService } from './create-checkout.service';
@@ -21,11 +20,11 @@ export class CreateCheckoutController {
   constructor(private readonly createCheckoutService: CreateCheckoutService) {}
 
   @Post('checkout')
-  @UseGuards(AuthGuard)
+  @RequirePermissions('account.access')
   async handle(
     @Body(new ValidationPipe()) dto: CreateCheckoutDto,
     @Res() res: FastifyReply,
-    @UserDecorator() user: User,
+    @UserDecorator() user: AuthenticatedUser,
   ) {
     const organizationId =
       user.role === 'admin'

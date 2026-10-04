@@ -15,4 +15,4 @@ import { SendSmsModule } from './SendSms/send-sms.module';
     RegisterLiteModule,
   ],
 })
-export class AuthModule {}
+export class AuthFlowsModule {}

@@ -1,10 +1,10 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
+import { AuthenticatedUser } from 'src/auth/authenticated-user';
 import {
   AgentInstructionRepository,
   AgentRepository,
   OrganizationRepository,
 } from 'src/repositories';
-import { User } from 'src/types';
 
 import { CreateAgentDto } from './create-agent.dto';
 
@@ -16,7 +16,7 @@ export class CreateAgentService {
     private readonly organizationRepository: OrganizationRepository,
   ) {}
 
-  async execute(dto: CreateAgentDto, user: User) {
+  async execute(dto: CreateAgentDto, user: AuthenticatedUser) {
     await this.assertWithinAgentQuota(user.organization_id);
 
     const agent = await this.agentRepository.create({

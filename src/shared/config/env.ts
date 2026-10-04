@@ -41,6 +41,7 @@ const envSchema = z.object({
   BRAVOHUB_JWT_SECRET: z.string().min(1).optional(),
   BRAVOHUB_ORG_ID: z.string().min(1).optional(),
   BRAVOHUB_SCOPED_AGENTS: csvList,
+  AUTH_PRINCIPAL_CACHE_TTL_MS: z.coerce.number().int().min(0).default(30_000),
 
   ANTHROPIC_API_KEY: z.string().min(1).optional(),
   AI_MODEL: z.string().min(1).optional(),

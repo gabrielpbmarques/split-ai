@@ -59,11 +59,10 @@ Default port is **`4000`** (`src/main.ts:115`). There is **no global API prefix*
 │     POST /support/question  (streaming)  → QuestionController.execute        │
 │     POST /chat/attendant    (one-shot)   → AttendantController.handle        │
 │                                                                              │
-│     CompositeAuthGuard   (Bearer → AuthGuard; ApiKey → ApiKeyGuard)          │
-│         AuthGuard          (JWT signature verified via JWT_SECRET)           │
-│         ApiKeyGuard        (token → org via chat_embed_token, role=service)  │
-│     ActiveOrgGuard       (rejects inactive organizations)                    │
-│     @Roles(...)          (admin/user)                                        │
+│     AuthenticationGuard (global; Bearer JWT / BravoHub JWT / ApiKey via    │
+│         TokenVerifier → PrincipalResolverService → request.user)            │
+│     AuthorizationGuard  (global; @RequirePermissions('chat.ask' |           │
+│         'chat.attend') + @RequireActiveOrganization())                       │
 │                                                                              │
 ├──────────────────────────────────────────────────────────────────────────────┤
 │  Phase D — Orchestrate the response                                          │
@@ -126,7 +125,7 @@ Default port is **`4000`** (`src/main.ts:115`). There is **no global API prefix*
 | -------------- | ------------------------------------------------------------------------------ |
 | Controller     | `src/components/ArtificialIntelligence/CreateAgent/create-agent.controller.ts` |
 | Handler        | `CreateAgentController.execute`                                                |
-| Guards         | `AuthGuard`, `@Roles('admin')`                                                 |
+| Guards         | global; `@RequirePermissions('agent.write')`                                   |
 | Service        | `CreateAgentService.execute(dto, user)`                                        |
 | Success status | `201`                                                                          |
 
@@ -432,9 +431,10 @@ The `sources` table (also a TypeORM entity) is the catalog — one row per inges
 `AIChat/Question/question.controller.ts:16-52`:
 
 ```ts
-@UseGuards(CompositeAuthGuard, ActiveOrgGuard)
 @Post()
-async execute(@Res() res, @Body(...) dto: QuestionDto, @AuthUser() user) {
+@RequirePermissions('chat.ask')
+@RequireActiveOrganization()
+async execute(@Res() res, @Body() dto: QuestionDto, @AuthUser() user) {
   res.hijack();
   res.raw.writeHead(200, {
     'Content-Type': 'text/plain; charset=utf-8',
@@ -469,10 +469,10 @@ Why hijack:
 `AIChat/Attendant/attendant.controller.ts:16-30`:
 
 ```ts
-@UseGuards(AuthGuard, ActiveOrgGuard)
 @Post()
-async handle(@Res() res, @Body(...) dto, @AuthUser() user) {
-  try {
+@RequirePermissions('chat.attend')
+@RequireActiveOrganization()
+async handle(@Res() res, @Body() dto, @AuthUser() user) {
     const result = await this.attendantService.execute(dto, user);
     res.status(200).send(result);
   } catch (err) {
@@ -1160,11 +1160,9 @@ AppModule
 ├── ComponentsModule                        # wiring only — imports, no exports
 │   ├── AIChatModule                        # wiring only
 │   │   ├── QuestionModule
-│   │   │   imports: ApiKeyRepositoryModule, OrganizationRepositoryModule,
-│   │   │            CreateSessionIfNotExistsModule, RecordChatMessageModule,
+│   │   │   imports: CreateSessionIfNotExistsModule, RecordChatMessageModule,
 │   │   │            ResolveAgentModule, GenerateAiResponseModule
-│   │   │   providers: QuestionService, AuthGuard, ApiKeyGuard, CompositeAuthGuard
-│   │   │            (the two repository modules are there for ApiKeyGuard, not the service)
+│   │   │   providers: QuestionService (auth is global via AuthModule)
 │   │   └── AttendantModule
 │   │       imports: CreateSessionIfNotExistsModule, RecordChatMessageModule,
 │   │                ResolveAgentModule, GenerateAiResponseModule

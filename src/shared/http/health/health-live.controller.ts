@@ -1,6 +1,6 @@
 import { Controller, Get, Res } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
-import { Public } from 'src/auth/auth.guard';
+import { Public } from 'src/shared/decorators/public.decorator';
 
 @Controller('health')
 export class HealthLiveController {

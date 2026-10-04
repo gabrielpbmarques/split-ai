@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
+import { AuthenticatedUser } from 'src/auth/authenticated-user';
 import { ReportEntity } from 'src/entities/report.entity';
 import { ReportRepository } from 'src/repositories';
-import { User } from 'src/types';
 import { Between, In } from 'typeorm';
 
 import { ListReportsDto } from './list-reports.dto';
@@ -10,7 +10,10 @@ import { ListReportsDto } from './list-reports.dto';
 export class ListReportsService {
   constructor(private readonly reportRepository: ReportRepository) {}
 
-  async execute(user: User, dto: ListReportsDto): Promise<ReportEntity[]> {
+  async execute(
+    user: AuthenticatedUser,
+    dto: ListReportsDto,
+  ): Promise<ReportEntity[]> {
     const where: any = {};
 
     // Organization scope (keep existing behavior)

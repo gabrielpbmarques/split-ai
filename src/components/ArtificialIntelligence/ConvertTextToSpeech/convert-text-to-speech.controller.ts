@@ -1,4 +1,5 @@
 import { Body, Controller, Post, ValidationPipe } from '@nestjs/common';
+import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
 
 import { ConvertTextToSpeechDto } from './convert-text-to-speech.dto';
 import { ConvertTextToSpeechService } from './convert-text-to-speech.service';
@@ -10,6 +11,7 @@ export class ConvertTextToSpeechController {
   ) {}
 
   @Post('convert-text-to-speech')
+  @RequirePermissions('voice.synthesize')
   async convertTextToSpeech(
     @Body(new ValidationPipe()) dto: ConvertTextToSpeechDto,
   ) {

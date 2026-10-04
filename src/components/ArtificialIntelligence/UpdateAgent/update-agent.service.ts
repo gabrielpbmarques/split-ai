@@ -1,15 +1,13 @@
-import {
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { AccessScopeService } from 'src/auth/access-scope.service';
+import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import { Permission } from 'src/auth/permissions';
 import { AgentEntity } from 'src/entities';
 import {
   AgentConnectionRepository,
   AgentInstructionRepository,
   AgentRepository,
 } from 'src/repositories';
-import { User } from 'src/types';
 
 import { UpdateAgentDto } from './update-agent.dto';
 
@@ -19,6 +17,7 @@ export class UpdateAgentService {
     private readonly agentRepository: AgentRepository,
     private readonly agentInstructionRepository: AgentInstructionRepository,
     private readonly agentConnectionRepository: AgentConnectionRepository,
+    private readonly accessScope: AccessScopeService,
   ) {}
 
   private isUuid(id: string): boolean {
@@ -35,24 +34,28 @@ export class UpdateAgentService {
     return await this.agentRepository.findByIdentifier(idOrIdentifier);
   }
 
-  /**
-   * Platform admins (global `role: 'admin'`) may access any agent; every other
-   * user is restricted to agents within their own organization.
-   */
-  private authorizeAccess(agent: AgentEntity, user: User): void {
-    if (user.role === 'admin') {
-      return;
-    }
-    if (agent.organization_id !== user.organization_id) {
-      throw new ForbiddenException('Você não tem acesso a este agente.');
-    }
+  private authorizeAccess(
+    agent: AgentEntity,
+    user: AuthenticatedUser,
+    permission: Permission,
+  ): void {
+    this.accessScope.ensureCan(
+      user,
+      permission,
+      { organizationId: agent.organization_id },
+      'Você não tem acesso a este agente.',
+    );
   }
 
-  async update(idOrIdentifier: string, dto: UpdateAgentDto, user: User) {
+  async update(
+    idOrIdentifier: string,
+    dto: UpdateAgentDto,
+    user: AuthenticatedUser,
+  ) {
     const agent = await this.resolveAgent(idOrIdentifier);
     if (!agent) throw new NotFoundException('Agente não encontrado.');
 
-    this.authorizeAccess(agent, user);
+    this.authorizeAccess(agent, user, 'agent.write');
 
     const updateData: any = {};
     if (dto.name !== undefined) updateData.name = dto.name;
@@ -108,11 +111,11 @@ export class UpdateAgentService {
     return { id: agent.id };
   }
 
-  async getOne(idOrIdentifier: string, user: User) {
+  async getOne(idOrIdentifier: string, user: AuthenticatedUser) {
     const agent = await this.resolveAgent(idOrIdentifier);
     if (!agent) throw new NotFoundException('Agente não encontrado.');
 
-    this.authorizeAccess(agent, user);
+    this.authorizeAccess(agent, user, 'agent.read');
 
     const [latest, flags] = await Promise.all([
       this.agentInstructionRepository.findLatestByAgentId(agent.id),

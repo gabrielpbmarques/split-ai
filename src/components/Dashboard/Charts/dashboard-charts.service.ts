@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
+import { AuthenticatedUser } from 'src/auth/authenticated-user';
 import {
   MessageRepository,
   ReportRepository,
   SessionRepository,
   TokenUsageRepository,
 } from 'src/repositories';
-import { User } from 'src/types';
 import { Between } from 'typeorm';
 
 import {
@@ -23,7 +23,10 @@ export class DashboardChartsService {
     private readonly tokenUsageRepository: TokenUsageRepository,
   ) {}
 
-  async execute(user: User, dto: DashboardChartsDto): Promise<DashboardCharts> {
+  async execute(
+    user: AuthenticatedUser,
+    dto: DashboardChartsDto,
+  ): Promise<DashboardCharts> {
     const { startDate, endDate } = this.getDateRange(dto);
 
     // Get sentiment data
@@ -58,7 +61,7 @@ export class DashboardChartsService {
   }
 
   private async getSentimentData(
-    user: User,
+    user: AuthenticatedUser,
     startDate: Date,
     endDate: Date,
     agentId?: string,
@@ -100,7 +103,7 @@ export class DashboardChartsService {
   }
 
   private async getConversationsData(
-    user: User,
+    user: AuthenticatedUser,
     startDate: Date,
     endDate: Date,
     agentId?: string,
@@ -157,7 +160,7 @@ export class DashboardChartsService {
   }
 
   private async getTokensData(
-    user: User,
+    user: AuthenticatedUser,
     startDate: Date,
     endDate: Date,
     agentId?: string,

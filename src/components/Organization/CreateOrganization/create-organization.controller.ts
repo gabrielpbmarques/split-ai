@@ -1,9 +1,8 @@
-import { Body, Controller, Post, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, Res } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
-import { AuthGuard } from 'src/auth/auth.guard';
-import { Roles } from 'src/decorators/roles.decorator';
-import { User as AuthUser } from 'src/decorators/user.decorator';
-import { User } from 'src/types';
+import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
+import { User as AuthUser } from 'src/shared/decorators/user.decorator';
 
 import { CreateOrganizationDto } from './create-organization.dto';
 import { CreateOrganizationService } from './create-organization.service';
@@ -15,12 +14,11 @@ export class CreateOrganizationController {
   ) {}
 
   @Post()
-  @UseGuards(AuthGuard)
-  @Roles('admin')
+  @RequirePermissions('organization.manage')
   async handle(
     @Res() res: FastifyReply,
     @Body() dto: CreateOrganizationDto,
-    @AuthUser() user: User,
+    @AuthUser() user: AuthenticatedUser,
   ) {
     const result = await this.createOrganizationService.execute(dto, user);
     return res.status(200).send(result);

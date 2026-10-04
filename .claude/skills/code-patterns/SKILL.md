@@ -34,7 +34,6 @@ import {
   Body,
   Controller,
   Post,
-  UseGuards,
   Res,
   ValidationPipe,
 } from '@nestjs/common';
@@ -52,8 +51,7 @@ export class CreateOrderController {
   constructor(private readonly createOrderService: CreateOrderService) {}
 
   @Post()
-  @UseGuards(AuthGuard)
-  @Roles('customer', 'admin')
+  @RequirePermissions('order.write')
   async handle(
     @Body(new ValidationPipe()) body: CreateOrderDto,
     @AuthUser() user: User,
@@ -74,7 +72,7 @@ export class CreateOrderController {
 5. **No try/catch.** Exceptions propagate to `GlobalExceptionFilter`, which answers with `ErrorResponse`. Request-level checks throw `BadRequestException` etc.
 6. **The controller delegates ALL logic to the service** and only maps the result to a status code (201 create, 200 read/update with body, 204 no body).
 7. **Use @AuthUser() decorator**`@AuthUser()` (aliased from `User`) to extract the authenticated user when needed.
-8. **Decorator order**: `@HttpMethod()` → `@UseGuards(AuthGuard)` → `@Roles(...)`.
+8. **Decorator order**: `@HttpMethod()` → `@RequirePermissions(...)` / `@Public()` → `@RequireActiveOrganization()` (if any) → Swagger. Never `@UseGuards`; the guards are global.
 9. **No business logic** in controllers — controllers are thin wrappers that delegate to services.
 
 ### Error handling

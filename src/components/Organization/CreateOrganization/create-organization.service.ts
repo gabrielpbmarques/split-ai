@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { BadRequestException } from '@nestjs/common';
+import { AuthenticatedUser } from 'src/auth/authenticated-user';
 import { ManageCreditsService } from 'src/components/Credits/ManageCredits/manage-credits.service';
 import { TransactionType } from 'src/entities/credit-transaction.entity';
 import { OrganizationEntity } from 'src/entities/organization.entity';
@@ -9,7 +10,6 @@ import {
   PlanRepository,
   UserRepository,
 } from 'src/repositories';
-import { User } from 'src/types';
 
 import { CreateOrganizationDto } from './create-organization.dto';
 
@@ -22,7 +22,7 @@ export class CreateOrganizationService {
     private readonly userRepository: UserRepository,
   ) {}
 
-  async execute(dto: CreateOrganizationDto, user: User) {
+  async execute(dto: CreateOrganizationDto, user: AuthenticatedUser) {
     let plan;
 
     if (dto.planId) {

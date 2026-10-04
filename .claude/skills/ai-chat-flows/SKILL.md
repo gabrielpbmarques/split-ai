@@ -11,8 +11,8 @@ description: 'Use for the chat orchestration: /support/question NDJSON streaming
 
 | Route                    | Method                       | Streams?             | Auth                                    | DTO                    |
 | ------------------------ | ---------------------------- | -------------------- | --------------------------------------- | ---------------------- |
-| `POST /support/question` | `QuestionController.execute` | yes (Fastify hijack) | `CompositeAuthGuard` + `ActiveOrgGuard` | `QuestionDto`          |
-| `POST /chat/attendant`   | `AttendantController.handle` | no                   | `AuthGuard` + `ActiveOrgGuard`          | `QuestionDto` (reused) |
+| `POST /support/question` | `QuestionController.execute` | yes (Fastify hijack) | `chat.ask` (JWT, ApiKey or BravoHub) + active org | `QuestionDto`          |
+| `POST /chat/attendant`   | `AttendantController.handle` | no                   | `chat.attend` (JWT only) + active org             | `QuestionDto` (reused) |
 
 `QuestionDto` (`src/components/AIChat/Question/question.dto.ts`): `question` (required), `agentId` (required), optional `phone`, `name`, `conversationId` (drives thread memory), and `variables?: Record<string, string>` (per-call prompt variables surfaced to the agent; server-controlled keys `sessionId`/`conversationId`/`threadId`/`organizationId` always override anything passed here). No `organizationId`/`companyId` — those are dead since `CompositeAuthGuard` always resolves the org (from JWT or from the `chat_embed_token` looked up by `ApiKeyGuard`). Attendant imports it from the Question folder — keep them in sync.
 

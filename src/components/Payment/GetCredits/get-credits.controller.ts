@@ -1,8 +1,8 @@
-import { Controller, Get, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Res } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
-import { AuthGuard } from 'src/auth/auth.guard';
-import { User as UserDecorator } from 'src/decorators/user.decorator';
-import { User } from 'src/types';
+import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
+import { User as UserDecorator } from 'src/shared/decorators/user.decorator';
 
 import { GetCreditsService } from './get-credits.service';
 
@@ -11,8 +11,11 @@ export class GetCreditsController {
   constructor(private readonly getCreditsService: GetCreditsService) {}
 
   @Get('credits')
-  @UseGuards(AuthGuard)
-  async handle(@Res() res: FastifyReply, @UserDecorator() user: User) {
+  @RequirePermissions('account.access')
+  async handle(
+    @Res() res: FastifyReply,
+    @UserDecorator() user: AuthenticatedUser,
+  ) {
     const data = await this.getCreditsService.execute(user.organization_id);
     return res.status(200).send(data);
   }

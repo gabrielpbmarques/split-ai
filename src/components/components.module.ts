@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { AuthModule } from 'src/components/Auth/auth.module';
+import { AuthFlowsModule } from 'src/components/Auth/auth-flows.module';
 import { SessionModule } from 'src/components/Session/session.module';
 
 import { AgentConnectionModule } from './AgentConnection/agent-connection.module';
@@ -22,7 +22,7 @@ import { WhatsappModule } from './Whatsapp/whatsapp.module';
 
 @Module({
   imports: [
-    AuthModule,
+    AuthFlowsModule,
     SessionModule,
     AIChatModule,
     LoadAgentToolsModule,
