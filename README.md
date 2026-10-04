@@ -29,7 +29,7 @@ bun run lint             # eslint (sem --fix)
 bun run lint:fix         # eslint --fix
 bun run typecheck        # tsc --noEmit
 bun run test             # jest (unitários)
-bun run test:e2e         # jest com test/jest-e2e.json
+bun run test:e2e         # e2e contra um Postgres (TEST_DATABASE_URL ou `docker compose up postgres`)
 bun run di:verify        # confere se cada módulo importa o que seus providers injetam
 bun run di:boot-check    # monta o container Nest sem banco
 bun run seed:maia        # seed da organização MAIA e planos base
@@ -40,7 +40,7 @@ bun run db:check         # falha se entidades e banco divergem
 docker compose up        # api + redis local
 ```
 
-Antes de abrir PR: `format:check`, `lint`, `typecheck`, `test` e `build` limpos. É o que o CI roda.
+Antes de abrir PR: `format:check`, `lint`, `typecheck`, `test`, `test:e2e` e `build` limpos. É o que o CI roda (o e2e usa um `postgres:16-alpine` como service container).
 
 ## Estrutura
 
