@@ -138,3 +138,33 @@ Registro de travas, contornos e desvios conscientes do `split-ai` em relação a
 | Tentativas descartadas | Trocar os imports para `import * as path` arquivo a arquivo: resolve caso a caso e volta a quebrar no próximo import default. |
 | Remover quando | O Jest rodar em modo ESM ou o ts-jest respeitar `module: nodenext`. |
 | Registrado em | 2026-10-04 |
+
+### PC-010 — `CREATE INDEX CONCURRENTLY` não roda dentro da transação da migration
+
+| Campo | Valor |
+| --- | --- |
+| Status | contornado |
+| Biblioteca | `typeorm@0.3.28`, PostgreSQL 15 |
+| Sintoma | `ERROR: CREATE INDEX CONCURRENTLY cannot run inside a transaction block` ao criar índice em migration. |
+| Causa | O TypeORM envolve cada migration em uma transação por padrão. |
+| Solução | Declarar `transaction = false` na classe da migration (suportado pela `MigrationInterface` do 0.3) e manter nela só comandos idempotentes (`IF NOT EXISTS`, `IF EXISTS`), porque sem transação uma falha no meio não desfaz os passos anteriores. |
+| Onde | `src/infrastructure/database/migrations/1759600002000-partial-unique-indexes.ts` |
+| Regra dona | `09-banco-de-dados.md` |
+| Tentativas descartadas | Criar o índice sem `CONCURRENTLY`: bloqueia escrita na tabela durante a criação. |
+| Remover quando | — |
+| Registrado em | 2026-10-04 |
+
+### PC-011 — `migration:generate` exige um banco acessível
+
+| Campo | Valor |
+| --- | --- |
+| Status | sem-solucao |
+| Biblioteca | `typeorm@0.3.28` |
+| Sintoma | `db:generate` e `db:check` não funcionam no ambiente de desenvolvimento remoto sem rede para o Postgres; o diff é calculado contra o banco, não contra o histórico de migrations. |
+| Causa | O TypeORM não mantém snapshot de schema; compara entidades com o banco vivo. |
+| Solução | Rodar `db:generate`/`db:check` contra um Postgres local restaurado de um dump de schema do Supabase (`pg_dump --schema-only`). Nunca apontar `db:generate` para produção. As migrations da Fase 5 foram escritas à mão a partir das entidades e devem ser validadas com `db:check` nesse espelho antes do merge. |
+| Onde | `package.json` (`db:generate`, `db:check`) |
+| Regra dona | `09-banco-de-dados.md` |
+| Tentativas descartadas | — |
+| Remover quando | — |
+| Registrado em | 2026-10-04 |

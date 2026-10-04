@@ -4,6 +4,7 @@ import { DevtoolsModule } from '@nestjs/devtools-integration';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { AuthModule } from 'src/auth/auth.module';
+import { MIGRATIONS } from 'src/infrastructure/database/migrations';
 import { ENTITIES } from 'src/infrastructure/database/schema';
 import { AgentConnectionsModule } from 'src/modules/agent-connections/agent-connections.module';
 import { AgentRuntimeModule } from 'src/modules/agent-runtime/agent-runtime.module';
@@ -35,7 +36,9 @@ import { AppLoggerModule } from 'src/shared/observability/logger.module';
       type: 'postgres',
       url: env.DATABASE_URL,
       entities: ENTITIES,
-      synchronize: true,
+      migrations: MIGRATIONS,
+      migrationsRun: false,
+      synchronize: false,
       poolSize: env.DATABASE_POOL_MAX,
       extra: {
         min: env.DATABASE_POOL_MIN,

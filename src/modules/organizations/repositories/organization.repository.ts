@@ -166,7 +166,7 @@ export class OrganizationRepository {
   }
 
   async delete(id: string): Promise<boolean> {
-    const result = await this.organizationRepository.delete(id);
+    const result = await this.organizationRepository.softDelete(id);
     return (
       result.affected !== null &&
       result.affected !== undefined &&

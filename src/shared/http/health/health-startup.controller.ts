@@ -16,12 +16,12 @@ export class HealthStartupController {
   @Get('startup')
   @Public()
   async handle(@Res() res: FastifyReply): Promise<FastifyReply> {
-    const database = this.database.isInitialized();
+    const migrations = await this.database.migrationsApplied();
 
-    if (database.status === 'down') {
-      throw new ServiceUnavailableException('Banco de dados não inicializado');
+    if (migrations.status === 'down') {
+      throw new ServiceUnavailableException(migrations.detail);
     }
 
-    return res.status(200).send({ status: 'ok', checks: { database } });
+    return res.status(200).send({ status: 'ok', checks: { migrations } });
   }
 }

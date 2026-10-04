@@ -14,6 +14,18 @@ export class DatabaseHealthIndicator {
     return { status: this.dataSource.isInitialized ? 'up' : 'down' };
   }
 
+  async migrationsApplied(): Promise<HealthIndicatorResult> {
+    if (!this.dataSource.isInitialized) {
+      return { status: 'down', detail: 'Banco de dados não inicializado' };
+    }
+
+    const pending = await this.dataSource.showMigrations();
+
+    return pending
+      ? { status: 'down', detail: 'Migrations pendentes' }
+      : { status: 'up' };
+  }
+
   async ping(): Promise<HealthIndicatorResult> {
     try {
       await this.dataSource.query('SELECT 1');

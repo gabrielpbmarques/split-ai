@@ -2,11 +2,12 @@ import {
   Check,
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
-  Unique,
   UpdateDateColumn,
 } from 'typeorm';
 
@@ -21,7 +22,14 @@ import { OrganizationEntity } from 'src/infrastructure/database/schema/organizat
  * `ResolveAgentService.loadTools`.
  */
 @Entity('agent_connections')
-@Unique(['principal_agent_id', 'child_agent_id'])
+@Index(
+  'agent_connections_principal_child_uq',
+  ['principal_agent_id', 'child_agent_id'],
+  {
+    unique: true,
+    where: '"deleted_at" IS NULL',
+  },
+)
 @Check('"principal_agent_id" <> "child_agent_id"')
 export class AgentConnectionEntity {
   @PrimaryGeneratedColumn('uuid')
@@ -57,6 +65,9 @@ export class AgentConnectionEntity {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updated_at: Date;
+
+  @DeleteDateColumn({ type: 'timestamp', nullable: true })
+  deleted_at: Date | null;
 
   @ManyToOne(() => AgentEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'principal_agent_id' })

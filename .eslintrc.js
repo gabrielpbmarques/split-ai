@@ -26,6 +26,10 @@ module.exports = {
       files: ['src/infrastructure/database/schema/**/*.ts'],
       rules: { 'no-restricted-imports': 'off' },
     },
+    {
+      files: ['src/infrastructure/database/migrations/*.ts'],
+      rules: { 'check-file/filename-naming-convention': 'off' },
+    },
   ],
   rules: {
     '@typescript-eslint/interface-name-prefix': 'off',

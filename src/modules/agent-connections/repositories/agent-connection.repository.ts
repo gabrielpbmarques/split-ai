@@ -150,6 +150,6 @@ export class AgentConnectionRepository {
   }
 
   async deleteById(id: string, organizationId: string): Promise<void> {
-    await this.repository.delete({ id, organization_id: organizationId });
+    await this.repository.softDelete({ id, organization_id: organizationId });
   }
 }

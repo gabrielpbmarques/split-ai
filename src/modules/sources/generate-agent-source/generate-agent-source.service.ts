@@ -59,6 +59,7 @@ export class GenerateAgentSourceService {
       const buffer = params.buffer;
       const source = await this.sourceRepository.create({
         agent_id: agentId,
+        organization_id: organizationId ?? null,
         name: fileName || DEFAULT_FILE_NAME[kind],
         source_type: 'pdf' as SourceType,
         file_name: fileName,
@@ -88,6 +89,7 @@ export class GenerateAgentSourceService {
       for (const siteUrl of sitesArray) {
         const source = await this.sourceRepository.create({
           agent_id: agentId,
+          organization_id: organizationId ?? null,
           name: extractDomainName(siteUrl),
           source_type: 'site' as SourceType,
           url: siteUrl,

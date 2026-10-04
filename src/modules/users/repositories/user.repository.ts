@@ -139,7 +139,7 @@ export class UserRepository {
   }
 
   async delete(id: string): Promise<boolean> {
-    const result = await this.userRepository.delete(id);
+    const result = await this.userRepository.softDelete(id);
     return (
       result.affected !== null &&
       result.affected !== undefined &&

@@ -1,7 +1,9 @@
 import {
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -28,6 +30,10 @@ export enum PaymentMethod {
 }
 
 @Entity('payments')
+@Index('payments_stripe_payment_intent_id_uq', ['stripe_payment_intent_id'], {
+  unique: true,
+  where: '"deleted_at" IS NULL',
+})
 export class PaymentEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -38,7 +44,7 @@ export class PaymentEntity {
   @Column({ type: 'uuid', nullable: true })
   plan_id: string;
 
-  @Column({ type: 'text', unique: true })
+  @Column({ type: 'text' })
   stripe_payment_intent_id: string;
 
   @Column({ type: 'text', nullable: true })
@@ -93,6 +99,9 @@ export class PaymentEntity {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updated_at: Date;
+
+  @DeleteDateColumn({ type: 'timestamp', nullable: true })
+  deleted_at: Date | null;
 
   @ManyToOne(() => OrganizationEntity)
   @JoinColumn({ name: 'organization_id' })

@@ -1,7 +1,9 @@
 import {
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
+  Index,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -22,6 +24,10 @@ export enum BillingPeriod {
 }
 
 @Entity('plans')
+@Index('plans_type_uq', ['type'], {
+  unique: true,
+  where: '"deleted_at" IS NULL',
+})
 export class PlanEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -29,7 +35,6 @@ export class PlanEntity {
   @Column({
     type: 'enum',
     enum: PlanType,
-    unique: true,
   })
   type: PlanType;
 
@@ -88,4 +93,7 @@ export class PlanEntity {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updated_at: Date;
+
+  @DeleteDateColumn({ type: 'timestamp', nullable: true })
+  deleted_at: Date | null;
 }

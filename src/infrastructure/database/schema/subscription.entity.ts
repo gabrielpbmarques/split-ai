@@ -1,7 +1,9 @@
 import {
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -22,6 +24,10 @@ export enum SubscriptionStatus {
 }
 
 @Entity('subscriptions')
+@Index('subscriptions_stripe_subscription_id_uq', ['stripe_subscription_id'], {
+  unique: true,
+  where: '"deleted_at" IS NULL',
+})
 export class SubscriptionEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -32,7 +38,7 @@ export class SubscriptionEntity {
   @Column({ type: 'uuid' })
   plan_id: string;
 
-  @Column({ type: 'text', unique: true })
+  @Column({ type: 'text' })
   stripe_subscription_id: string;
 
   @Column({ type: 'text', nullable: true })
@@ -77,6 +83,9 @@ export class SubscriptionEntity {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updated_at: Date;
+
+  @DeleteDateColumn({ type: 'timestamp', nullable: true })
+  deleted_at: Date | null;
 
   @ManyToOne(() => OrganizationEntity)
   @JoinColumn({ name: 'organization_id' })

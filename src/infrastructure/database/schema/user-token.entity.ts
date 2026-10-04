@@ -1,7 +1,9 @@
 import {
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
+  Index,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -9,6 +11,10 @@ import {
 import type { UserRole, UserStatus } from 'src/shared/contracts';
 
 @Entity('user_tokens')
+@Index('user_tokens_token_uq', ['token'], {
+  unique: true,
+  where: '"deleted_at" IS NULL',
+})
 export class UserTokenEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -16,7 +22,7 @@ export class UserTokenEntity {
   @Column({ type: 'uuid' })
   user_id: string;
 
-  @Column({ type: 'text', unique: true })
+  @Column({ type: 'text' })
   token: string;
 
   @Column({
@@ -41,4 +47,7 @@ export class UserTokenEntity {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updated_at: Date;
+
+  @DeleteDateColumn({ type: 'timestamp', nullable: true })
+  deleted_at: Date | null;
 }

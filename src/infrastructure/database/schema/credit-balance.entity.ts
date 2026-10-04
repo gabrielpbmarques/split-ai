@@ -1,7 +1,9 @@
 import {
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
+  Index,
   JoinColumn,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -11,11 +13,15 @@ import {
 import { OrganizationEntity } from 'src/infrastructure/database/schema/organization.entity';
 
 @Entity('credit_balances')
+@Index('credit_balances_organization_id_uq', ['organization_id'], {
+  unique: true,
+  where: '"deleted_at" IS NULL',
+})
 export class CreditBalanceEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'uuid', unique: true })
+  @Column({ type: 'uuid' })
   organization_id: string;
 
   @Column({ type: 'int', default: 0 })
@@ -41,6 +47,9 @@ export class CreditBalanceEntity {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updated_at: Date;
+
+  @DeleteDateColumn({ type: 'timestamp', nullable: true })
+  deleted_at: Date | null;
 
   @OneToOne(() => OrganizationEntity)
   @JoinColumn({ name: 'organization_id' })

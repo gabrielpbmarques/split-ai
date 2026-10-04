@@ -1,7 +1,9 @@
 import {
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -17,6 +19,10 @@ import { OrganizationEntity } from 'src/infrastructure/database/schema/organizat
  * for the public chat widget.
  */
 @Entity('api_keys')
+@Index('api_keys_key_hash_uq', ['key_hash'], {
+  unique: true,
+  where: '"deleted_at" IS NULL',
+})
 export class ApiKeyEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -55,6 +61,9 @@ export class ApiKeyEntity {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updated_at: Date;
+
+  @DeleteDateColumn({ type: 'timestamp', nullable: true })
+  deleted_at: Date | null;
 
   @ManyToOne(() => OrganizationEntity)
   @JoinColumn({ name: 'organization_id' })

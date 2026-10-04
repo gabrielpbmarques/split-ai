@@ -52,7 +52,7 @@ export class SmsVerificationRepository {
   }
 
   async delete(id: string): Promise<boolean> {
-    const result = await this.smsVerificationRepository.delete(id);
+    const result = await this.smsVerificationRepository.softDelete(id);
     return (
       result.affected !== null &&
       result.affected !== undefined &&

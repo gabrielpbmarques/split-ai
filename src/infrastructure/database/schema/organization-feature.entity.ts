@@ -1,11 +1,12 @@
 import {
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
-  Unique,
   UpdateDateColumn,
 } from 'typeorm';
 
@@ -13,10 +14,14 @@ import { FeatureEntity } from 'src/infrastructure/database/schema/feature.entity
 import { OrganizationEntity } from 'src/infrastructure/database/schema/organization.entity';
 
 @Entity('organization_features')
-@Unique('uq_organization_features_org_feature', [
-  'organization_id',
-  'feature_id',
-])
+@Index(
+  'organization_features_org_feature_uq',
+  ['organization_id', 'feature_id'],
+  {
+    unique: true,
+    where: '"deleted_at" IS NULL',
+  },
+)
 export class OrganizationFeatureEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -46,4 +51,7 @@ export class OrganizationFeatureEntity {
 
   @UpdateDateColumn()
   updated_at: Date;
+
+  @DeleteDateColumn({ type: 'timestamp', nullable: true })
+  deleted_at: Date | null;
 }

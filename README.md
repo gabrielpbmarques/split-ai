@@ -33,6 +33,10 @@ bun run test:e2e         # jest com test/jest-e2e.json
 bun run di:verify        # confere se cada módulo importa o que seus providers injetam
 bun run di:boot-check    # monta o container Nest sem banco
 bun run seed:maia        # seed da organização MAIA e planos base
+bun run db:migrate       # aplica migrations pendentes (CI faz isso antes do deploy)
+bun run db:show          # lista migrations aplicadas e pendentes
+bun run db:generate <caminho>  # gera migration a partir do diff entidades × banco
+bun run db:check         # falha se entidades e banco divergem
 docker compose up        # api + redis local
 ```
 

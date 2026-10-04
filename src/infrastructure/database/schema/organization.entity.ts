@@ -1,10 +1,14 @@
 import {
   Column,
+  CreateDateColumn,
+  DeleteDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 
 import { AgentEntity } from 'src/infrastructure/database/schema/agent.entity';
@@ -13,6 +17,10 @@ import { UserEntity } from 'src/infrastructure/database/schema/user.entity';
 import type { Organization, OrganizationStatus } from 'src/shared/contracts';
 
 @Entity('organizations')
+@Index('organizations_chat_embed_token_uq', ['chat_embed_token'], {
+  unique: true,
+  where: '"deleted_at" IS NULL',
+})
 export class OrganizationEntity implements Organization {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -88,6 +96,15 @@ export class OrganizationEntity implements Organization {
 
   @Column({ type: 'boolean', default: false })
   chat_embed_welcome_enabled: boolean;
+
+  @CreateDateColumn({ type: 'timestamp' })
+  created_at: Date;
+
+  @UpdateDateColumn({ type: 'timestamp' })
+  updated_at: Date;
+
+  @DeleteDateColumn({ type: 'timestamp', nullable: true })
+  deleted_at: Date | null;
 
   @OneToMany(() => UserEntity, (user) => user.organization)
   users: UserEntity[];

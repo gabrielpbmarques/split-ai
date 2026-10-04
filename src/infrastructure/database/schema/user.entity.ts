@@ -1,7 +1,9 @@
 import {
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   OneToMany,
@@ -19,6 +21,10 @@ import type {
 } from 'src/shared/contracts';
 
 @Entity('users')
+@Index('users_email_uq', ['email'], {
+  unique: true,
+  where: '"deleted_at" IS NULL',
+})
 export class UserEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -26,7 +32,7 @@ export class UserEntity {
   @Column({ type: 'text', nullable: true })
   name: string;
 
-  @Column({ type: 'text', unique: true, nullable: true })
+  @Column({ type: 'text', nullable: true })
   email: string;
 
   @Column({ type: 'text', nullable: true })
@@ -83,4 +89,7 @@ export class UserEntity {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updated_at: Date;
+
+  @DeleteDateColumn({ type: 'timestamp', nullable: true })
+  deleted_at: Date | null;
 }
