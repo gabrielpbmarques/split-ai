@@ -9,13 +9,15 @@ import {
 import { UserEntity } from 'src/infrastructure/database/schema/user.entity';
 import { ITwilioService } from 'src/infrastructure/twilio/twilio.provider';
 import { TWILIO_SERVICE } from 'src/infrastructure/twilio/twilio.tokens';
-import { GenerateTokenService } from 'src/modules/auth-flows/generate-token/generate-token.service';
 import { SmsVerificationRepository } from 'src/modules/auth-flows/repositories/sms-verification.repository';
-import {
-  SendSmsDto,
-  VerifySmsDto,
-} from 'src/modules/auth-flows/send-sms/send-sms.dto';
+import { SendSmsDto } from 'src/modules/auth-flows/send-sms/send-sms.dto';
 import { UserRepository } from 'src/modules/users/repositories/user.repository';
+import { cleanPhoneNumber } from 'src/shared/utils/clean-phone-number';
+
+export interface SendSmsResult {
+  success: true;
+  message: string;
+}
 
 @Injectable()
 export class SendSmsService {
@@ -26,11 +28,10 @@ export class SendSmsService {
     private readonly twilioService: ITwilioService,
     private readonly smsVerificationRepository: SmsVerificationRepository,
     private readonly userRepository: UserRepository,
-    private readonly generateTokenService: GenerateTokenService,
   ) {}
 
-  async execute(sendSmsDto: SendSmsDto) {
-    const cleanPhone = this.cleanPhoneNumber(sendSmsDto.phone);
+  async execute(sendSmsDto: SendSmsDto): Promise<SendSmsResult> {
+    const cleanPhone = cleanPhoneNumber(sendSmsDto.phone);
 
     if (!this.isValidBrazilianPhone(cleanPhone)) {
       throw new BadRequestException('Número de telefone inválido');
@@ -78,48 +79,6 @@ export class SendSmsService {
       success: true,
       message: 'Código de verificação enviado com sucesso',
     };
-  }
-
-  async verify(verifySmsDto: VerifySmsDto) {
-    const cleanPhone = this.cleanPhoneNumber(verifySmsDto.phone);
-
-    const verification = await this.smsVerificationRepository.findValidCode(
-      cleanPhone,
-      verifySmsDto.code,
-    );
-
-    if (!verification) {
-      throw new BadRequestException('Código inválido ou expirado');
-    }
-
-    await this.smsVerificationRepository.markAsVerified(verification.id);
-
-    let user = await this.userRepository.findByPhone(cleanPhone);
-
-    if (!user) {
-      const newUser = new UserEntity();
-      newUser.phone = cleanPhone;
-      newUser.name = verifySmsDto.name || 'Visitante';
-      newUser.role = 'guest';
-      newUser.origin = 'website';
-      newUser.status = 'active';
-
-      user = await this.userRepository.create(newUser);
-    }
-
-    const tokenResult = await this.generateTokenService.execute(user!);
-
-    return {
-      success: true,
-      message: 'Telefone verificado com sucesso',
-      user_id: user!.id,
-      token: tokenResult.token,
-      expiresAt: tokenResult.expiresAt,
-    };
-  }
-
-  private cleanPhoneNumber(phone: string): string {
-    return phone.replace(/\D/g, '');
   }
 
   private isValidBrazilianPhone(phone: string): boolean {

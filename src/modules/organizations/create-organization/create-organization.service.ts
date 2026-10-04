@@ -20,7 +20,10 @@ export class CreateOrganizationService {
     private readonly userRepository: UserRepository,
   ) {}
 
-  async execute(dto: CreateOrganizationDto, user: AuthenticatedUser) {
+  async execute(
+    dto: CreateOrganizationDto,
+    user: AuthenticatedUser,
+  ): Promise<OrganizationEntity> {
     let plan;
 
     if (dto.planId) {

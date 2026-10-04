@@ -12,7 +12,10 @@ export class CreateAttendantAgentService {
     private readonly agentInstructionRepository: AgentInstructionRepository,
   ) {}
 
-  async execute(dto: CreateAttendantAgentDto, user: AuthenticatedUser) {
+  async execute(
+    dto: CreateAttendantAgentDto,
+    user: AuthenticatedUser,
+  ): Promise<{ id: string }> {
     const orgIdToSave =
       user.role === 'admin'
         ? (dto.organizationId ?? null)

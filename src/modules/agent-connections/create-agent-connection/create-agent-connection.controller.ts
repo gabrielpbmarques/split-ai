@@ -1,4 +1,11 @@
-import { Body, Controller, Post, Res, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Post, Res } from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiForbiddenResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { FastifyReply } from 'fastify';
 
 import { AuthenticatedUser } from 'src/auth/authenticated-user';
@@ -7,6 +14,7 @@ import { CreateAgentConnectionService } from 'src/modules/agent-connections/crea
 import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
 import { User as AuthUser } from 'src/shared/decorators/user.decorator';
 
+@ApiTags('agent-connections')
 @Controller('agent-connection')
 export class CreateAgentConnectionController {
   constructor(
@@ -15,9 +23,13 @@ export class CreateAgentConnectionController {
 
   @Post('create')
   @RequirePermissions('agent-connection.manage')
+  @ApiCreatedResponse()
+  @ApiBearerAuth()
+  @ApiUnauthorizedResponse({ description: 'Token ausente ou inválido' })
+  @ApiForbiddenResponse({ description: 'Permissão insuficiente' })
   async handle(
     @Res() res: FastifyReply,
-    @Body(new ValidationPipe()) dto: CreateAgentConnectionDto,
+    @Body() dto: CreateAgentConnectionDto,
     @AuthUser() user: AuthenticatedUser,
   ): Promise<FastifyReply> {
     const result = await this.createAgentConnectionService.execute(dto, user);

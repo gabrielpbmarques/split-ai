@@ -1,4 +1,11 @@
 import { Body, Controller, Post, Res } from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiForbiddenResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { FastifyReply } from 'fastify';
 
 import { AuthenticatedUser } from 'src/auth/authenticated-user';
@@ -7,6 +14,7 @@ import { CreateOrganizationService } from 'src/modules/organizations/create-orga
 import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
 import { User as AuthUser } from 'src/shared/decorators/user.decorator';
 
+@ApiTags('organizations')
 @Controller('organization')
 export class CreateOrganizationController {
   constructor(
@@ -15,12 +23,16 @@ export class CreateOrganizationController {
 
   @Post()
   @RequirePermissions('organization.manage')
+  @ApiCreatedResponse()
+  @ApiBearerAuth()
+  @ApiUnauthorizedResponse({ description: 'Token ausente ou inválido' })
+  @ApiForbiddenResponse({ description: 'Permissão insuficiente' })
   async handle(
     @Res() res: FastifyReply,
     @Body() dto: CreateOrganizationDto,
     @AuthUser() user: AuthenticatedUser,
   ) {
     const result = await this.createOrganizationService.execute(dto, user);
-    return res.status(200).send(result);
+    return res.status(201).send(result);
   }
 }

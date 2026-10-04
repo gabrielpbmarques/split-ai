@@ -31,6 +31,7 @@ export class CreateAgentConnectionDto {
 
   @IsNotEmpty()
   @IsString()
+  @MaxLength(10000)
   toolDescription: string;
 
   @IsOptional()

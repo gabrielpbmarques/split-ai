@@ -1,4 +1,11 @@
-import { Controller, Get, Query, Res, ValidationPipe } from '@nestjs/common';
+import { Controller, Get, Query, Res } from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiForbiddenResponse,
+  ApiOkResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { FastifyReply } from 'fastify';
 
 import { AuthenticatedUser } from 'src/auth/authenticated-user';
@@ -7,6 +14,7 @@ import { GetCreditTransactionsService } from 'src/modules/billing/get-credit-tra
 import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
 import { User as UserDecorator } from 'src/shared/decorators/user.decorator';
 
+@ApiTags('billing')
 @Controller('payment')
 export class GetCreditTransactionsController {
   constructor(
@@ -15,10 +23,14 @@ export class GetCreditTransactionsController {
 
   @Get('transactions')
   @RequirePermissions('account.access')
+  @ApiOkResponse()
+  @ApiBearerAuth()
+  @ApiUnauthorizedResponse({ description: 'Token ausente ou inválido' })
+  @ApiForbiddenResponse({ description: 'Permissão insuficiente' })
   async handle(
     @Res() res: FastifyReply,
     @UserDecorator() user: AuthenticatedUser,
-    @Query(new ValidationPipe({ transform: true }))
+    @Query()
     query: GetCreditTransactionsQueryDto,
   ) {
     const transactions = await this.getCreditTransactionsService.execute(

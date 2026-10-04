@@ -5,12 +5,14 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  MaxLength,
   MinLength,
 } from 'class-validator';
 
 export class CreateUserDto {
   @IsNotEmpty()
   @IsString()
+  @MaxLength(255)
   name: string;
 
   @IsNotEmpty()
@@ -19,15 +21,18 @@ export class CreateUserDto {
 
   @IsNotEmpty()
   @IsString()
+  @MaxLength(255)
   phone: string;
 
   @IsNotEmpty()
   @IsString()
   @MinLength(8)
+  @MaxLength(128)
   password: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
+  @MaxLength(128)
   confirmPassword: string;
 
   @IsOptional()

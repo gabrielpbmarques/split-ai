@@ -1,20 +1,22 @@
-import { IsOptional, IsString, IsDateString } from 'class-validator';
+import { IsDateString, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class DashboardStatisticsDto {
-  @IsString()
   @IsOptional()
+  @IsString()
+  @MaxLength(255)
   period?: 'today' | '7days' | '30days' | 'custom';
 
-  @IsDateString()
   @IsOptional()
+  @IsDateString()
   startDate?: string;
 
-  @IsDateString()
   @IsOptional()
+  @IsDateString()
   endDate?: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
+  @MaxLength(255)
   agentId?: string;
 }
 

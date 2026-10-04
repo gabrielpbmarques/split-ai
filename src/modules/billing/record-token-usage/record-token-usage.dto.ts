@@ -1,13 +1,16 @@
-import { IsString, IsNumber } from 'class-validator';
+import { IsNumber, IsString, MaxLength } from 'class-validator';
 
 export class RecordTokenUsageDto {
   @IsString()
+  @MaxLength(255)
   organization_id: string;
 
   @IsString()
+  @MaxLength(255)
   agent_id?: string;
 
   @IsString()
+  @MaxLength(255)
   user_id?: string;
 
   @IsNumber()
@@ -20,5 +23,6 @@ export class RecordTokenUsageDto {
   total_tokens: number;
 
   @IsString()
+  @MaxLength(255)
   model: string;
 }

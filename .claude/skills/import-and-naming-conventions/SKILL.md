@@ -154,7 +154,7 @@ Allowed types: `build`, `chore`, `ci`, `docs`, `feat`, `fix`, `perf`, `refactor`
 
 1. **One endpoint per controller** — never add multiple HTTP handlers to a single controller.
 2. **Service main method is execute**`execute` — never use other names for the primary public method.
-3. **Controller handler is handle or execute**`handle``execute` — use one of these names consistently.
+3. **Controller handler is `handle`** — the only public method of a controller; the service's only public method is `execute`.
 4. **Always use @Res() with FastifyReply**`@Res()``FastifyReply` — never rely on NestJS default response handling.
 5. **Always validate with ValidationPipe**`ValidationPipe` — never accept unvalidated request bodies.
 6. **Always use early return** — validate and throw at the top, keep the happy path flat.

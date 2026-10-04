@@ -13,25 +13,7 @@ export class EmailService {
     private readonly emailService: IEmailService,
   ) {}
 
-  async send(options: EmailOptions): Promise<void> {
-    try {
-      await this.emailService.send(options);
-    } catch (error: any) {
-      throw error;
-    }
-  }
-
-  async sendWithTemplate(
-    to: string,
-    subject: string,
-    templateId: string,
-    data: Record<string, any>,
-  ): Promise<void> {
-    return this.send({
-      to,
-      subject,
-      templateId,
-      dynamicTemplateData: data,
-    });
+  async execute(options: EmailOptions): Promise<void> {
+    await this.emailService.send(options);
   }
 }

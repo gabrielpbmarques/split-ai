@@ -1,10 +1,18 @@
-import { IsEmail, IsIn, IsOptional, IsString, IsUUID } from 'class-validator';
+import {
+  IsEmail,
+  IsIn,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+} from 'class-validator';
 
 import { UserRole, UserStatus } from 'src/shared/contracts';
 
 export class UpdateUserDto {
   @IsOptional()
   @IsString()
+  @MaxLength(255)
   name?: string;
 
   @IsOptional()
@@ -13,6 +21,7 @@ export class UpdateUserDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(255)
   phone?: string;
 
   @IsOptional()

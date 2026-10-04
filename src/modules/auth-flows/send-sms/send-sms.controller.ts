@@ -1,21 +1,13 @@
-import {
-  Controller,
-  Post,
-  Body,
-  Res,
-  ValidationPipe,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Post, Res, UseGuards } from '@nestjs/common';
+import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { FastifyReply } from 'fastify';
 
-import {
-  SendSmsDto,
-  VerifySmsDto,
-} from 'src/modules/auth-flows/send-sms/send-sms.dto';
+import { SendSmsDto } from 'src/modules/auth-flows/send-sms/send-sms.dto';
 import { SendSmsService } from 'src/modules/auth-flows/send-sms/send-sms.service';
 import { Public } from 'src/shared/decorators/public.decorator';
 
+@ApiTags('auth-flows')
 @Controller('auth')
 @UseGuards(ThrottlerGuard)
 export class SendSmsController {
@@ -23,21 +15,12 @@ export class SendSmsController {
 
   @Post('send-sms')
   @Public()
-  async sendSms(
-    @Body(new ValidationPipe()) sendSmsDto: SendSmsDto,
+  @ApiOkResponse()
+  async handle(
+    @Body() dto: SendSmsDto,
     @Res() res: FastifyReply,
-  ) {
-    const result = await this.sendSmsService.execute(sendSmsDto);
-    return res.status(200).send(result);
-  }
-
-  @Post('verify-sms')
-  @Public()
-  async verifySms(
-    @Body(new ValidationPipe()) verifySmsDto: VerifySmsDto,
-    @Res() res: FastifyReply,
-  ) {
-    const result = await this.sendSmsService.verify(verifySmsDto);
+  ): Promise<FastifyReply> {
+    const result = await this.sendSmsService.execute(dto);
     return res.status(200).send(result);
   }
 }

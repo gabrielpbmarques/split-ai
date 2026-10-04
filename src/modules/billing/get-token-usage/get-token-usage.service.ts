@@ -3,11 +3,21 @@ import { Injectable } from '@nestjs/common';
 import { GetTokenUsageDto } from 'src/modules/billing/get-token-usage/get-token-usage.dto';
 import { TokenUsageRepository } from 'src/modules/billing/repositories/token-usage.repository';
 
+export interface TokenUsageReport {
+  period: { start: Date; end: Date };
+  totals: Awaited<ReturnType<TokenUsageRepository['getTotals']>>;
+  daily_usage: Awaited<ReturnType<TokenUsageRepository['getDailyUsage']>>;
+  usage_by_agent: Awaited<ReturnType<TokenUsageRepository['getUsageByAgent']>>;
+}
+
 @Injectable()
 export class GetTokenUsageService {
   constructor(private readonly tokenUsageRepository: TokenUsageRepository) {}
 
-  async execute(dto: GetTokenUsageDto, userOrganizationId?: string) {
+  async execute(
+    dto: GetTokenUsageDto,
+    userOrganizationId?: string,
+  ): Promise<TokenUsageReport> {
     const startDate = dto.start_date
       ? new Date(dto.start_date)
       : new Date(new Date().setDate(new Date().getDate() - 30));

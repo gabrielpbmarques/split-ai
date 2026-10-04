@@ -14,7 +14,7 @@ export class WebhookService {
     private readonly userRepository: UserRepository,
   ) {}
 
-  async execute(body: WebhookDto) {
+  async execute(body: WebhookDto): Promise<void> {
     const { WaId } = body;
 
     let user = await this.userRepository.findByPhone(WaId);
@@ -23,7 +23,7 @@ export class WebhookService {
       user = await this.createUser(body);
     }
 
-    return this.twilioService.sendWhatsapp(WaId, 'Webhook funcionando!');
+    await this.twilioService.sendWhatsapp(WaId, 'Webhook funcionando!');
   }
 
   private async createUser(body: WebhookDto): Promise<UserEntity> {

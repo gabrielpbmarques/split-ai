@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import { GetDashboardDataDto } from 'src/modules/reports/get-dashboard-data/get-dashboard-data.dto';
 import { ReportRepository } from 'src/modules/reports/repositories/report.repository';
 
 @Injectable()
@@ -54,7 +55,10 @@ export class GetDashboardDataService {
     return filters;
   }
 
-  async execute(user: AuthenticatedUser, query: any): Promise<any> {
+  async execute(
+    user: AuthenticatedUser,
+    query: GetDashboardDataDto,
+  ): Promise<any> {
     const filters = this.parseFilters(user, query);
 
     // 1) Volume total

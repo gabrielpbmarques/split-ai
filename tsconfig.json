@@ -7,11 +7,14 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
     "target": "ESNext",
     "sourceMap": true,
     "outDir": "./dist",
     "paths": {
-      "src/*": ["./src/*"]
+      "src/*": [
+        "./src/*"
+      ]
     },
     "incremental": true,
     "skipLibCheck": true,
@@ -21,5 +24,7 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false
   },
-  "exclude": ["./dist"]
+  "exclude": [
+    "./dist"
+  ]
 }

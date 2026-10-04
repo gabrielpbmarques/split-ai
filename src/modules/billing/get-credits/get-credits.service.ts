@@ -2,13 +2,20 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 
 import { CreditBalanceRepository } from 'src/modules/billing/repositories/credit-balance.repository';
 
+export interface CreditSummary {
+  total_credits: number;
+  used_credits: number;
+  available_credits: number;
+  reserved_credits: number;
+}
+
 @Injectable()
 export class GetCreditsService {
   constructor(
     private readonly creditBalanceRepository: CreditBalanceRepository,
   ) {}
 
-  async execute(organizationId: string) {
+  async execute(organizationId: string): Promise<CreditSummary> {
     if (!organizationId) {
       throw new BadRequestException('Organization not found');
     }

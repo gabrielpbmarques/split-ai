@@ -2,58 +2,33 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { AccessScopeService } from 'src/auth/access-scope.service';
 import { AuthenticatedUser } from 'src/auth/authenticated-user';
-import { Permission } from 'src/auth/permissions';
 import { AgentEntity } from 'src/infrastructure/database/schema';
-import { AgentConnectionRepository } from 'src/modules/agent-connections/repositories/agent-connection.repository';
 import { AgentInstructionRepository } from 'src/modules/agents/repositories/agent-instruction.repository';
 import { AgentRepository } from 'src/modules/agents/repositories/agent.repository';
 import { UpdateAgentDto } from 'src/modules/agents/update-agent/update-agent.dto';
-
+import { isUuid } from 'src/shared/utils/is-uuid';
 @Injectable()
 export class UpdateAgentService {
   constructor(
     private readonly agentRepository: AgentRepository,
     private readonly agentInstructionRepository: AgentInstructionRepository,
-    private readonly agentConnectionRepository: AgentConnectionRepository,
     private readonly accessScope: AccessScopeService,
   ) {}
 
-  private isUuid(id: string): boolean {
-    return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(
-      id,
-    );
-  }
-
-  private async resolveAgent(idOrIdentifier: string) {
-    if (this.isUuid(idOrIdentifier)) {
-      const byId = await this.agentRepository.findById(idOrIdentifier);
-      if (byId) return byId;
-    }
-    return await this.agentRepository.findByIdentifier(idOrIdentifier);
-  }
-
-  private authorizeAccess(
-    agent: AgentEntity,
-    user: AuthenticatedUser,
-    permission: Permission,
-  ): void {
-    this.accessScope.ensureCan(
-      user,
-      permission,
-      { organizationId: agent.organization_id },
-      'Você não tem acesso a este agente.',
-    );
-  }
-
-  async update(
+  async execute(
     idOrIdentifier: string,
     dto: UpdateAgentDto,
     user: AuthenticatedUser,
-  ) {
+  ): Promise<{ id: string }> {
     const agent = await this.resolveAgent(idOrIdentifier);
     if (!agent) throw new NotFoundException('Agente não encontrado.');
 
-    this.authorizeAccess(agent, user, 'agent.write');
+    this.accessScope.ensureCan(
+      user,
+      'agent.write',
+      { organizationId: agent.organization_id },
+      'Você não tem acesso a este agente.',
+    );
 
     const updateData: any = {};
     if (dto.name !== undefined) updateData.name = dto.name;
@@ -109,70 +84,13 @@ export class UpdateAgentService {
     return { id: agent.id };
   }
 
-  async getOne(idOrIdentifier: string, user: AuthenticatedUser) {
-    const agent = await this.resolveAgent(idOrIdentifier);
-    if (!agent) throw new NotFoundException('Agente não encontrado.');
-
-    this.authorizeAccess(agent, user, 'agent.read');
-
-    const [latest, flags] = await Promise.all([
-      this.agentInstructionRepository.findLatestByAgentId(agent.id),
-      this.agentConnectionRepository.getRoleFlags(agent.id),
-    ]);
-
-    return {
-      id: agent.id,
-      name: agent.name,
-      agentIdentifier: agent.agent_identifier,
-      model: agent.model,
-      temperature: agent.temperature,
-      withHistory: agent.with_history,
-      organization_id: (agent as any).organization_id ?? null,
-      sites: (agent as any).sites ?? null,
-      parser: agent.parser_schema
-        ? {
-            name: agent.parser_name,
-            description: agent.parser_description,
-            schema: agent.parser_schema,
-          }
-        : null,
-      instructions: latest?.instructions || null,
-      isTool: flags.isTool,
-      isPrincipal: flags.isPrincipal,
-      createdAt: agent.created_at,
-      updatedAt: agent.updated_at,
-    };
-  }
-
-  async list() {
-    const agents = await this.agentRepository.find({
-      order: { created_at: 'DESC' },
-    });
-    const result = await Promise.all(
-      agents.map(async (a) => {
-        const latest =
-          await this.agentInstructionRepository.findLatestByAgentId(a.id);
-        return {
-          id: a.id,
-          name: a.name,
-          agentIdentifier: a.agent_identifier,
-          model: a.model,
-          temperature: a.temperature,
-          withHistory: a.with_history,
-          sites: (a as any).sites ?? null,
-          parser: a.parser_schema
-            ? {
-                name: a.parser_name,
-                description: a.parser_description,
-                schema: a.parser_schema,
-              }
-            : null,
-          instructions: latest?.instructions || null,
-          createdAt: a.created_at,
-          updatedAt: a.updated_at,
-        };
-      }),
-    );
-    return result;
+  private async resolveAgent(
+    idOrIdentifier: string,
+  ): Promise<AgentEntity | null> {
+    if (isUuid(idOrIdentifier)) {
+      const byId = await this.agentRepository.findById(idOrIdentifier);
+      if (byId) return byId;
+    }
+    return this.agentRepository.findByIdentifier(idOrIdentifier);
   }
 }

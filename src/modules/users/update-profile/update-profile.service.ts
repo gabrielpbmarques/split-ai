@@ -12,7 +12,7 @@ import { UpdateProfileDto } from 'src/modules/users/update-profile/update-profil
 export class UpdateProfileService {
   constructor(private readonly userRepository: UserRepository) {}
 
-  async execute(userId: string, dto: UpdateProfileDto) {
+  async execute(userId: string, dto: UpdateProfileDto): Promise<UserEntity> {
     const user = await this.userRepository.findById(userId);
     if (!user) {
       throw new NotFoundException('Usuário não encontrado.');

@@ -3,6 +3,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { AccessScopeService } from 'src/auth/access-scope.service';
 import { AuthenticatedUser } from 'src/auth/authenticated-user';
 import { ReportRepository } from 'src/modules/reports/repositories/report.repository';
+import { ConversationDetail } from 'src/modules/sessions/get-session-messages/get-session-messages.service';
 import { GetSessionMessagesService } from 'src/modules/sessions/get-session-messages/get-session-messages.service';
 
 @Injectable()
@@ -13,7 +14,10 @@ export class GetReportConversationService {
     private readonly accessScope: AccessScopeService,
   ) {}
 
-  async execute(user: AuthenticatedUser, reportId: string) {
+  async execute(
+    user: AuthenticatedUser,
+    reportId: string,
+  ): Promise<ConversationDetail> {
     const report = await this.reportRepository.findById(reportId);
 
     if (!report) {

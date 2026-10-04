@@ -1,9 +1,18 @@
-import { Body, Controller, Post, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Post, Res } from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiForbiddenResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
+import { FastifyReply } from 'fastify';
 
 import { ConvertTextToSpeechDto } from 'src/modules/voice/convert-text-to-speech/convert-text-to-speech.dto';
 import { ConvertTextToSpeechService } from 'src/modules/voice/convert-text-to-speech/convert-text-to-speech.service';
 import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
 
+@ApiTags('voice')
 @Controller('artificial-intelligence')
 export class ConvertTextToSpeechController {
   constructor(
@@ -12,9 +21,15 @@ export class ConvertTextToSpeechController {
 
   @Post('convert-text-to-speech')
   @RequirePermissions('voice.synthesize')
-  async convertTextToSpeech(
-    @Body(new ValidationPipe()) dto: ConvertTextToSpeechDto,
-  ) {
-    await this.convertTextToSpeechService.execute(dto.text);
+  @ApiCreatedResponse()
+  @ApiBearerAuth()
+  @ApiUnauthorizedResponse({ description: 'Token ausente ou inválido' })
+  @ApiForbiddenResponse({ description: 'Permissão insuficiente' })
+  async handle(
+    @Body() dto: ConvertTextToSpeechDto,
+    @Res() res: FastifyReply,
+  ): Promise<FastifyReply> {
+    const result = await this.convertTextToSpeechService.execute(dto.text);
+    return res.status(201).send(result);
   }
 }

@@ -1,8 +1,22 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
 
+import { UserEntity } from 'src/infrastructure/database/schema';
 import { CreateUserDto } from 'src/modules/users/create-user/create-user.dto';
 import { UserRepository } from 'src/modules/users/repositories/user.repository';
+
+export type CreatedUser = Pick<
+  UserEntity,
+  | 'id'
+  | 'name'
+  | 'email'
+  | 'phone'
+  | 'role'
+  | 'status'
+  | 'organization_id'
+  | 'created_at'
+  | 'updated_at'
+>;
 
 @Injectable()
 export class CreateUserService {
@@ -12,7 +26,7 @@ export class CreateUserService {
     return phone.replace(/\D/g, '');
   }
 
-  async execute(dto: CreateUserDto) {
+  async execute(dto: CreateUserDto): Promise<CreatedUser> {
     const { email, password, phone, role, organization_id, name } = dto;
 
     const existingByEmail = await this.userRepository.findByEmail(email);

@@ -5,6 +5,7 @@ import {
   IsString,
   IsUUID,
   Matches,
+  MaxLength,
 } from 'class-validator';
 
 export class UpdateEmbedSettingsDto {
@@ -31,6 +32,7 @@ export class UpdateEmbedSettingsDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(10000)
   chat_embed_greeting?: string | null;
 
   @IsOptional()

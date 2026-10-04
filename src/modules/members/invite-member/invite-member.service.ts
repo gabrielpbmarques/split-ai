@@ -72,7 +72,7 @@ export class InviteMemberService {
 
   private async sendInviteEmail(email: string, token: string): Promise<void> {
     try {
-      await this.emailService.send({
+      await this.emailService.execute({
         to: email,
         from: env.SENDGRID_EMAIL_DEFAULT_FROM,
         subject: 'Você foi convidado(a) para uma organização',

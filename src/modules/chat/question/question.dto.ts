@@ -1,20 +1,30 @@
-import { IsNotEmpty, IsObject, IsOptional, IsString } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsObject,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 
 export class QuestionDto {
   @IsString()
   @IsNotEmpty()
+  @MaxLength(10000)
   question: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
+  @MaxLength(255)
   phone?: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
+  @MaxLength(255)
   name?: string;
 
   @IsString()
   @IsNotEmpty()
+  @MaxLength(255)
   agentId: string;
 
   /**
@@ -22,8 +32,9 @@ export class QuestionDto {
    * agent's `threadId` so memory persists across calls in the same
    * conversation. Falls back to the session id.
    */
-  @IsString()
   @IsOptional()
+  @IsString()
+  @MaxLength(255)
   conversationId?: string;
 
   /**
@@ -32,7 +43,7 @@ export class QuestionDto {
    * (`sessionId`, `conversationId`, `threadId`, `organizationId`) always
    * override anything passed here.
    */
-  @IsObject()
   @IsOptional()
+  @IsObject()
   variables?: Record<string, string>;
 }

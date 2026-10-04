@@ -3,22 +3,26 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  MaxLength,
 } from 'class-validator';
 
 export class CreateSessionIfNotExistsDto {
   @IsString()
   @IsNotEmpty()
+  @MaxLength(255)
   agent_id: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
+  @MaxLength(255)
   user_id?: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
+  @MaxLength(255)
   organization_id?: string;
 
-  @IsDateString()
   @IsOptional()
+  @IsDateString()
   expires_at?: string;
 }

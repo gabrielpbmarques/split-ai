@@ -1,4 +1,5 @@
 import {
+  ArrayMaxSize,
   IsArray,
   IsBoolean,
   IsNotEmpty,
@@ -6,6 +7,7 @@ import {
   IsObject,
   IsOptional,
   IsString,
+  MaxLength,
 } from 'class-validator';
 
 import { AIInstructions } from 'src/shared/contracts';
@@ -13,46 +15,51 @@ import { AIInstructions } from 'src/shared/contracts';
 export class CreateAgentDto {
   @IsString()
   @IsNotEmpty()
+  @MaxLength(255)
   name: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
+  @MaxLength(255)
   agentIdentifier?: string | null;
 
-  @IsString()
   @IsOptional()
+  @IsString()
+  @MaxLength(255)
   model?: string | null;
 
-  @IsNumber()
   @IsOptional()
+  @IsNumber()
   temperature?: number | null;
 
-  @IsBoolean()
   @IsOptional()
+  @IsBoolean()
   withHistory?: boolean;
 
-  @IsBoolean()
   @IsOptional()
+  @IsBoolean()
   databaseTool?: boolean;
 
-  @IsBoolean()
   @IsOptional()
+  @IsBoolean()
   vectorSearchTool?: boolean;
 
-  @IsObject()
   @IsOptional()
+  @IsObject()
   instructions: AIInstructions;
 
-  @IsObject()
   @IsOptional()
+  @IsObject()
   parser?: {
     name: string;
     description: string;
     schema: any;
   } | null;
 
+  @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  @IsOptional()
+  @MaxLength(2048)
+  @ArrayMaxSize(50)
   sites?: string[];
 }

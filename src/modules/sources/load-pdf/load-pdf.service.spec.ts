@@ -1,37 +1,17 @@
-import { Test, TestingModule } from '@nestjs/testing';
-
 import { LoadPdfService } from 'src/modules/sources/load-pdf/load-pdf.service';
-import { ProcessPdfService } from 'src/modules/sources/process-pdf/process-pdf.service';
-
-// Criar mocks simples para as dependências
-const mockProcessPdfService = {
-  execute: jest.fn().mockResolvedValue([]),
-};
 
 describe('LoadPdfService', () => {
-  let service: LoadPdfService;
+  it('writes the buffer to a temp file, extracts chunks and removes the file', async () => {
+    const processPdfService = {
+      execute: jest.fn().mockResolvedValue([{ pageContent: 'chunk' }]),
+    };
+    const service = new LoadPdfService(processPdfService as any);
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        {
-          provide: LoadPdfService,
-          useValue: {
-            // Implementação mínima para passar no teste
-            execute: jest.fn().mockResolvedValue([]),
-          },
-        },
-        {
-          provide: ProcessPdfService,
-          useValue: mockProcessPdfService,
-        },
-      ],
-    }).compile();
+    const chunks = await service.execute(Buffer.from('%PDF-1.4'));
 
-    service = module.get<LoadPdfService>(LoadPdfService);
-  });
-
-  it('should be defined', () => {
-    expect(service).toBeDefined();
+    expect(chunks).toEqual([{ pageContent: 'chunk' }]);
+    expect(processPdfService.execute).toHaveBeenCalledWith(
+      expect.stringMatching(/temp\.pdf$/),
+    );
   });
 });

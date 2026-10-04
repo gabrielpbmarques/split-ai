@@ -4,7 +4,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UserEntity } from 'src/infrastructure/database/schema';
 import { SignUpDto } from 'src/modules/auth-flows/sign-up/sign-up.dto';
 import { SignUpService } from 'src/modules/auth-flows/sign-up/sign-up.service';
-import { OrganizationRepository } from 'src/modules/organizations/repositories/organization.repository';
 import { UserRepository } from 'src/modules/users/repositories/user.repository';
 
 describe('SignUpService', () => {
@@ -18,14 +17,6 @@ describe('SignUpService', () => {
     findById: jest.fn(),
   };
 
-  const mockOrganizationRepository = {
-    findByEmailDomain: jest.fn(),
-  };
-
-  const mockSendVerificationEmailService = {
-    execute: jest.fn(),
-  };
-
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -33,10 +24,6 @@ describe('SignUpService', () => {
         {
           provide: UserRepository,
           useValue: mockUserRepository,
-        },
-        {
-          provide: OrganizationRepository,
-          useValue: mockOrganizationRepository,
         },
       ],
     }).compile();
@@ -61,7 +48,7 @@ describe('SignUpService', () => {
       organization: '1',
     };
 
-    it('should register a citizen successfully', async () => {
+    it('registers an active user when the e-mail is free', async () => {
       // Mock user does not exist
       mockUserRepository.findByEmail.mockResolvedValue(null);
       mockUserRepository.create.mockResolvedValue({
@@ -71,17 +58,14 @@ describe('SignUpService', () => {
 
       const result = await service.execute(mockSignUpDto);
 
-      expect(result).toEqual({
-        message: 'Registration successful! Your account is now active.',
+      expect(result).toMatchObject({
+        message: expect.stringContaining('Cadastro realizado com sucesso'),
+        user: { id: '1', email: mockSignUpDto.email },
       });
       expect(mockUserRepository.findByEmail).toHaveBeenCalledWith(
         mockSignUpDto.email,
       );
       expect(mockUserRepository.create).toHaveBeenCalled();
-      expect(
-        mockOrganizationRepository.findByEmailDomain,
-      ).not.toHaveBeenCalled();
-      expect(mockSendVerificationEmailService.execute).not.toHaveBeenCalled();
     });
 
     it('should throw if passwords do not match', async () => {

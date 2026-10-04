@@ -14,7 +14,10 @@ export class CreateAgentService {
     private readonly organizationRepository: OrganizationRepository,
   ) {}
 
-  async execute(dto: CreateAgentDto, user: AuthenticatedUser) {
+  async execute(
+    dto: CreateAgentDto,
+    user: AuthenticatedUser,
+  ): Promise<{ id: string }> {
     await this.assertWithinAgentQuota(user.organization_id);
 
     const agent = await this.agentRepository.create({

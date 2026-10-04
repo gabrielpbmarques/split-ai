@@ -123,3 +123,18 @@ Registro de travas, contornos e desvios conscientes do `split-ai` em relação a
 | Tentativas descartadas | `useExisting`: erro de dependência circular no boot. `forwardRef` nos dois lados: proibido pela regra e esconde o acoplamento. |
 | Remover quando | A resolução do sub-agente for feita por um orquestrador acima de `ResolveAgentService`, eliminando a recursão. |
 | Registrado em | 2026-10-04 |
+
+### PC-009 — ts-jest perde o `esModuleInterop` implícito de `module: nodenext`
+
+| Campo | Valor |
+| --- | --- |
+| Status | contornado |
+| Biblioteca | `ts-jest@29.4.6`, `typescript@5.9.3` |
+| Sintoma | `TypeError: Cannot read properties of undefined (reading 'join')` em `import path from 'path'` (e `reading 'hash'` em `import bcrypt from 'bcryptjs'`) só dentro do Jest; a aplicação compilada funciona. |
+| Causa | Com `module: nodenext` o TypeScript implica `esModuleInterop`; o ts-jest recompila com `module: commonjs` e a implicação some, então o import default de um módulo CommonJS vira `require('path').default`. |
+| Solução | `esModuleInterop: true` explícito em `tsconfig.json`. Sem efeito no build (já era o comportamento implícito). |
+| Onde | `tsconfig.json` |
+| Regra dona | — |
+| Tentativas descartadas | Trocar os imports para `import * as path` arquivo a arquivo: resolve caso a caso e volta a quebrar no próximo import default. |
+| Remover quando | O Jest rodar em modo ESM ou o ts-jest respeitar `module: nodenext`. |
+| Registrado em | 2026-10-04 |

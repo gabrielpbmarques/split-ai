@@ -1,26 +1,30 @@
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
 
 import { AgentSource } from 'src/shared/contracts/agent-source';
 
 export class GenerateAgentSourceDto {
-  @IsString()
   @IsOptional()
+  @IsString()
+  @MaxLength(2048)
   url?: string;
 
-  @IsEnum(AgentSource)
   @IsOptional()
+  @IsEnum(AgentSource)
   sourceType?: AgentSource;
 
-  @IsString()
   @IsOptional()
+  @IsString()
+  @MaxLength(255)
   agentId?: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
+  @MaxLength(255)
   fileName?: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
+  @MaxLength(255)
   mimeType?: string;
 
   @IsOptional()

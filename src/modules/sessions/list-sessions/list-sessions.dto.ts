@@ -5,16 +5,19 @@ import {
   IsOptional,
   IsString,
   Max,
+  MaxLength,
   Min,
 } from 'class-validator';
 
 export class ListSessionsDto {
   @IsOptional()
   @IsString()
+  @MaxLength(255)
   agent_id?: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(255)
   user_id?: string;
 
   @IsOptional()

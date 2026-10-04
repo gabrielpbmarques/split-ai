@@ -1,4 +1,11 @@
-import { Controller, Get, Query, Res, ValidationPipe } from '@nestjs/common';
+import { Controller, Get, Query, Res } from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiForbiddenResponse,
+  ApiOkResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { FastifyReply } from 'fastify';
 
 import { AuthenticatedUser } from 'src/auth/authenticated-user';
@@ -7,6 +14,7 @@ import { GetPaymentHistoryService } from 'src/modules/billing/get-payment-histor
 import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
 import { User as UserDecorator } from 'src/shared/decorators/user.decorator';
 
+@ApiTags('billing')
 @Controller('payment')
 export class GetPaymentHistoryController {
   constructor(
@@ -15,10 +23,14 @@ export class GetPaymentHistoryController {
 
   @Get('history')
   @RequirePermissions('account.access')
+  @ApiOkResponse()
+  @ApiBearerAuth()
+  @ApiUnauthorizedResponse({ description: 'Token ausente ou inválido' })
+  @ApiForbiddenResponse({ description: 'Permissão insuficiente' })
   async handle(
     @Res() res: FastifyReply,
     @UserDecorator() user: AuthenticatedUser,
-    @Query(new ValidationPipe({ transform: true }))
+    @Query()
     query: GetPaymentHistoryQueryDto,
   ) {
     const payments = await this.getPaymentHistoryService.execute(

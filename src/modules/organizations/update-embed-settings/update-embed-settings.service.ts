@@ -1,7 +1,20 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
+import { OrganizationEntity } from 'src/infrastructure/database/schema';
 import { OrganizationRepository } from 'src/modules/organizations/repositories/organization.repository';
 import { UpdateEmbedSettingsDto } from 'src/modules/organizations/update-embed-settings/update-embed-settings.dto';
+
+export type EmbedSettings = Pick<
+  OrganizationEntity,
+  | 'id'
+  | 'chat_embed_enabled'
+  | 'chat_embed_token'
+  | 'chat_embed_agent_id'
+  | 'chat_embed_primary_color'
+  | 'chat_embed_button_position'
+  | 'chat_embed_greeting'
+  | 'chat_embed_welcome_enabled'
+>;
 
 @Injectable()
 export class UpdateEmbedSettingsService {
@@ -9,7 +22,10 @@ export class UpdateEmbedSettingsService {
     private readonly organizationRepository: OrganizationRepository,
   ) {}
 
-  async execute(id: string, dto: UpdateEmbedSettingsDto) {
+  async execute(
+    id: string,
+    dto: UpdateEmbedSettingsDto,
+  ): Promise<EmbedSettings> {
     const org = await this.organizationRepository.findById(id);
     if (!org) throw new NotFoundException('Organização não encontrada');
 

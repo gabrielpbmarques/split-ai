@@ -3,9 +3,15 @@ import {
   Controller,
   Post,
   Res,
-  ValidationPipe,
   BadRequestException,
 } from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiForbiddenResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { FastifyReply } from 'fastify';
 
 import { AuthenticatedUser } from 'src/auth/authenticated-user';
@@ -15,14 +21,19 @@ import { env } from 'src/shared/config/env';
 import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
 import { User as UserDecorator } from 'src/shared/decorators/user.decorator';
 
+@ApiTags('billing')
 @Controller('payment')
 export class CreateCheckoutController {
   constructor(private readonly createCheckoutService: CreateCheckoutService) {}
 
   @Post('checkout')
   @RequirePermissions('account.access')
+  @ApiCreatedResponse()
+  @ApiBearerAuth()
+  @ApiUnauthorizedResponse({ description: 'Token ausente ou inválido' })
+  @ApiForbiddenResponse({ description: 'Permissão insuficiente' })
   async handle(
-    @Body(new ValidationPipe()) dto: CreateCheckoutDto,
+    @Body() dto: CreateCheckoutDto,
     @Res() res: FastifyReply,
     @UserDecorator() user: AuthenticatedUser,
   ) {
@@ -45,6 +56,6 @@ export class CreateCheckoutController {
       cancelUrl,
     });
 
-    return res.status(200).send(result);
+    return res.status(201).send(result);
   }
 }

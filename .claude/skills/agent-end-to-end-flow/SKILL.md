@@ -56,7 +56,7 @@ Default port is **`4000`** (`src/main.ts:115`). There is **no global API prefix*
 │                                                                              │
 ├──────────────────────────────────────────────────────────────────────────────┤
 │  Phase C — Receive a question                                                │
-│     POST /support/question  (streaming)  → QuestionController.execute        │
+│     POST /support/question  (streaming)  → QuestionController.handle         │
 │     POST /chat/attendant    (one-shot)   → AttendantController.handle        │
 │                                                                              │
 │     AuthenticationGuard (global; Bearer JWT / BravoHub JWT / ApiKey via    │
@@ -344,7 +344,7 @@ Flow (`execute()`):
 1. Resolve `agentId` by id-or-identifier (`isUuid` regex first).
 2. If `buffer` is present:
    - Create a `sources` row with `status: 'processing'`.
-   - `loadPdfService.executeFromBuffer(buffer)` → chunks.
+   - `loadPdfService.execute(buffer)` → chunks.
    - `supabaseService.createVectorStore(chunks, { source_type: sourceType ?? 'pdf', agent_id, source_id })`.
 3. If `url` is present:
    - Split on commas.

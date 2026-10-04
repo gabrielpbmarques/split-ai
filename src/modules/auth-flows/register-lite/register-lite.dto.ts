@@ -4,11 +4,13 @@ import {
   IsOptional,
   IsString,
   Matches,
+  MaxLength,
 } from 'class-validator';
 
 export class RegisterLiteDto {
   @IsNotEmpty()
   @IsString()
+  @MaxLength(255)
   name: string;
 
   @IsNotEmpty()
@@ -22,5 +24,6 @@ export class RegisterLiteDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(255)
   organization_id?: string;
 }

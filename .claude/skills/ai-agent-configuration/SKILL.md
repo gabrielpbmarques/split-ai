@@ -45,9 +45,9 @@ Field names mix English (`context`) and Portuguese (`diretrizes`, `objetivo`). *
 | `POST /agent/create`           | `CreateAgentController.execute`  | `CreateAgentService`          | `agent.write`                           | staff (admin/user)                  |
 | `POST /agent/create-attendant` | `CreateAttendantAgentController` | `CreateAttendantAgentService` | (see file)                              | admin can scope to any org          |
 | `GET /agent/list`              | `ListAgentsController.handle`    | `ListAgentsService`           | `agent.read`                            | scoped to user's org for non-admins |
-| `GET /agent`                   | `UpdateAgentController.list`     | `UpdateAgentService.list`     | `agent.manage`                          | admin-wide list with full payload   |
-| `GET /agent/:id`               | `UpdateAgentController.getOne`   | `UpdateAgentService.getOne`   | `agent.read` + org scope                |                                     |
-| `PATCH /agent/:id`             | `UpdateAgentController.update`   | `UpdateAgentService.update`   | `agent.write` + org scope               | partial update                      |
+| `GET /agent`                   | `ListAllAgentsController.handle` | `ListAllAgentsService`        | `agent.manage`                          | admin-wide list with full payload   |
+| `GET /agent/:id`               | `GetAgentController.handle`      | `GetAgentService`             | `agent.read` + org scope                |                                     |
+| `PATCH /agent/:id`             | `UpdateAgentController.handle`   | `UpdateAgentService`          | `agent.write` + org scope               | partial update                      |
 
 ## CreateAgent vs CreateAttendantAgent
 

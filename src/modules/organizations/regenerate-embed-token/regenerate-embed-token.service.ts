@@ -3,13 +3,18 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { OrganizationRepository } from 'src/modules/organizations/repositories/organization.repository';
 
+export interface EmbedToken {
+  id: string;
+  chat_embed_token: string;
+}
+
 @Injectable()
 export class RegenerateEmbedTokenService {
   constructor(
     private readonly organizationRepository: OrganizationRepository,
   ) {}
 
-  async execute(id: string) {
+  async execute(id: string): Promise<EmbedToken> {
     const org = await this.organizationRepository.findById(id);
     if (!org) throw new NotFoundException('Organização não encontrada');
 

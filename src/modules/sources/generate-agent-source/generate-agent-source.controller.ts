@@ -5,6 +5,13 @@ import {
   Req,
   Res,
 } from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiForbiddenResponse,
+  ApiOkResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { FastifyReply, FastifyRequest } from 'fastify';
 
 import { GenerateAgentSourceService } from 'src/modules/sources/generate-agent-source/generate-agent-source.service';
@@ -40,6 +47,7 @@ function fieldValue(
   return typeof value === 'string' ? value : undefined;
 }
 
+@ApiTags('sources')
 @Controller('agent')
 export class GenerateAgentSourceController {
   constructor(
@@ -48,6 +56,10 @@ export class GenerateAgentSourceController {
 
   @Post('generate-source')
   @RequirePermissions('agent.manage')
+  @ApiOkResponse()
+  @ApiBearerAuth()
+  @ApiUnauthorizedResponse({ description: 'Token ausente ou inválido' })
+  @ApiForbiddenResponse({ description: 'Permissão insuficiente' })
   async handle(
     @Req() req: FastifyRequest,
     @Res() res: FastifyReply,

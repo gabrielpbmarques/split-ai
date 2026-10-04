@@ -186,6 +186,8 @@ Dono das regras: `02`, `04`, `05`.
 
 Pronto quando: todo controller tem um único handler `handle()`; todo service um único `execute()` tipado; nenhum DTO com string sem `@MaxLength`.
 
+**Status: concluída.** Decisões tomadas: `GET /agent` foi mantido como caso de uso próprio (`list-all-agents`, listagem administrativa com payload completo) em vez de removido, porque `GET /agent/list` devolve outro formato e o front pode depender dos dois; `GET /agent/:id` virou `get-agent` e `PATCH /agent/:id` ficou em `update-agent`; `verify-sms`, `get-embed-script` e `get-embed-page` viraram casos de uso próprios; `EmailService.send` virou `execute` e `sendWithTemplate` (sem consumidor) saiu; `LoadPdfService` ficou só com `execute(buffer)` (a variante por URL não tinha consumidor, e `axios` saiu das dependências); `GenerateTokenService.validateToken` (sem consumidor) saiu. Status HTTP: 201 em `create-attendant-agent`, `create-organization`, `sign-up`, `register-lite`, `create-checkout` e `convert-text-to-speech`; 204 sem corpo em `delete-agent-connection` e `remove-member`. `@MaxLength` com limites por heurística (255 em identificadores e nomes, 2048 em URLs, 10000 em textos longos, 128 em senhas) e `@ArrayMaxSize(100)` (50 em `sites`); mensagens de validação em português por campo ficaram de fora (a mensagem de topo do `ErrorResponse` já é em português; os `details` carregam a mensagem padrão do class-validator). Paginação das listagens ficou para a Fase 5, junto com a projeção nos repositórios. Os três specs placeholders que falhavam desde antes da Fase 0 (`ConvertTextToSpeech`, `Login`, `SignUp`) foram reescritos e passam.
+
 ### Fase 5 — Banco de dados (TypeORM com as regras de `09`)
 
 Dono das regras: `09`, `05`, `06`.

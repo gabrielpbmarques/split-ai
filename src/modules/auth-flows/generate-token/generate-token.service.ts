@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { sign, verify } from 'jsonwebtoken';
+import { sign } from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 
 import { UserEntity } from 'src/infrastructure/database/schema/user.entity';
@@ -57,18 +57,5 @@ export class GenerateTokenService {
       token,
       expiresAt,
     };
-  }
-
-  /**
-   * Validates a JWT token
-   * @param token The token to validate
-   * @returns The decoded token payload if valid
-   */
-  async validateToken(token: string): Promise<any> {
-    try {
-      return verify(token, env.JWT_SECRET);
-    } catch (error: any) {
-      return null;
-    }
   }
 }

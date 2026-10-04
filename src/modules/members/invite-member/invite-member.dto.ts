@@ -4,6 +4,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  MaxLength,
 } from 'class-validator';
 
 import { OrgRole } from 'src/shared/contracts';
@@ -15,6 +16,7 @@ export class InviteMemberDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(255)
   name?: string;
 
   // Owner cannot be assigned via invite; only admin/member.

@@ -5,6 +5,13 @@ import {
   ForbiddenException,
   Res,
 } from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiForbiddenResponse,
+  ApiOkResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { FastifyReply } from 'fastify';
 
 import { AuthenticatedUser } from 'src/auth/authenticated-user';
@@ -13,13 +20,18 @@ import { GetTokenUsageService } from 'src/modules/billing/get-token-usage/get-to
 import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
 import { User as AuthUser } from 'src/shared/decorators/user.decorator';
 
+@ApiTags('billing')
 @Controller('token-usage')
 export class GetTokenUsageController {
   constructor(private readonly getTokenUsageService: GetTokenUsageService) {}
 
   @Get()
   @RequirePermissions('account.access')
-  async execute(
+  @ApiOkResponse()
+  @ApiBearerAuth()
+  @ApiUnauthorizedResponse({ description: 'Token ausente ou inválido' })
+  @ApiForbiddenResponse({ description: 'Permissão insuficiente' })
+  async handle(
     @Query() dto: GetTokenUsageDto,
     @AuthUser() user: AuthenticatedUser,
     @Res() res: FastifyReply,

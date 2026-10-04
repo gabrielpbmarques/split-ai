@@ -1,4 +1,5 @@
 import { Body, Controller, Logger, Post, Res } from '@nestjs/common';
+import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { FastifyReply } from 'fastify';
 
 import { WebhookDto } from 'src/modules/whatsapp/webhook/webhook.dto';
@@ -7,6 +8,7 @@ import { Public } from 'src/shared/decorators/public.decorator';
 
 const TWIML_EMPTY_RESPONSE = '<Response/>';
 
+@ApiTags('whatsapp')
 @Controller('whatsapp')
 export class WebhookController {
   private readonly logger = new Logger(WebhookController.name);
@@ -15,6 +17,7 @@ export class WebhookController {
 
   @Post('webhook')
   @Public()
+  @ApiOkResponse()
   async handle(
     @Res() res: FastifyReply,
     @Body() body: Record<string, string>,

@@ -1,4 +1,11 @@
-import { Body, Controller, Post, Res, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Post, Res } from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiForbiddenResponse,
+  ApiNoContentResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { FastifyReply } from 'fastify';
 
 import { AuthenticatedUser } from 'src/auth/authenticated-user';
@@ -7,6 +14,7 @@ import { DeleteAgentConnectionService } from 'src/modules/agent-connections/dele
 import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
 import { User as AuthUser } from 'src/shared/decorators/user.decorator';
 
+@ApiTags('agent-connections')
 @Controller('agent-connection')
 export class DeleteAgentConnectionController {
   constructor(
@@ -15,15 +23,16 @@ export class DeleteAgentConnectionController {
 
   @Post('delete')
   @RequirePermissions('agent-connection.manage')
+  @ApiNoContentResponse()
+  @ApiBearerAuth()
+  @ApiUnauthorizedResponse({ description: 'Token ausente ou inválido' })
+  @ApiForbiddenResponse({ description: 'Permissão insuficiente' })
   async handle(
     @Res() res: FastifyReply,
-    @Body(new ValidationPipe()) dto: DeleteAgentConnectionDto,
+    @Body() dto: DeleteAgentConnectionDto,
     @AuthUser() user: AuthenticatedUser,
   ): Promise<FastifyReply> {
-    const result = await this.deleteAgentConnectionService.execute(
-      dto.id,
-      user,
-    );
-    return res.status(200).send(result);
+    await this.deleteAgentConnectionService.execute(dto.id, user);
+    return res.status(204).send();
   }
 }

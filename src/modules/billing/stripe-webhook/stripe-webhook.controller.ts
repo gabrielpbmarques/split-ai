@@ -7,18 +7,21 @@ import {
   Req,
   Res,
 } from '@nestjs/common';
+import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { FastifyReply, FastifyRequest } from 'fastify';
 
 import { StripeWebhookService } from 'src/modules/billing/stripe-webhook/stripe-webhook.service';
 import { env } from 'src/shared/config/env';
 import { Public } from 'src/shared/decorators/public.decorator';
 
+@ApiTags('billing')
 @Controller('payment')
 export class StripeWebhookController {
   constructor(private readonly stripeWebhookService: StripeWebhookService) {}
 
   @Post('webhook')
   @Public()
+  @ApiOkResponse()
   async handle(
     @Headers('stripe-signature') signature: string,
     @Req() req: RawBodyRequest<FastifyRequest>,

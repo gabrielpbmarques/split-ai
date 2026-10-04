@@ -59,8 +59,4 @@ describe('GenerateTokenService', () => {
     expect(payload.organization_id).toBeUndefined();
     expect(payload.org_role).toBeUndefined();
   });
-
-  it('returns null for a token signed with another secret', async () => {
-    expect(await service.validateToken('not-a-token')).toBeNull();
-  });
 });

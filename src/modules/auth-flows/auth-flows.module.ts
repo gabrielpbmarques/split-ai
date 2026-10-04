@@ -6,6 +6,7 @@ import { LoginModule } from 'src/modules/auth-flows/login/login.module';
 import { RegisterLiteModule } from 'src/modules/auth-flows/register-lite/register-lite.module';
 import { SendSmsModule } from 'src/modules/auth-flows/send-sms/send-sms.module';
 import { SignUpModule } from 'src/modules/auth-flows/sign-up/sign-up.module';
+import { VerifySmsModule } from 'src/modules/auth-flows/verify-sms/verify-sms.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { SignUpModule } from 'src/modules/auth-flows/sign-up/sign-up.module';
     RegisterLiteModule,
     SendSmsModule,
     SignUpModule,
+    VerifySmsModule,
   ],
   exports: [
     CheckUserRegisteredModule,
@@ -23,6 +25,7 @@ import { SignUpModule } from 'src/modules/auth-flows/sign-up/sign-up.module';
     RegisterLiteModule,
     SendSmsModule,
     SignUpModule,
+    VerifySmsModule,
   ],
 })
 export class AuthFlowsModule {}
