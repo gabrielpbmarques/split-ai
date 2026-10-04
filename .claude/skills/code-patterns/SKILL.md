@@ -1,205 +1,98 @@
 ---
 name: code-patterns
-description: 'Use for controller/service/DTO templates and review: error handling via GlobalExceptionFilter, global ValidationPipe, service composition, Promise.all vs allSettled, handler naming (handle/execute), and the NestJS CLI scaffolding commands.'
+description: 'Use for controller, service and DTO templates in this repo and for reviewing them: handle()/execute(), @Res() FastifyReply, status codes, global ValidationPipe, ErrorResponse, pagination, transactions, Promise.all vs allSettled. The delta over rule 05 of ai-agents-engineering.'
 ---
 
-### Creating a new component (scope)
+Rule `05-controllers-services-dtos.md` (and `04`, `07`) own the pattern. These are the templates already adapted to this repository's names.
 
-```bash
-mkdir <ComponentName>
-cd <ComponentName>
-nest g module <ComponentName> --flat
-```
-
-### Creating a new use case (with endpoint)
-
-```bash
-mkdir <UseCaseName>
-cd <UseCaseName>
-nest g module <UseCaseName> --flat
-nest g controller <UseCaseName> --flat --no-spec
-nest g service <UseCaseName> --flat --no-spec
-```
-
-After scaffolding, adjust the generated files to match the patterns below. The NestJS CLI generates boilerplate that must be adapted.
-
-## Controller Pattern
-
-Each controller belongs to **one use case** and exposes **one endpoint**. A controller NEVER has multiple HTTP handler methods for different operations — each operation is a separate use case with its own controller.
-
-### Standard controller structure
+## Controller
 
 ```typescript
-import {
-  Body,
-  Controller,
-  Post,
-  Res,
-  ValidationPipe,
-} from '@nestjs/common';
-import { FastifyReply } from 'fastify';
-import { AuthGuard } from 'src/auth/auth.guard';
-import { Roles } from 'src/decorators/roles.decorator';
-import { User as AuthUser } from 'src/decorators/user.decorator';
-import { User } from 'src/shared/contracts/models/user.model';
+@ApiTags('agents')
+@Controller('agent')
+export class CreateAgentController {
+  constructor(private readonly createAgentService: CreateAgentService) {}
 
-import { CreateOrderDto } from './create-order.dto';
-import { CreateOrderService } from './create-order.service';
-
-@Controller('order')
-export class CreateOrderController {
-  constructor(private readonly createOrderService: CreateOrderService) {}
-
-  @Post()
-  @RequirePermissions('order.write')
+  @Post('create')
+  @RequirePermissions('agent.write')
+  @ApiCreatedResponse()
+  @ApiBearerAuth()
+  @ApiUnauthorizedResponse({ description: 'Token ausente ou inválido' })
+  @ApiForbiddenResponse({ description: 'Permissão insuficiente' })
   async handle(
-    @Body(new ValidationPipe()) body: CreateOrderDto,
-    @AuthUser() user: User,
+    @Body() dto: CreateAgentDto,
+    @AuthUser() user: AuthenticatedUser,
     @Res() res: FastifyReply,
-  ) {
-    const result = await this.createOrderService.execute(body, user);
+  ): Promise<FastifyReply> {
+    const result = await this.createAgentService.execute(dto, user);
     return res.status(201).send(result);
   }
 }
 ```
 
-### Controller rules
+- Decorator order: HTTP method → `@Public()` / `@RequirePermissions()` → `@RequireActiveOrganization()` → Swagger.
+- `@Controller('<domain-path>')` is the domain path (`agent`, `organization`, `payment`), the method adds the action (`create`, `:id`, `list`).
+- Status: 201 create, 200 read/update with body, 204 no body (`res.status(204).send()`).
+- No try/catch, no business logic. Request-level checks throw Nest exceptions. The only streaming controller (`QuestionController`) hijacks the reply and writes its own `error`/`done` events.
+- Open payloads (Twilio form, multipart) type the body as `Record<string, unknown>` or read `req.body`; the Stripe webhook reads `req.rawBody` (`rawBody: true` in `main.ts`).
+- `user.id` / `user.organization_id` are nullable: `requireUserId(user)` / `requireOrganizationId(user)` when the service needs a string.
 
-1. **Controller name** = scope name in lowercase. The `@Controller('auth')` prefix matches the component, NOT the use case. So `LoginController`, `RegisterDeviceController`, etc all use `@Controller('auth')`.
-2. **One handler method per controller**: Named `handle` (preferred) or `execute`. Never create multiple HTTP method handlers in one controller.
-3. **Always use @Res() with FastifyReply**`@Res()``FastifyReply`: Never use NestJS default response handling.
-4. **Validation is global** (`createValidationPipe()` in `main.ts`): plain `@Body() dto: XDto` / `@Query() dto: XDto` are validated with whitelist + forbidNonWhitelisted + forbidUnknownValues. Every DTO field carries a class-validator decorator; numeric query fields add `@Type(() => Number)`.
-5. **No try/catch.** Exceptions propagate to `GlobalExceptionFilter`, which answers with `ErrorResponse`. Request-level checks throw `BadRequestException` etc.
-6. **The controller delegates ALL logic to the service** and only maps the result to a status code (201 create, 200 read/update with body, 204 no body).
-7. **Use @AuthUser() decorator**`@AuthUser()` (aliased from `User`) to extract the authenticated user when needed.
-8. **Decorator order**: `@HttpMethod()` → `@RequirePermissions(...)` / `@Public()` → `@RequireActiveOrganization()` (if any) → Swagger. Never `@UseGuards`; the guards are global.
-9. **No business logic** in controllers — controllers are thin wrappers that delegate to services.
-
-### Error handling
-
-Nothing in the controller. `GlobalExceptionFilter` (`src/shared/http/exception.filter.ts`, registered as `APP_FILTER`) converts any exception through `buildErrorResponse` (`src/shared/http/error-mapper.ts`) into:
+## Service
 
 ```typescript
-{ category, code, message, status, correlationId, timestamp, path, details? }
-```
-
-`HttpException` → its status (`code = HTTP_<status>`); `ZodError` → 400 `VALIDATION_FAILED`; anything else → 500 `INTERNAL_ERROR` with a generic message in production. Validation failures carry `details: [{ field, message }]`.
-
-## Service Pattern
-
-### Standard service structure
-
-```typescript
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { OrderRepository } from 'src/modules/users/repositories/order.repository';
-
-import { MyDto } from './my.dto';
-
 @Injectable()
-export class MyService {
-  constructor(private readonly orderRepository: OrderRepository) {}
+export class UpdateEmbedSettingsService {
+  constructor(
+    private readonly organizationRepository: OrganizationRepository,
+  ) {}
 
-  async execute(dto: MyDto) {
-    // business logic
+  async execute(id: string, dto: UpdateEmbedSettingsDto): Promise<EmbedSettings> {
+    const organization = await this.organizationRepository.findById(id);
+    if (!organization) throw new NotFoundException('Organização não encontrada');
+
+    const updated = await this.organizationRepository.updateEmbedSettings(id, { ...dto });
+    if (!updated) throw new NotFoundException('Organização não encontrada');
+
+    return pickEmbedSettings(updated);
   }
 }
 ```
 
-### Service rules
+- One public method, `execute`, with an explicit return type (a `Pick<>`/interface in `src/shared/contracts/models/` for subsets).
+- Early return; no catch; exceptions in Portuguese reach `GlobalExceptionFilter` and become `ErrorResponse` (`{ category, code, message, status, correlationId, timestamp, path, details? }`).
+- Ownership: `this.accessScope.ensureCan(user, 'source.write', { organizationId: source.organization_id }, 'Você não tem acesso a esta fonte.')`.
+- Pagination: DTO extends `PaginationDto`; repository returns `PageResult`; `return toPaginatedResponse(page, dto)`.
+- Transaction: `await this.transactionExecutor.run(async (tx) => { await repoA.create(a, tx); await repoB.update(id, b, tx); })`; pre-checks and external effects stay outside.
+- `Promise.all` for independent reads that must all succeed; `Promise.allSettled` only for fire-and-forget side effects.
+- Integration ports by token: `@Inject(VECTOR_STORE) private readonly vectorStore: VectorStoreGateway`.
 
-1. **Main method is always named execute**`execute`: This is the single public method that the controller calls.
-2. **Private helper methods are allowed**: For internal logic decomposition (e.g., `private async checkResourceBelongsToUser()`).
-3. **Use early return** for validation and branching — avoid deep nesting.
-4. **Delegate data processing to repositories**: If the database query can return the data already processed/filtered, prefer that over processing in the service.
-5. **Avoid redundant checks**: Understand the context. If the controller/guard already guarantees a value exists (e.g., authenticated user), don't add an `if (!user)` check in the service.
-6. **Use NestJS exceptions**: `NotFoundException`, `BadRequestException`, `UnauthorizedException`, `ForbiddenException`, `ConflictException`, `InternalServerErrorException`.
-7. **Dependencies injected via constructor** using `private readonly`.
-8. **Infrastructure services use @Inject(TOKEN)**`@Inject(TOKEN)`:
-
-```typescript
-constructor(
-  @Inject(EXTERNAL_SERVICE_TOKEN)
-  private readonly externalService: IExternalService,
-) {}
-```
-
-### Early return example
+## DTO
 
 ```typescript
-async execute(id: string) {
-  const order = await this.orderRepository.findById(id);
-  if (!order) {
-    throw new NotFoundException('Recurso não encontrado');
-  }
-
-  if (order.status === 'completed') {
-    throw new BadRequestException('Não é possível alterar um recurso concluído');
-  }
-
-  // proceed with main logic
-}
-```
-
-### Parallel operations
-
-Use `Promise.all` for independent async operations:
-
-```typescript
-const [inventory, activeSubscription] = await Promise.all([
-  this.inventoryRepository.checkStock(order.itemId),
-  this.subscriptionRepository.findActiveByUserId(user.id),
-]);
-```
-
-Use `Promise.allSettled` for fire-and-forget notifications where partial failure is acceptable:
-
-```typescript
-await Promise.allSettled([
-  this.webSocketGateway.notifyNewEvent(createdEntity),
-  this.emailNotificationService.execute(createdEntity, user),
-  this.analyticsService.trackEvent('entity_created', user.id),
-]);
-```
-
-## DTO Pattern
-
-DTOs use `class-validator` decorators with one class per DTO file.
-
-### Standard DTO structure
-
-```typescript
-import { IsEmail, IsNotEmpty, IsString, IsOptional } from 'class-validator';
-
-export class LoginDto {
-  @IsEmail()
-  @IsNotEmpty()
-  email: string;
-
-  @IsString()
-  @IsNotEmpty()
-  password: string;
-
-  @IsString()
+export class ListSessionsDto extends PaginationDto {
   @IsOptional()
-  deviceFingerprint?: string;
+  @IsString()
+  @MaxLength(255)
+  agent_id?: string;
+
+  @IsOptional()
+  @IsDateString()
+  start_date?: string;
 }
 ```
 
-### DTO rules
+- Every field has a validator or the global pipe strips/rejects it (`whitelist`, `forbidNonWhitelisted`, `forbidUnknownValues`). Strings carry `@MaxLength`, arrays `@ArrayMaxSize` and `{ each: true }` validators, numeric query fields `@Type(() => Number)`.
+- Required fields use `!` (`strictPropertyInitialization`); optional ones `?`.
+- Enums/unions via `@IsIn([...] as const)`; export the tuple when services need the type (`REPORT_SENTIMENTS`).
 
-1. **One DTO class per file** (multiple related DTOs in the same file are acceptable, e.g., `SendMfaDto` + `VerifyMfaDto`).
-2. **Always use class-validator decorators**`class-validator`: `@IsString`, `@IsNotEmpty`, `@IsEmail`, `@IsOptional`, `@IsNumber`, `@IsUUID`, `@IsEnum`, `@IsObject`, `@IsDateString`, `@MinLength`, `@IsIn`, `@IsBoolean`, etc.
-3. `@IsOptional()`**@IsOptional() for optional fields**: Combine with the type decorator.
-4. **Use @Type(() => Number) from class-transformer**`@Type(() => Number)``class-transformer` for query params that need numeric conversion.
-5. **Enums can be defined in the DTO file** when they are specific to that DTO.
-6. **Import shared types from src/shared/contracts**`src/shared/contracts` for reused types.
+## Scaffolding a new use case
 
-## Import Style
+```bash
+mkdir -p src/modules/<domain>/<verb-noun>
+# create <verb-noun>.dto.ts, <verb-noun>.service.ts, <verb-noun>.controller.ts, <verb-noun>.module.ts by hand (the Nest CLI templates don't match these conventions)
+# register the module in imports AND exports of src/modules/<domain>/<domain>.module.ts
+bun run di:verify && bun run di:boot-check
+# add the it(...) blocks to test/<domain>.e2e-spec.ts: happy path, 400, 401, 403, 404
+```
 
-### Import ordering
-
-1. External packages (`@nestjs/*`, `bcryptjs`, `typeorm`, etc.)
-2. Absolute internal imports (`src/...`)
-3. Relative imports (`./`, `../`)
-
-Each group separated by a blank line.
+Follow rule `11` first: answer the 18 questions and present the plan before writing these files.

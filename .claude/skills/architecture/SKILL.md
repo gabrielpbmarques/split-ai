@@ -1,272 +1,95 @@
 ---
 name: architecture
-description: 'Use when scaffolding modules, use cases, controllers, services, DTOs, entities, repositories, or providers, or for questions about project structure, the scope→use-case layout, module imports/exports, and DI patterns. Pairs with the always-on Hard rules in CLAUDE.md.'
+description: 'Use when scaffolding modules, use cases, controllers, services, DTOs, entities, repositories or integration gateways, or for questions about the src/ layout, module imports/exports and DI. This is the split-ai delta over rules 01, 03, 04 and 06 of ai-agents-engineering; the rules themselves are the spec.'
 ---
 
-## Project Root Structure
+The layout, the module discipline and the DI rules are the rules `01-topologia.md`, `03-modulo-nest.md`, `04-anatomia-caso-de-uso.md` and `06-injecao-dependencia.md` in `ai-agents-engineering/docs/backend/rules/`. This skill only maps them onto this repository's names and paths. The always-on `CLAUDE.md` has the tree and the deviations; don't restate them here.
 
-```text
-src/
-  app.module.ts          # Root module — imports TypeOrmModule.forRoot, ComponentsModule, HealthModule
-  main.ts                # Bootstrap — createFastifyAdapter() + global createValidationPipe() + nestjs-pino. No global "api" prefix; routes mount at each @Controller(...) path. See CLAUDE.md "Things that bite".
-  shared/config/env.ts   # Zod-validated frozen env object (only place that reads process.env)
-  auth/                  # Guards (e.g., AuthGuard, RoleGuard, DomainSpecificGuards)
-  components/            # Feature modules organized by scope
-  shared/decorators/     # @Public, @RequirePermissions, @RequireActiveOrganization, @User
-  entities/              # TypeORM entities — barrel exported via index.ts
-  infrastructure/        # External service providers
-  repositories/          # TypeORM repository wrappers — barrel exported via index.ts
-  types/                 # Type definitions — models/ sub-directory, barrel exported via index.ts
-  utils/                 # Pure utility functions to reduce code duplication
-```
+## Where things go
 
-## Module Hierarchy
+| Thing | Path | Module that exports it |
+| --- | --- | --- |
+| Use case (endpoint or auxiliary) | `src/modules/<domain>/<verb-noun>/<verb-noun>.{module,controller,service,dto}.ts` | its own `<VerbNoun>Module` |
+| Domain aggregator | `src/modules/<domain>/<domain>.module.ts` (`imports` = `exports` = use-case modules; nothing else) | imported only by `AppModule` |
+| Repository | `src/modules/<domain>/repositories/<name>.repository.ts` + `<name>.repository.module.ts` | `<Name>RepositoryModule` (`TypeOrmModule.forFeature([XEntity])`, module-local) |
+| Entity | `src/infrastructure/database/schema/<name>.entity.ts`, barrel + `ENTITIES` in `index.ts` | `TypeOrmModule.forRoot` in `AppModule` |
+| Migration | `src/infrastructure/database/migrations/<timestamp>-<name>.ts`, registered in `MIGRATIONS` | CI `migrate` job |
+| Transaction | `TransactionExecutor` | `TransactionExecutorModule` |
+| Ownership check | `AccessScopeService.ensureCan` | `AuthModule` |
+| Cross-domain port | `src/modules/<domain>/contracts/<name>.port.ts` | a `@Global()` contracts module (`AgentRuntimeContractsModule`) |
+| Integration port | `src/infrastructure/integration/<name>.port.ts` | `@Global()` `IntegrationModule` — **no import needed** |
+| Integration adapter | `src/infrastructure/integration/<source>/{<source>.contracts.ts, <source>.mappers.ts, <source>-<port>.gateway.ts}` + `mock/mock-<port>.gateway.ts` | registered in `integration.module.ts` with `select<Port>(live, mock)` |
+| Shared type | `src/shared/contracts/models/<name>.model.ts`, barrel `src/shared/contracts` | — |
+| Pure helper | `src/shared/utils/<name>.ts` (one function per file) | — |
 
-```text
-AppModule
-├── TypeOrmModule.forRoot(...)
-├── ScheduleModule.forRoot()
-├── ComponentsModule            # All feature modules
-└── HealthModule
-```
+## Use-case module recipe
 
-There is **no** catch-all `InfrastructureModule` / `RepositoriesModule`. Each
-repository and each external provider owns a small module of its own, and a use
-case imports only the ones it actually injects.
-
-### ComponentsModule
-
-`components/components.module.ts` imports all scope-level modules (wiring only — no `exports`):
-
-```text
-ComponentsModule
-├── AuthModule
-├── UserModule
-├── ProductModule
-├── OrderModule
-├── NotificationModule
-└── PaymentModule
-```
-
-Each scope module (e.g., `OrderModule`) imports its use case modules. It exists so their controllers register; it declares no `providers`, no `controllers` and **no `exports`**.
-
-## Component Pattern (Scope → Use Cases)
-
-Each directory inside `components/` represents a **scope** (domain area). Inside each scope, sub-directories represent **use cases**.
-
-### Directory naming
-
-- Scope directories: **PascalCase** (e.g., `Order/`, `Auth/`, `Notification/`)
-- Use case directories: **PascalCase** (e.g., `CreateOrder/`, `Login/`, `GenerateToken/`)
-- Files inside use cases: **kebab-case** (e.g., `create-order.service.ts`, `login.dto.ts`)
-
-### Use case that exposes an endpoint
-
-```text
-components/
-  <Scope>/
-    <scope>.module.ts                       # Scope module
-    <UseCase>/
-      <use-case>.module.ts                  # Use case module
-      <use-case>.controller.ts              # REST controller
-      <use-case>.service.ts                 # Business logic
-      <use-case>.dto.ts                     # class-validator DTO
-      <use-case>.service.spec.ts            # Unit tests (optional)
-```
-
-### Use case that is auxiliary (no endpoint)
-
-Some use cases exist only to be consumed by other use cases. They have no controller or DTO.
-
-```text
-components/
-  <Scope>/
-    <UseCase>/
-      <use-case>.module.ts
-      <use-case>.service.ts
-```
-
-Example: `GenerateToken` is an auxiliary use case used by `Login`. The `GenerateTokenModule` is imported inside `LoginModule`.
-
-### Scope module pattern
-
-The scope module is **wiring only** — it imports its use case modules so their
-controllers register, and exports nothing:
+`imports` is derived mechanically: one entry per thing the module's own classes inject, nothing else.
 
 ```typescript
 @Module({
   imports: [
-    CreateOrderModule,
-    ListOrdersModule,
-    GetOrderModule,
-    // ... all use case modules
+    AgentRepositoryModule,
+    AgentInstructionRepositoryModule,
+    TransactionExecutorModule,
+    AuthModule,
   ],
+  controllers: [CreateAgentController],
+  providers: [CreateAgentService],
+  exports: [CreateAgentService],
 })
-export class OrderModule {}
+export class CreateAgentModule {}
 ```
 
-Never add an `exports` array here. A module that wants `CreateOrderService`
-imports `CreateOrderModule` directly — importing `OrderModule` to reach one
-service drags in the whole scope.
+- Register the module in both `imports` and `exports` of `src/modules/<domain>/<domain>.module.ts`, or the route never mounts (no error).
+- A sibling or cross-domain service → import **that use case's module**, never the aggregator.
+- A cycle → a port in `contracts/` (see `AGENT_RESOLVER`, PC-008), never `forwardRef`.
+- Then run `bun run di:verify` (static reachability, understands `@Global()`) and `bun run di:boot-check` (compiles the real Nest container with the `DataSource` stubbed).
 
-### Use case module pattern
+## Repository recipe
 
-Its `imports` array is derived mechanically: list the module that supplies each
-thing the module's own classes inject, and nothing else.
-
-```typescript
-@Module({
-  imports: [
-    OrderRepositoryModule, // CreateOrderService injects OrderRepository
-    GenerateTokenModule, // ... and GenerateTokenService
-  ],
-  controllers: [CreateOrderController], // Only if this use case is an endpoint
-  providers: [CreateOrderService],
-  exports: [CreateOrderService], // Export the service for other modules
-})
-export class CreateOrderModule {}
-```
-
-**Key rules:**
-
-- One repository → its `XRepositoryModule` (`src/modules/users/repositories/<name>.repository.module.ts`).
-- One integration port (`PAYMENTS`, `VECTOR_STORE`, `EMAIL`, …) → **no import**: `src/infrastructure/integration/integration.module.ts` is `@Global()` and publishes every port.
-- One sibling/cross-scope service → that use case's own module (e.g. `GenerateTokenModule`), **never** the scope aggregator.
-- A service that calls `AccessScopeService` imports `AuthModule` (`src/auth/auth.module.ts`), which exports it together with `PrincipalResolverService`.
-- No `forwardRef`: a cycle goes through a port in `modules/<domain>/contracts/` (see `AGENT_RESOLVER`).
-- Cross-scope dependencies are allowed: use case modules can import modules from other scopes.
-- Check your work with `bun run di:verify` (static reachability) and `bun run di:boot-check` (real Nest container, DataSource stubbed).
-
-## Repositories
-
-All repositories live in `src/modules/users/repositories/`. Each wraps a TypeORM `Repository<Entity>`.
-
-### Repository pattern
+Concrete class, named methods only, `tx?: Executor` last on writes, `softDelete` never `delete`:
 
 ```typescript
 @Injectable()
-export class UserRepository {
+export class SourceRepository {
   constructor(
-    @InjectRepository(UserEntity)
-    private userRepository: Repository<UserEntity>,
+    @InjectRepository(SourceEntity)
+    private readonly repository: Repository<SourceEntity>,
   ) {}
 
-  async findById(id: string): Promise<UserEntity | null> {
-    return this.userRepository.findOneBy({ id });
+  private repo(tx?: Executor): Repository<SourceEntity> {
+    return tx ? tx.getRepository(SourceEntity) : this.repository;
   }
-  // ... domain-specific query methods
-}
-```
 
-### Repository modules
+  async listByAgentPaginated<K extends keyof SourceEntity>(
+    agentId: string,
+    page: PageRequest,
+    fields?: readonly K[],
+  ): Promise<PageResult<Pick<SourceEntity, K>>> {
+    const [items, total] = await this.repository.findAndCount({
+      where: { agent_id: agentId },
+      select: fields ? [...fields] : undefined,
+      skip: skipOf(page),
+      take: page.limit,
+      order: { created_at: 'DESC' },
+    });
+    return { items, total };
+  }
 
-Every repository has a sibling module next to it:
-
-```text
-src/modules/users/repositories/
-  order.repository.ts
-  order.repository.module.ts   -> OrderRepositoryModule
-```
-
-```typescript
-@Module({
-  imports: [TypeOrmModule.forFeature([OrderEntity])],
-  providers: [OrderRepository],
-  exports: [OrderRepository],
-})
-export class OrderRepositoryModule {}
-```
-
-`TypeOrmModule.forFeature` is **module-local**: the `Repository<OrderEntity>`
-token only exists inside the module that registered it, so each repository
-module registers its own entity. Repositories inject nothing but TypeORM
-repositories; embeddings and other integrations belong to services.
-
-## Tools scope
-
-LangChain tools available to AI agents follow the same one-use-case-one-module pattern as everything else, but live under a dedicated top-level scope at `src/modules/retrieval/`. Each tool gets its own directory with a single service and a single module — never bundle multiple tools into one service.
-
-### Directory layout
-
-```text
-components/
-  Tools/
-    tools.module.ts                              # Scope module — imports/exports every tool module
-    <ToolName>/
-      <tool-name>-tool.module.ts                 # Tool's NestJS module
-      <tool-name>-tool.service.ts                # Exposes execute(ctx): DynamicStructuredTool<...>
-```
-
-### Tool service pattern
-
-The service is `@Injectable()`, takes any dependencies via constructor (repositories from their `XRepositoryModule`, integration ports from the global `IntegrationModule`, sibling services), and exposes a single `execute(...)` method that returns (or resolves to) a `DynamicStructuredTool`. Its argument carries whatever per-request input the tool needs — e.g. `LoadDatabaseTool.execute({ databaseUrl, readOnly, scope })`, while `LoadVectorSearchTool.execute()` takes none.
-
-```typescript
-@Injectable()
-export class LoadDatabaseToolService {
-  // No constructor deps here; other tools inject repositories/clients via DI.
-  async execute({
-    databaseUrl,
-    readOnly = false,
-    scope,
-  }: {
-    databaseUrl: string;
-    readOnly?: boolean;
-    scope?: { column: string; value: string | number };
-  }): Promise<DynamicStructuredTool<z.ZodObject<{ query: z.ZodString }>>> {
-    return tool(
-      async ({ query }) => {
-        /* sanitize (single statement, deny DELETE/DROP/…, force LIMIT 5),
-           then run against a per-request TypeORM DataSource */
-      },
-      {
-        name: 'execute_sql',
-        description: '...', // pt-BR, tenant-agnostic — schema + REGRAS DE OURO
-        schema: z.object({ query: z.string() }),
-      },
-    );
+  create(data: Partial<SourceEntity>, tx?: Executor): Promise<SourceEntity> {
+    return this.repo(tx).save(this.repo(tx).create(data));
   }
 }
 ```
 
-### How tools are wired into agents
+`update()` payloads need `data as QueryDeepPartialEntity<Entity>` (PC-015).
 
-`ResolveAgentService.loadTools` reads per-tool boolean columns on `AgentEntity` — `parser_schema`, `vector_search_tool`, and `database_tool` — and assembles the toolbelt by invoking each enabled tool's `execute(...)`. For `database_tool`, `maybeLoadDatabaseTool` first checks that the agent's org has the `database_connection` feature enabled and a `database_url` set, then injects `LoadDatabaseToolService.execute({ databaseUrl })`; any missing prerequisite → the tool is silently absent. The `agent_identifier` column is a human-readable label and does **not** gate tools. See the `ai-agent-tools-and-rag` skill / `.claude/rules/agent-tools.md` for the full gate.
+## Tools for agents
 
-`src/modules/retrieval/load-vector-search-tool/` and `src/modules/retrieval/load-database-tool/` are the reference templates for tool-module shape — copy their structure when adding a new tool.
+LangChain tools follow the same one-use-case-one-module shape under `src/modules/retrieval/`: `load-vector-search-tool/` and `load-database-tool/` are the templates. A tool service exposes one `execute(...)` returning an `AgentTool` (`StructuredToolInterface`, from `src/shared/contracts`). `LoadAgentToolsService` assembles the tool belt from the agent flags (`parser_schema`, `vector_search_tool`, `database_tool`) and the enabled `agent_connections`; `MaybeLoadDatabaseToolService` gates `execute_sql` on the organization feature + `database_url`. Details: `ai-agent-tools-and-rag`, `.claude/rules/agent-tools.md`.
 
-## Entities
-
-All TypeORM entities live in `src/infrastructure/database/schema/` and are barrel-exported via `src/infrastructure/database/schema/index.ts`. Entity files use kebab-case: `user.entity.ts`, `order.entity.ts`.
-
-Entities use decorators from `typeorm`: `@Entity`, `@Column`, `@PrimaryGeneratedColumn('uuid')`, etc.
-
-## Types / Models
-
-Type definitions live in `src/shared/contracts/models/`. Each model file defines interfaces/types and is barrel-exported through `src/shared/contracts/models/index.ts` → `src/shared/contracts/index.ts`.
-
-Import types from `src/shared/contracts` (barrel), not from individual model files.
-
-## Infrastructure (External integrations)
-
-Everything that leaves the process lives in `src/infrastructure/integration/`
-(rule `10`): `Fonte externa → gateway → contrato Zod → mapeador → contrato interno → domínio`.
-
-```
-src/infrastructure/integration/
-  integration.module.ts          @Global(); one provider per port, mock or live by env.INTEGRATION_MODE
-  integration.state.ts           IntegrationGateway { name; state(): READY | NOT_CONFIGURED | MOCK }, notConfigured()
-  integration.health.ts          IntegrationHealthIndicator → /health/ready checks.integrations
-  <name>.port.ts                 export const PAYMENTS = Symbol('PAYMENTS'); export interface PaymentsGateway …
-  http-client/                   ResilientClient, CircuitBreaker, backoff, SSRF guard (+ specs)
-  <source>/
-    <source>.contracts.ts        Zod schema with the exact external field names
-    <source>.mappers.ts (+spec)  pure functions external → internal
-    <source>-<port>.gateway.ts   the adapter: reads env, builds the SDK client lazily, implements the port
-  mock/mock-<port>.gateway.ts    in-memory implementation used when INTEGRATION_MODE=mock
-```
-
-### Port + gateway pattern
+## Integration gateway recipe
 
 ```typescript
 export const EMAIL = Symbol('EMAIL');
@@ -290,90 +113,8 @@ export class SendGridEmailGateway implements EmailGateway {
 }
 ```
 
-Registration in `integration.module.ts` picks the implementation once:
+Consumption: `constructor(@Inject(EMAIL) private readonly email: EmailGateway) {}` — no module import. The interface holds only what consumers use; a missing credential is `NOT_CONFIGURED` + 503 on call, never a boot failure; hand-written HTTP goes through `ResilientClient`; external payloads are validated with Zod in `<source>.contracts.ts` and mapped by pure functions in `<source>.mappers.ts` (with a spec) before they reach `src/modules/`. Every port has a mock in `integration/mock/`.
 
-```typescript
-{
-  provide: EMAIL,
-  useFactory: select<EmailGateway>(
-    () => new SendGridEmailGateway(),
-    () => new MockEmailGateway(),
-  ),
-}
-```
+## Auth surface
 
-Consumption in a domain service — no module import needed:
-
-```typescript
-constructor(@Inject(EMAIL) private readonly email: EmailGateway) {}
-```
-
-Rules: the interface holds only what consumers use; a missing credential makes
-`state()` report `NOT_CONFIGURED` and the method throw `ServiceUnavailableException`
-when called (never in the constructor, never at boot); hand-written HTTP goes
-through `ResilientClient`; external payloads are validated with Zod and mapped
-before they reach `src/modules/`.
-
-## Guards
-
-Auth lives in `src/auth/` and is global (two `APP_GUARD`s registered by `AuthModule`):
-
-- `AuthenticationGuard` — reads `@Public()`, parses `Authorization` (`Bearer` or `ApiKey`), delegates to `TokenVerifier`, and sets `request.user` from `PrincipalResolverService`.
-- `AuthorizationGuard` — compares `@RequirePermissions(...)` metadata with `request.user.permissions` (no I/O) and enforces `@RequireActiveOrganization()`.
-- `AccessScopeService` — per-resource check in services: `ensureCan(user, permission, { organizationId })`.
-
-No controller uses `@UseGuards`. Permission keys are the catalog in `src/auth/permissions.ts`.
-
-## Decorators
-
-Custom decorators live in `src/shared/decorators/`:
-
-- `@Public()` — exempts the route from both guards
-- `@RequirePermissions(...keys)` — required permissions (any of the listed; class and method levels are both enforced)
-- `@RequireActiveOrganization()` — rejects users whose organization is inactive
-- `@User(field?)` — Extracts the `AuthenticatedUser` (or a specific field) from the request
-
-## Middleware
-
-Middleware implementations live in `src/middleware/`. The `MiddlewareModule` registers them globally via `consumer.apply(...).forRoutes('*path')`.
-
-## Controllers
-
-- Use Fastify types (`FastifyReply`) for `@Res()`.
-- DTOs are validated by the global pipe; plain `@Body() dto: XDto` is enough.
-- DTOs use `class-validator` decorators (`@IsString`, `@IsNotEmpty`, `@IsEmail`, etc.).
-- Controller method is typically named `handle` for single-action controllers, or uses semantic naming like `login`.
-- Error handling: none in the controller; exceptions reach `GlobalExceptionFilter` and become `ErrorResponse`.
-
-## Services
-
-- Decorated with `@Injectable()`.
-- Main method is named `execute(dto)`.
-- Dependencies injected via constructor (repositories, other services, infrastructure tokens via `@Inject(TOKEN)`).
-
-## Naming Conventions Summary
-
-| Item                 | Naming                  | Example                   |
-| -------------------- | ----------------------- | ------------------------- |
-| Scope directory      | PascalCase              | `Order/`, `Auth/`         |
-| Use case directory   | PascalCase              | `CreateOrder/`, `Login/`  |
-| Files                | kebab-case              | `create-order.service.ts` |
-| Module class         | PascalCase + Module     | `CreateOrderModule`       |
-| Service class        | PascalCase + Service    | `CreateOrderService`      |
-| Controller class     | PascalCase + Controller | `CreateOrderController`   |
-| DTO class            | PascalCase + Dto        | `CreateOrderDto`          |
-| Repository class     | PascalCase + Repository | `UserRepository`          |
-| Entity class         | PascalCase + Entity     | `UserEntity`              |
-| Infrastructure token | UPPER_SNAKE_CASE        | `PAYMENT_GATEWAY_CLIENT`  |
-
-## Rules — NEVER Violate
-
-1. **NEVER import more than the module needs** — the `imports` array is exactly the modules supplying what its own providers/controllers/guards inject.
-2. **NEVER import a scope aggregator to reach one service** — import that use case's module. Aggregators have no `exports`.
-3. **NEVER place business logic in controllers** — controllers delegate to services.
-4. **NEVER skip the scope module** — every use case module must be imported in its scope module, which in turn is imported in `ComponentsModule`, or its route never registers.
-5. **Every use case gets its own module** — even auxiliary ones without endpoints.
-6. **DTOs use class-validator decorators** — never accept raw unvalidated input.
-7. **Services use execute() as the main method name**`execute()`.
-8. **Entity files go in src/infrastructure/database/schema/**`src/infrastructure/database/schema/`, not inside component folders.
-9. **One tool = one module under `src/modules/retrieval/<ToolName>/`** — never bundle multiple tools into one service; never place tool modules outside the Tools scope.
+Two global guards (`AuthenticationGuard` → `AuthorizationGuard`), no `@UseGuards` except `ThrottlerGuard` on SMS. Every handler carries `@Public()` or `@RequirePermissions('<resource>.<action>')` (typed keys from `src/auth/permissions.ts`), chat/conversation routes add `@RequireActiveOrganization()`, and resource ownership is `accessScope.ensureCan(user, permission, { organizationId }, message)` inside the service. Nullable `user.id` / `user.organization_id` go through `requireUserId` / `requireOrganizationId`.

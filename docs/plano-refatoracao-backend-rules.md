@@ -266,6 +266,8 @@ Dono das regras: `11`, `12`, `CLAUDE.md` de `docs/backend`.
 3. Atualizar `.claude/rules/*.md` e `.claude/skills/*` para os caminhos novos; apagar o que repete regra já coberta em `rules/`.
 4. Novo caso de uso passa a seguir `11-fluxo-de-raciocinio-nova-funcionalidade.md` (18 perguntas, plano, ordem de implementação).
 
+**Status: concluída.** `CLAUDE.md` foi reescrito em torno da especificação: aponta para `ai-agents-engineering/docs/backend/rules/` com uma tabela "arquivo da regra → o que ela governa → o que muda aqui", traz a tabela de tradução de nomes (regra em português → identificador em inglês: `@Publico()` → `@Public()`, `garantirPode` → `ensureCan`, `executor-transacao` → `TransactionExecutor`, `colunasCicloDeVida` → colunas declaradas por entidade, conectores → gateways/mocks), a tabela de desvios conscientes (TypeORM, bun, Jest, JWT próprio, inglês, sem prefixo, permissões derivadas, `INTEGRATION_MODE`, `ResilientClient` só em HTTP manual, `isolatedModules` off, `noUncheckedIndexedAccess` off, sem baseline) e só o que é específico do produto: invariantes de auth/paginação/transação/soft delete, integrações, pipeline de IA, feature de banco por organização, testes, "things that bite" e CI. `docs/problemas-conhecidos.md` já existia desde a Fase 1 e fechou com PC-001…PC-018, todos os itens listados neste plano incluídos (`ContextualCompressionRetriever` em `@langchain/classic` e o cast load-bearing em PC-005/PC-012, TDZ do bun em PC-006, cota Voyage em PC-007, `res.hijack()` fora do filtro em PC-003, `forwardRef` resolvido por porta em PC-008, JWT próprio em PC-001). Skills gerais (`architecture`, `code-patterns`, `import-and-naming-conventions`) foram reduzidas ao delta sobre as regras `01`–`06` (tabela "onde fica cada coisa", receitas de módulo/repositório/gateway, templates com os nomes reais, mapa de exceções) em vez de repetir as regras; as skills de IA, `tech-stack` e `eleven-labs` tiveram as referências antigas corrigidas (`config.*` → `env.*`, `AIChat/`/`ArtificialIntelligence/`/`Source/` → `src/modules/<domínio>/`, `synchronize: true`, `forwardRef`, `console.*`, grafo de módulos reescrito com os aggregators e portas atuais, seção de código morto zerada). Governança: `.github/pull_request_template.md` carrega o checklist da Parte 4 da regra `11` adaptado ao repositório, e `CLAUDE.md` exige a regra `11` (18 perguntas + plano antes do código) para toda funcionalidade nova. Não entrou: regra de `@AcaoAuditoria`/`EVENT_PUBLISHER`/`audit_logs`, que a regra `07`/`10` prevê e o produto não tem — registrado na tabela de tradução como "não implementado".
+
 ---
 
 ## 5. Ordem, dependências e esforço
@@ -289,30 +291,32 @@ Total aproximado: 9 a 13 semanas de uma pessoa, ou 5 a 7 semanas com duas pessoa
 
 ## 6. Métricas de pronto
 
-| Métrica | Baseline | Alvo |
-| --- | --- | --- |
-| `process.env` fora de `env.ts` | 7 | 0 |
-| Imports relativos | 593 | 0 |
-| Controllers com `try/catch` | 62 | 2 (streaming, documentados) |
-| Formatos distintos de corpo de erro | 12 | 1 (`ErrorResponse`) |
-| Controllers com `@UseGuards` | 51 | 0 |
-| Rotas sem `@ExigirPermissoes`/`@Publico()` | 66 | 0 |
-| Handlers com `@Body()` sem validação | 13 | 0 |
-| DTOs com string sem `@MaxLength` | 25 | 0 |
-| Controllers com mais de um handler | 3 | 0 |
-| Services com mais de um método público | 6 | 0 |
-| `execute()` sem tipo de retorno | 20 | 0 |
-| Entidades sem `deleted_at` | 22 | 0 (exceto trilhas) |
-| `delete`/`remove` físico em repositório | 5 | 0 (exceto trilhas) |
-| `synchronize: true` | sim | não; migrations versionadas |
-| Chamadas de rede fora de `infrastructure/integration/` | 3 arquivos | 0 |
-| Ciclos com `forwardRef` | 2 | 0 |
-| Dependências sem import | 30+ | 0 |
-| `console.*` | 10 | 0 |
-| `any` | 149 | 0 |
-| Linhas de comentário | 393 | 0 |
-| Rotas de health | 1 | 3 |
-| Testes e2e | 1 placeholder | 1 por caso de uso (66) |
+Medidas em 2026-10-04, após a Fase 9, com `grep` sobre `src/` e `test/`.
+
+| Métrica | Baseline | Alvo | Resultado |
+| --- | --- | --- | --- |
+| `process.env` fora de `env.ts` | 7 | 0 | 0 |
+| Imports relativos | 593 | 0 | 0 (exceto `infrastructure/database/schema/`, permitido) |
+| Controllers com `try/catch` | 62 | 2 (streaming, documentados) | 1 (`QuestionController`, PC-003) |
+| Formatos distintos de corpo de erro | 12 | 1 (`ErrorResponse`) | 1 |
+| Controllers com `@UseGuards` | 51 | 0 | 0 (`ThrottlerGuard` em SMS é rate limiting) |
+| Rotas sem `@RequirePermissions`/`@Public()` | 66 | 0 | 0 |
+| Handlers com `@Body()` sem validação | 13 | 0 | 0 (pipe global; webhooks/multipart leem `req.body` por contrato) |
+| DTOs com string sem `@MaxLength` | 25 | 0 | 0 |
+| Controllers com mais de um handler | 3 | 0 | 0 |
+| Services com mais de um método público | 6 | 0 | 0 |
+| `execute()` sem tipo de retorno | 20 | 0 | 0 |
+| Entidades sem `deleted_at` | 22 | 0 (exceto trilhas) | 2 (`token_usage`, `credit_transactions`) |
+| `delete`/`remove` físico em repositório | 5 | 0 (exceto trilhas) | 0 |
+| `synchronize: true` | sim | não; migrations versionadas | não; 3 migrations (5b aguarda janela) |
+| Chamadas de rede fora de `infrastructure/integration/` | 3 arquivos | 0 | 0 |
+| Ciclos com `forwardRef` | 2 | 0 | 0 |
+| Dependências sem import | 30+ | 0 | 0 (`di:verify` + `di:boot-check` no CI local) |
+| `console.*` | 10 | 0 | 0 (o único `console.warn` é JS de browser dentro do template do widget) |
+| `any` | 149 | 0 | 0 fora de `*.spec.ts` |
+| Linhas de comentário | 393 | 0 | 0 (`lint:comments`) |
+| Rotas de health | 1 | 3 | 3 |
+| Testes e2e | 1 placeholder | 1 por caso de uso (66) | 62 `it(...)` em 13 arquivos, cobrindo os 66 endpoints (vários `it` exercitam mais de um caso de uso do mesmo domínio) |
 
 ---
 

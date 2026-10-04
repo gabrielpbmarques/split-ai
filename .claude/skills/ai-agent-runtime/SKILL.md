@@ -26,10 +26,9 @@ interface ResolvedAgent {
 
 Single public method `execute(agentId, promptVariables?, memorySaver?)`:
 
-1. **Lookup.** `agentRepository.findOne({ where: [{ id: agentId }, { agent_identifier: agentId }] })` — accepts either the UUID or the human-readable identifier in the same field. Throws `'Agent não encontrado'` if neither matches.
+1. **Lookup.** `agentRepository.findByIdOrIdentifierWithOrganization(agentId)` — accepts either the UUID or the human-readable identifier. Throws `NotFoundException('Agente não encontrado')` if neither matches, `ForbiddenException` if the organization is inactive, and `NotFoundException('Agente sem instruções configuradas')` when no instructions row exists.
 2. **Latest instructions.** `agentInstructionRepository.findLatestByAgentId(agent.id)` — instructions are versioned in `agents_instructions`; the latest row wins.
-3. **Parallel load** of chat model and tools via `Promise.all([loadChat(agent), loadTools(agent)])`.
-   - `loadChat` returns `new ChatAnthropic({ model: agent.model || config.aiModel, temperature: agent.temperature ?? 0.4 })`. `temperature` is omitted (left `undefined`) for models matching `MODELS_WITHOUT_SAMPLING_PARAMS` — the adaptive-thinking-only families (prefix-matched: `claude-opus-4-7/4-8`, `claude-sonnet-5`, `claude-fable-5`, `claude-mythos-5`) that reject sampling params with a `400`; otherwise the first LLM call fails. Extend the list as new such models ship.
+3. **Chat model and tools.** `loadChat` asks the `CHAT_MODEL` port: `chatModelFactory.create({ model: agent.model, temperature: agent.temperature })` (`AnthropicChatModelFactory` → `ChatAnthropic` with `env.AI_MODEL` fallback, `ANTHROPIC_BASE_URL`; `FakeListChatModel` in mock mode); then `loadAgentToolsService.execute(agent, connectionContext, scopeCompanyId)`. `temperature` is omitted (left `undefined`) for models matching `MODELS_WITHOUT_SAMPLING_PARAMS` — the adaptive-thinking-only families (prefix-matched: `claude-opus-4-7/4-8`, `claude-sonnet-5`, `claude-fable-5`, `claude-mythos-5`) that reject sampling params with a `400`; otherwise the first LLM call fails. Extend the list as new such models ship.
    - `loadTools` is gated by per-agent flags (see `[[ai-agent-tools-and-rag]]`).
 4. **System prompt.** `buildSystemPromptService.execute(latestInstructions?.instructions, tools, { ...promptVariables, organizationId: agent.organization_id })` — `organizationId` is always merged in, so prompt templates can reference it.
 5. **Checkpointer.** Only created when `agent.with_history` is `true`. Caller can inject an in-memory `MemorySaver`; otherwise `loadCheckpointerService.execute()` returns the singleton `PostgresSaver`.
@@ -55,7 +54,7 @@ export class LoadCheckpointerService implements OnModuleInit {
 }
 ```
 
-- **One shared saver per process** (`static`), built from `config.databaseUrl` and `setup()`-ed once on module init. `setup()` creates the LangGraph checkpoint tables in Postgres if absent.
+- **One shared saver per process** (`static`), built from `env.DATABASE_URL` and `setup()`-ed once on module init. `setup()` creates the LangGraph checkpoint tables in Postgres if absent.
 - The saver is the **same** Supabase Postgres instance as TypeORM. Tables live alongside your entities. Don't accidentally drop or rename them in migrations.
 - Caller-supplied `MemorySaver` (in-memory) is used in places that need transient memory (e.g., one-shot tool invocations) — pass it explicitly to `resolveAgentService.execute(..., memorySaver)`.
 
@@ -74,14 +73,14 @@ const configurable = {
     thread_id: `${agent.organization_id}_${metadata.session_id}`,
   },
   callbacks: [this.tracer], // LangSmith
-  tags: [config.env, agent.id, metadata.organization_id],
-  metadata: { userId, sessionId, environment: config.env },
+  tags: [env.NODE_ENV, agent.id, metadata.organization_id].filter(Boolean),
+  metadata: { userId, sessionId, environment: env.NODE_ENV },
 };
 ```
 
 - **`thread_id` format is `${organization_id}_${session_id}`.** This is what binds a conversation's history together in the checkpointer. Change the format only if you migrate stored threads — otherwise existing sessions detach from their memory.
-- LangSmith tracing is **always on** (constructor: `new LangChainTracer({ projectName: config.langchainProject })`). Make sure `LANGSMITH_*` env vars are set in any new environment.
-- The `as any` on `invokeParams` is intentional — `createAgent`'s inferred input type is overly strict; the runtime accepts `{ messages: BaseMessage[] }`.
+- LangSmith tracing is **always on** (constructor: `new LangChainTracer({ projectName: env.LANGCHAIN_PROJECT })`). Make sure `LANGSMITH_*` env vars are set in any new environment.
+- `invokeParams` is `{ messages: [new HumanMessage(question)] }` and the config is a `RunnableConfig`; no casts since `@langchain/langgraph` was aligned with `langchain@1.x`.
 
 ### Non-stream path (lines 80-101)
 
@@ -124,7 +123,7 @@ Only `finalAnswer` is wired through to chat callers today. The other fields are 
 
 ## Common pitfalls
 
-- **Empty `chat.model`.** `model: (agent.chat as any).model` reads back the model name. If the agent record has `model = null` and `config.aiModel` is unset, the recorded row gets `'unknown'`.
+- **Empty `chat.model`.** `model: (agent.chat as any).model` reads back the model name. If the agent record has `model = null` and `AI_MODEL` is unset, the `CHAT_MODEL` port reports `NOT_CONFIGURED` and `create()` throws 503.
 - **`runnable.stream` returns an `AsyncIterable`, not a `Promise`.** Don't `await` the iterator itself — only the items.
 - **Memory continuity depends on a stable `session_id`.** `createSessionIfNotExists` is responsible for that; if you bypass it, each request gets a fresh thread.
 - **Streaming and `responseFormat` coexist.** The graph still emits a final structured chunk at the end (the `chunk.model.structuredResponse` branch). If you stop using `responseFormat`, the stream handler will yield nothing for the final answer.

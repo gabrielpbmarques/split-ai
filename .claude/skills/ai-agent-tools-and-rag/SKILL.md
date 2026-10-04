@@ -1,6 +1,6 @@
 ---
 name: ai-agent-tools-and-rag
-description: "Use for an agent's LangChain tools and RAG: vector_similarity_search, execute_sql and the LoadDatabaseTool SQL guardrails, the parser tool, pgvector/Supabase similarity search, Spider source ingestion, the documents table, Voyage embeddings, and the rerank-2.5 cross-encoder + relevance threshold. Scope: src/modules/retrieval/ + ArtificialIntelligence/."
+description: "Use for an agent's LangChain tools and RAG: vector_similarity_search, execute_sql and the LoadDatabaseTool SQL guardrails, the parser tool, pgvector/Supabase similarity search, Spider source ingestion, the documents table, Voyage embeddings, and the rerank-2.5 cross-encoder + relevance threshold. Scope: src/modules/retrieval/ + src/infrastructure/integration/{voyage,supabase,customer-database}/."
 ---
 
 ## Three tools an agent can carry
@@ -110,7 +110,7 @@ SupabaseVectorStore.fromExistingIndex(embeddings, {
 
 ```ts
 const retriever = new ContextualCompressionRetriever({
-  baseRetriever: vectorStore.asRetriever({ k: config.vectorSearchCandidateK }),
+  baseRetriever: vectorStore.asRetriever({ k: env.VECTOR_SEARCH_CANDIDATE_K }),
   baseCompressor: this.rerankDocumentsService.execute(),
 });
 
@@ -131,11 +131,11 @@ return retriever.invoke(question);
 
 1. Empty input → `[]`, without calling the API.
 2. `rerank(query, documents.map((d) => d.pageContent))` → Voyage `POST /v1/rerank`; results arrive sorted by descending relevance, so filter-then-slice preserves the ranking.
-3. Keep `relevanceScore >= config.vectorSearchMinScore` (default **0.8**), cap at `config.vectorSearchMaxResults` (default 10), stamp `metadata.relevance_score`.
+3. Keep `relevanceScore >= env.VECTOR_SEARCH_MIN_SCORE` (default **0.8**), cap at `env.VECTOR_SEARCH_MAX_RESULTS` (default 10), stamp `metadata.relevance_score`.
 4. Nothing clears the bar → `logger.warn` with the best score seen, return `[]`.
 
 - **Why the threshold lives on the rerank score and not on the cosine score.** `match_documents` already returns rows ordered by `embedding <=> query_embedding`, so filtering on that same similarity adds no signal the ordering did not already carry — and a bi-encoder's scale is not comparable across queries. The cross-encoder scores query and document _together_, so a fixed cutoff is meaningful. Measured against pt-BR content: direct answers 0.87–0.96, partial matches ~0.76, related-but-wrong ~0.49, off-topic 0.20–0.34.
-- Tuning is **env-only** (`VECTOR_SEARCH_MIN_SCORE`, `VECTOR_SEARCH_MAX_RESULTS`, `VECTOR_SEARCH_CANDIDATE_K`) and deliberately **not** a column on `agents` — `synchronize: true` would alter the live schema on boot.
+- Tuning is **env-only** (`VECTOR_SEARCH_MIN_SCORE`, `VECTOR_SEARCH_MAX_RESULTS`, `VECTOR_SEARCH_CANDIDATE_K`) and deliberately **not** a column on `agents` — a per-agent knob would need a migration and a UI; tune the env first.
 - The reranker consumes the same Voyage quota as the embeddings, so a search now costs **two** Voyage calls instead of one.
 
 ## Site ingestion — src/modules/agents/load-agent-sites/load-agent-sites.service.ts

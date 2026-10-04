@@ -1,159 +1,45 @@
 ---
 name: import-and-naming-conventions
-description: 'Use for imports (barrel vs direct), file/class/method naming and suffixes, casing conventions, choosing the right NestJS exception, organizing src/shared/utils functions, and Conventional Commit formatting.'
+description: 'Use for imports (absolute from src/, barrel vs direct, import type), file/class/method naming and suffixes, casing, picking the Nest exception, organizing src/shared/utils, and Conventional Commits. The delta over rule 02 of ai-agents-engineering.'
 ---
 
-### Import conventions
+Rule `02-convencoes-fundamentais.md` owns the conventions; this is how they look in this repository.
 
-- **Repositories**: Import from `src/modules/users/repositories/<name>.repository` (specific files) — NOT from the barrel `src/modules/users/repositories/index.ts` in services.
-- **Entities**: Import from `src/infrastructure/database/schema` (barrel) or specific entity files.
-- **Types/Models**: Import from `src/shared/contracts` (barrel) or `src/shared/contracts/models/<name>.model`.
-- **Integration ports**: Import token + interface from `src/infrastructure/integration/<name>.port` (`PAYMENTS` / `PaymentsGateway`, `VECTOR_STORE` / `VectorStoreGateway`, …).
-- **Type-only imports use `import type`** (or inline `import { X, type Y }`), enforced by `@typescript-eslint/consistent-type-imports` + `no-import-type-side-effects`. Exception the rule handles itself: a class injected through a decorated constructor (`constructor(private readonly repo: UserRepository)`) must stay a value import because `emitDecoratorMetadata` needs the runtime reference — never hand-write `import type` for those (PC-014).
-- **Decorators**: Import `User` as `AuthUser` in controllers to avoid conflict with the `User` type:
+## Imports
 
-```typescript
-import { User as AuthUser } from 'src/decorators/user.decorator';
-import { User } from 'src/shared/contracts/models/user.model';
-```
+- Absolute from `src/` everywhere (`import { X } from 'src/modules/...'`); `./` and `../` are lint errors outside `src/infrastructure/database/schema/`.
+- Order is enforced by `import/order`: builtin → external → `src/…`, alphabetized, blank line between groups. `bun run lint:fix` sorts them.
+- Type-only imports use `import type` or inline `type` (`consistent-type-imports` + `no-import-type-side-effects`). The rule itself keeps a value import for a class injected through a decorated constructor; never hand-write `import type` on those (PC-014).
+- Repositories from their file: `src/modules/<domain>/repositories/<name>.repository` (no barrel). Entities from `src/infrastructure/database/schema` (barrel) or the entity file. Shared types from `src/shared/contracts` (barrel). Integration ports from `src/infrastructure/integration/<name>.port` (token + interface). `env` from `src/shared/config/env`.
+- `@User` is imported as `AuthUser` in controllers (`import { User as AuthUser } from 'src/shared/decorators/user.decorator'`) and the parameter is typed `AuthenticatedUser` from `src/auth/authenticated-user`.
 
-- **Use absolute paths** (`src/...`) for cross-module imports, **relative paths** (`./`, `../`) for same-module imports.
+## Names
 
-## Naming Conventions
+| Item | Form | Example |
+| --- | --- | --- |
+| Folder | kebab-case, use case = `<verb>-<noun>` | `src/modules/agents/create-agent/` |
+| File | kebab-case + suffix | `create-agent.service.ts`, `agent.repository.module.ts`, `stripe-payments.gateway.ts`, `stripe.contracts.ts`, `stripe.mappers.ts`, `payments.port.ts`, `sql-guard.ts` |
+| Class | PascalCase + suffix | `CreateAgentService`, `CreateAgentController`, `CreateAgentDto`, `CreateAgentModule`, `AgentRepository`, `AgentEntity`, `StripePaymentsGateway` |
+| Port token | UPPER_SNAKE_CASE `Symbol` | `PAYMENTS`, `VECTOR_STORE`, `AGENT_RESOLVER` |
+| Port interface | PascalCase, suffix by role | `PaymentsGateway`, `ChatModelFactory`, `SiteCrawler`, `AgentResolver` |
+| Permission | `<resource>.<action>` | `agent.write`, `member.manage` |
+| Column / DTO field mapping a column | snake_case | `organization_id`, `chat_embed_token` |
+| Variable / method | camelCase | `requireOrganizationId` |
+| Controller handler / service method | `handle` / `execute` | always |
+| Repository methods | named by intent | `findByIdOrIdentifierWithOrganization`, `listSummariesPaginated`, `countByOrganization`, `softDelete` |
+| Migration file | `<timestamp>-<kebab-name>.ts`, class `<PascalName><timestamp>` | `1759600000000-add-lifecycle-columns.ts` |
+| Spec | next to the file, `.spec.ts`; e2e `test/<domain>.e2e-spec.ts` | `sql-guard.spec.ts`, `test/agents.e2e-spec.ts` |
 
-### Files
+Identifiers are English; user-facing strings (exceptions, Swagger descriptions, prompt text) are Portuguese.
 
-All files use **kebab-case**: `create-order.service.ts`, `login.dto.ts`, `user.repository.ts`.
+## Exceptions
 
-File suffixes:
+`BadRequestException` (400, format/business rule), `UnauthorizedException` (401, only in auth), `ForbiddenException` (403, permission/scope/quota), `NotFoundException` (404), `ConflictException` (409, duplicates), `ServiceUnavailableException` (503, integration `NOT_CONFIGURED`), `BadGatewayException` (502, upstream answered outside its contract). Thrown at the top of `execute`, never caught in services or controllers.
 
-- `.module.ts` — NestJS module
-- `.controller.ts` — REST controller
-- `.service.ts` — Business logic service
-- `.dto.ts` — Data Transfer Object
-- `.entity.ts` — TypeORM entity
-- `.repository.ts` — Repository wrapper
-- `.gateway.ts` — WebSocket gateway
-- `.guard.ts` — NestJS guard
-- `.middleware.ts` — NestJS middleware
-- `.provider.ts` — Infrastructure provider
-- `.model.ts` — Type/interface definition
-- `.decorator.ts` — Custom decorator
-- `.spec.ts` — Unit test
+## Utils
 
-### Classes
+`src/shared/utils/<name>.ts`: one pure exported function per file, named after the function, no classes, no I/O. A util that needs `env` or a repository is a service, not a util.
 
-All classes use **PascalCase** with a descriptive suffix:
+## Commits
 
-- `CreateOrderService`, `LoginController`, `UserRepository`, `OrderEntity`
-
-### Variables and methods
-
-- **camelCase** for all variables and method names.
-- **snake_case** for database column names and DTO properties that map to database fields (e.g., `user_id`, `device_fingerprint`, `created_at`).
-- **UPPER_SNAKE_CASE** for injection tokens and constants (e.g., `PAYMENT_GATEWAY_CLIENT`, `EMAIL_SERVICE`).
-
-### Method naming
-
-| Context                  | Name                                               | Notes                                               |
-| ------------------------ | -------------------------------------------------- | --------------------------------------------------- |
-| Service main method      | `execute`                                          | Always                                              |
-| Controller handler       | `handle`                                           | Preferred, `execute` also acceptable                |
-| Private helper methods   | Descriptive camelCase                              | e.g., `checkResourceBelongsToUser`, `formatPayload` |
-| Repository query methods | `findBy*`, `findAll`, `create`, `update`, `delete` | Domain-oriented naming                              |
-
-## Utility Functions
-
-Utilities in `src/shared/utils/` are **pure exported functions** (not classes, not injectable):
-
-```typescript
-export function formatCreatedAt(createdAt: Date): string {
-  // ...
-}
-```
-
-Or as arrow functions:
-
-```typescript
-export const cleanPhoneNumber = (phone: string): string => {
-  // ...
-};
-```
-
-Rules:
-
-- One utility per file, named after the function.
-- No classes — just plain exported functions.
-- Purpose: reduce code duplication across services.
-
-## Error Handling Philosophy
-
-1. **Use NestJS built-in exceptions** — they carry the correct HTTP status:
-   - `BadRequestException` (400)
-   - `UnauthorizedException` (401)
-   - `ForbiddenException` (403)
-   - `NotFoundException` (404)
-   - `ConflictException` (409)
-   - `InternalServerErrorException` (500)
-
-2. **Error messages in the project's default language** (e.g., Portuguese) for user-facing messages (e.g., `'Credenciais inválidas'`, `'Recurso não encontrado'`).
-3. **Early return on errors** — validate and throw at the top of the method, then proceed with the happy path.
-4. **Don't catch exceptions in services** — let them bubble up to the controller's try/catch.
-
-## Code Style Principles
-
-1. **Avoid redundancy**: Don't check for conditions that are guaranteed by the caller/guard chain. If `AuthGuard` guarantees `user` exists on the request, don't add `if (!user)` in the service.
-2. **Lean services**: Push data processing into repository queries whenever possible. Prefer a single optimized query over fetching data and processing it in TypeScript.
-3. **Early return over nesting**: Validate preconditions at the top and return/throw early to keep the main logic flat.
-4. **Prefer Promise.all/Promise.allSettled**`Promise.all``Promise.allSettled` for independent async operations instead of sequential awaits.
-5. `readonly`**readonly on all constructor dependencies**: Always use `private readonly` for injected dependencies.
-6. **No unnecessary comments**: Code should be self-explanatory. Comments are reserved for non-obvious business rules or workarounds.
-7. **TypeScript strict-ish**: The project uses `strictNullChecks: false` and `noImplicitAny: false`, but write type-safe code where practical.
-
-## Infrastructure Service Injection
-
-When a service needs an external provider:
-
-```typescript
-import { Inject } from '@nestjs/common';
-import { EMAIL, EmailGateway } from 'src/infrastructure/integration/email.port';
-
-@Injectable()
-export class SendNotificationService {
-  constructor(@Inject(EMAIL) private readonly email: EmailGateway) {}
-}
-```
-
-- Use the **port token** (`EMAIL`) with `@Inject()` and the **port interface** (`EmailGateway`) for typing.
-- The module imports **nothing** for it: `src/infrastructure/integration/integration.module.ts` is `@Global()` and publishes every port, choosing the live gateway or the mock by `INTEGRATION_MODE`.
-- Never import an SDK (`stripe`, `twilio`, `@supabase/supabase-js`, `@langchain/anthropic`, …), `fetch` or `axios` under `src/modules/` — add a gateway in `src/infrastructure/integration/<source>/` instead.
-- Same for repositories: `src/modules/users/repositories/<name>.repository.module.ts` exports exactly one repository; import the ones the service injects and no others.
-
-## Commit Convention
-
-The project uses **Conventional Commits** enforced by `commitlint`:
-
-```
-<type>: <description>
-```
-
-Allowed types: `build`, `chore`, `ci`, `docs`, `feat`, `fix`, `perf`, `refactor`, `revert`, `style`, `test`.
-
-## Linting and Formatting
-
-- **ESLint** + **Prettier** enforced via `lint-staged` on pre-commit.
-- Prettier formats all `.ts`, `.js`, `.json`, `.md`, `.yml` files.
-- Spec files (`*.spec.ts`) are excluded from ESLint in pre-commit.
-
-## Rules — NEVER Violate
-
-1. **One endpoint per controller** — never add multiple HTTP handlers to a single controller.
-2. **Service main method is execute**`execute` — never use other names for the primary public method.
-3. **Controller handler is `handle`** — the only public method of a controller; the service's only public method is `execute`.
-4. **Always use @Res() with FastifyReply**`@Res()``FastifyReply` — never rely on NestJS default response handling.
-5. **Always validate with ValidationPipe**`ValidationPipe` — never accept unvalidated request bodies.
-6. **Always use early return** — validate and throw at the top, keep the happy path flat.
-7. **No redundant safety checks** — trust the guard/decorator chain.
-8. **No business logic in controllers** — controllers only call `service.execute()` and format the HTTP response.
-9. **Use private readonly for all injected dependencies**`private readonly`.
-10. **Error messages in the project's default language** for user-facing responses.
+Conventional Commits enforced by commitlint: `<type>: <subject>` with `build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test`, lowercase subject, no trailing period, blank line before the body.

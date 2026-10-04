@@ -12,18 +12,18 @@ You are the **Tech Stack Agent** for the NestJS backend. You hold the technical 
 | Runtime    | Node.js + TypeScript                | Application runtime                        |
 | Framework  | NestJS (Fastify adapter)            | HTTP framework with DI                     |
 | ORM        | TypeORM                             | Database access and entity management      |
-| Database   | PostgreSQL (+ PostGIS)              | Primary data store with geospatial queries |
-| Validation | class-validator + class-transformer | DTO validation                             |
-| Auth       | JWT (`@nestjs/jwt`)                 | Token-based authentication                 |
-| Scheduling | `@nestjs/schedule`                  | Cron jobs and periodic tasks               |
-| Realtime   | Socket.IO (`@nestjs/websockets`)    | WebSocket communication                    |
+| Database   | PostgreSQL on Supabase              | Primary data store (TypeORM, migrations)   |
+| Validation | class-validator + class-transformer | DTO validation (global pipe)               |
+| Auth       | `jsonwebtoken` HS256 + API keys     | Self-issued JWT, `api_keys`, embed token   |
+| Logging    | `nestjs-pino`                       | Structured logs with `x-request-id`        |
+| Env        | Zod (`src/shared/config/env.ts`)    | Validated, frozen configuration            |
 
 ## Database — PostgreSQL (TypeORM)
 
-- **Connection**: Configured directly in `AppModule` via `TypeOrmModule.forRoot()` with environment variables (`DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`, `DATABASE_NAME`).
-- **PostGIS**: Used for geospatial queries (`ST_DWithin`, `ST_Distance`, `ST_MakePoint`) — finding nearby drivers, stores, or delivery zones within a radius.
-- **Entities**: Auto-loaded from `src/infrastructure/database/schema/` via `entities: [__dirname + '/**/*.entity{.ts,.js}']`.
-- **Synchronize**: Enabled (`synchronize: true` for dev, false for prod) — schema auto-syncs with entities.
+- **Connection**: `TypeOrmModule.forRoot()` in `AppModule` with `env.DATABASE_URL` and the `pg` pool options from `DATABASE_POOL_MIN/MAX`, `DATABASE_STATEMENT_TIMEOUT_MS`, `DATABASE_CONNECTION_TIMEOUT_MS`.
+- **Entities**: the explicit `ENTITIES` array from `src/infrastructure/database/schema/index.ts` (no filesystem glob).
+- **Schema**: `synchronize: false`; `MIGRATIONS` from `src/infrastructure/database/migrations/` run by the CI `migrate` job (`bun run db:migrate`), never at boot. `/health/startup` answers 503 while a migration is pending.
+- **Soft delete** on every table except `token_usage` and `credit_transactions`; partial unique indexes (`WHERE "deleted_at" IS NULL`).
 
 ## Google Text-to-Speech — Voice Generation
 
@@ -122,7 +122,7 @@ Env vars:
 
 | Variable                    | Default      | Description                                                                                                             |
 | --------------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------- |
-| `VOYAGEAI_API_KEY`          | —            | Shared by both providers. Read directly from env by `VoyageEmbeddings`; read via `config.voyageApiKey` by the reranker. |
+| `VOYAGEAI_API_KEY`          | —            | Shared by both adapters: passed to `VoyageEmbeddings` by the factory and used as bearer by the reranker's `ResilientClient`. |
 | `EMBEDDING_MODEL`           | —            | `voyage-3-large`                                                                                                        |
 | `RERANK_MODEL`              | `rerank-2.5` | Cross-encoder model                                                                                                     |
 | `VECTOR_SEARCH_CANDIDATE_K` | `50`         | Dense candidates fetched before reranking (recall ceiling)                                                              |

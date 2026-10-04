@@ -5,7 +5,7 @@ description: 'Use for agent CRUD and configuration: create/update/list/delete ag
 
 ## Persistence shape
 
-Two tables, both managed by TypeORM with `synchronize: true` (so entity changes alter prod schema — see top-level `CLAUDE.md`).
+Two tables, both managed by TypeORM entities + migrations (`synchronize: false`; see `CLAUDE.md` → Things that bite).
 
 **`agents`** (`src/infrastructure/database/schema/agent.entity.ts`)
 
@@ -14,7 +14,7 @@ Two tables, both managed by TypeORM with `synchronize: true` (so entity changes 
 | `id`                                | uuid                  | PK                                            |
 | `name`                              | text not null         |                                               |
 | `agent_identifier`                  | text nullable         | human-readable handle, used as alt lookup     |
-| `model`                             | text nullable         | falls back to `config.aiModel`                |
+| `model`                             | text nullable         | falls back to `env.AI_MODEL`                  |
 | `temperature`                       | float default 0.4     |                                               |
 | `with_history`                      | bool default true     | gates checkpointer                            |
 | `parser_schema`                     | jsonb nullable        | drives parser tool                            |
@@ -55,7 +55,7 @@ Both insert into `agents` + `agents_instructions`. The differences matter:
 
 |                                        | `CreateAgentService`                                                  | `CreateAttendantAgentService`                                         |
 | -------------------------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| Model default                          | `'claude-haiku-4-5-20251001'` (hard-coded)                            | `null` (falls back to `config.aiModel` at runtime)                    |
+| Model default                          | `null` (falls back to `env.AI_MODEL` at runtime)                      | `null` (falls back to `env.AI_MODEL` at runtime)                      |
 | `database_tool` / `vector_search_tool` | not set explicitly → DB defaults apply (`true`)                       | takes from DTO, defaults `false`                                      |
 | `organization_id`                      | admin → `null`, others → `user.organization_id` (no override allowed) | admin → `dto.organizationId ?? null`, others → `user.organization_id` |
 | Instructions                           | raw DTO `instructions`                                                | merged with hard-coded defaults (see below)                           |
