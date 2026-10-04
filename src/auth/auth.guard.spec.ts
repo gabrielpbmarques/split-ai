@@ -7,8 +7,9 @@ import { Reflector } from '@nestjs/core';
 import { sign } from 'jsonwebtoken';
 import { AuthGuard, IS_PUBLIC_KEY, verifyJwt } from 'src/auth/auth.guard';
 import { ROLES_KEY } from 'src/decorators/roles.decorator';
+import { env } from 'src/shared/config/env';
 
-const TEST_SECRET = 'test-secret';
+const TEST_SECRET = env.JWT_SECRET;
 
 function signToken(payload: Record<string, any>, expiresIn = '1h'): string {
   return sign(payload, TEST_SECRET, { expiresIn } as any);
@@ -21,7 +22,6 @@ describe('AuthGuard', () => {
   let reflector: Reflector;
 
   beforeEach(() => {
-    process.env.JWT_SECRET = TEST_SECRET;
     reflector = new Reflector();
     guard = new AuthGuard(reflector);
     mockRequest = { headers: {}, url: '' };

@@ -1,12 +1,12 @@
 import * as Sentry from '@sentry/node';
-import { config } from 'src/config';
+import { env } from 'src/shared/config/env';
 
 export function initSentryIo(): typeof Sentry {
   Sentry.init({
-    dsn: config.sentryDsn,
+    dsn: env.SENTRY_DSN,
     integrations: [new Sentry.Integrations.Http({ tracing: true })],
     tracesSampleRate: 1.0,
-    environment: config.env,
+    environment: env.NODE_ENV,
   });
 
   return Sentry;

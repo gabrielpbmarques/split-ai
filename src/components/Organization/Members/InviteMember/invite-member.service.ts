@@ -4,8 +4,8 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { EmailService } from 'src/components/Email/email.service';
-import { config } from 'src/config';
 import { OrganizationRepository, UserRepository } from 'src/repositories';
+import { env } from 'src/shared/config/env';
 import { generateInviteToken } from 'src/utils/inviteToken';
 
 import { InviteMemberDto } from './invite-member.dto';
@@ -73,7 +73,7 @@ export class InviteMemberService {
     try {
       await this.emailService.send({
         to: email,
-        from: config.emailDefaultFrom,
+        from: env.SENDGRID_EMAIL_DEFAULT_FROM,
         subject: 'Você foi convidado(a) para uma organização',
         text: `Você foi convidado(a). Use o token de convite para definir sua senha: ${token}`,
       });

@@ -9,7 +9,7 @@ description: 'Use when scaffolding modules, use cases, controllers, services, DT
 src/
   app.module.ts          # Root module — imports TypeOrmModule.forRoot, ComponentsModule, HealthModule
   main.ts                # Bootstrap — Fastify adapter. NOTE: no global ValidationPipe and no global "api" prefix; see CLAUDE.md "Things that bite". Validation is per-handler (@Body(new ValidationPipe())); routes mount at each @Controller(...) path.
-  config.ts              # Plain object reading process.env (not @nestjs/config registerAs)
+  shared/config/env.ts   # Zod-validated frozen env object (only place that reads process.env)
   auth/                  # Guards (e.g., AuthGuard, RoleGuard, DomainSpecificGuards)
   components/            # Feature modules organized by scope
   decorators/            # Custom decorators (@Roles, @User)

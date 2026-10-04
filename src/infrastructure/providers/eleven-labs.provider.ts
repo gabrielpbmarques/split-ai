@@ -1,7 +1,6 @@
 import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js';
 import { Provider } from '@nestjs/common';
-
-import { config } from '../../config';
+import { env } from 'src/shared/config/env';
 
 // ElevenLabs voice provider. Follows the twilio/sendgrid "Shape B" convention:
 // a raw client token (ELEVEN_LABS_CLIENT) plus a method-bearing wrapper token
@@ -100,7 +99,7 @@ class ElevenLabsService implements IElevenLabsService {
     options: TextToSpeechOptions = {},
   ): Promise<Uint8Array> {
     const audioStream = await this.client.textToSpeech.convert(
-      options.voiceId || config.elevenLabsVoiceId,
+      options.voiceId || env.ELEVENLABS_VOICE_ID,
       this.buildTextToSpeechRequest(
         text,
         options,
@@ -115,7 +114,7 @@ class ElevenLabsService implements IElevenLabsService {
     options: TextToSpeechOptions = {},
   ): Promise<TextToSpeechAudioStream> {
     return this.client.textToSpeech.stream(
-      options.voiceId || config.elevenLabsVoiceId,
+      options.voiceId || env.ELEVENLABS_VOICE_ID,
       this.buildTextToSpeechRequest(
         text,
         options,
@@ -129,7 +128,7 @@ class ElevenLabsService implements IElevenLabsService {
   ): Promise<SpeechToTextResult> {
     return this.client.speechToText.convert({
       file,
-      modelId: options.modelId || config.elevenLabsSttModelId,
+      modelId: options.modelId || env.ELEVENLABS_STT_MODEL_ID,
       ...(options.languageCode ? { languageCode: options.languageCode } : {}),
       ...(options.diarize !== undefined ? { diarize: options.diarize } : {}),
       ...(options.tagAudioEvents !== undefined
@@ -147,8 +146,8 @@ class ElevenLabsService implements IElevenLabsService {
   ): Record<string, unknown> {
     return {
       text,
-      modelId: options.modelId || config.elevenLabsModelId,
-      outputFormat: options.outputFormat || config.elevenLabsOutputFormat,
+      modelId: options.modelId || env.ELEVENLABS_MODEL_ID,
+      outputFormat: options.outputFormat || env.ELEVENLABS_OUTPUT_FORMAT,
       ...(options.languageCode ? { languageCode: options.languageCode } : {}),
       ...(options.voiceSettings
         ? { voiceSettings: options.voiceSettings }
@@ -161,10 +160,10 @@ export const ElevenLabsProvider: Provider[] = [
   {
     provide: ELEVEN_LABS_CLIENT,
     useFactory: (): ElevenLabsClient => {
-      if (!config.elevenLabsApiKey) {
+      if (!env.ELEVENLABS_API_KEY) {
         throw new Error('ElevenLabs API key must be provided');
       }
-      return new ElevenLabsClient({ apiKey: config.elevenLabsApiKey });
+      return new ElevenLabsClient({ apiKey: env.ELEVENLABS_API_KEY });
     },
   },
   {

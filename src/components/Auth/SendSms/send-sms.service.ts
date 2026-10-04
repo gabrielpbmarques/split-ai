@@ -3,6 +3,7 @@ import {
   BadRequestException,
   InternalServerErrorException,
   Inject,
+  Logger,
 } from '@nestjs/common';
 import { UserEntity } from 'src/entities/user.entity';
 import {
@@ -17,6 +18,8 @@ import { SendSmsDto, VerifySmsDto } from './send-sms.dto';
 
 @Injectable()
 export class SendSmsService {
+  private readonly logger = new Logger(SendSmsService.name);
+
   constructor(
     @Inject(TWILIO_SERVICE)
     private readonly twilioService: ITwilioService,
@@ -66,7 +69,7 @@ export class SendSmsService {
     await this.twilioService
       .sendSmsMessage(cleanPhone, verificationCode)
       .catch((error) => {
-        console.log(error);
+        this.logger.error('Falha ao enviar SMS', error);
         throw new InternalServerErrorException('Falha ao enviar SMS', error);
       });
 

@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { config } from 'src/config';
+import { env } from 'src/shared/config/env';
 
 @Injectable()
 export class GetStripePublicKeyService {
   async execute() {
-    return { publicKey: config.stripePublishableKey };
+    return { publicKey: env.STRIPE_PUBLISHABLE_KEY };
   }
 }

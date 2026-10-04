@@ -1,6 +1,6 @@
 import { VoyageEmbeddings } from '@langchain/community/embeddings/voyage';
 import { Provider } from '@nestjs/common';
-import { config } from 'src/config';
+import { env } from 'src/shared/config/env';
 
 export const VOYAGE_EMBEDDINGS = 'VOYAGE_EMBEDDINGS';
 
@@ -10,12 +10,12 @@ export const VoyageEmbeddingsProvider: Provider[] = [
   {
     provide: VOYAGE_EMBEDDINGS,
     useFactory: (): VoyageEmbeddings => {
-      if (!config.embeddingModel) {
+      if (!env.EMBEDDING_MODEL) {
         throw new Error('Embedding model must be provided');
       }
 
       return new VoyageEmbeddings({
-        modelName: config.embeddingModel,
+        modelName: env.EMBEDDING_MODEL,
         outputDimension: DEFAULT_OUTPUT_DIMENSION,
       });
     },

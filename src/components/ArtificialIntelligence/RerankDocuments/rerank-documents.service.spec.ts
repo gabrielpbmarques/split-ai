@@ -1,10 +1,14 @@
 import { Document } from '@langchain/core/documents';
 import { Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { config } from 'src/config';
 import { VOYAGE_RERANK_SERVICE } from 'src/infrastructure/providers/voyage-rerank.provider';
+import { env } from 'src/shared/config/env';
 
 import { RerankDocumentsService } from './rerank-documents.service';
+
+jest.mock('src/shared/config/env', () => ({
+  env: { VECTOR_SEARCH_MIN_SCORE: 0.8, VECTOR_SEARCH_MAX_RESULTS: 10 },
+}));
 
 describe('RerankDocumentsService', () => {
   let service: RerankDocumentsService;
@@ -26,8 +30,8 @@ describe('RerankDocumentsService', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
 
-    config.vectorSearchMinScore = 0.8;
-    config.vectorSearchMaxResults = 10;
+    env.VECTOR_SEARCH_MIN_SCORE = 0.8;
+    env.VECTOR_SEARCH_MAX_RESULTS = 10;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -83,7 +87,7 @@ describe('RerankDocumentsService', () => {
   });
 
   it('caps the result at vectorSearchMaxResults', async () => {
-    config.vectorSearchMaxResults = 2;
+    env.VECTOR_SEARCH_MAX_RESULTS = 2;
 
     const documents = buildDocuments(5);
 

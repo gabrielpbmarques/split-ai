@@ -1,5 +1,5 @@
 import { Provider } from '@nestjs/common';
-import { config } from 'src/config';
+import { env } from 'src/shared/config/env';
 
 export const VOYAGE_RERANK_SERVICE = 'VOYAGE_RERANK_SERVICE';
 
@@ -35,11 +35,11 @@ export class VoyageRerankService implements IVoyageRerankService {
     const response = await fetch(VOYAGE_RERANK_URL, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${config.voyageApiKey}`,
+        Authorization: `Bearer ${env.VOYAGEAI_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: config.rerankModel,
+        model: env.RERANK_MODEL,
         query,
         documents,
         truncation: true,
@@ -67,11 +67,11 @@ export const VoyageRerankProvider: Provider[] = [
   {
     provide: VOYAGE_RERANK_SERVICE,
     useFactory: (): VoyageRerankService => {
-      if (!config.voyageApiKey) {
+      if (!env.VOYAGEAI_API_KEY) {
         throw new Error('Voyage API key must be provided');
       }
 
-      if (!config.rerankModel) {
+      if (!env.RERANK_MODEL) {
         throw new Error('Rerank model must be provided');
       }
 

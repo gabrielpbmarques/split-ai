@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { DynamicStructuredTool } from 'langchain';
-import { config } from 'src/config';
 import { AgentEntity } from 'src/entities';
 import {
   OrganizationFeatureRepository,
   OrganizationRepository,
 } from 'src/repositories';
+import { env } from 'src/shared/config/env';
 import { z } from 'zod';
 
 import { LoadDatabaseToolService } from '../LoadDatabaseTool/load-database-tool.service';
@@ -46,9 +46,9 @@ export class MaybeLoadDatabaseToolService {
 
     const scopeRequired =
       !!agent &&
-      (config.bravohubScopedAgents.includes(agent.id) ||
+      (env.BRAVOHUB_SCOPED_AGENTS.includes(agent.id) ||
         (!!agent.agent_identifier &&
-          config.bravohubScopedAgents.includes(agent.agent_identifier)));
+          env.BRAVOHUB_SCOPED_AGENTS.includes(agent.agent_identifier)));
 
     return this.loadDatabaseToolService.execute({
       databaseUrl: organization.database_url,

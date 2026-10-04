@@ -1,36 +1,24 @@
 import { Module } from '@nestjs/common';
 import { DevtoolsModule } from '@nestjs/devtools-integration';
-import { JwtService } from '@nestjs/jwt';
-import { ScheduleModule } from '@nestjs/schedule';
-import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ComponentsModule } from 'src/components/components.module';
 import { HealthModule } from 'src/health/health.module';
+import { env } from 'src/shared/config/env';
 
-import { config } from './config';
 @Module({
   imports: [
-    ThrottlerModule.forRoot([
-      {
-        ttl: 60000,
-        limit: 10,
-      },
-    ]),
     TypeOrmModule.forRoot({
       type: 'postgres',
-      url: config.databaseUrl,
+      url: env.DATABASE_URL,
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: true,
       autoLoadEntities: true,
     }),
     DevtoolsModule.register({
-      http: process.env.NODE_ENV !== 'production',
+      http: !env.isProduction,
     }),
     HealthModule,
     ComponentsModule,
-    ScheduleModule.forRoot(),
   ],
-  controllers: [],
-  providers: [JwtService],
 })
 export class AppModule {}

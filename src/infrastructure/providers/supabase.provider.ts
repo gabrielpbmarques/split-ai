@@ -3,7 +3,7 @@ import { Embeddings } from '@langchain/core/embeddings';
 import { Inject, Provider } from '@nestjs/common';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Document } from 'langchain';
-import { config } from 'src/config';
+import { env } from 'src/shared/config/env';
 import { Chunks, CustomMetadata } from 'src/types';
 import { cleanInvalidUnicode } from 'src/utils/clearInvalidUnicode';
 
@@ -53,8 +53,8 @@ export const SupabaseProvider: Provider[] = [
   {
     provide: SUPABASE_CLIENT,
     useFactory: (): SupabaseClient => {
-      const supabaseUrl = config.supabaseUrl;
-      const supabaseKey = config.supabaseKey;
+      const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
       if (!supabaseUrl || !supabaseKey) {
         throw new Error('Supabase URL and key must be provided');

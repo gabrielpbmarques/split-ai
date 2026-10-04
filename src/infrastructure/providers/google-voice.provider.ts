@@ -1,11 +1,10 @@
-import { TextToSpeechClient, protos } from '@google-cloud/text-to-speech';
+import { TextToSpeechClient } from '@google-cloud/text-to-speech';
 import { Provider } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 
 export class GoogleVoiceService {
   private readonly textToSpeechClient: TextToSpeechClient;
 
-  constructor(private configService: ConfigService) {
+  constructor() {
     this.textToSpeechClient = new TextToSpeechClient();
   }
 
@@ -13,18 +12,11 @@ export class GoogleVoiceService {
     const [response] = await this.textToSpeechClient.synthesizeSpeech({
       input: { text },
       voice: {
-        languageCode:
-          this.configService.get<string>('googleVoice.languageCode') || 'pt-BR',
-        ssmlGender:
-          (this.configService.get(
-            'googleVoice.ssmlGender',
-          ) as protos.google.cloud.texttospeech.v1.SsmlVoiceGender) || 'FEMALE',
+        languageCode: 'pt-BR',
+        ssmlGender: 'FEMALE',
       },
       audioConfig: {
-        audioEncoding:
-          (this.configService.get(
-            'googleVoice.audioEncoding',
-          ) as protos.google.cloud.texttospeech.v1.AudioEncoding) || 'MP3',
+        audioEncoding: 'MP3',
       },
     });
 
@@ -37,9 +29,6 @@ export const GOOGLE_VOICE_SERVICE = 'GOOGLE_VOICE_SERVICE';
 export const GoogleVoiceProvider: Provider[] = [
   {
     provide: GOOGLE_VOICE_SERVICE,
-    useFactory: (configService: ConfigService): GoogleVoiceService => {
-      return new GoogleVoiceService(configService);
-    },
-    inject: [ConfigService],
+    useFactory: (): GoogleVoiceService => new GoogleVoiceService(),
   },
 ];

@@ -92,6 +92,8 @@ Dono das regras: `01`, `02`, `00`.
 
 Pronto quando: `grep process.env src` devolve só `env.ts`; `bun install` não traz pacotes não importados; CI com os cinco comandos verdes.
 
+**Status: concluída.** Desvios em relação ao previsto: o `.env` já não estava versionado (o `CLAUDE.md` estava desatualizado); `services/cep.service.ts` foi removido por não ter consumidor; `GenerateTokenService` passou a usar `jsonwebtoken` diretamente, dispensando `@nestjs/jwt`; `DevtoolsModule` ficou condicionado a `env.isProduction` em vez de removido; `ThrottlerModule` migrou para `SendSmsModule`; o resolver TypeScript do `eslint-plugin-import` não foi ativado porque reclassificaria `src/...` como grupo interno e reordenaria imports em 312 arquivos (fica para a Fase 3, junto com a conversão para imports absolutos). As quatro suítes de teste que falhavam antes da fase (`ConvertTextToSpeech`, `Login`, `SignUp`, e `GenerateToken`, esta corrigida) são placeholders sem providers mockados e ficam para a Fase 8.
+
 ### Fase 1 — Transversais: filtro de exceção, correlação, logger, health
 
 Dono das regras: `07`, `01`.

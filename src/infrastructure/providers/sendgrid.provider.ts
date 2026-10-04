@@ -1,7 +1,6 @@
 import { Provider } from '@nestjs/common';
 import SendGrid from '@sendgrid/mail';
-
-import { config } from '../../config';
+import { env } from 'src/shared/config/env';
 
 export const SENDGRID_CLIENT = 'SENDGRID_CLIENT';
 export const EMAIL_SERVICE = 'EMAIL_SERVICE';
@@ -28,7 +27,7 @@ export interface EmailService {
 
 class SendGridEmailService implements EmailService {
   constructor(private readonly defaultFrom: string) {
-    SendGrid.setApiKey(config.sendgridApiKey);
+    SendGrid.setApiKey(env.SENDGRID_API_KEY);
   }
 
   async send(options: EmailOptions): Promise<void> {
@@ -74,7 +73,7 @@ export const SendGridProvider: Provider[] = [
   {
     provide: SENDGRID_CLIENT,
     useFactory: () => {
-      if (!config.sendgridApiKey) {
+      if (!env.SENDGRID_API_KEY) {
         throw new Error('SendGrid API key must be provided');
       }
       return SendGrid;
@@ -83,13 +82,13 @@ export const SendGridProvider: Provider[] = [
   {
     provide: EMAIL_SERVICE,
     useFactory: () => {
-      if (!config.sendgridApiKey) {
+      if (!env.SENDGRID_API_KEY) {
         throw new Error('SendGrid API key must be provided');
       }
-      if (!config.emailDefaultFrom) {
+      if (!env.SENDGRID_EMAIL_DEFAULT_FROM) {
         throw new Error('Default from email address must be provided');
       }
-      return new SendGridEmailService(config.emailDefaultFrom);
+      return new SendGridEmailService(env.SENDGRID_EMAIL_DEFAULT_FROM);
     },
   },
 ];

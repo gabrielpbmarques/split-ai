@@ -1,8 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { MessageRepository } from 'src/repositories';
 
 @Injectable()
 export class RecordChatMessageService {
+  private readonly logger = new Logger(RecordChatMessageService.name);
+
   constructor(private readonly messageRepository: MessageRepository) {}
 
   async execute(
@@ -21,8 +23,7 @@ export class RecordChatMessageService {
         message,
       });
     } catch (error: any) {
-      // Log error but don't fail the chat flow
-      console.error('Failed to record chat message:', error);
+      this.logger.error('Failed to record chat message', error);
     }
   }
 }

@@ -2,7 +2,7 @@ import { HumanMessage } from '@langchain/core/messages';
 import { LangChainTracer } from '@langchain/core/tracers/tracer_langchain';
 import { Injectable } from '@nestjs/common';
 import { AIMessage } from 'langchain';
-import { config } from 'src/config';
+import { env } from 'src/shared/config/env';
 import {
   AgentFinalResponseSchema,
   CustomMetadata,
@@ -19,7 +19,7 @@ export class GenerateAiResponseService {
   private tracer: LangChainTracer;
 
   constructor() {
-    this.tracer = new LangChainTracer({ projectName: config.langchainProject });
+    this.tracer = new LangChainTracer({ projectName: env.LANGCHAIN_PROJECT });
   }
 
   async execute(
@@ -42,11 +42,11 @@ export class GenerateAiResponseService {
           thread_id: `${agent.organization_id}_${threadKey}`,
         },
         callbacks: [this.tracer],
-        tags: [config.env, agent.id, metadata.organization_id],
+        tags: [env.NODE_ENV, agent.id, metadata.organization_id],
         metadata: {
           userId: metadata.user_id,
           sessionId: metadata.session_id,
-          environment: config.env,
+          environment: env.NODE_ENV,
         },
       };
 

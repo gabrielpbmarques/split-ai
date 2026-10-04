@@ -1,7 +1,7 @@
 import { Controller, Headers, Post, Req, Res } from '@nestjs/common';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { Public } from 'src/auth/auth.guard';
-import { config } from 'src/config';
+import { env } from 'src/shared/config/env';
 
 import { StripeWebhookService } from './stripe-webhook.service';
 
@@ -29,7 +29,7 @@ export class StripeWebhookController {
       await this.stripeWebhookService.execute(
         signature,
         rawBody.toString(),
-        config.stripeWebhookSecret,
+        env.STRIPE_WEBHOOK_SECRET,
       );
 
       return res.status(200).send({ received: true });

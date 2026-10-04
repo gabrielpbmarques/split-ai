@@ -10,7 +10,7 @@ It's a NestJS 10 + Fastify backend for an AI assistant product (chat, OCR, sourc
 
 ## Package manager
 
-**Use `bun`.** The lockfile is `bun.lock`, the Dockerfile uses `bun`, and CI runs `bun install && bun run lint`. The README's `bun install` line is correct; the `package.json` scripts call `nest`/`jest` directly so they work under either bun or npm, but stay on bun to keep the lockfile honest.
+**Use `bun`.** The lockfile is `bun.lock`, the Dockerfile uses `bun`, and CI runs `bun install` then `format:check`, `lint`, `typecheck`, `test` and `build`. The README's `bun install` line is correct; the `package.json` scripts call `nest`/`jest` directly so they work under either bun or npm, but stay on bun to keep the lockfile honest.
 
 ## Commands
 
@@ -19,7 +19,10 @@ bun install                                 # install deps
 bun run start:dev                           # watch mode (default port 4000)
 bun run start:prod                          # run compiled dist/main
 bun run build                               # nest build → dist/
-bun run lint                                # eslint --fix on src,test
+bun run lint                                # eslint (check only; CI runs this)
+bun run lint:fix                            # eslint --fix
+bun run typecheck                           # tsc --noEmit
+bun run format:check                        # prettier --check
 bun run test                                # jest (unit)
 bun run test:e2e                            # jest with test/jest-e2e.json
 bun run test:cov                            # coverage
@@ -28,7 +31,7 @@ bun jest -t "test name fragment"            # single test by name
 docker compose up                           # api + local Redis
 ```
 
-The dev server defaults to **port 4000** (`PORT || 4000` in `src/main.ts`). The README's NestJS-template snippets imply 3000 — ignore them.
+The dev server defaults to **port 4000** (`PORT` default in `src/shared/config/env.ts`).
 
 ## How guidance is organized: rules, scoped-rules, skills
 
@@ -62,7 +65,7 @@ Project guidance lives at three loading tiers. Pick the right tier when adding n
 **Model & integration reference (knowledge bases — not always wired):**
 
 - `langchain-anthropic-integration` — `ChatAnthropic` config reference from `@langchain/anthropic` (instantiation, prompt caching, citations, context management). The `ChatVertexAI` migration is already done — read this before changing the LLM provider config. (For Claude model IDs/pricing, use the `claude-api` skill; for other library docs, prefer context7.)
-- `eleven-labs` — ElevenLabs API reference (TTS, voice cloning, STT, sound effects, voice changer, conversational AI). Knowledge base for building **ElevenLabs-specific** voice features. **Provider is wired but unused**: `eleven-labs.provider.ts` exposes `ELEVEN_LABS_SERVICE` (`textToSpeech` returns MP3 `Uint8Array`, a drop-in for the Google seam; plus `textToSpeechStream` / `speechToText`) via `@elevenlabs/elevenlabs-js`. No endpoint consumes it yet — the **active** voice path is still Google TTS (`ConvertTextToSpeech` + `google-voice.provider.ts`). Config lives in `src/config.ts` (`elevenLabs*`, key `ELEVENLABS_API_KEY`).
+- `eleven-labs` — ElevenLabs API reference (TTS, voice cloning, STT, sound effects, voice changer, conversational AI). Knowledge base for building **ElevenLabs-specific** voice features. **Provider is wired but unused**: `eleven-labs.provider.ts` exposes `ELEVEN_LABS_SERVICE` (`textToSpeech` returns MP3 `Uint8Array`, a drop-in for the Google seam; plus `textToSpeechStream` / `speechToText`) via `@elevenlabs/elevenlabs-js`. No endpoint consumes it yet — the **active** voice path is still Google TTS (`ConvertTextToSpeech` + `google-voice.provider.ts`). Config lives in `src/shared/config/env.ts` (`ELEVENLABS_*`).
 
 **Read the relevant skill before scaffolding new code.** This file intentionally doesn't restate skill bodies.
 
@@ -72,7 +75,7 @@ Project guidance lives at three loading tiers. Pick the right tier when adding n
 src/
   main.ts                    Fastify bootstrap, request/response logging, Sentry in prod
   app.module.ts              Root — TypeOrmModule.forRoot, Components, Health
-  config.ts                  Plain object reading process.env (not @nestjs/config registerAs)
+  shared/config/env.ts       Zod-validated, frozen `env` object — the ONLY place that reads process.env
   auth/                      AuthGuard, ActiveOrgGuard
   decorators/                @Roles, @User (alias as AuthUser in controllers)
   entities/                  TypeORM entities + barrel index.ts
@@ -129,11 +132,11 @@ Single, opt-in mechanism for an agent to query its organization's own database. 
   2. `organizations.database_url` populado com uma conn-string (`postgres://...` ou `mysql://...`).
   3. Linha em `organization_features` ligando a org à feature `database_connection` (seedada por SQL aplicado à mão no Supabase) com `enabled = true`.
 - **Tool wiring:** `ResolveAgentService.loadTools` (`resolve-agent.service.ts`) faz, para agentes com `database_tool=true`: lookup da org via `OrganizationRepository`, check da feature via `OrganizationFeatureRepository.isEnabledForOrganization(orgId, 'database_connection')`, e injeta `LoadDatabaseToolService.execute({ databaseUrl: org.database_url })`. Qualquer pré-requisito faltando → skip silencioso (a tool não aparece para o LLM).
-- **`LoadDatabaseTool`** (`src/components/Tools/LoadDatabaseTool/`) detecta o dialeto pelo prefixo da URL (`postgres://`/`postgresql://` → Postgres; `mysql://`/`mysql2://` → MySQL). Constrói o `DataSource` lazy via TypeORM por chamada. Sanitização: statement única; allow-list do primeiro verbo (`SELECT`/`INSERT`/`UPDATE`; em modo read-only apenas `SELECT`); deny regex `DELETE|ALTER|DROP|CREATE|REPLACE|TRUNCATE` mesmo após verbo permitido; força `LIMIT 5` quando não há LIMIT. Agentes BravoHub-scoped (`config.bravohubScopedAgents`) rodam company-scoped read-only via `scopeCompanyId`.
+- **`LoadDatabaseTool`** (`src/components/Tools/LoadDatabaseTool/`) detecta o dialeto pelo prefixo da URL (`postgres://`/`postgresql://` → Postgres; `mysql://`/`mysql2://` → MySQL). Constrói o `DataSource` lazy via TypeORM por chamada. Sanitização: statement única; allow-list do primeiro verbo (`SELECT`/`INSERT`/`UPDATE`; em modo read-only apenas `SELECT`); deny regex `DELETE|ALTER|DROP|CREATE|REPLACE|TRUNCATE` mesmo após verbo permitido; força `LIMIT 5` quando não há LIMIT. Agentes BravoHub-scoped (`env.BRAVOHUB_SCOPED_AGENTS`) rodam company-scoped read-only via `scopeCompanyId`.
 - **Knowledge externo (schema do banco do cliente, docs internos):** ingerir como `Source` do agente (via `/agent/load-sites`, OCR ou outras rotas de Source). `LoadVectorSearchTool` (já existente) filtra por `agent_id` na busca semântica.
 - **A tabela `documents` e a função `match_documents` vivem só no Supabase.** O diretório `migrations/` foi removido no commit `cfa5375` e `scripts/apply-pgvector-migration.ts` não existe mais — não há nenhum `.sql` versionado no repo. A assinatura em uso é a padrão do LangChain, `match_documents(query_embedding vector, match_count int, filter jsonb)`, retornando `(id, content, metadata, similarity)` com `similarity = 1 - (embedding <=> query_embedding)` (maior = melhor). `synchronize` do TypeORM não toca nisso: não cria a extensão `vector`, o índice cosine nem a função. Qualquer mudança de schema vetorial é aplicada à mão no SQL editor do Supabase.
 - **Features migrations:** as tabelas `features` + `organization_features` (com a feature `database_connection` seedada) e a coluna `organizations.database_url` também foram criadas por SQL aplicado à mão. Os arquivos citados por versões antigas deste documento (`migrations/create_features_tables.sql`, `migrations/add_organization_database_url.sql`) **não existem mais no repo** — o estado real está no Supabase.
-- **Required env vars:** `ANTHROPIC_API_KEY` (Claude — lido por `ChatAnthropic` automaticamente), `VOYAGEAI_API_KEY` (usada pelos **dois** providers Voyage: lida do env pelo `VoyageEmbeddings` e via `config.voyageApiKey` pelo reranker), `EMBEDDING_MODEL` (set to `voyage-3-large`, 1024 dims via `outputDimension` hard-coded em `voyage-embeddings.provider.ts`), `ORCHESTRATOR_MODEL` (default `claude-sonnet-4-6`). Opcionais de retrieval, todos com default no `src/config.ts`: `RERANK_MODEL` (`rerank-2.5`), `VECTOR_SEARCH_CANDIDATE_K` (`50`), `VECTOR_SEARCH_MIN_SCORE` (`0.8`), `VECTOR_SEARCH_MAX_RESULTS` (`10`). Não há mais `ANALYTICS_ASK_API_KEY`/`BRAVOHUB_*` — auth S2S é per-org via `chat_embed_token`.
+- **Required env vars:** `ANTHROPIC_API_KEY` (Claude — lido por `ChatAnthropic` automaticamente), `VOYAGEAI_API_KEY` (usada pelos **dois** providers Voyage: lida do env pelo `VoyageEmbeddings` e via `env.VOYAGEAI_API_KEY` pelo reranker), `EMBEDDING_MODEL` (set to `voyage-3-large`, 1024 dims via `outputDimension` hard-coded em `voyage-embeddings.provider.ts`), `ORCHESTRATOR_MODEL` (default `claude-sonnet-4-6`). Opcionais de retrieval, todos com default em `src/shared/config/env.ts`: `RERANK_MODEL` (`rerank-2.5`), `VECTOR_SEARCH_CANDIDATE_K` (`50`), `VECTOR_SEARCH_MIN_SCORE` (`0.8`), `VECTOR_SEARCH_MAX_RESULTS` (`10`). Não há mais `ANALYTICS_ASK_API_KEY`/`BRAVOHUB_*` — auth S2S é per-org via `chat_embed_token`.
 
 ## Things that bite
 
@@ -145,16 +148,16 @@ Single, opt-in mechanism for an agent to query its organization's own database. 
   - `AuthGuard` (`src/auth/auth.guard.ts`) — JWT-only. Protects almost everything.
   - `ApiKeyGuard` (`src/auth/api-key.guard.ts`) — extracts the token from `Authorization: ApiKey <token>` and resolves it in two steps: **(1)** a real secret key from the `api_keys` table via `ApiKeyRepository.findValidByHash(sha256(token))` (not revoked, not expired) → sets `request.user` with `organization_id`, `api_key_id`, `scopes`, `role: 'service'`; **(2)** fallback to the publishable widget token via `OrganizationRepository.findActiveByEmbedToken` (matches `chat_embed_token` AND `chat_embed_enabled=true`). Secret keys are the sanctioned S2S credential (revocable + expirable); the embed token stays only for the browser widget.
   - `CompositeAuthGuard` (`src/auth/composite-auth.guard.ts`) — dispatches on the `Authorization` scheme to one of the above. Just delegates — `request.user` is now populated by whichever guard ran. When wiring a new endpoint, register both `AuthGuard` and `ApiKeyGuard` (which depends on `ApiKeyRepository` + `OrganizationRepository`) as providers in the use-case module; `CompositeAuthGuard` resolves them via DI.
-- **`AuthGuard` verifies the JWT signature** via `verifyJwt` (`src/auth/auth.guard.ts`), which calls `jsonwebtoken.verify(token, process.env.JWT_SECRET)` — `JWT_SECRET` must be set and match the issuer (`GenerateTokenService`). Tampered/expired/unsigned tokens are rejected with `UnauthorizedException`. (Historical note: this guard used to base64-decode without verifying; that gap is now closed.)
+- **`AuthGuard` verifies the JWT signature** via `verifyJwt` (`src/auth/auth.guard.ts`), which calls `jsonwebtoken.verify(token, env.JWT_SECRET)` — `JWT_SECRET` must be set and match the issuer (`GenerateTokenService`). Tampered/expired/unsigned tokens are rejected with `UnauthorizedException`. (Historical note: this guard used to base64-decode without verifying; that gap is now closed.)
 - **Whitelabel auth model (multi-user + plans + API keys).** Org-scoped roles live on `users.org_role` (`owner` > `admin` > `member`), carried in the JWT and enforced by `OrgRoleGuard` + `@OrgRoles(...)` (`src/auth/org-role.guard.ts`, `src/decorators/org-roles.decorator.ts`). Plan benefits live on `PlanEntity`: `max_agents` / `max_users` (`null` = unbounded), `unlimited` (bypasses credit billing **and** quotas — used by the MAIA playground), and `monthly_credits` (granted on org creation). API keys: `api_keys` table + `ApiKeyRepository`, CRUD under `src/components/ApiKey/` (`POST /api-key/{create,list,revoke}`, owner/admin only). Member invites under `src/components/Organization/Members/` (`POST /organization/members/{invite,accept,list,role,remove}`). Seed the MAIA org + base plans with `bun run seed:maia` (ts-node/CommonJS — running the script directly under bun's ESM loader hits a TypeORM `emitDecoratorMetadata` TDZ).
 - **No global API prefix.** Routes are mounted at the path declared on each `@Controller(...)` (e.g., `/support/question`), not `/api/...`. If any doc or template snippet implies `/api/...` or a global `ValidationPipe`, the code wins.
-- **`.env` is checked in with live secrets** (Supabase service key, Stripe live keys, Twilio credentials, LangSmith keys). Don't echo, log, paste into messages, or commit changes that move them. If a task needs new secrets, edit `.env` locally but don't commit; surface the variable name in the PR description instead.
+- **`.env` is git-ignored; `.env.example` is the documented template.** Every variable lives in the Zod schema in `src/shared/config/env.ts` (`import { env } from 'src/shared/config/env'`); `process.env` is read nowhere else (ESLint has no rule for it yet — review for it). Missing `DATABASE_URL` or `JWT_SECRET`, or an invalid value, aborts the boot listing every problem. New variable → add to the schema **and** to `.env.example`. Never paste secret values into messages or commits.
 - **TS is loose**: `strictNullChecks: false`, `noImplicitAny: false`, `@typescript-eslint/no-explicit-any: off`. Write type-safe code anyway, but don't waste time fighting `any` in existing files unless the task is a cleanup.
-- **`eslint-plugin-import` enforces order**: builtin → external → internal (`src/...`) → parent → sibling → index, alphabetized, blank line between groups. `bun run lint --fix` resolves most violations automatically.
+- **`eslint-plugin-import` enforces order**: builtin → external → internal (`src/...`) → parent → sibling → index, alphabetized, blank line between groups. `bun run lint:fix` resolves most violations automatically. Also enforced: `no-console` (use Nest `Logger`); in `warn` for now: no inline comments, no `TODO`/`FIXME`, kebab-case file and folder names under `src/`, no `../` imports (use `src/...`).
 - **`bravohub-analytics-workspace/CLAUDE.md` doesn't apply here.** Its scope rule says it only fires when `pwd` ends in `bravohub-analytics-workspace`. When `cd`'d into `split-ai/`, this file takes over.
 
 ## Commit & CI
 
 - Conventional Commits enforced by commitlint (`build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test`). Subject in lowercase, no trailing period, blank line before body.
 - Husky `pre-commit` runs `lint-staged` → ESLint + Prettier on staged files (specs excluded from ESLint).
-- `.github/workflows/ci-cd.yml`: PRs run lint only. Pushes to `main` build a Docker image, push to Artifact Registry, and `gcloud run deploy split-ai` in `southamerica-east1` with `min-instances 1, max-instances 2, 4Gi, 4 CPU`. The Cloud Run service binds to `$PORT`, which is why `main.ts` reads `process.env.PORT` first.
+- `.github/workflows/ci-cd.yml`: PRs run `format:check`, `lint`, `typecheck`, `test` and `build`. Pushes to `main` build a Docker image, push to Artifact Registry, and `gcloud run deploy split-ai` in `southamerica-east1` with `min-instances 1, max-instances 2, 4Gi, 4 CPU`. The Cloud Run service binds to `$PORT`, which is why `env.PORT` has no hard-coded production value.

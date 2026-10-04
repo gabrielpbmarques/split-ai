@@ -3,7 +3,7 @@ import { SupabaseVectorStore } from '@langchain/community/vectorstores/supabase'
 import { BaseRetrieverInterface } from '@langchain/core/retrievers';
 import { Injectable } from '@nestjs/common';
 import { Document } from 'langchain';
-import { config } from 'src/config';
+import { env } from 'src/shared/config/env';
 
 import { RerankDocumentsService } from '../RerankDocuments/rerank-documents.service';
 
@@ -19,7 +19,7 @@ export class ExecuteSimilaritySearchService {
   ): Promise<Document<Record<string, any>>[]> {
     const retriever = new ContextualCompressionRetriever({
       baseRetriever: vectorStore.asRetriever({
-        k: config.vectorSearchCandidateK,
+        k: env.VECTOR_SEARCH_CANDIDATE_K,
       }) as unknown as BaseRetrieverInterface,
       baseCompressor: this.rerankDocumentsService.execute(),
     });

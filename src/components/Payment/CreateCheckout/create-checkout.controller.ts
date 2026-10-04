@@ -10,6 +10,7 @@ import {
 import { FastifyReply } from 'fastify';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { User as UserDecorator } from 'src/decorators/user.decorator';
+import { env } from 'src/shared/config/env';
 import { User } from 'src/types';
 
 import { CreateCheckoutDto } from './create-checkout.dto';
@@ -37,9 +38,8 @@ export class CreateCheckoutController {
       }
 
       const successUrl =
-        dto.successUrl || `${process.env.FRONTEND_URL}/payment/success`;
-      const cancelUrl =
-        dto.cancelUrl || `${process.env.FRONTEND_URL}/payment/cancel`;
+        dto.successUrl || `${env.FRONTEND_URL}/payment/success`;
+      const cancelUrl = dto.cancelUrl || `${env.FRONTEND_URL}/payment/cancel`;
 
       const result = await this.createCheckoutService.execute({
         organizationId,

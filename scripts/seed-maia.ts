@@ -20,7 +20,7 @@ import * as bcrypt from 'bcryptjs';
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 
-import { config } from '../src/config';
+import { env } from 'src/shared/config/env';
 import { OrganizationEntity, PlanEntity, UserEntity } from '../src/entities';
 import { BillingPeriod, PlanType } from '../src/entities/plan.entity';
 
@@ -40,7 +40,7 @@ async function upsertPlan(
 async function main(): Promise<void> {
   const dataSource = new DataSource({
     type: 'postgres',
-    url: config.databaseUrl,
+    url: env.DATABASE_URL,
     entities: [__dirname + '/../src/**/*.entity{.ts,.js}'],
     synchronize: true,
   });

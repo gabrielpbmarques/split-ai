@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import {
@@ -5,9 +6,9 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { AppModule } from 'src/app.module';
-// Using Fastify's built-in CORS support instead of the cors package
-import { config } from 'src/config';
 import { initSentryIo } from 'src/observability/sentry.provider';
+import { env } from 'src/shared/config/env';
+
 async function bootstrap() {
   let sentry: any;
   const appLogger = new Logger('AppModule');
@@ -54,7 +55,6 @@ async function bootstrap() {
     const duration = Date.now() - startTime;
     const statusCode = reply.statusCode;
 
-    // Limpar o Map para evitar vazamentos de memória
     requestTimes.delete(requestId);
 
     const logLevel =
@@ -75,11 +75,9 @@ async function bootstrap() {
     done();
   });
 
-  // Initialize Sentry before creating the app
-  if (config.env === 'production') {
+  if (env.isProduction) {
     sentry = initSentryIo();
 
-    // Add Sentry request hooks for Fastify
     fastifyAdapter
       .getInstance()
       .addHook('onRequest', (request, reply, done) => {
@@ -92,7 +90,6 @@ async function bootstrap() {
         done();
       });
 
-    // Add Sentry error hook for Fastify
     fastifyAdapter
       .getInstance()
       .addHook('onError', (request, reply, error, done) => {
@@ -111,10 +108,8 @@ async function bootstrap() {
 
   app.enableCors();
 
-  // Use PORT environment variable provided by Cloud Run, fallback to 4000 for local development
-  const port = process.env.PORT || 4001;
-  await app.listen(port, '0.0.0.0');
+  await app.listen(env.PORT, '0.0.0.0');
 
-  appLogger.log(`Application is running on port ${port}`);
+  appLogger.log(`Application is running on port ${env.PORT}`);
 }
 bootstrap();

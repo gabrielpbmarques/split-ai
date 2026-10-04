@@ -10,6 +10,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { verify } from 'jsonwebtoken';
 import { Observable } from 'rxjs';
+import { env } from 'src/shared/config/env';
 
 import { ROLES_KEY, UserRole } from '../decorators/roles.decorator';
 
@@ -69,7 +70,7 @@ export class AuthGuard implements CanActivate {
         org_role: 'member',
         document: '',
         document_type: '',
-        organization_id: process.env.BRAVOHUB_ORG_ID || null,
+        organization_id: env.BRAVOHUB_ORG_ID ?? null,
         companyId: claim.company_id,
         birth_date: null,
         password_hash: '',
@@ -131,7 +132,7 @@ export class AuthGuard implements CanActivate {
  */
 export function verifyJwt(token: string): any {
   try {
-    return verify(token, process.env.JWT_SECRET);
+    return verify(token, env.JWT_SECRET);
   } catch {
     throw new UnauthorizedException();
   }
@@ -157,7 +158,7 @@ export type BravohubUserClaim = {
  * claim is always trustworthy as the tenant scope.
  */
 export function verifyBravohubJwt(token: string): BravohubUserClaim | null {
-  const secret = process.env.BRAVOHUB_JWT_SECRET;
+  const secret = env.BRAVOHUB_JWT_SECRET;
   if (!secret) {
     return null;
   }

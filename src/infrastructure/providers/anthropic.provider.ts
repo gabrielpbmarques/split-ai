@@ -2,18 +2,18 @@ export const ANTHROPIC_CHAT = 'ANTHROPIC_CHAT';
 
 import { ChatAnthropic } from '@langchain/anthropic';
 import { Provider } from '@nestjs/common';
-import { config } from 'src/config';
+import { env } from 'src/shared/config/env';
 
 export const AnthropicProvider: Provider[] = [
   {
     provide: ANTHROPIC_CHAT,
     useFactory: (): ChatAnthropic => {
-      if (!config.aiModel) {
+      if (!env.AI_MODEL) {
         throw new Error('AI model must be provided');
       }
 
       return new ChatAnthropic({
-        model: config.aiModel,
+        model: env.AI_MODEL,
         temperature: 0.4,
         clientOptions: {
           baseURL: 'https://api.deepseek.com/anthropic',

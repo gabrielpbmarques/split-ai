@@ -1122,7 +1122,7 @@ private readonly CREDITS_PER_AI_RESPONSE = 3;
 
 ## 11. Reference: every env var the flow reads
 
-Read via `src/config.ts` (or directly by an SDK where the Field column says so):
+Read via `src/shared/config/env.ts` (or directly by an SDK where the Field column says so):
 
 | Env var                                     | Field                    | Purpose                                                                                  |
 | ------------------------------------------- | ------------------------ | ---------------------------------------------------------------------------------------- |
@@ -1145,7 +1145,7 @@ Read via `src/config.ts` (or directly by an SDK where the Field column says so):
 | `JWT_SECRET`                                | — (read by guard)        | `AuthGuard.verifyJwt` verifies the JWT signature/expiry with it — see §4.3               |
 | `BRAVOHUB_JWT_SECRET`, `BRAVOHUB_ORG_ID`    | `bravohubJwtSecret`, …   | verify the forwarded BravoHub token + attribute its org — see §4.3                       |
 
-Not used in the chat path but read by the same `config.ts`: SendGrid, Twilio, Stripe, MongoDB, Redis.
+Not used in the chat path but read by the same `env.ts`: SendGrid, Twilio, Stripe, ElevenLabs.
 
 > `.env` is checked in with live secrets (Supabase service key, Stripe live keys, Twilio, LangSmith). Don't echo, log, paste into messages, or commit changes that move them. Surface needs in PR descriptions instead.
 

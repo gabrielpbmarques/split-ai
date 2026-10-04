@@ -1,7 +1,6 @@
 import { Provider } from '@nestjs/common';
+import { env } from 'src/shared/config/env';
 import { Twilio } from 'twilio';
-
-import { config } from '../../config';
 
 export const TWILIO_CLIENT = 'TWILIO_CLIENT';
 export const TWILIO_SERVICE = 'TWILIO_SERVICE';
@@ -28,7 +27,7 @@ class TwilioService implements ITwilioService {
 
   async createCall(options: VoiceOptions): Promise<void> {
     await this.twilioClient.calls.create({
-      from: config.twilioPhoneNumber,
+      from: env.TWILIO_PHONE_NUMBER,
       to: options.to,
       twiml: options.twiml,
     });
@@ -43,7 +42,7 @@ class TwilioService implements ITwilioService {
 
       await this.twilioClient.messages.create({
         body: message,
-        from: config.twilioPhoneNumber,
+        from: env.TWILIO_PHONE_NUMBER,
         to: `+${phone.startsWith('55') ? phone : '55' + phone}`,
       });
 
@@ -60,7 +59,7 @@ class TwilioService implements ITwilioService {
     try {
       await this.twilioClient.messages.create({
         body: message,
-        from: `whatsapp:${config.twilioWhatsappNumber}`,
+        from: `whatsapp:${env.TWILIO_WHATSAPP_NUMBER}`,
         to: `whatsapp:+${phone.startsWith('55') ? phone : '55' + phone}`,
       });
 
@@ -75,13 +74,13 @@ export const TwilioProvider: Provider[] = [
   {
     provide: TWILIO_CLIENT,
     useFactory: () => {
-      if (!config.twilioAuthToken) {
+      if (!env.TWILIO_AUTH_TOKEN) {
         throw new Error('Twilio Auth Token must be provided');
       }
-      if (!config.twilioAccountSid) {
+      if (!env.TWILIO_ACCOUNT_SID) {
         throw new Error('Twilio Account SID must be provided');
       }
-      return new Twilio(config.twilioAccountSid, config.twilioAuthToken);
+      return new Twilio(env.TWILIO_ACCOUNT_SID, env.TWILIO_AUTH_TOKEN);
     },
   },
   {

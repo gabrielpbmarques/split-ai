@@ -21,7 +21,7 @@
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 
-import { config } from '../src/config';
+import { env } from 'src/shared/config/env';
 
 // The thread flagged in the LangSmith trace. Override via argv.
 const DEFAULT_THREAD_IDS = [
@@ -41,7 +41,7 @@ async function main() {
 
   const dataSource = new DataSource({
     type: 'postgres',
-    url: config.databaseUrl,
+    url: env.DATABASE_URL,
   });
   await dataSource.initialize();
 

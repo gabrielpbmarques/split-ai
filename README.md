@@ -1,73 +1,61 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# split-ai
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Backend NestJS 10 + Fastify de um assistente de IA multi-organização: chat com agentes (LangChain / LangGraph + Anthropic Claude), ingestão de fontes (sites, PDF, DOCX, OCR), busca semântica (Voyage AI + Supabase pgvector), voz, WhatsApp, API keys e cobrança (Stripe).
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="npm Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="npm Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Requisitos
 
-## Description
+- [bun](https://bun.sh) 1.3+
+- PostgreSQL (o projeto usa Supabase; o vector store `documents` + `match_documents` vive só lá)
+- Credenciais dos provedores usados (ver `.env.example`)
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Installation
+## Primeiros passos
 
 ```bash
-$ bun install
+bun install
+cp .env.example .env     # preencher DATABASE_URL e JWT_SECRET no mínimo
+bun run start:dev        # http://localhost:4000
 ```
 
-## Running the app
+O schema de ambiente fica em `src/shared/config/env.ts`. Variável obrigatória ausente ou valor inválido derruba o boot listando todos os problemas. Variável nova: adicionar ao schema e ao `.env.example`.
+
+## Comandos
 
 ```bash
-# development
-$ bun run start
-
-# watch mode
-$ bun run start:dev
-
-# production mode
-$ bun run start:prod
+bun run start:dev        # modo watch
+bun run start:prod       # roda dist/main
+bun run build            # nest build → dist/
+bun run format:check     # prettier --check
+bun run lint             # eslint (sem --fix)
+bun run lint:fix         # eslint --fix
+bun run typecheck        # tsc --noEmit
+bun run test             # jest (unitários)
+bun run test:e2e         # jest com test/jest-e2e.json
+bun run di:verify        # confere se cada módulo importa o que seus providers injetam
+bun run di:boot-check    # monta o container Nest sem banco
+bun run seed:maia        # seed da organização MAIA e planos base
+docker compose up        # api + redis local
 ```
 
-## Test
+Antes de abrir PR: `format:check`, `lint`, `typecheck`, `test` e `build` limpos. É o que o CI roda.
 
-```bash
-# unit tests
-$ bun run test
+## Estrutura
 
-# e2e tests
-$ bun run test:e2e
-
-# test coverage
-$ bun run test:cov
+```
+src/
+  main.ts                    bootstrap Fastify
+  app.module.ts              TypeORM + módulos de componentes + health
+  shared/config/env.ts       schema Zod do ambiente (único lugar que lê process.env)
+  auth/                      guards (JWT, ApiKey, composto, papéis de organização)
+  components/<Scope>/<UseCase>/   um caso de uso = um módulo = um controller = um endpoint
+  repositories/              wrappers TypeORM, um módulo por repositório
+  entities/                  entidades TypeORM
+  infrastructure/providers/  SDKs externos (Voyage, Supabase, Stripe, Twilio, SendGrid, GCS, Spider, Google TTS, ElevenLabs)
+  types/models/              tipos compartilhados
+  utils/                     funções puras
 ```
 
-## Support
+Guia completo para quem trabalha no código: `CLAUDE.md`. Plano de refatoração em andamento: `docs/plano-refatoracao-backend-rules.md`.
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## Deploy
 
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](LICENSE).
+Push em `main` constrói a imagem Docker, publica no Artifact Registry e faz `gcloud run deploy split-ai` em `southamerica-east1` (`.github/workflows/ci-cd.yml`). O serviço lê `PORT` do Cloud Run.

@@ -1,11 +1,11 @@
 import { BaseDocumentCompressor } from '@langchain/classic/retrievers/document_compressors';
 import { Document, DocumentInterface } from '@langchain/core/documents';
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { config } from 'src/config';
 import {
   IVoyageRerankService,
   VOYAGE_RERANK_SERVICE,
 } from 'src/infrastructure/providers/voyage-rerank.provider';
+import { env } from 'src/shared/config/env';
 
 export class VoyageRerankCompressor extends BaseDocumentCompressor {
   private readonly logger = new Logger(VoyageRerankCompressor.name);
@@ -66,8 +66,8 @@ export class RerankDocumentsService {
   execute(): BaseDocumentCompressor {
     return new VoyageRerankCompressor(
       this.rerankService,
-      config.vectorSearchMinScore,
-      config.vectorSearchMaxResults,
+      env.VECTOR_SEARCH_MIN_SCORE,
+      env.VECTOR_SEARCH_MAX_RESULTS,
     );
   }
 }

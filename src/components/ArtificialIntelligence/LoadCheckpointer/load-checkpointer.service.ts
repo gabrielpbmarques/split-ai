@@ -1,8 +1,8 @@
 import { PostgresSaver } from '@langchain/langgraph-checkpoint-postgres';
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { config } from 'src/config';
+import { env } from 'src/shared/config/env';
 
-const DB_URI = config.databaseUrl;
+const DB_URI = env.DATABASE_URL;
 
 @Injectable()
 export class LoadCheckpointerService implements OnModuleInit {

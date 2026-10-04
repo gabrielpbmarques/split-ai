@@ -1,18 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
+import { sign, verify } from 'jsonwebtoken';
 import { UserEntity } from 'src/entities/user.entity';
 import { UserTokenRepository } from 'src/repositories';
+import { env } from 'src/shared/config/env';
 import { UserRole } from 'src/types';
 import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class GenerateTokenService {
-  constructor(
-    private readonly jwtService: JwtService,
-    private readonly configService: ConfigService,
-    private readonly userTokenRepository: UserTokenRepository,
-  ) {}
+  constructor(private readonly userTokenRepository: UserTokenRepository) {}
 
   /**
    * Generates a JWT token for a user and stores it in the database
@@ -20,10 +16,7 @@ export class GenerateTokenService {
    * @returns The generated token and its expiration date
    */
   async execute(user: UserEntity): Promise<{ token: string; expiresAt: Date }> {
-    const expirationHours = this.configService.get<number>(
-      'JWT_EXPIRATION_HOURS',
-      24,
-    );
+    const expirationHours = env.JWT_EXPIRATION_HOURS;
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + expirationHours);
 
@@ -45,9 +38,8 @@ export class GenerateTokenService {
       };
     }
 
-    const token = this.jwtService.sign(payload, {
+    const token = sign(payload, env.JWT_SECRET, {
       expiresIn: `${expirationHours}h`,
-      secret: this.configService.get<string>('JWT_SECRET'),
     });
 
     const roleToPersist: UserRole = user.role;
@@ -73,9 +65,7 @@ export class GenerateTokenService {
    */
   async validateToken(token: string): Promise<any> {
     try {
-      return this.jwtService.verify(token, {
-        secret: this.configService.get<string>('JWT_SECRET'),
-      });
+      return verify(token, env.JWT_SECRET);
     } catch (error: any) {
       return null;
     }

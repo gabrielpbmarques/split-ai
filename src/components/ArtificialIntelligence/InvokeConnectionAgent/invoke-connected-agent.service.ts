@@ -1,6 +1,6 @@
 import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { HumanMessage } from 'langchain';
-import { config } from 'src/config';
+import { env } from 'src/shared/config/env';
 import { AgentFinalResponseSchema } from 'src/types';
 
 import { ResolveAgentService } from '../ResolveAgent/resolve-agent.service';
@@ -30,7 +30,7 @@ export class InvokeConnectedAgentService {
         { messages: [new HumanMessage(input)] } as any,
         {
           configurable: { thread_id: `conn_${childAgent.id}` },
-          tags: [config.env, childAgent.id, childAgent.organization_id],
+          tags: [env.NODE_ENV, childAgent.id, childAgent.organization_id],
         },
       );
 

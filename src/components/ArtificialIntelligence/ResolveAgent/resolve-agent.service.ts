@@ -3,9 +3,9 @@ import { MemorySaver } from '@langchain/langgraph';
 import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { createAgent, createMiddleware } from 'langchain';
 import { LoadAgentToolsService } from 'src/components/Tools/LoadAgentTools/load-agent-tools.service';
-import { config } from 'src/config';
 import { AgentEntity } from 'src/entities';
 import { AgentRepository, AgentInstructionRepository } from 'src/repositories';
+import { env } from 'src/shared/config/env';
 import { AgentFinalResponseSchema, ResolvedAgent } from 'src/types';
 import { sanitizeToolCallMessages } from 'src/utils/sanitizeToolCallMessages';
 
@@ -109,7 +109,7 @@ export class ResolveAgentService {
   }
 
   private async loadChat(agent: AgentEntity): Promise<ChatAnthropic> {
-    const model = agent.model || config.aiModel;
+    const model = agent.model || env.AI_MODEL;
 
     return new ChatAnthropic({
       model,

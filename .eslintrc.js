@@ -5,7 +5,7 @@ module.exports = {
     tsconfigRootDir: __dirname,
     sourceType: 'module',
   },
-  plugins: ['@typescript-eslint/eslint-plugin', 'import'],
+  plugins: ['@typescript-eslint/eslint-plugin', 'import', 'check-file'],
   extends: [
     'plugin:@typescript-eslint/recommended',
     'plugin:prettier/recommended',
@@ -23,7 +23,16 @@ module.exports = {
     '@typescript-eslint/no-explicit-any': 'off',
     '@typescript-eslint/no-unused-vars': ['error'],
     '@typescript-eslint/ban-ts-comment': 'off',
-    'import/no-unused-modules': [1, { unusedExports: true }],
+    'no-console': 'error',
+    'no-inline-comments': 'warn',
+    'no-warning-comments': ['warn', { terms: ['todo', 'fixme'] }],
+    'import/no-relative-parent-imports': 'warn',
+    'check-file/filename-naming-convention': [
+      'warn',
+      { 'src/**/*.ts': 'KEBAB_CASE' },
+      { ignoreMiddleExtensions: true },
+    ],
+    'check-file/folder-naming-convention': ['warn', { 'src/**/': 'KEBAB_CASE' }],
     'import/order': [
       'error',
       {
