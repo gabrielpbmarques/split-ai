@@ -1,37 +1,45 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 
 import { UserEntity } from 'src/infrastructure/database/schema';
-import { ITwilioService } from 'src/infrastructure/twilio/twilio.provider';
-import { TWILIO_SERVICE } from 'src/infrastructure/twilio/twilio.tokens';
+import {
+  InboundWhatsappMessage,
+  MESSAGING,
+  MessagingGateway,
+} from 'src/infrastructure/integration/messaging.port';
 import { UserRepository } from 'src/modules/users/repositories/user.repository';
-import { WebhookDto } from 'src/modules/whatsapp/webhook/webhook.dto';
+
+const GREETING = 'Webhook funcionando!';
 
 @Injectable()
 export class WebhookService {
+  private readonly logger = new Logger(WebhookService.name);
+
   constructor(
-    @Inject(TWILIO_SERVICE)
-    private readonly twilioService: ITwilioService,
+    @Inject(MESSAGING) private readonly messaging: MessagingGateway,
     private readonly userRepository: UserRepository,
   ) {}
 
-  async execute(body: WebhookDto): Promise<void> {
-    const { WaId } = body;
+  async execute(form: Readonly<Record<string, unknown>>): Promise<void> {
+    const inbound = this.messaging.parseInboundWhatsapp(form);
 
-    let user = await this.userRepository.findByPhone(WaId);
-
-    if (!user) {
-      user = await this.createUser(body);
+    if (!inbound) {
+      this.logger.warn('Webhook do WhatsApp sem remetente identificável');
+      return;
     }
 
-    await this.twilioService.sendWhatsapp(WaId, 'Webhook funcionando!');
+    const user =
+      (await this.userRepository.findByPhone(inbound.senderPhone)) ??
+      (await this.createUser(inbound));
+
+    this.logger.log(`Mensagem recebida do usuário ${user.id}`);
+
+    await this.messaging.sendWhatsapp(inbound.senderPhone, GREETING);
   }
 
-  private async createUser(body: WebhookDto): Promise<UserEntity> {
-    const { WaId, ProfileName } = body;
-
+  private createUser(inbound: InboundWhatsappMessage): Promise<UserEntity> {
     return this.userRepository.create({
-      phone: WaId,
-      name: ProfileName,
+      phone: inbound.senderPhone,
+      name: inbound.senderName,
       origin: 'whatsapp',
       status: 'active',
     });

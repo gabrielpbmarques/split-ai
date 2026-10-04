@@ -11,7 +11,6 @@ import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { FastifyReply, FastifyRequest } from 'fastify';
 
 import { StripeWebhookService } from 'src/modules/billing/stripe-webhook/stripe-webhook.service';
-import { env } from 'src/shared/config/env';
 import { Public } from 'src/shared/decorators/public.decorator';
 
 @ApiTags('billing')
@@ -35,11 +34,7 @@ export class StripeWebhookController {
       throw new BadRequestException('Corpo da requisição ausente');
     }
 
-    await this.stripeWebhookService.execute(
-      signature,
-      req.rawBody.toString(),
-      env.STRIPE_WEBHOOK_SECRET,
-    );
+    await this.stripeWebhookService.execute(signature, req.rawBody.toString());
 
     return res.status(200).send({ received: true });
   }

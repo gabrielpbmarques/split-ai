@@ -86,12 +86,12 @@ The tool's `description` is dialect-aware (PostgreSQL vs MySQL label) and embeds
 ### Common edits
 
 - **Cache DataSources across requests.** Today each `execute({ databaseUrl })` call opens a fresh pool. For a tenant with many sessions this is wasteful. Add a process-level LRU keyed by URL with TTL.
-- **Support another dialect.** Add the scheme detection + the TypeORM type in `detectDialect`. Tested are `postgres` and `mysql`.
+- **Support another dialect.** Add the scheme detection in `src/infrastructure/integration/customer-database/sql-guard.ts` (`detectDialect`, with spec) and the driver options in `customer-database.gateway.ts`. Tested are `postgres` and `mysql`.
 - **Tighten verbs.** Restrict to `SELECT` only for read-only analytics use cases.
 
 ## Vector store layer
 
-### LoadVectorStore — src/modules/retrieval/load-vector-store/load-vector-store.service.ts
+### `VECTOR_STORE.loadIndex(filter)` — src/infrastructure/integration/supabase/supabase-vector-store.gateway.ts
 
 ```ts
 SupabaseVectorStore.fromExistingIndex(embeddings, {
@@ -104,7 +104,7 @@ SupabaseVectorStore.fromExistingIndex(embeddings, {
 
 - Default table is `documents`; the matching Postgres function is `match_documents`. A second table would need its own SQL function with the same signature.
 - `filter` is a `CustomMetadata` object (`{ session_id?, user_id?, agent_id?, source_type?, source_id?, organization_id? }`) — pgvector scopes vectors by this metadata. The vector-search-tool above passes `{ agent_id }`, so chunks ingested without `agent_id` are invisible to chat.
-- `embeddings` is `VoyageEmbeddings` provided via `VOYAGE_EMBEDDINGS` token from `src/infrastructure/voyage-rerank/voyage-embeddings.provider.ts`. Don't `new` it inline — DI it.
+- `embeddings` is the `EMBEDDINGS` port (Voyage `voyage-3-large` live, `MockEmbeddings` in mock mode), injected into the gateway by `integration.module.ts`. `LoadVectorSearchTool` injects `VECTOR_STORE` directly; there is no `LoadVectorStoreService` any more.
 
 ### ExecuteSimilaritySearch — src/modules/retrieval/execute-similarity-search/execute-similarity-search.service.ts
 
@@ -118,14 +118,14 @@ return retriever.invoke(question);
 ```
 
 - **The dense search only generates candidates.** `vectorSearchCandidateK` (default 50, env `VECTOR_SEARCH_CANDIDATE_K`) is a recall ceiling, not a relevance criterion — relevance is decided by the reranker below. The old hard-coded `topK = 10` is gone.
-- **Never pass `filter` to `asRetriever`.** `LoadVectorStore` fixes `this.filter` at construction, and a second filter makes `_searchSupabase` throw `"cannot provide both filter and this.filter"`.
-- `asRetriever` embeds the query internally, so this is still **one** embedding call per search. The service no longer injects `VOYAGE_EMBEDDINGS`.
+- **Never pass `filter` to `asRetriever`.** `loadIndex` fixes `this.filter` at construction, and a second filter makes `_searchSupabase` throw `"cannot provide both filter and this.filter"`.
+- `asRetriever` embeds the query internally, so this is still **one** embedding call per search. The service receives a LangChain `VectorStoreInterface` and injects no embeddings.
 - `ContextualCompressionRetriever` comes from **`@langchain/classic`**, not `langchain` — the classic retrievers moved packages and `langchain@1.2.x` no longer exports them.
 - The `as unknown as BaseRetrieverInterface` cast on the base retriever is packaging friction, not a real mismatch: under `NodeNext`, `@langchain/community` resolves its CJS typings back to the ESM ones, so both packages see the same declaration under two identities. Removing the cast breaks `bun run build`.
 
 ### RerankDocuments — src/modules/retrieval/rerank-documents/rerank-documents.service.ts
 
-`execute()` returns a `VoyageRerankCompressor extends BaseDocumentCompressor` (from `@langchain/classic/retrievers/document_compressors`) wrapping the `VOYAGE_RERANK_SERVICE` token.
+`execute()` returns a `VoyageRerankCompressor extends BaseDocumentCompressor` (from `@langchain/classic/retrievers/document_compressors`) wrapping the `RERANKER` port (`VoyageRerankerGateway` over `ResilientClient`, Zod-validated response).
 
 `compressDocuments(documents, query)`:
 
@@ -143,7 +143,7 @@ return retriever.invoke(question);
 Endpoint `POST /agent/load-sites` (admin-only). Body: `{ sites: string, agentId: string }`.
 
 1. `spiderService.crawl(sites, { limit: 20, depth: 25, metadata: true, readability: true, return_format: 'text' })` — third-party crawler at `spider.cloud`.
-2. `supabaseService.createVectorStore(docs, { source_type: 'site', agent_id, source_id })` — chunks and embeds into the `documents` table, tagged with `source_type: 'site'` so the vector search tool can retrieve them under that agent.
+2. `vectorStore.upsertChunks(chunks, { source_type: 'site', agent_id, source_id })` — chunks and embeds into the `documents` table, tagged with `source_type: 'site'` so the vector search tool can retrieve them under that agent.
 
 Returns the chunk count. Failures send a 500 with `'Failed to load sites'` (intentionally generic — Spider errors can leak URLs).
 

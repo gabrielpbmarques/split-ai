@@ -1,7 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import { SupabaseService } from 'src/infrastructure/supabase/supabase.provider';
-import { SUPABASE_SERVICE } from 'src/infrastructure/supabase/supabase.tokens';
+import {
+  VECTOR_STORE,
+  VectorStoreGateway,
+} from 'src/infrastructure/integration/vector-store.port';
 import { ProcessSourceInput } from 'src/shared/contracts';
 import { buildSourceMetadata } from 'src/shared/utils/build-source-metadata';
 import { chunkText } from 'src/shared/utils/chunk-text';
@@ -9,8 +11,7 @@ import { chunkText } from 'src/shared/utils/chunk-text';
 @Injectable()
 export class ProcessTextSourceService {
   constructor(
-    @Inject(SUPABASE_SERVICE)
-    private readonly supabaseService: SupabaseService,
+    @Inject(VECTOR_STORE) private readonly vectorStore: VectorStoreGateway,
   ) {}
 
   async execute(params: ProcessSourceInput): Promise<number> {
@@ -25,6 +26,6 @@ export class ProcessTextSourceService {
       sourceId,
     });
 
-    return this.supabaseService.createVectorStore(chunks, metadata);
+    return this.vectorStore.upsertChunks(chunks, metadata);
   }
 }

@@ -1,7 +1,9 @@
-import { Embeddings } from '@langchain/core/embeddings';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 
-import { VOYAGE_EMBEDDINGS } from 'src/infrastructure/voyage-embeddings/voyage-embeddings.tokens';
+import {
+  EMBEDDINGS,
+  EmbeddingsGateway,
+} from 'src/infrastructure/integration/embeddings.port';
 import { MessageRepository } from 'src/modules/sessions/repositories/message.repository';
 
 @Injectable()
@@ -10,7 +12,7 @@ export class RecordChatMessageService {
 
   constructor(
     private readonly messageRepository: MessageRepository,
-    @Inject(VOYAGE_EMBEDDINGS) private readonly embeddings: Embeddings,
+    @Inject(EMBEDDINGS) private readonly embeddings: EmbeddingsGateway,
   ) {}
 
   async execute(

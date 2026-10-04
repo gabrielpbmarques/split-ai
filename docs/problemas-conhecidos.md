@@ -103,7 +103,7 @@ Registro de travas, contornos e desvios conscientes do `split-ai` em relação a
 | Sintoma | 429 com corpo `"You have not yet added your payment method"`; cada busca custa duas chamadas (embed + rerank) na mesma chave. |
 | Causa | Limite por organização Voyage; um cartão cadastrado sem ser o padrão não conta. |
 | Solução | Definir cartão padrão na conta Voyage e validar com rajada de chamadas concorrentes, não pelo dashboard. |
-| Onde | `src/infrastructure/voyage-rerank/voyage-*.provider.ts` |
+| Onde | `src/infrastructure/integration/voyage/` |
 | Regra dona | `10-integracoes-externas.md` |
 | Tentativas descartadas | — |
 | Remover quando | — |
@@ -167,4 +167,34 @@ Registro de travas, contornos e desvios conscientes do `split-ai` em relação a
 | Regra dona | `09-banco-de-dados.md` |
 | Tentativas descartadas | — |
 | Remover quando | — |
+| Registrado em | 2026-10-04 |
+
+### PC-012 — `@langchain/community` e `@langchain/core` com identidades duplas sob `NodeNext`
+
+| Campo | Valor |
+| --- | --- |
+| Status | atalho |
+| Biblioteca | `@langchain/community@0.3.59`, `@langchain/core@1.1.x`, TypeScript `module: nodenext` |
+| Sintoma | `SupabaseVectorStore` não é atribuível a `VectorStoreInterface` e `VoyageEmbeddings` não é atribuível a `Embeddings`: "Property 'maxConcurrency' is protected but type 'AsyncCaller' is not a class derived from 'AsyncCaller'". |
+| Causa | `@langchain/community` resolve os tipos de `@langchain/core` pela entrada CJS (`resolution-mode: import` vs `require`), então a mesma classe aparece duas vezes para o compilador. Mesma raiz do PC-005. |
+| Solução | Dois casts `as unknown as` dentro dos adaptadores (`supabase-vector-store.gateway.ts` → `VectorStoreInterface`; `voyage-embeddings.factory.ts` → `Embeddings`). O domínio só vê os tipos de `@langchain/core`. |
+| Onde | `src/infrastructure/integration/supabase/`, `src/infrastructure/integration/voyage/` |
+| Regra dona | `10-integracoes-externas.md` |
+| Tentativas descartadas | Tipar a porta com `SupabaseVectorStore`: vaza o SDK para `src/modules/` e impede o mock com `MemoryVectorStore`. |
+| Remover quando | `@langchain/community` publicar tipos resolvidos contra a mesma entrada de `@langchain/core` que o projeto usa, ou o projeto deixar `nodenext`. |
+| Registrado em | 2026-10-04 |
+
+### PC-013 — Chamadas via SDK não passam pelo `ResilientClient`
+
+| Campo | Valor |
+| --- | --- |
+| Status | sem-solucao |
+| Biblioteca | `stripe`, `twilio`, `@sendgrid/mail`, `@supabase/supabase-js`, `@langchain/anthropic`, `@langchain/community` (`VoyageEmbeddings`, `SpiderLoader`), `@google-cloud/*`, `@elevenlabs/elevenlabs-js` |
+| Sintoma | A regra `10` exige timeout, retry, circuit breaker e SSRF guard em toda chamada externa. Só o reranker Voyage (único `fetch` manual) usa `ResilientClient`; os demais adaptadores delegam o HTTP ao SDK, com os timeouts/retries do próprio SDK. Em particular embeddings e rerank partilham a cota Voyage mas não partilham o circuit breaker. |
+| Causa | Os SDKs encapsulam autenticação, assinatura de webhook, paginação e streaming; reescrevê-los sobre `fetch` custaria mais do que o ganho e perderia a verificação de assinatura do Stripe. |
+| Solução | Aceito: a porta isola o SDK no adaptador, `state()` + `/health/ready` expõem a configuração, e qualquer novo endpoint HTTP sem SDK nasce sobre `ResilientClient`. Timeouts dos SDKs ficam nos defaults. |
+| Onde | `src/infrastructure/integration/<fonte>/*.gateway.ts` |
+| Regra dona | `10-integracoes-externas.md` |
+| Tentativas descartadas | — |
+| Remover quando | Houver incidente de dependência externa travando requests (então configurar timeout/retry por SDK) ou quando uma fonte for migrada para chamada HTTP direta. |
 | Registrado em | 2026-10-04 |

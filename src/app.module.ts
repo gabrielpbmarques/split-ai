@@ -6,6 +6,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from 'src/auth/auth.module';
 import { MIGRATIONS } from 'src/infrastructure/database/migrations';
 import { ENTITIES } from 'src/infrastructure/database/schema';
+import { IntegrationModule } from 'src/infrastructure/integration/integration.module';
 import { AgentConnectionsModule } from 'src/modules/agent-connections/agent-connections.module';
 import { AgentRuntimeModule } from 'src/modules/agent-runtime/agent-runtime.module';
 import { AgentRuntimeContractsModule } from 'src/modules/agent-runtime/contracts/agent-runtime-contracts.module';
@@ -54,6 +55,7 @@ import { AppLoggerModule } from 'src/shared/observability/logger.module';
     DevtoolsModule.register({
       http: !env.isProduction,
     }),
+    IntegrationModule,
     AuthModule,
     HealthModule,
     AgentConnectionsModule,

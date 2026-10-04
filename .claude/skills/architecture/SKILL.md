@@ -118,7 +118,6 @@ thing the module's own classes inject, and nothing else.
 @Module({
   imports: [
     OrderRepositoryModule, // CreateOrderService injects OrderRepository
-    StripeProviderModule, // ... and @Inject(STRIPE_CLIENT)
     GenerateTokenModule, // ... and GenerateTokenService
   ],
   controllers: [CreateOrderController], // Only if this use case is an endpoint
@@ -131,10 +130,10 @@ export class CreateOrderModule {}
 **Key rules:**
 
 - One repository → its `XRepositoryModule` (`src/modules/users/repositories/<name>.repository.module.ts`).
-- One infrastructure token → its `XProviderModule` (`src/infrastructure/voyage-rerank/<name>.provider.module.ts`).
+- One integration port (`PAYMENTS`, `VECTOR_STORE`, `EMAIL`, …) → **no import**: `src/infrastructure/integration/integration.module.ts` is `@Global()` and publishes every port.
 - One sibling/cross-scope service → that use case's own module (e.g. `GenerateTokenModule`), **never** the scope aggregator.
 - A service that calls `AccessScopeService` imports `AuthModule` (`src/auth/auth.module.ts`), which exports it together with `PrincipalResolverService`.
-- Mutual dependencies use `forwardRef(() => XModule)` on **both** sides, matching `@Inject(forwardRef(() => XService))` in the constructor.
+- No `forwardRef`: a cycle goes through a port in `modules/<domain>/contracts/` (see `AGENT_RESOLVER`).
 - Cross-scope dependencies are allowed: use case modules can import modules from other scopes.
 - Check your work with `bun run di:verify` (static reachability) and `bun run di:boot-check` (real Nest container, DataSource stubbed).
 
@@ -180,10 +179,8 @@ export class OrderRepositoryModule {}
 
 `TypeOrmModule.forFeature` is **module-local**: the `Repository<OrderEntity>`
 token only exists inside the module that registered it, so each repository
-module registers its own entity. If the repository injects anything else (e.g.
-`MessageRepository` injects `VOYAGE_EMBEDDINGS`), add that provider module to
-this module's `imports` too. A repository backed by `DataSource` alone
-(`UniversalDataRepository`) needs no `forFeature` at all.
+module registers its own entity. Repositories inject nothing but TypeORM
+repositories; embeddings and other integrations belong to services.
 
 ## Tools scope
 
@@ -202,7 +199,7 @@ components/
 
 ### Tool service pattern
 
-The service is `@Injectable()`, takes any dependencies via constructor (repositories from their `XRepositoryModule`, external clients from their `XProviderModule`, sibling services), and exposes a single `execute(...)` method that returns (or resolves to) a `DynamicStructuredTool`. Its argument carries whatever per-request input the tool needs — e.g. `LoadDatabaseTool.execute({ databaseUrl, readOnly, scope })`, while `LoadVectorSearchTool.execute()` takes none.
+The service is `@Injectable()`, takes any dependencies via constructor (repositories from their `XRepositoryModule`, integration ports from the global `IntegrationModule`, sibling services), and exposes a single `execute(...)` method that returns (or resolves to) a `DynamicStructuredTool`. Its argument carries whatever per-request input the tool needs — e.g. `LoadDatabaseTool.execute({ databaseUrl, readOnly, scope })`, while `LoadVectorSearchTool.execute()` takes none.
 
 ```typescript
 @Injectable()
@@ -250,49 +247,72 @@ Type definitions live in `src/shared/contracts/models/`. Each model file defines
 
 Import types from `src/shared/contracts` (barrel), not from individual model files.
 
-## Infrastructure (External Providers)
+## Infrastructure (External integrations)
 
-External service integrations live in `src/infrastructure/voyage-rerank/`. Each provider file exports:
+Everything that leaves the process lives in `src/infrastructure/integration/`
+(rule `10`): `Fonte externa → gateway → contrato Zod → mapeador → contrato interno → domínio`.
 
-1. An injection token constant (e.g., `PAYMENT_GATEWAY_CLIENT`, `PUSH_NOTIFICATION_SERVICE`)
-2. A service class (if needed)
-3. A `Provider[]` array for NestJS DI registration
+```
+src/infrastructure/integration/
+  integration.module.ts          @Global(); one provider per port, mock or live by env.INTEGRATION_MODE
+  integration.state.ts           IntegrationGateway { name; state(): READY | NOT_CONFIGURED | MOCK }, notConfigured()
+  integration.health.ts          IntegrationHealthIndicator → /health/ready checks.integrations
+  <name>.port.ts                 export const PAYMENTS = Symbol('PAYMENTS'); export interface PaymentsGateway …
+  http-client/                   ResilientClient, CircuitBreaker, backoff, SSRF guard (+ specs)
+  <source>/
+    <source>.contracts.ts        Zod schema with the exact external field names
+    <source>.mappers.ts (+spec)  pure functions external → internal
+    <source>-<port>.gateway.ts   the adapter: reads env, builds the SDK client lazily, implements the port
+  mock/mock-<port>.gateway.ts    in-memory implementation used when INTEGRATION_MODE=mock
+```
 
-### Provider pattern
+### Port + gateway pattern
 
 ```typescript
-export const MY_EXTERNAL_SERVICE = 'MY_EXTERNAL_SERVICE';
+export const EMAIL = Symbol('EMAIL');
 
-export class MyExternalService {
-  constructor(@Inject(DEPENDENCY) private dep: Dep) {}
-  // methods...
+export interface EmailGateway extends IntegrationGateway {
+  send(message: EmailMessage): Promise<void>;
 }
 
-export const MyProvider: Provider[] = [
-  {
-    provide: MY_EXTERNAL_SERVICE,
-    useFactory: (dep: Dep): MyExternalService => new MyExternalService(dep),
-    inject: [DEPENDENCY],
-  },
-];
+export class SendGridEmailGateway implements EmailGateway {
+  readonly name = 'sendgrid';
+  private readonly configured = Boolean(env.SENDGRID_API_KEY);
+
+  state(): IntegrationState {
+    return this.configured ? 'READY' : 'NOT_CONFIGURED';
+  }
+
+  async send(message: EmailMessage): Promise<void> {
+    if (!this.configured) notConfigured(this.name);
+    await SendGrid.send(toSendGridMail(message));
+  }
+}
 ```
 
-Each `<name>.provider.ts` has a sibling `<name>.provider.module.ts` that spreads
-that one provider array and exports its tokens:
+Registration in `integration.module.ts` picks the implementation once:
 
 ```typescript
-@Module({
-  imports: [VoyageEmbeddingsProviderModule], // only if a factory injects its token
-  providers: [...SupabaseProvider],
-  exports: [SUPABASE_CLIENT, SUPABASE_SERVICE],
-})
-export class SupabaseProviderModule {}
+{
+  provide: EMAIL,
+  useFactory: select<EmailGateway>(
+    () => new SendGridEmailGateway(),
+    () => new MockEmailGateway(),
+  ),
+}
 ```
 
-A use case that injects `SUPABASE_SERVICE` imports `SupabaseProviderModule` — and
-nothing else from `infrastructure/`. Because `AppModule` no longer imports a
-catch-all, a provider factory only runs when some module that needs it is
-instantiated.
+Consumption in a domain service — no module import needed:
+
+```typescript
+constructor(@Inject(EMAIL) private readonly email: EmailGateway) {}
+```
+
+Rules: the interface holds only what consumers use; a missing credential makes
+`state()` report `NOT_CONFIGURED` and the method throw `ServiceUnavailableException`
+when called (never in the constructor, never at boot); hand-written HTTP goes
+through `ResilientClient`; external payloads are validated with Zod and mapped
+before they reach `src/modules/`.
 
 ## Guards
 

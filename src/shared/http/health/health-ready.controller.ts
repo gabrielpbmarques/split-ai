@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
 
+import { IntegrationHealthIndicator } from 'src/infrastructure/integration/integration.health';
 import { Public } from 'src/shared/decorators/public.decorator';
 import { DatabaseHealthIndicator } from 'src/shared/http/health/database.health';
 import { MemoryHealthIndicator } from 'src/shared/http/health/memory.health';
@@ -15,6 +16,7 @@ export class HealthReadyController {
   constructor(
     private readonly database: DatabaseHealthIndicator,
     private readonly memory: MemoryHealthIndicator,
+    private readonly integrations: IntegrationHealthIndicator,
   ) {}
 
   @Get('ready')
@@ -24,7 +26,11 @@ export class HealthReadyController {
       await this.database.ping(),
       this.memory.check(),
     ];
-    const checks = { database, memory };
+    const checks = {
+      database,
+      memory,
+      integrations: this.integrations.check(),
+    };
 
     if (database.status === 'down' || memory.status === 'down') {
       throw new ServiceUnavailableException({

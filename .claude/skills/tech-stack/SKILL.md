@@ -27,8 +27,8 @@ You are the **Tech Stack Agent** for the NestJS backend. You hold the technical 
 
 ## Google Text-to-Speech — Voice Generation
 
-- **Provider**: `google-voice.provider.ts`
-- **Token**: `GOOGLE_VOICE_SERVICE`
+- **Gateway**: `src/infrastructure/integration/google/google-text-to-speech.gateway.ts` (default) or `eleven-labs/eleven-labs-text-to-speech.gateway.ts` (`TTS_PROVIDER=elevenlabs`)
+- **Port**: `TEXT_TO_SPEECH` → `TextToSpeech.synthesize(text): Promise<Uint8Array>`
 - **Library**: `@google-cloud/text-to-speech`
 - **Purpose**: Converts text into spoken audio (MP3). Used to generate voice prompts for automated calls or accessibility features.
 - **Config**: Portuguese (pt-BR), female voice, MP3 output encoding.
@@ -36,19 +36,19 @@ You are the **Tech Stack Agent** for the NestJS backend. You hold the technical 
 
 ## Google Cloud Storage (GCS) — File Storage
 
-- **Provider**: `gcp-storage.provider.ts`
-- **Token**: `GCP_STORAGE_SERVICE`
+- **Gateway**: `src/infrastructure/integration/google/gcs-file-storage.gateway.ts`
+- **Port**: `FILE_STORAGE` → `FileStorage.uploadAudio(localPath, fileName)`, `deleteFile(fileName)`
 - **Library**: `@google-cloud/storage`
 - **Purpose**: Stores media files, user uploads, and generated audio files.
-- **Bucket**: `app-uploads-bucket` (configurable via env)
+- **Bucket**: `GCS_AUDIO_BUCKET` (default `alert-calls-audios`)
 - **Operations**: Upload files, delete files. Returns public URLs (`https://storage.googleapis.com/...`).
 - **Used by**: `UploadMedia` (Storage component), `UpdateProfilePicture` (User component)
 
 ## Twilio — SMS & Voice Calls
 
-- **Provider**: `twilio.provider.ts`
-- **Tokens**: `TWILIO_CLIENT`, `TWILIO_SERVICE`
-- **Env vars**: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`, `TWILIO_WEBHOOK_BASE_URL`
+- **Gateway**: `src/infrastructure/integration/twilio/twilio-messaging.gateway.ts` (+ `twilio.contracts.ts` / `twilio.mappers.ts` for the inbound webhook form)
+- **Port**: `MESSAGING` → `sendSms(phone, text)`, `sendWhatsapp(phone, text)`, `parseInboundWhatsapp(form)`
+- **Env vars**: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`, `TWILIO_WHATSAPP_NUMBER`
 - **Purpose**:
   - **SMS**: Sends verification codes for phone number validation during registration or MFA (10-min expiry).
   - **Voice calls**: Creates automated calls with TwiML for critical notifications.
@@ -56,8 +56,8 @@ You are the **Tech Stack Agent** for the NestJS backend. You hold the technical 
 
 ## SendGrid — Transactional Email
 
-- **Provider**: `sendgrid.provider.ts`
-- **Tokens**: `SENDGRID_CLIENT`, `EMAIL_SERVICE`
+- **Gateway**: `src/infrastructure/integration/sendgrid/sendgrid-email.gateway.ts`
+- **Port**: `EMAIL` → `EmailGateway.send(message: EmailMessage)`
 - **Env vars**: `SENDGRID_API_KEY`, `SENDGRID_EMAIL_DEFAULT_FROM`
 - **Purpose**: Sends transactional emails — verification emails, password resets, and invoices, with support for plain text, HTML, and dynamic templates.
 - **Used by**: `SendVerificationEmail` (Auth component), `SendInvoice` (Billing component)
@@ -111,12 +111,12 @@ You are the **Tech Stack Agent** for the NestJS backend. You hold the technical 
 
 ## Voyage AI — Embeddings & Reranking
 
-Two separate providers, one API key (`VOYAGEAI_API_KEY`), one shared rate-limit quota.
+Two ports, one API key (`VOYAGEAI_API_KEY`), one shared rate-limit quota.
 
-| Provider   | File                                                         | Token                   | Purpose                                                                                                                                                           |
-| ---------- | ------------------------------------------------------------ | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Embeddings | `src/infrastructure/voyage-rerank/voyage-embeddings.provider.ts` | `VOYAGE_EMBEDDINGS`     | `voyage-3-large`, 1024 dims (`outputDimension` hard-coded). Key is read by the SDK from the env, never passed by the factory.                                     |
-| Reranking  | `src/infrastructure/voyage-rerank/voyage-rerank.provider.ts`     | `VOYAGE_RERANK_SERVICE` | Cross-encoder `rerank-2.5` via plain `fetch` on `POST https://api.voyageai.com/v1/rerank`. Returns `{ index, relevanceScore }[]`, sorted by descending relevance. |
+| Port         | File                                                                         | Purpose                                                                                                                                                                          |
+| ------------ | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `EMBEDDINGS` | `src/infrastructure/integration/voyage/voyage-embeddings.factory.ts`         | LangChain `Embeddings`: `voyage-3-large`, 1024 dims (`outputDimension` hard-coded). Without the key the factory returns an `UnavailableEmbeddings` that answers 503 when called. |
+| `RERANKER`   | `src/infrastructure/integration/voyage/voyage-reranker.gateway.ts`           | Cross-encoder `rerank-2.5` over `ResilientClient` (`POST /v1/rerank`, Zod contract in `voyage.contracts.ts`). Returns `{ index, relevanceScore }[]`, sorted by descending relevance. |
 
 Env vars:
 
@@ -218,15 +218,20 @@ Since retrieval reranks, **each search costs two Voyage calls** (one embed + one
 
 Quick lookup for which token to inject when using a service:
 
-| Need                    | Token                            | Interface/Class               |
-| ----------------------- | -------------------------------- | ----------------------------- |
-| Vector store operations | `VECTOR_STORE_SERVICE`           | `IVectorStoreService`         |
-| Voyage embeddings       | `VOYAGE_EMBEDDINGS`              | `VoyageEmbeddings`            |
-| Voyage reranking        | `VOYAGE_RERANK_SERVICE`          | `IVoyageRerankService`        |
-| Text-to-speech          | `GOOGLE_VOICE_SERVICE`           | `GoogleVoiceService`          |
-| File upload (GCS)       | `GCP_STORAGE_SERVICE`            | `GcpStorageService`           |
-| SMS & voice calls       | `TWILIO_SERVICE`                 | `ITwilioService`              |
-| Twilio raw client       | `TWILIO_CLIENT`                  | `Twilio`                      |
-| Transactional email     | `EMAIL_SERVICE`                  | `EmailService`                |
-| SendGrid raw client     | `SENDGRID_CLIENT`                | `SendGrid`                    |
+All tokens live in `src/infrastructure/integration/<name>.port.ts` and are published by the `@Global()` `IntegrationModule` — no module import needed.
+
+| Need                      | Token               | Interface                 |
+| ------------------------- | ------------------- | ------------------------- |
+| Vector store operations   | `VECTOR_STORE`      | `VectorStoreGateway`      |
+| Embeddings                | `EMBEDDINGS`        | `EmbeddingsGateway`       |
+| Reranking                 | `RERANKER`          | `RerankerGateway`         |
+| Chat model (`ChatAnthropic`) | `CHAT_MODEL`     | `ChatModelFactory`        |
+| Payments (Stripe)         | `PAYMENTS`          | `PaymentsGateway`         |
+| SMS / WhatsApp            | `MESSAGING`         | `MessagingGateway`        |
+| Transactional email       | `EMAIL`             | `EmailGateway`            |
+| Site crawling (Spider)    | `SITE_CRAWLER`      | `SiteCrawler`             |
+| File upload (GCS)         | `FILE_STORAGE`      | `FileStorage`             |
+| Text-to-speech            | `TEXT_TO_SPEECH`    | `TextToSpeech`            |
+| OCR (Google Vision)       | `OCR`               | `OcrReader`               |
+| Tenant database           | `CUSTOMER_DATABASE` | `CustomerDatabaseGateway` |
 | Mobile push (Expo)      | `EXPO_PUSH_NOTIFICATION_SERVICE` | `ExpoPushNotificationService` |

@@ -1,26 +1,29 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  Logger,
-} from '@nestjs/common';
-import Stripe from 'stripe';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 
 import { TransactionType } from 'src/infrastructure/database/schema/credit-transaction.entity';
 import { PaymentStatus } from 'src/infrastructure/database/schema/payment.entity';
 import { TransactionExecutor } from 'src/infrastructure/database/transaction-executor/transaction-executor.service';
-import { STRIPE_CLIENT } from 'src/infrastructure/stripe/stripe.tokens';
+import {
+  PAYMENTS,
+  PaymentEvent,
+  PaymentsGateway,
+} from 'src/infrastructure/integration/payments.port';
 import { ManageCreditsService } from 'src/modules/billing/manage-credits/manage-credits.service';
 import { PaymentRepository } from 'src/modules/billing/repositories/payment.repository';
 import { ActivateOrganizationService } from 'src/modules/organizations/activate-organization/activate-organization.service';
 import { DeactivateOrganizationService } from 'src/modules/organizations/deactivate-organization/deactivate-organization.service';
+
+type EventOf<T extends PaymentEvent['type']> = Extract<
+  PaymentEvent,
+  { type: T }
+>;
 
 @Injectable()
 export class StripeWebhookService {
   private readonly logger = new Logger(StripeWebhookService.name);
 
   constructor(
-    @Inject(STRIPE_CLIENT) private readonly stripe: Stripe,
+    @Inject(PAYMENTS) private readonly payments: PaymentsGateway,
     private readonly paymentRepository: PaymentRepository,
     private readonly manageCreditsService: ManageCreditsService,
     private readonly activateOrganizationService: ActivateOrganizationService,
@@ -28,130 +31,82 @@ export class StripeWebhookService {
     private readonly transactionExecutor: TransactionExecutor,
   ) {}
 
-  async execute(
-    signature: string,
-    payload: string,
-    webhookSecret: string,
-  ): Promise<void> {
-    let event: Stripe.Event;
+  async execute(signature: string, payload: string): Promise<void> {
+    const event = this.payments.parseWebhookEvent(payload, signature);
 
-    try {
-      event = this.stripe.webhooks.constructEvent(
-        payload,
-        signature,
-        webhookSecret,
-      );
-    } catch (err: any) {
-      this.logger.error(
-        `Webhook signature verification failed: ${err.message}`,
-      );
-      throw new BadRequestException('Assinatura do webhook inválida');
-    }
-
-    this.logger.log(`Processing webhook event: ${event.type}`);
+    this.logger.log(`Processando evento de pagamento: ${event.type}`);
 
     switch (event.type) {
-      case 'payment_intent.succeeded':
-        await this.handlePaymentIntentSucceeded(
-          event.data.object as Stripe.PaymentIntent,
-        );
-        break;
-
-      case 'payment_intent.payment_failed':
-        await this.handlePaymentIntentFailed(
-          event.data.object as Stripe.PaymentIntent,
-        );
-        break;
-
-      case 'checkout.session.completed':
-        await this.handleCheckoutSessionCompleted(
-          event.data.object as Stripe.Checkout.Session,
-        );
-        break;
-
-      case 'invoice.payment_succeeded':
-        await this.handleInvoicePaymentSucceeded(
-          event.data.object as Stripe.Invoice,
-        );
-        break;
-
-      case 'customer.subscription.created':
-      case 'customer.subscription.updated':
-        await this.handleSubscriptionUpdate(
-          event.data.object as Stripe.Subscription,
-        );
-        break;
-
-      case 'customer.subscription.deleted':
-        await this.handleSubscriptionDeleted(
-          event.data.object as Stripe.Subscription,
-        );
-        break;
-
-      default:
-        this.logger.log(`Unhandled event type: ${event.type}`);
+      case 'payment.succeeded':
+        return this.handlePaymentSucceeded(event);
+      case 'payment.failed':
+        return this.handlePaymentFailed(event);
+      case 'checkout.completed':
+        return this.handleCheckoutCompleted(event);
+      case 'subscription.renewed':
+        return this.handleSubscriptionRenewed(event);
+      case 'subscription.updated':
+        this.logger.log(`Assinatura atualizada: ${event.subscriptionId}`);
+        return;
+      case 'subscription.cancelled':
+        return this.handleSubscriptionCancelled(event);
+      case 'ignored':
+        this.logger.log(`Evento ignorado: ${event.eventType}`);
+        return;
     }
   }
 
-  private async handlePaymentIntentSucceeded(
-    paymentIntent: Stripe.PaymentIntent,
+  private async handlePaymentSucceeded(
+    event: EventOf<'payment.succeeded'>,
   ): Promise<void> {
     const payment = await this.paymentRepository.findByStripePaymentIntentId(
-      paymentIntent.id,
+      event.paymentReference,
     );
 
     if (!payment) {
       this.logger.warn(
-        `Payment not found for payment_intent: ${paymentIntent.id}`,
+        `Pagamento não encontrado para a referência ${event.paymentReference}`,
       );
       return;
     }
-
-    const credits = parseInt(paymentIntent.metadata?.credits || '0', 10);
-    const receiptUrl =
-      paymentIntent.latest_charge &&
-      typeof paymentIntent.latest_charge !== 'string'
-        ? ((paymentIntent.latest_charge as any)?.receipt_url ?? null)
-        : null;
 
     await this.transactionExecutor.run(async (tx) => {
       await this.paymentRepository.updateStatus(
         payment.id,
         PaymentStatus.SUCCEEDED,
-        { receipt_url: receiptUrl },
+        { receipt_url: event.receiptUrl },
         tx,
       );
 
-      if (credits > 0) {
+      if (event.credits > 0) {
         await this.manageCreditsService.execute(
           payment.organization_id,
-          credits,
+          event.credits,
           TransactionType.PURCHASE,
-          `Pagamento aprovado - ${credits} créditos adicionados`,
-          { paymentId: payment.id, stripePaymentIntentId: paymentIntent.id },
+          `Pagamento aprovado - ${event.credits} créditos adicionados`,
+          { paymentId: payment.id, paymentReference: event.paymentReference },
           tx,
         );
       }
     });
 
     this.logger.log(
-      `Payment succeeded for organization ${payment.organization_id}: ${credits} credits added`,
+      `Pagamento aprovado para a organização ${payment.organization_id}: ${event.credits} créditos`,
     );
 
-    // Activate organization
     await this.activateOrganizationService.execute(payment.organization_id);
   }
 
-  private async handlePaymentIntentFailed(
-    paymentIntent: Stripe.PaymentIntent,
+  private async handlePaymentFailed(
+    event: EventOf<'payment.failed'>,
   ): Promise<void> {
     const payment = await this.paymentRepository.findByStripePaymentIntentId(
-      paymentIntent.id,
+      event.paymentReference,
     );
 
     if (!payment) {
       this.logger.warn(
-        `Payment not found for payment_intent: ${paymentIntent.id}`,
+        `Pagamento não encontrado para a referência ${event.paymentReference}`,
       );
       return;
     }
@@ -160,96 +115,73 @@ export class StripeWebhookService {
       payment.id,
       PaymentStatus.FAILED,
       {
-        failure_reason:
-          paymentIntent.last_payment_error?.message || 'Payment failed',
+        failure_reason: event.reason,
       },
     );
 
     this.logger.log(
-      `Payment failed for organization ${payment.organization_id}`,
+      `Pagamento recusado para a organização ${payment.organization_id}`,
     );
   }
 
-  private async handleCheckoutSessionCompleted(
-    session: Stripe.Checkout.Session,
+  private async handleCheckoutCompleted(
+    event: EventOf<'checkout.completed'>,
   ): Promise<void> {
-    if (session.payment_status !== 'paid') {
+    if (!event.paid || !event.paymentReference) {
       return;
     }
 
-    const paymentIntentId = session.payment_intent as string;
-    const payment =
-      await this.paymentRepository.findByStripePaymentIntentId(paymentIntentId);
+    const payment = await this.paymentRepository.findByStripePaymentIntentId(
+      event.paymentReference,
+    );
 
     if (!payment) {
-      this.logger.warn(`Payment not found for session: ${session.id}`);
+      this.logger.warn(
+        `Pagamento não encontrado para a sessão ${event.sessionId}`,
+      );
       return;
     }
 
-    // Payment will be handled by payment_intent.succeeded webhook
     this.logger.log(
-      `Checkout session completed for organization ${payment.organization_id}`,
+      `Checkout concluído para a organização ${payment.organization_id}`,
     );
   }
 
-  private async handleInvoicePaymentSucceeded(
-    invoice: Stripe.Invoice,
+  private async handleSubscriptionRenewed(
+    event: EventOf<'subscription.renewed'>,
   ): Promise<void> {
-    // Handle subscription renewals
-    const rawSubscription = (invoice as any)?.subscription as
-      | string
-      | { id?: string }
-      | null
-      | undefined;
-    const subscriptionId =
-      typeof rawSubscription === 'string'
-        ? rawSubscription
-        : rawSubscription?.id;
-    const credits = parseInt(invoice.metadata?.credits || '0', 10);
-    const organizationId = invoice.metadata?.organizationId;
-
-    if (!organizationId || credits <= 0) {
+    if (!event.organizationId || event.credits <= 0) {
       return;
     }
 
-    // Add credits for subscription renewal
     await this.manageCreditsService.execute(
-      organizationId,
-      credits,
+      event.organizationId,
+      event.credits,
       TransactionType.PURCHASE,
-      `Renovação de assinatura - ${credits} créditos adicionados`,
+      `Renovação de assinatura - ${event.credits} créditos adicionados`,
       {
-        stripeInvoiceId: invoice.id,
-        ...(subscriptionId ? { stripeSubscriptionId: subscriptionId } : {}),
+        invoiceId: event.invoiceId,
+        ...(event.subscriptionId
+          ? { subscriptionId: event.subscriptionId }
+          : {}),
       },
     );
 
     this.logger.log(
-      `Subscription renewed for organization ${organizationId}: ${credits} credits added`,
+      `Assinatura renovada para a organização ${event.organizationId}: ${event.credits} créditos`,
     );
 
-    // Activate organization
-    await this.activateOrganizationService.execute(organizationId);
+    await this.activateOrganizationService.execute(event.organizationId);
   }
 
-  private async handleSubscriptionUpdate(
-    subscription: Stripe.Subscription,
+  private async handleSubscriptionCancelled(
+    event: EventOf<'subscription.cancelled'>,
   ): Promise<void> {
-    // Implementation for subscription updates
-    this.logger.log(`Subscription updated: ${subscription.id}`);
-  }
+    this.logger.log(`Assinatura cancelada: ${event.subscriptionId}`);
 
-  private async handleSubscriptionDeleted(
-    subscription: Stripe.Subscription,
-  ): Promise<void> {
-    // Implementation for subscription cancellation
-    this.logger.log(`Subscription deleted: ${subscription.id}`);
-
-    const organizationId = subscription.metadata?.organizationId;
-
-    if (organizationId) {
+    if (event.organizationId) {
       await this.deactivateOrganizationService.execute(
-        organizationId,
+        event.organizationId,
         'Subscription deleted',
       );
     }

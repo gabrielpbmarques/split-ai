@@ -48,7 +48,7 @@ Default port is **`4000`** (`src/main.ts:115`). There is **no global API prefix*
 │     POST /agent/load-sites        → LoadAgentSitesService                    │
 │     POST /support/source/generate → GenerateAgentSourceService               │
 │                                                                              │
-│     Spider crawl + PDF loader → SupabaseService.createVectorStore()          │
+│     Spider crawl + PDF loader → VECTOR_STORE.upsertChunks()                  │
 │     → SupabaseVectorStore.fromDocuments(chunks, embeddings, {                │
 │           tableName: 'documents', queryName: 'match_documents',              │
 │           filter: { source_type, agent_id, source_id }                       │
@@ -89,7 +89,7 @@ Default port is **`4000`** (`src/main.ts:115`). There is **no global API prefix*
 ├──────────────────────────────────────────────────────────────────────────────┤
 │  Phase E — Tool calls from inside the runnable                               │
 │     vector_similarity_search({ query, agent_id, source_type })               │
-│         → LoadVectorStoreService.execute({ agent_id, source_type })          │
+│         → VECTOR_STORE.loadIndex({ agent_id, source_type })                   │
 │         → ExecuteSimilaritySearchService.execute(store, query)               │
 │             ↳ ContextualCompressionRetriever                                 │
 │                 ↳ asRetriever(k=50)  → candidates (recall only)              │
@@ -314,7 +314,7 @@ const docs = await spiderService.crawl(sites, {
   return_format: 'text',
 });
 
-return supabaseService.createVectorStore(docs, {
+return vectorStore.upsertChunks(chunks, {
   source_type: 'site',
   agent_id: agentId,
   source_id: sourceId,
@@ -345,7 +345,7 @@ Flow (`execute()`):
 2. If `buffer` is present:
    - Create a `sources` row with `status: 'processing'`.
    - `loadPdfService.execute(buffer)` → chunks.
-   - `supabaseService.createVectorStore(chunks, { source_type: sourceType ?? 'pdf', agent_id, source_id })`.
+   - `vectorStore.upsertChunks(chunks, { source_type: sourceType ?? 'pdf', agent_id, source_id })`.
 3. If `url` is present:
    - Split on commas.
    - Per URL: create `sources` row → call `LoadAgentSitesService.execute(url, agentId, sourceId)`.
@@ -368,9 +368,9 @@ await this.sourceRepository.delete(id);
 
 The pgvector wipe is **tied to `source_id`** in metadata. If a source was ingested without `source_id`, this leaves orphan chunks in the vector store — flag during code review.
 
-### 3.4 `SupabaseService.createVectorStore` — the write path
+### 3.4 `VECTOR_STORE.upsertChunks` — the write path
 
-`src/infrastructure/voyage-rerank/supabase.provider.ts:22-47`:
+`src/infrastructure/integration/supabase/supabase-vector-store.gateway.ts` (`SupabaseVectorStoreGateway`; `MockVectorStoreGateway` in `INTEGRATION_MODE=mock`):
 
 ```ts
 const chunks = docs.map(
@@ -391,7 +391,7 @@ await SupabaseVectorStore.fromDocuments(chunks, this.embeddings, {
 return chunks.length;
 ```
 
-- The injected `embeddings` is `VOYAGE_EMBEDDINGS` (Voyage `voyage-3-large`, 1024 dims; `config.embeddingModel` env var).
+- The injected `embeddings` is the `EMBEDDINGS` port (Voyage `voyage-3-large`, 1024 dims; `EMBEDDING_MODEL` env var).
 - **Caller metadata overrides chunk metadata** when keys collide — be aware if Spider already set `agent_id` somehow.
 - `cleanInvalidUnicode()` (`src/shared/utils/clearInvalidUnicode.ts`) only removes NUL bytes — other invalid surrogates still slip through.
 
@@ -973,7 +973,7 @@ Four things to internalize:
 3. **Retrieval is threshold-based, so the tool can return an empty string.** Nothing clearing the rerank cutoff is a designed outcome, not a failure — check the `logger.warn` from `VoyageRerankCompressor` before assuming retrieval is broken.
 4. **Joining drops sources and scores.** Chunks are separated by a blank line so the model sees boundaries, but `metadata.relevance_score` is discarded. If you need citations, return a structured payload and update the LLM-side consumer (today there is none).
 
-#### `LoadVectorStore.execute(filter)` (lines 16-31 of `load-vector-store.service.ts`)
+#### `VECTOR_STORE.loadIndex(filter)` (`supabase-vector-store.gateway.ts`)
 
 ```ts
 SupabaseVectorStore.fromExistingIndex(this.embeddings, {
@@ -1008,7 +1008,7 @@ return retriever.invoke(question);
 
 The threshold sits on the cross-encoder score, never on the cosine score: `match_documents` already orders rows by `embedding <=> query_embedding`, so cutting on that same value adds nothing the ordering did not already encode, and a bi-encoder's scale is not comparable across queries. Observed pt-BR ranges: direct answer 0.87–0.96, partial match ~0.76, related-but-wrong ~0.49, off-topic 0.20–0.34.
 
-Backed by `VOYAGE_RERANK_SERVICE` (`src/infrastructure/voyage-rerank/voyage-rerank.provider.ts`), a plain `fetch` wrapper over `POST https://api.voyageai.com/v1/rerank` using the same `VOYAGEAI_API_KEY` as the embeddings.
+Backed by the `RERANKER` port (`src/infrastructure/integration/voyage/voyage-reranker.gateway.ts`): `ResilientClient` (timeout, circuit breaker, SSRF allowlist) over `POST https://api.voyageai.com/v1/rerank`, response validated by `voyage.contracts.ts`, same `VOYAGEAI_API_KEY` as the embeddings.
 
 ### 8.2 `execute_sql` (database tool)
 
@@ -1107,7 +1107,7 @@ private readonly CREDITS_PER_AI_RESPONSE = 3;
 | `agents_instructions`       | `AgentInstructionEntity`      | `CreateAgent`, `CreateAttendantAgent`, `UpdateAgent.update`                                         |
 | `sessions`                  | `SessionEntity`               | `CreateSessionIfNotExists`, expiration in same                                                      |
 | `messages`                  | `MessageEntity`               | `RecordChatMessage` (auto-embeds)                                                                   |
-| `documents`                 | (Supabase, no TypeORM entity) | `SupabaseService.createVectorStore`, `DeleteSource`                                                 |
+| `documents`                 | (Supabase, no TypeORM entity) | `VECTOR_STORE.upsertChunks`, `DeleteSource`                                                 |
 | `sources`                   | `SourceEntity`                | `GenerateAgentSource`, `DeleteSource`                                                               |
 | `token_usage`               | `TokenUsageEntity`            | `RecordTokenUsage` (per stream step + per non-stream call)                                          |
 | `credit_balances`           | `CreditBalanceEntity`         | `ManageCredits`                                                                                     |
@@ -1174,10 +1174,8 @@ AppModule
 │   │   ├── GenerateAiResponseModule        imports: — (the service has an empty constructor)
 │   │   ├── BuildSystemPromptModule         imports: NormalizePromptInstructionsModule
 │   │   ├── ExecuteSimilaritySearchModule   imports: RerankDocumentsModule
-│   │   ├── RerankDocumentsModule           imports: VoyageRerankProviderModule
-│   │   ├── LoadVectorStoreModule           imports: SupabaseProviderModule,
-│   │   │                                            VoyageEmbeddingsProviderModule
-│   │   ├── LoadAgentSitesModule            imports: SpiderProviderModule, SupabaseProviderModule
+│   │   ├── RerankDocumentsModule           imports: —  (RERANKER port is global)
+│   │   ├── LoadAgentSitesModule            imports: —  (SITE_CRAWLER + VECTOR_STORE ports)
 │   │   ├── AppendConnectionToolsModule     imports: AgentConnectionRepositoryModule,
 │   │   │                                            forwardRef(() => InvokeConnectedAgentModule)
 │   │   ├── InvokeConnectedAgentModule      imports: forwardRef(() => ResolveAgentModule)
@@ -1197,12 +1195,11 @@ AppModule
 Imported à la carte by whoever injects them:
   src/modules/users/repositories/<name>.repository.module.ts
       forFeature([XEntity]) + provides/exports exactly one repository.
-      MessageRepositoryModule additionally imports VoyageEmbeddingsProviderModule
-      (MessageRepository auto-embeds every message on create).
-  src/infrastructure/voyage-rerank/<name>.provider.module.ts
-      spreads one provider array, exports that provider's tokens.
-      SupabaseProviderModule imports VoyageEmbeddingsProviderModule (SUPABASE_SERVICE
-      injects VOYAGE_EMBEDDINGS); GcpStorage/GoogleVoice import ConfigModule.
+      (RecordChatMessageService embeds via the EMBEDDINGS port before create.)
+  src/infrastructure/integration/integration.module.ts   @Global()
+      publishes PAYMENTS, MESSAGING, EMAIL, EMBEDDINGS, VECTOR_STORE, RERANKER,
+      CHAT_MODEL, SITE_CRAWLER, FILE_STORAGE, TEXT_TO_SPEECH, OCR, CUSTOMER_DATABASE
+      (live gateway or in-memory mock per INTEGRATION_MODE) — nobody imports it.
 ```
 
 **Hard rule (from `[[architecture]]`):** a module's `imports` array is exactly the

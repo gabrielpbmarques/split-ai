@@ -1,7 +1,5 @@
 import { Module } from '@nestjs/common';
 
-import { SpiderProviderModule } from 'src/infrastructure/spider/spider.provider.module';
-import { SupabaseProviderModule } from 'src/infrastructure/supabase/supabase.provider.module';
 import { LoadAgentSitesService } from 'src/modules/agents/load-agent-sites/load-agent-sites.service';
 import { AgentRepositoryModule } from 'src/modules/agents/repositories/agent.repository.module';
 import { GenerateAgentSourceController } from 'src/modules/sources/generate-agent-source/generate-agent-source.controller';
@@ -20,8 +18,6 @@ import { ResolveSourceAgentModule } from 'src/modules/sources/resolve-source-age
     ProcessTextSourceModule,
     ResolveSourceAgentModule,
     SourceRepositoryModule,
-    SpiderProviderModule,
-    SupabaseProviderModule,
   ],
   providers: [GenerateAgentSourceService, LoadAgentSitesService],
   controllers: [GenerateAgentSourceController],

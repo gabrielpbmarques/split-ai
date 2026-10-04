@@ -1,15 +1,18 @@
 import { DynamicStructuredTool } from '@langchain/core/tools';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { z } from 'zod';
 
+import {
+  VECTOR_STORE,
+  VectorStoreGateway,
+} from 'src/infrastructure/integration/vector-store.port';
 import { ExecuteSimilaritySearchService } from 'src/modules/retrieval/execute-similarity-search/execute-similarity-search.service';
-import { LoadVectorStoreService } from 'src/modules/retrieval/load-vector-store/load-vector-store.service';
 import { CustomDocument } from 'src/shared/contracts';
 
 @Injectable()
 export class LoadVectorSearchToolService {
   constructor(
-    private readonly loadVectorStoreService: LoadVectorStoreService,
+    @Inject(VECTOR_STORE) private readonly vectorStore: VectorStoreGateway,
     private readonly executeSimilaritySearchService: ExecuteSimilaritySearchService,
   ) {}
 
@@ -39,7 +42,7 @@ export class LoadVectorSearchToolService {
           .describe('Tipo de fonte para busca de vetores'),
       }),
       func: async ({ query, agent_id, source_type }) => {
-        const vectorStore = await this.loadVectorStoreService.execute({
+        const vectorStore = await this.vectorStore.loadIndex({
           agent_id,
           source_type,
         });

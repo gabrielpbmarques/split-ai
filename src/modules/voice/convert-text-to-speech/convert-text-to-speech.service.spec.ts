@@ -8,25 +8,32 @@ jest.mock('fs-extra', () => ({
 }));
 
 describe('ConvertTextToSpeechService', () => {
-  const googleVoice = { textToSpeech: jest.fn() };
-  const gcpStorage = {
-    uploadMp3File: jest.fn().mockResolvedValue('https://bucket/file.mp3'),
+  const textToSpeech = {
+    name: 'tts',
+    state: () => 'MOCK',
+    synthesize: jest.fn(),
+  };
+  const fileStorage = {
+    name: 'storage',
+    state: () => 'MOCK',
+    uploadAudio: jest.fn().mockResolvedValue('https://bucket/file.mp3'),
+    deleteFile: jest.fn(),
   };
   const service = new ConvertTextToSpeechService(
-    googleVoice as any,
-    gcpStorage as any,
+    textToSpeech as any,
+    fileStorage as any,
   );
 
   beforeEach(() => jest.clearAllMocks());
 
   it('synthesizes, writes the mp3 locally and uploads it', async () => {
-    googleVoice.textToSpeech.mockResolvedValue(new Uint8Array([1, 2, 3]));
+    textToSpeech.synthesize.mockResolvedValue(new Uint8Array([1, 2, 3]));
 
     const result = await service.execute('olá');
 
-    expect(googleVoice.textToSpeech).toHaveBeenCalledWith('olá');
+    expect(textToSpeech.synthesize).toHaveBeenCalledWith('olá');
     expect(fs.writeFile).toHaveBeenCalled();
-    expect(gcpStorage.uploadMp3File).toHaveBeenCalledWith(
+    expect(fileStorage.uploadAudio).toHaveBeenCalledWith(
       result.audioPath,
       result.fileName,
     );
@@ -34,10 +41,10 @@ describe('ConvertTextToSpeechService', () => {
     expect(result.fileName).toMatch(/\.mp3$/);
   });
 
-  it('fails when the voice provider returns nothing', async () => {
-    googleVoice.textToSpeech.mockResolvedValue(null);
+  it('propagates a failure from the voice provider without uploading', async () => {
+    textToSpeech.synthesize.mockRejectedValue(new Error('voz indisponível'));
 
-    await expect(service.execute('olá')).rejects.toThrow();
-    expect(gcpStorage.uploadMp3File).not.toHaveBeenCalled();
+    await expect(service.execute('olá')).rejects.toThrow('voz indisponível');
+    expect(fileStorage.uploadAudio).not.toHaveBeenCalled();
   });
 });

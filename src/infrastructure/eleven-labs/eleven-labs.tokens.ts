@@ -1,2 +1,0 @@
-export const ELEVEN_LABS_CLIENT = Symbol('ELEVEN_LABS_CLIENT');
-export const ELEVEN_LABS_SERVICE = Symbol('ELEVEN_LABS_SERVICE');

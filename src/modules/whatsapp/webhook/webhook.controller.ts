@@ -2,7 +2,6 @@ import { Body, Controller, Logger, Post, Res } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { FastifyReply } from 'fastify';
 
-import { WebhookDto } from 'src/modules/whatsapp/webhook/webhook.dto';
 import { WebhookService } from 'src/modules/whatsapp/webhook/webhook.service';
 import { Public } from 'src/shared/decorators/public.decorator';
 
@@ -20,9 +19,9 @@ export class WebhookController {
   @ApiOkResponse()
   async handle(
     @Res() res: FastifyReply,
-    @Body() body: Record<string, string>,
+    @Body() body: Record<string, unknown>,
   ): Promise<FastifyReply> {
-    await this.webhookService.execute(body as WebhookDto).catch((error) => {
+    await this.webhookService.execute(body).catch((error) => {
       this.logger.error('Falha ao processar webhook do WhatsApp', error);
     });
 

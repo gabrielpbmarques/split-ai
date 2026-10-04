@@ -1,16 +1,39 @@
-import { SqlDatabase } from '@langchain/classic/sql_db';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { DynamicStructuredTool, tool } from 'langchain';
-import { DataSource } from 'typeorm';
 import z from 'zod';
 
-const DENY_RE = /\b(DELETE|ALTER|DROP|CREATE|REPLACE|TRUNCATE)\b/i;
-const HAS_LIMIT_TAIL_RE = /\blimit\b\s+\d+(\s*,\s*\d+)?\s*;?\s*$/i;
+import {
+  assertScoped,
+  sanitizeSqlQuery,
+  SqlScope,
+} from 'src/infrastructure/integration/customer-database/sql-guard';
+import {
+  CUSTOMER_DATABASE,
+  CustomerDatabaseGateway,
+  CustomerDatabaseOptions,
+  SqlDialect,
+} from 'src/infrastructure/integration/customer-database.port';
 
-type SupportedDialect = 'postgres' | 'mysql';
+export interface LoadDatabaseToolInput {
+  databaseUrl: string;
+  includeTables?: string[];
+  sampleRows?: number;
+  readOnly?: boolean;
+  scope?: SqlScope;
+  scopeRequired?: boolean;
+}
+
+export type DatabaseTool = DynamicStructuredTool<
+  z.ZodObject<{ query: z.ZodString }>
+>;
 
 @Injectable()
 export class LoadDatabaseToolService {
+  constructor(
+    @Inject(CUSTOMER_DATABASE)
+    private readonly customerDatabase: CustomerDatabaseGateway,
+  ) {}
+
   async execute({
     databaseUrl,
     includeTables,
@@ -18,22 +41,16 @@ export class LoadDatabaseToolService {
     readOnly = false,
     scope,
     scopeRequired = false,
-  }: {
-    databaseUrl: string;
-    includeTables?: string[];
-    sampleRows?: number;
-    readOnly?: boolean;
-    scope?: { column: string; value: string | number };
-    scopeRequired?: boolean;
-  }): Promise<DynamicStructuredTool<z.ZodObject<{ query: z.ZodString }>>> {
-    const dialect = this.detectDialect(databaseUrl);
+  }: LoadDatabaseToolInput): Promise<DatabaseTool> {
+    const options: CustomerDatabaseOptions = { includeTables, sampleRows };
 
-    const schema = await this.withDatabase(
-      dialect,
+    const { dialect, schema } = await this.customerDatabase.withConnection(
       databaseUrl,
-      includeTables,
-      sampleRows,
-      (db) => db.getTableInfo(),
+      options,
+      async (connection) => ({
+        dialect: connection.dialect,
+        schema: await connection.describeSchema(),
+      }),
     );
 
     return tool(
@@ -41,25 +58,20 @@ export class LoadDatabaseToolService {
         if (scopeRequired && !scope) {
           return 'Consulta bloqueada: escopo de empresa ausente. Nenhum dado pode ser lido sem uma empresa autenticada.';
         }
-        let q: string;
+
+        let sanitized: string;
+
         try {
-          q = this.sanitizeSqlQuery(query, { readOnly });
-          if (scope) this.assertScoped(q, scope);
-        } catch (e: any) {
-          return `Consulta rejeitada: ${e?.message ?? String(e)}`;
+          sanitized = sanitizeSqlQuery(query, { readOnly });
+          if (scope) assertScoped(sanitized, scope);
+        } catch (error) {
+          return `Consulta rejeitada: ${(error as Error).message}`;
         }
-        return this.withDatabase(
-          dialect,
+
+        return this.customerDatabase.withConnection(
           databaseUrl,
-          includeTables,
-          sampleRows,
-          async (db) => {
-            try {
-              return await db.run(q);
-            } catch (e: any) {
-              throw new Error(e?.message ?? String(e));
-            }
-          },
+          options,
+          (connection) => connection.run(sanitized),
         );
       },
       {
@@ -81,69 +93,16 @@ export class LoadDatabaseToolService {
     );
   }
 
-  private async withDatabase<T>(
-    dialect: SupportedDialect,
-    databaseUrl: string,
-    includeTables: string[] | undefined,
-    sampleRows: number | undefined,
-    fn: (db: SqlDatabase) => Promise<T>,
-  ): Promise<T> {
-    const database = this.parseDatabaseName(databaseUrl);
-    const dataSource = new DataSource({
-      type: dialect,
-      url: databaseUrl,
-      ...(database ? { database } : {}),
-    });
-    await dataSource.initialize();
-    try {
-      const db = await SqlDatabase.fromDataSourceParams({
-        appDataSource: dataSource,
-        ...(includeTables?.length ? { includesTables: includeTables } : {}),
-        ...(sampleRows !== undefined
-          ? { sampleRowsInTableInfo: sampleRows }
-          : {}),
-      });
-      return await fn(db);
-    } finally {
-      await dataSource.destroy().catch(() => {});
-    }
-  }
-
-  private parseDatabaseName(url: string): string | undefined {
-    try {
-      const name = decodeURIComponent(new URL(url).pathname.replace(/^\//, ''));
-      return name || undefined;
-    } catch {
-      return undefined;
-    }
-  }
-
-  private detectDialect(url: string): SupportedDialect {
-    if (url.startsWith('postgres://') || url.startsWith('postgresql://')) {
-      return 'postgres';
-    }
-    if (url.startsWith('mysql://') || url.startsWith('mysql2://')) {
-      return 'mysql';
-    }
-    const scheme = url.split('://')[0] || url.slice(0, 20);
-    throw new BadRequestException(
-      `database_url com scheme não suportado: '${scheme}'. Apenas postgres:// e mysql:// são aceitos.`,
-    );
-  }
-
   private buildDescription(
-    dialect: SupportedDialect,
+    dialect: SqlDialect,
     schema: string,
-    opts?: {
-      readOnly?: boolean;
-      scope?: { column: string; value: string | number };
-    },
+    opts: { readOnly: boolean; scope?: SqlScope },
   ): string {
     const dialectLabel = dialect === 'postgres' ? 'PostgreSQL' : 'MySQL';
-    const rule1 = opts?.readOnly
+    const rule1 = opts.readOnly
       ? '1. SOMENTE SELECT (somente leitura). INSERT/UPDATE/DELETE/ALTER/DROP/CREATE/REPLACE/TRUNCATE são bloqueados.'
       : '1. Use apenas SELECT, INSERT ou UPDATE. DELETE/ALTER/DROP/CREATE/REPLACE/TRUNCATE são bloqueados.';
-    const scopeRule = opts?.scope
+    const scopeRule = opts.scope
       ? `
       6. ISOLAMENTO OBRIGATÓRIO DE EMPRESA: toda query DEVE filtrar ${opts.scope.column} = ${opts.scope.value}, referenciando uma tabela que possua essa coluna (ex.: app_company, app_company_user, app_company_campaign). Para tabelas-filho sem ${opts.scope.column}, faça JOIN até o pai (ex.: app_company_campaign / app_company_analytics_session) e filtre o ${opts.scope.column} = ${opts.scope.value} dele. É PROIBIDO usar outro valor, ${opts.scope.column} IN (...), faixas ou desigualdades sobre ${opts.scope.column} — a query será REJEITADA automaticamente.`
       : '';
@@ -160,74 +119,5 @@ export class LoadDatabaseToolService {
       4. Prefira listar colunas explicitamente em vez de SELECT *.
       5. Em caso de erro do banco, analise a mensagem, corrija e tente de novo (até 3 tentativas).${scopeRule}
     `;
-  }
-
-  private sanitizeSqlQuery(q: string, opts?: { readOnly?: boolean }): string {
-    let query = String(q ?? '').trim();
-
-    query = query.replace(/;+\s*$/g, '').trim();
-    if (query.includes(';')) {
-      throw new Error('multiple statements are not allowed.');
-    }
-
-    const lower = query.toLowerCase();
-    if (opts?.readOnly) {
-      if (!lower.startsWith('select')) {
-        throw new Error('Only read-only SELECT statements are allowed');
-      }
-    } else if (
-      !(
-        lower.startsWith('select') ||
-        lower.startsWith('insert') ||
-        lower.startsWith('update')
-      )
-    ) {
-      throw new Error('Only SELECT/INSERT/UPDATE statements are allowed');
-    }
-    if (DENY_RE.test(query)) {
-      throw new Error(
-        'DML/DDL detected. Only SELECT/INSERT/UPDATE queries are permitted.',
-      );
-    }
-
-    if (!HAS_LIMIT_TAIL_RE.test(query)) {
-      query += ' LIMIT 5';
-    }
-
-    return query;
-  }
-
-  private assertScoped(
-    query: string,
-    scope: { column: string; value: string | number },
-  ): void {
-    const column = String(scope.column).replace(/[^a-z0-9_]/gi, '');
-    const value = String(scope.value);
-    if (!column || !/^\d+$/.test(value)) {
-      throw new Error('escopo de empresa inválido.');
-    }
-
-    const qualifier = '(?:`?[a-z0-9_]+`?\\.)?';
-    const col = `\`?${column}\`?`;
-
-    const present = new RegExp(
-      `(?<![a-z0-9_\`])${qualifier}${col}\\s*=\\s*${value}(?![0-9])`,
-      'i',
-    ).test(query);
-    if (!present) {
-      throw new Error(
-        `toda query deve filtrar ${column} = ${value} (escopo da empresa).`,
-      );
-    }
-
-    const widens = new RegExp(
-      `(?<![a-z0-9_\`])${col}\\s*(?:in\\b|<>|!=|>=|<=|>|<|=\\s*(?!${value}(?![0-9]))\\d)`,
-      'i',
-    ).test(query);
-    if (widens) {
-      throw new Error(
-        `apenas ${column} = ${value} é permitido — sem IN, faixas, desigualdades ou outra empresa.`,
-      );
-    }
   }
 }

@@ -1,18 +1,22 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { GenericParams } from '@spider-cloud/spider-client';
 
-import { SpiderService } from 'src/infrastructure/spider/spider.provider';
-import { SPIDER_SERVICE } from 'src/infrastructure/spider/spider.tokens';
-import { SupabaseService } from 'src/infrastructure/supabase/supabase.provider';
-import { SUPABASE_SERVICE } from 'src/infrastructure/supabase/supabase.tokens';
+import {
+  SITE_CRAWLER,
+  SiteCrawler,
+} from 'src/infrastructure/integration/site-crawler.port';
+import {
+  VECTOR_STORE,
+  VectorStoreGateway,
+} from 'src/infrastructure/integration/vector-store.port';
+
+const CRAWL_LIMIT = 20;
+const CRAWL_DEPTH = 25;
 
 @Injectable()
 export class LoadAgentSitesService {
   constructor(
-    @Inject(SPIDER_SERVICE)
-    private readonly spiderService: SpiderService,
-    @Inject(SUPABASE_SERVICE)
-    private readonly supabaseService: SupabaseService,
+    @Inject(SITE_CRAWLER) private readonly siteCrawler: SiteCrawler,
+    @Inject(VECTOR_STORE) private readonly vectorStore: VectorStoreGateway,
   ) {}
 
   async execute(
@@ -22,22 +26,20 @@ export class LoadAgentSitesService {
   ): Promise<number> {
     if (!sites?.length) return 0;
 
-    const crawlParams: GenericParams = {
-      limit: 20,
-      depth: 25,
-      metadata: true,
-      readability: true,
-      return_format: 'text',
-    };
+    const pages = await this.siteCrawler.crawl(sites, {
+      limit: CRAWL_LIMIT,
+      depth: CRAWL_DEPTH,
+    });
 
-    const docs = await this.spiderService.crawl(sites, crawlParams);
+    const chunks = pages.map((page) => ({
+      pageContent: page.content,
+      metadata: { ...page.metadata },
+    }));
 
-    const chunkCount = await this.supabaseService.createVectorStore(docs, {
+    return this.vectorStore.upsertChunks(chunks, {
       source_type: 'site',
       agent_id: agentId,
       source_id: sourceId,
     });
-
-    return chunkCount;
   }
 }

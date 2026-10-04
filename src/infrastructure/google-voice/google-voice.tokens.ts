@@ -1,1 +1,0 @@
-export const GOOGLE_VOICE_SERVICE = Symbol('GOOGLE_VOICE_SERVICE');

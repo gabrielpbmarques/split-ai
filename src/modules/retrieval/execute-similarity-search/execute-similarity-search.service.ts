@@ -1,6 +1,6 @@
 import { ContextualCompressionRetriever } from '@langchain/classic/retrievers/contextual_compression';
-import { SupabaseVectorStore } from '@langchain/community/vectorstores/supabase';
 import { BaseRetrieverInterface } from '@langchain/core/retrievers';
+import { VectorStoreInterface } from '@langchain/core/vectorstores';
 import { Injectable } from '@nestjs/common';
 import { Document } from 'langchain';
 
@@ -14,7 +14,7 @@ export class ExecuteSimilaritySearchService {
   ) {}
 
   async execute(
-    vectorStore: SupabaseVectorStore,
+    vectorStore: VectorStoreInterface,
     question: string,
   ): Promise<Document<Record<string, any>>[]> {
     const retriever = new ContextualCompressionRetriever({

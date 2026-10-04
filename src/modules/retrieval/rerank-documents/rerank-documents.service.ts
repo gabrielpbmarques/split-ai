@@ -2,15 +2,17 @@ import { BaseDocumentCompressor } from '@langchain/classic/retrievers/document_c
 import { Document, DocumentInterface } from '@langchain/core/documents';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 
-import { IVoyageRerankService } from 'src/infrastructure/voyage-rerank/voyage-rerank.provider';
-import { VOYAGE_RERANK_SERVICE } from 'src/infrastructure/voyage-rerank/voyage-rerank.tokens';
+import {
+  RERANKER,
+  RerankerGateway,
+} from 'src/infrastructure/integration/reranker.port';
 import { env } from 'src/shared/config/env';
 
 export class VoyageRerankCompressor extends BaseDocumentCompressor {
   private readonly logger = new Logger(VoyageRerankCompressor.name);
 
   constructor(
-    private readonly rerankService: IVoyageRerankService,
+    private readonly rerankService: RerankerGateway,
     private readonly minScore: number,
     private readonly maxResults: number,
   ) {
@@ -58,8 +60,7 @@ export class VoyageRerankCompressor extends BaseDocumentCompressor {
 @Injectable()
 export class RerankDocumentsService {
   constructor(
-    @Inject(VOYAGE_RERANK_SERVICE)
-    private readonly rerankService: IVoyageRerankService,
+    @Inject(RERANKER) private readonly rerankService: RerankerGateway,
   ) {}
 
   execute(): BaseDocumentCompressor {

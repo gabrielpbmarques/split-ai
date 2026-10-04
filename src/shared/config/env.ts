@@ -33,6 +33,22 @@ const envSchema = z.object({
     .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace'])
     .default('info'),
   SWAGGER_ENABLED: booleanFlag,
+  INTEGRATION_MODE: z.enum(['mock', 'live']).optional(),
+
+  HTTP_TIMEOUT_MS: z.coerce.number().int().positive().default(10_000),
+  HTTP_RETRIES: z.coerce.number().int().min(0).max(5).default(2),
+  HTTP_BACKOFF_BASE_MS: z.coerce.number().int().positive().default(200),
+  HTTP_CIRCUIT_FAILURE_THRESHOLD: z.coerce.number().int().positive().default(5),
+  HTTP_CIRCUIT_OPEN_MS: z.coerce.number().int().positive().default(30_000),
+  HTTP_ALLOWED_HOSTS: z
+    .string()
+    .default('api.voyageai.com')
+    .transform((value) =>
+      value
+        .split(',')
+        .map((item) => item.trim().toLowerCase())
+        .filter(Boolean),
+    ),
 
   DATABASE_URL: z.string().min(1),
   DATABASE_POOL_MIN: z.coerce.number().int().min(0).default(1),
@@ -56,6 +72,10 @@ const envSchema = z.object({
   AUTH_PRINCIPAL_CACHE_TTL_MS: z.coerce.number().int().min(0).default(30_000),
 
   ANTHROPIC_API_KEY: z.string().min(1).optional(),
+  ANTHROPIC_BASE_URL: z
+    .string()
+    .url()
+    .default('https://api.deepseek.com/anthropic'),
   AI_MODEL: z.string().min(1).optional(),
   ORCHESTRATOR_MODEL: z.string().min(1).default('claude-sonnet-4-6'),
   LANGCHAIN_PROJECT: z.string().min(1).optional(),
@@ -86,16 +106,33 @@ const envSchema = z.object({
   STRIPE_PUBLISHABLE_KEY: z.string().min(1).optional(),
   STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
 
+  TTS_PROVIDER: z.enum(['google', 'elevenlabs']).default('google'),
+  GCS_AUDIO_BUCKET: z.string().min(1).default('alert-calls-audios'),
   ELEVENLABS_API_KEY: z.string().min(1).optional(),
   ELEVENLABS_VOICE_ID: z.string().min(1).default('21m00Tcm4TlvDq8ikWAM'),
   ELEVENLABS_MODEL_ID: z.string().min(1).default('eleven_multilingual_v2'),
   ELEVENLABS_OUTPUT_FORMAT: z.string().min(1).default('mp3_44100_128'),
-  ELEVENLABS_STT_MODEL_ID: z.string().min(1).default('scribe_v1'),
+
+  CUSTOMER_DATABASE_ALLOWED_HOSTS: csvList,
+  CUSTOMER_DATABASE_ALLOW_INTERNAL_NETWORK: booleanFlag,
+  CUSTOMER_DATABASE_STATEMENT_TIMEOUT_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(15_000),
+  CUSTOMER_DATABASE_CONNECTION_TIMEOUT_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(5_000),
 });
 
 type EnvSchema = z.infer<typeof envSchema>;
 
-export interface AppConfig extends Omit<EnvSchema, 'ENV'> {
+export type IntegrationMode = 'mock' | 'live';
+
+export interface AppConfig extends Omit<EnvSchema, 'ENV' | 'INTEGRATION_MODE'> {
+  readonly INTEGRATION_MODE: IntegrationMode;
   readonly isProduction: boolean;
   readonly isTest: boolean;
 }
@@ -111,14 +148,16 @@ function loadConfig(): AppConfig {
     throw new Error(`Variáveis de ambiente inválidas:\n${problems}`);
   }
 
-  const { ENV, ...parsed } = result.data;
+  const { ENV, INTEGRATION_MODE, ...parsed } = result.data;
   const effectiveNodeEnv = ENV ?? parsed.NODE_ENV;
+  const isTest = effectiveNodeEnv === 'test';
 
   return Object.freeze({
     ...parsed,
     NODE_ENV: effectiveNodeEnv,
+    INTEGRATION_MODE: INTEGRATION_MODE ?? (isTest ? 'mock' : 'live'),
     isProduction: effectiveNodeEnv === 'production',
-    isTest: effectiveNodeEnv === 'test',
+    isTest,
   });
 }
 

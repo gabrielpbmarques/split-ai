@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 
-import { StripeProviderModule } from 'src/infrastructure/stripe/stripe.provider.module';
 import { CreateCheckoutController } from 'src/modules/billing/create-checkout/create-checkout.controller';
 import { CreateCheckoutService } from 'src/modules/billing/create-checkout/create-checkout.service';
 import { PaymentRepositoryModule } from 'src/modules/billing/repositories/payment.repository.module';
@@ -12,7 +11,6 @@ import { OrganizationRepositoryModule } from 'src/modules/organizations/reposito
     OrganizationRepositoryModule,
     PaymentRepositoryModule,
     PlanRepositoryModule,
-    StripeProviderModule,
   ],
   providers: [CreateCheckoutService],
   controllers: [CreateCheckoutController],

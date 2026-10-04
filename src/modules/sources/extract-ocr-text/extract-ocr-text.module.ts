@@ -1,4 +1,3 @@
-import { ImageAnnotatorClient } from '@google-cloud/vision';
 import { Module } from '@nestjs/common';
 
 import { GenerateAiResponseModule } from 'src/modules/agent-runtime/generate-ai-response/generate-ai-response.module';
@@ -7,13 +6,7 @@ import { ExtractOcrTextService } from 'src/modules/sources/extract-ocr-text/extr
 
 @Module({
   imports: [GenerateAiResponseModule, ResolveAgentModule],
-  providers: [
-    ExtractOcrTextService,
-    {
-      provide: ImageAnnotatorClient,
-      useFactory: () => new ImageAnnotatorClient(),
-    },
-  ],
+  providers: [ExtractOcrTextService],
   exports: [ExtractOcrTextService],
 })
 export class ExtractOcrTextModule {}

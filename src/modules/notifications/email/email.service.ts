@@ -1,19 +1,16 @@
 import { Inject, Injectable } from '@nestjs/common';
 
 import {
-  EmailService as IEmailService,
-  EmailOptions,
-} from 'src/infrastructure/sendgrid/sendgrid.provider';
-import { EMAIL_SERVICE } from 'src/infrastructure/sendgrid/sendgrid.tokens';
+  EMAIL,
+  EmailGateway,
+  EmailMessage,
+} from 'src/infrastructure/integration/email.port';
 
 @Injectable()
 export class EmailService {
-  constructor(
-    @Inject(EMAIL_SERVICE)
-    private readonly emailService: IEmailService,
-  ) {}
+  constructor(@Inject(EMAIL) private readonly email: EmailGateway) {}
 
-  async execute(options: EmailOptions): Promise<void> {
-    await this.emailService.send(options);
+  async execute(message: EmailMessage): Promise<void> {
+    await this.email.send(message);
   }
 }

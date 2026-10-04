@@ -8,7 +8,7 @@ description: 'Use for imports (barrel vs direct), file/class/method naming and s
 - **Repositories**: Import from `src/modules/users/repositories/<name>.repository` (specific files) — NOT from the barrel `src/modules/users/repositories/index.ts` in services.
 - **Entities**: Import from `src/infrastructure/database/schema` (barrel) or specific entity files.
 - **Types/Models**: Import from `src/shared/contracts` (barrel) or `src/shared/contracts/models/<name>.model`.
-- **Infrastructure tokens**: Import from `src/infrastructure/voyage-rerank/<name>.provider`.
+- **Integration ports**: Import token + interface from `src/infrastructure/integration/<name>.port` (`PAYMENTS` / `PaymentsGateway`, `VECTOR_STORE` / `VectorStoreGateway`, …).
 - **Decorators**: Import `User` as `AuthUser` in controllers to avoid conflict with the `User` type:
 
 ```typescript
@@ -74,7 +74,7 @@ export function formatCreatedAt(createdAt: Date): string {
 Or as arrow functions:
 
 ```typescript
-export const getUrlBuffer = async (url: string): Promise<Buffer> => {
+export const cleanPhoneNumber = (phone: string): string => {
   // ...
 };
 ```
@@ -115,23 +115,17 @@ When a service needs an external provider:
 
 ```typescript
 import { Inject } from '@nestjs/common';
-import {
-  EMAIL_SERVICE,
-  IEmailService,
-} from 'src/infrastructure/voyage-rerank/email.provider';
+import { EMAIL, EmailGateway } from 'src/infrastructure/integration/email.port';
 
 @Injectable()
 export class SendNotificationService {
-  constructor(
-    @Inject(EMAIL_SERVICE)
-    private readonly emailService: IEmailService,
-  ) {}
+  constructor(@Inject(EMAIL) private readonly email: EmailGateway) {}
 }
 ```
 
-- Use the **injection token** (`EMAIL_SERVICE`) with `@Inject()`.
-- Import the **interface** (`IEmailService`) for typing.
-- The module imports **that provider's module only** — `SendGridProviderModule` for `EMAIL_SERVICE`, `StripeProviderModule` for `STRIPE_CLIENT`, and so on (`src/infrastructure/voyage-rerank/<name>.provider.module.ts`). There is no catch-all `InfrastructureModule`.
+- Use the **port token** (`EMAIL`) with `@Inject()` and the **port interface** (`EmailGateway`) for typing.
+- The module imports **nothing** for it: `src/infrastructure/integration/integration.module.ts` is `@Global()` and publishes every port, choosing the live gateway or the mock by `INTEGRATION_MODE`.
+- Never import an SDK (`stripe`, `twilio`, `@supabase/supabase-js`, `@langchain/anthropic`, …), `fetch` or `axios` under `src/modules/` — add a gateway in `src/infrastructure/integration/<source>/` instead.
 - Same for repositories: `src/modules/users/repositories/<name>.repository.module.ts` exports exactly one repository; import the ones the service injects and no others.
 
 ## Commit Convention

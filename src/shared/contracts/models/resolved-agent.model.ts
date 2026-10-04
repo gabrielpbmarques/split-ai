@@ -1,4 +1,4 @@
-import { ChatAnthropic } from '@langchain/anthropic';
+import { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import type { createAgent, DynamicStructuredTool } from 'langchain';
 import { z } from 'zod';
 
@@ -9,7 +9,7 @@ export type AgentRunnable = ReturnType<typeof createAgent>;
 export interface ResolvedAgent {
   id?: string;
   systemPrompt: string;
-  chat: ChatAnthropic;
+  chat: BaseChatModel;
   runnableOpts: RunnableChatOpts;
   tools?: DynamicStructuredTool<z.ZodObject<any>>[];
   sites?: string[];

@@ -2,7 +2,7 @@ import { Document } from '@langchain/core/documents';
 import { Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 
-import { VOYAGE_RERANK_SERVICE } from 'src/infrastructure/voyage-rerank/voyage-rerank.tokens';
+import { RERANKER } from 'src/infrastructure/integration/reranker.port';
 import { RerankDocumentsService } from 'src/modules/retrieval/rerank-documents/rerank-documents.service';
 import { env } from 'src/shared/config/env';
 
@@ -36,7 +36,7 @@ describe('RerankDocumentsService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RerankDocumentsService,
-        { provide: VOYAGE_RERANK_SERVICE, useValue: mockRerankService },
+        { provide: RERANKER, useValue: mockRerankService },
       ],
     }).compile();
 
