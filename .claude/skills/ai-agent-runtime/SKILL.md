@@ -72,14 +72,14 @@ const configurable = {
   configurable: {
     thread_id: `${agent.organization_id}_${metadata.session_id}`,
   },
-  callbacks: [this.tracer], // LangSmith
+  callbacks: this.tracers, // LangSmith (empty in INTEGRATION_MODE=mock)
   tags: [env.NODE_ENV, agent.id, metadata.organization_id].filter(Boolean),
   metadata: { userId, sessionId, environment: env.NODE_ENV },
 };
 ```
 
 - **`thread_id` format is `${organization_id}_${session_id}`.** This is what binds a conversation's history together in the checkpointer. Change the format only if you migrate stored threads — otherwise existing sessions detach from their memory.
-- LangSmith tracing is **always on** (constructor: `new LangChainTracer({ projectName: env.LANGCHAIN_PROJECT })`). Make sure `LANGSMITH_*` env vars are set in any new environment.
+- LangSmith tracing is on whenever `INTEGRATION_MODE` is not `mock` (constructor builds `new LangChainTracer({ projectName: env.LANGCHAIN_PROJECT })`); tests run without a tracer. Make sure `LANGSMITH_*` env vars are set in any new live environment.
 - `invokeParams` is `{ messages: [new HumanMessage(question)] }` and the config is a `RunnableConfig`; no casts since `@langchain/langgraph` was aligned with `langchain@1.x`.
 
 ### Non-stream path (lines 80-101)

@@ -17,10 +17,13 @@ import { textOf } from 'src/shared/utils/text-of';
 
 @Injectable()
 export class GenerateAiResponseService {
-  private tracer: LangChainTracer;
+  private readonly tracers: LangChainTracer[];
 
   constructor() {
-    this.tracer = new LangChainTracer({ projectName: env.LANGCHAIN_PROJECT });
+    this.tracers =
+      env.INTEGRATION_MODE === 'mock'
+        ? []
+        : [new LangChainTracer({ projectName: env.LANGCHAIN_PROJECT })];
   }
 
   async execute(
@@ -40,7 +43,7 @@ export class GenerateAiResponseService {
         configurable: {
           thread_id: `${agent.organization_id}_${threadKey}`,
         },
-        callbacks: [this.tracer],
+        callbacks: this.tracers,
         tags: [env.NODE_ENV, agent.id, metadata.organization_id].filter(
           (tag): tag is string => Boolean(tag),
         ),

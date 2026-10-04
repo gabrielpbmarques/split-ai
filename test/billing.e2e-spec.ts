@@ -33,7 +33,7 @@ describe('billing (e2e)', () => {
     expect(plans.body).toHaveLength(1);
 
     const key = await t.http().get('/payment/stripe-public-key').expect(200);
-    expect(key.body).toHaveProperty('publicKey');
+    expect(key.body).toEqual({ publicKey: 'pk_test_mock' });
   });
 
   it('POST /payment/checkout opens a checkout through the payments port and records a pending payment', async () => {
