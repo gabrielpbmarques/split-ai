@@ -3,7 +3,7 @@ paths:
   - 'src/modules/chat/**/*.ts'
 ---
 
-# Scoped rule — `src/modules/AIChat/`
+# Scoped rule — `src/modules/chat/`
 
 Thin path-scoped reminder. Full detail: the **`ai-chat-flows`** skill. Live entry points only: `Question/` (`POST /support/question`, streams) and `Attendant/` (`POST /chat/attendant`, non-stream); both wired in `ai-chat.module.ts`.
 

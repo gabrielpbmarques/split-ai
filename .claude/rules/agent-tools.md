@@ -4,7 +4,7 @@ paths:
   - 'src/shared/utils/build-zod-schema.ts'
 ---
 
-# Scoped rule — `src/modules/Tools/`
+# Scoped rule — `src/modules/retrieval/`
 
 Thin path-scoped reminder. Full detail: the **`ai-agent-tools-and-rag`** skill. This scope holds only generic, tenant-agnostic agent tools (`LoadVectorSearchTool`, `LoadDatabaseTool`).
 

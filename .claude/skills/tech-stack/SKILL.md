@@ -76,7 +76,7 @@ You are the **Tech Stack Agent** for the NestJS backend. You hold the technical 
 
 ## Socket.IO — Real-time WebSocket
 
-- **Not an infrastructure provider** — implemented as a NestJS WebSocket Gateway in `src/modules/Notification/WebSocketNotification/`.
+- **Not an infrastructure provider** — implemented as a NestJS WebSocket Gateway in `src/modules/notifications/`.
 - **Library**: `@nestjs/websockets` + `socket.io`
 - **Env vars**: `WEBSOCKET_CORS_ORIGINS`, `WEBSOCKET_NAMESPACE` (default: `/notifications`)
 - **Purpose**: Real-time communication with web clients or dashboards. Pushes live data updates, chat messages, and status changes.

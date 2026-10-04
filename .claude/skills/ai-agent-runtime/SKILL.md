@@ -1,6 +1,6 @@
 ---
 name: ai-agent-runtime
-description: 'Use for running an agent at request time: ResolveAgent, GenerateAIResponse, LangGraph streaming, structured responses (AgentFinalResponseSchema), thread_id memory via PostgresSaver, LangSmith tracing, token-usage rows. Also for debugging empty replies or lost memory. Scope: src/modules/ArtificialIntelligence/.'
+description: 'Use for running an agent at request time: ResolveAgent, GenerateAIResponse, LangGraph streaming, structured responses (AgentFinalResponseSchema), thread_id memory via PostgresSaver, LangSmith tracing, token-usage rows. Also for debugging empty replies or lost memory. Scope: src/modules/agents/ + src/modules/agent-runtime/ + src/modules/retrieval/.'
 ---
 
 ## What a "resolved agent" is

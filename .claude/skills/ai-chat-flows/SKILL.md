@@ -1,11 +1,11 @@
 ---
 name: ai-chat-flows
-description: 'Use for the chat orchestration: /support/question NDJSON streaming and /chat/attendant, Fastify response hijacking for chunked streaming, and wiring chat into sessions, credits, and message persistence. Scope: src/modules/AIChat/.'
+description: 'Use for the chat orchestration: /support/question NDJSON streaming and /chat/attendant, Fastify response hijacking for chunked streaming, and wiring chat into sessions, credits, and message persistence. Scope: src/modules/chat/.'
 ---
 
 ## Scope
 
-`AIChatModule` (`src/modules/AIChat/ai-chat.module.ts`) only registers `QuestionModule` and `AttendantModule`. Those are the only live entry points. The other directories (`AnalyticsAsk/`, `ExtractDocumentData/`, `RecordChatMessage/`) are either empty or internal-only — see the "dead and internal modules" section below.
+`AIChatModule` (`src/modules/chat/-chat.module.ts`) only registers `QuestionModule` and `AttendantModule`. Those are the only live entry points. The other directories (`AnalyticsAsk/`, `ExtractDocumentData/`, `RecordChatMessage/`) are either empty or internal-only — see the "dead and internal modules" section below.
 
 ## Live endpoints
 

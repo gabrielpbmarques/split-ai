@@ -12,7 +12,7 @@ Registro de travas, contornos e desvios conscientes do `split-ai` em relação a
 | Biblioteca | `jsonwebtoken@9.0.3` |
 | Sintoma | `POST /auth/login`, `/auth/register-lite`, `/auth/send-sms`, `/auth/verify-sms` e `/sign-up` emitem tokens; `GenerateTokenService` assina com `env.JWT_SECRET`. |
 | Causa | O produto não tem IdP externo; o backend é o emissor. |
-| Solução | Manter a emissão em `src/modules/Auth/`. A verificação continua concentrada em `TokenVerifier` (`src/auth/token.verifier.ts`), que é a única classe que conhece o formato do token. Nunca criar flag ou variável que desligue a verificação. |
+| Solução | Manter a emissão em `src/modules/auth-flows/`. A verificação continua concentrada em `TokenVerifier` (`src/auth/token.verifier.ts`), que é a única classe que conhece o formato do token. Nunca criar flag ou variável que desligue a verificação. |
 | Onde | `src/auth/token.verifier.ts`, `src/modules/auth-flows/generate-token/` |
 | Regra dona | `08-autenticacao-autorizacao.md` |
 | Tentativas descartadas | — |

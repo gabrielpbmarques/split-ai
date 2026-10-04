@@ -5,7 +5,7 @@ paths:
   - 'src/shared/contracts/models/ai-instructions.model.ts'
 ---
 
-# Scoped rule — `src/modules/ArtificialIntelligence/`
+# Scoped rule — `src/modules/agents/ + src/modules/agent-runtime/ + src/modules/retrieval/`
 
 Thin path-scoped reminder. Full detail: **`ai-agent-configuration`** (CRUD, prompts, tables) and **`ai-agent-runtime`** (ResolveAgent, GenerateAIResponse, memory, tracing). For RAG/tools see **`ai-agent-tools-and-rag`**.
 

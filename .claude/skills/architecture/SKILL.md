@@ -187,7 +187,7 @@ this module's `imports` too. A repository backed by `DataSource` alone
 
 ## Tools scope
 
-LangChain tools available to AI agents follow the same one-use-case-one-module pattern as everything else, but live under a dedicated top-level scope at `src/modules/Tools/`. Each tool gets its own directory with a single service and a single module — never bundle multiple tools into one service.
+LangChain tools available to AI agents follow the same one-use-case-one-module pattern as everything else, but live under a dedicated top-level scope at `src/modules/retrieval/`. Each tool gets its own directory with a single service and a single module — never bundle multiple tools into one service.
 
 ### Directory layout
 
@@ -356,4 +356,4 @@ Middleware implementations live in `src/middleware/`. The `MiddlewareModule` reg
 6. **DTOs use class-validator decorators** — never accept raw unvalidated input.
 7. **Services use execute() as the main method name**`execute()`.
 8. **Entity files go in src/infrastructure/database/schema/**`src/infrastructure/database/schema/`, not inside component folders.
-9. **One tool = one module under `src/modules/Tools/<ToolName>/`** — never bundle multiple tools into one service; never place tool modules outside the Tools scope.
+9. **One tool = one module under `src/modules/retrieval/<ToolName>/`** — never bundle multiple tools into one service; never place tool modules outside the Tools scope.

@@ -1,6 +1,6 @@
 ---
 name: ai-agent-tools-and-rag
-description: "Use for an agent's LangChain tools and RAG: vector_similarity_search, execute_sql and the LoadDatabaseTool SQL guardrails, the parser tool, pgvector/Supabase similarity search, Spider source ingestion, the documents table, Voyage embeddings, and the rerank-2.5 cross-encoder + relevance threshold. Scope: src/modules/Tools/ + ArtificialIntelligence/."
+description: "Use for an agent's LangChain tools and RAG: vector_similarity_search, execute_sql and the LoadDatabaseTool SQL guardrails, the parser tool, pgvector/Supabase similarity search, Spider source ingestion, the documents table, Voyage embeddings, and the rerank-2.5 cross-encoder + relevance threshold. Scope: src/modules/retrieval/ + ArtificialIntelligence/."
 ---
 
 ## Three tools an agent can carry
