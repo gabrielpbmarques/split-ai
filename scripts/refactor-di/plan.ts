@@ -153,7 +153,9 @@ function repositoryModules(
     const lines: string[] = ["import { Module } from '@nestjs/common';"];
     if (entities.length) {
       lines.push("import { TypeOrmModule } from '@nestjs/typeorm';");
-      lines.push(`import { ${entities.join(', ')} } from 'src/entities';`);
+      lines.push(
+        `import { ${entities.join(', ')} } from 'src/infrastructure/database/schema';`,
+      );
     }
     lines.push('');
     for (const [name, target] of [...extraModules.entries()].sort()) {
@@ -172,7 +174,9 @@ function repositoryModules(
         }';`,
       );
     }
-    lines.push(`import { ${className} } from './${base.replace(/\.ts$/, '')}';`);
+    lines.push(
+      `import { ${className} } from './${base.replace(/\.ts$/, '')}';`,
+    );
     lines.push('');
     lines.push('@Module({');
     if (imports.length) lines.push(`  imports: [${imports.join(', ')}],`);
@@ -224,7 +228,10 @@ function readProviderFile(file: string): ProviderFileInfo | undefined {
           if (!ts.isPropertyAssignment(prop)) continue;
           const key = prop.name.getText();
           if (key === 'provide') provides.push(prop.initializer.getText());
-          if (key === 'inject' && ts.isArrayLiteralExpression(prop.initializer)) {
+          if (
+            key === 'inject' &&
+            ts.isArrayLiteralExpression(prop.initializer)
+          ) {
             for (const dep of prop.initializer.elements) {
               injects.push(dep.getText());
             }
@@ -256,7 +263,9 @@ function providerModules(): {
   for (const info of infos) {
     // `SendGridProvider` -> `SendGridProviderModule`, `SpiderServiceProvider`
     // -> `SpiderProviderModule`: keep the casing the provider file already uses.
-    const base = info.arrayName.replace(/Provider$/, '').replace(/Service$/, '');
+    const base = info.arrayName
+      .replace(/Provider$/, '')
+      .replace(/Service$/, '');
     const name = `${base}ProviderModule`;
     moduleNameOf.set(info.file, name);
     for (const token of info.provides) tokenOwner.set(token, name);
@@ -284,7 +293,8 @@ function providerModules(): {
     imports.push(...[...foreignModules].sort());
 
     const lines: string[] = ["import { Module } from '@nestjs/common';"];
-    if (needsConfig) lines.push("import { ConfigModule } from '@nestjs/config';");
+    if (needsConfig)
+      lines.push("import { ConfigModule } from '@nestjs/config';");
     for (const foreign of [...foreignModules].sort()) {
       const target = infos.find((i) => moduleNameOf.get(i.file) === foreign)!;
       const targetBase = path.basename(target.file).replace(/\.ts$/, '');
@@ -462,7 +472,12 @@ export function buildPlan(graph: Graph): Plan {
     const carried: ImportSpec[] = [];
     for (const entry of mod.imports) {
       if (entry.dynamic) {
-        carried.push({ name: entry.text, forwardRef: false, from: '', raw: entry.text });
+        carried.push({
+          name: entry.text,
+          forwardRef: false,
+          from: '',
+          raw: entry.text,
+        });
         continue;
       }
       if (entry.name && NEST_EXTERNAL_MODULES.has(entry.name)) {

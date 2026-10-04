@@ -1,0 +1,25 @@
+import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
+import { FakeListChatModel } from '@langchain/core/utils/testing';
+
+import type { ChatModelFactory } from 'src/infrastructure/integration/chat-model.port';
+import type { IntegrationState } from 'src/infrastructure/integration/integration.state';
+
+const DEFAULT_RESPONSES = [
+  JSON.stringify({ response: 'Resposta simulada do assistente.' }),
+];
+
+export class MockChatModelFactory implements ChatModelFactory {
+  readonly name = 'anthropic';
+
+  constructor(
+    private readonly responses: readonly string[] = DEFAULT_RESPONSES,
+  ) {}
+
+  state(): IntegrationState {
+    return 'MOCK';
+  }
+
+  create(): BaseChatModel {
+    return new FakeListChatModel({ responses: [...this.responses] });
+  }
+}

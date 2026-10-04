@@ -1,20 +1,20 @@
 ---
 name: ai-agent-configuration
-description: 'Use for agent CRUD and configuration: create/update/list/delete agents, the AIInstructions shape, prompt construction (NormalizePromptInstructions, BuildSystemPrompt), parser schemas, the agents / agents_instructions tables, and agent DTO fields. Scope: src/components/ArtificialIntelligence/.'
+description: 'Use for agent CRUD and configuration: create/update/list/delete agents, the AIInstructions shape, prompt construction (NormalizePromptInstructions, BuildSystemPrompt), parser schemas, the agents / agents_instructions tables, and agent DTO fields. Scope: src/modules/agents/ + src/modules/agent-runtime/ + src/modules/retrieval/.'
 ---
 
 ## Persistence shape
 
-Two tables, both managed by TypeORM with `synchronize: true` (so entity changes alter prod schema — see top-level `CLAUDE.md`).
+Two tables, both managed by TypeORM entities + migrations (`synchronize: false`; see `CLAUDE.md` → Things that bite).
 
-**`agents`** (`src/entities/agent.entity.ts`)
+**`agents`** (`src/infrastructure/database/schema/agent.entity.ts`)
 
 | Column                              | Type                  | Notes                                         |
 | ----------------------------------- | --------------------- | --------------------------------------------- |
 | `id`                                | uuid                  | PK                                            |
 | `name`                              | text not null         |                                               |
 | `agent_identifier`                  | text nullable         | human-readable handle, used as alt lookup     |
-| `model`                             | text nullable         | falls back to `config.aiModel`                |
+| `model`                             | text nullable         | falls back to `env.AI_MODEL`                  |
 | `temperature`                       | float default 0.4     |                                               |
 | `with_history`                      | bool default true     | gates checkpointer                            |
 | `parser_schema`                     | jsonb nullable        | drives parser tool                            |
@@ -24,9 +24,9 @@ Two tables, both managed by TypeORM with `synchronize: true` (so entity changes 
 | `sites`                             | text[] nullable       | crawl seed urls                               |
 | `user_id`, `organization_id`        | uuid nullable         | `organization_id = null` → admin/global agent |
 
-**`agents_instructions`** (`src/entities/agent-instruction.entity.ts`) — versioned. `instructions: jsonb`, related back to agent. Use `findLatestByAgentId(agentId)` to get the active version. Updating instructions creates a new row (verify in `agentInstructionRepository`).
+**`agents_instructions`** (`src/infrastructure/database/schema/agent-instruction.entity.ts`) — versioned. `instructions: jsonb`, related back to agent. Use `findLatestByAgentId(agentId)` to get the active version. Updating instructions creates a new row (verify in `agentInstructionRepository`).
 
-## AIInstructions shape — src/types/models/ai-instructions.model.ts
+## AIInstructions shape — src/shared/contracts/models/ai-instructions.model.ts
 
 ```ts
 type AIInstructions = {
@@ -42,12 +42,12 @@ Field names mix English (`context`) and Portuguese (`diretrizes`, `objetivo`). *
 
 | Path                           | Method                           | Handler                       | Auth                                    | Notes                               |
 | ------------------------------ | -------------------------------- | ----------------------------- | --------------------------------------- | ----------------------------------- |
-| `POST /agent/create`           | `CreateAgentController.execute`  | `CreateAgentService`          | `AuthGuard` + `@Roles('admin')`         | admin-only                          |
+| `POST /agent/create`           | `CreateAgentController.execute`  | `CreateAgentService`          | `agent.write`                           | staff (admin/user)                  |
 | `POST /agent/create-attendant` | `CreateAttendantAgentController` | `CreateAttendantAgentService` | (see file)                              | admin can scope to any org          |
-| `GET /agent/list`              | `ListAgentsController.handle`    | `ListAgentsService`           | `AuthGuard` + `@Roles('admin', 'user')` | scoped to user's org for non-admins |
-| `GET /agent`                   | `UpdateAgentController.list`     | `UpdateAgentService.list`     | `@Roles('admin')`                       | admin-wide list with full payload   |
-| `GET /agent/:id`               | `UpdateAgentController.getOne`   | `UpdateAgentService.getOne`   | `@Roles('admin')`                       |                                     |
-| `PATCH /agent/:id`             | `UpdateAgentController.update`   | `UpdateAgentService.update`   | `@Roles('admin')`                       | partial update                      |
+| `GET /agent/list`              | `ListAgentsController.handle`    | `ListAgentsService`           | `agent.read`                            | scoped to user's org for non-admins |
+| `GET /agent`                   | `ListAllAgentsController.handle` | `ListAllAgentsService`        | `agent.manage`                          | admin-wide list with full payload   |
+| `GET /agent/:id`               | `GetAgentController.handle`      | `GetAgentService`             | `agent.read` + org scope                |                                     |
+| `PATCH /agent/:id`             | `UpdateAgentController.handle`   | `UpdateAgentService`          | `agent.write` + org scope               | partial update                      |
 
 ## CreateAgent vs CreateAttendantAgent
 
@@ -55,7 +55,7 @@ Both insert into `agents` + `agents_instructions`. The differences matter:
 
 |                                        | `CreateAgentService`                                                  | `CreateAttendantAgentService`                                         |
 | -------------------------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| Model default                          | `'claude-haiku-4-5-20251001'` (hard-coded)                            | `null` (falls back to `config.aiModel` at runtime)                    |
+| Model default                          | `null` (falls back to `env.AI_MODEL` at runtime)                      | `null` (falls back to `env.AI_MODEL` at runtime)                      |
 | `database_tool` / `vector_search_tool` | not set explicitly → DB defaults apply (`true`)                       | takes from DTO, defaults `false`                                      |
 | `organization_id`                      | admin → `null`, others → `user.organization_id` (no override allowed) | admin → `dto.organizationId ?? null`, others → `user.organization_id` |
 | Instructions                           | raw DTO `instructions`                                                | merged with hard-coded defaults (see below)                           |
@@ -63,7 +63,7 @@ Both insert into `agents` + `agents_instructions`. The differences matter:
 
 The `database_tool`/`vector_search_tool` discrepancy is real: regular `CreateAgent` callers cannot disable these tools — they always end up `true` because the column default fires. If you need a tools-off agent through that endpoint, extend the DTO + service.
 
-### Attendant default instructions — src/components/ArtificialIntelligence/CreateAttendantAgent/create-attendant-agent.service.ts:54-81
+### Attendant default instructions — src/modules/agents/create-attendant-agent/create-attendant-agent.service.ts:54-81
 
 `CreateAttendantAgentService` prepends three blocks before saving:
 
@@ -85,11 +85,11 @@ const instructions = {
 };
 ```
 
-But `NormalizePromptInstructions` (`src/components/ArtificialIntelligence/NormalizePromptInstructions/normalize-prompt-instructions.service.ts:23`) reads `instructions.context` (English). For attendant agents created today, the `CTX:` section of the rendered prompt is therefore `undefined`. When you touch this code, **decide on one spelling** (the type says `context`) and migrate stored rows, or extend the normalizer to accept both. Don't propagate `contexto` further.
+But `NormalizePromptInstructions` (`src/modules/agent-runtime/normalize-prompt-instructions/normalize-prompt-instructions.service.ts:23`) reads `instructions.context` (English). For attendant agents created today, the `CTX:` section of the rendered prompt is therefore `undefined`. When you touch this code, **decide on one spelling** (the type says `context`) and migrate stored rows, or extend the normalizer to accept both. Don't propagate `contexto` further.
 
 ## UpdateAgent — a multi-endpoint exception
 
-`src/components/ArtificialIntelligence/UpdateAgent/update-agent.controller.ts` mounts three routes (`GET /agent`, `GET /agent/:id`, `PATCH /agent/:id`) backed by three public methods on `UpdateAgentService` (`update`, `getOne`, `list`). This **violates the "one use case = one module = one controller = one endpoint" hard rule** from the architecture skill, but is the current state. Two consequences when extending:
+`src/modules/agents/update-agent/update-agent.controller.ts` mounts three routes (`GET /agent`, `GET /agent/:id`, `PATCH /agent/:id`) backed by three public methods on `UpdateAgentService` (`update`, `getOne`, `list`). This **violates the "one use case = one module = one controller = one endpoint" hard rule** from the architecture skill, but is the current state. Two consequences when extending:
 
 - Routes for admin-list / admin-getOne live here, while `ListAgentsService` handles the org-scoped list at `GET /agent/list`. Two list endpoints with different scopes is intentional. Don't merge them.
 - `UpdateAgentService.update` accepts both `organizationId` (camelCase) and `organization_id` (snake_case) for admin moves between orgs. Preserve this if you refactor the DTO.
@@ -98,7 +98,7 @@ Lookup helper `resolveAgent(idOrIdentifier)` checks UUID format with a regex bef
 
 ## Prompt construction chain
 
-### NormalizePromptInstructions — src/components/ArtificialIntelligence/NormalizePromptInstructions/normalize-prompt-instructions.service.ts
+### NormalizePromptInstructions — src/modules/agent-runtime/normalize-prompt-instructions/normalize-prompt-instructions.service.ts
 
 Renders the instruction object + tool list + caller-supplied variables into a single text block:
 
@@ -118,13 +118,13 @@ Description: <tool.description>
 
 The legend line (`OBJ = ... | OUT=saída`) is a fixed header. If you redesign the prompt format, update both the legend and the body sections.
 
-### BuildSystemPrompt — src/components/ArtificialIntelligence/BuildSystemPrompt/build-system-prompt.service.ts
+### BuildSystemPrompt — src/modules/agent-runtime/build-system-prompt/build-system-prompt.service.ts
 
 Thin wrapper: calls `NormalizePromptInstructionsService.execute(...)` and appends `\nTODAY_DATE: ${new Date().toLocaleDateString()}`. The date is computed at agent-resolve time (so it's "now" relative to the request, not the deploy). Locale follows the server's runtime locale — in Cloud Run this is typically `en-US`, so dates render as `M/D/YYYY`. If a prompt needs `dd/MM/yyyy`, format explicitly.
 
 ## Parser tool (`parser_schema`)
 
-When an agent has `parser_schema` set, `ResolveAgent` builds a tool from it via `buildLangchainToolFromSchema(parser_name, parser_description, parser_schema)` (`src/utils/buildZodSchema.ts`). The function compiles a custom schema DSL — `{ type: 'string' | 'number' | 'boolean' | 'object' | 'array', properties, items, enum, optional, default, description }` — into a Zod schema, then wraps it as a `DynamicStructuredTool` whose `func` is `async () => {}`. The tool exists only to advertise its schema to the model — its return value is empty. Useful when you want the agent to produce a structured payload as one of its tool calls without actually executing anything server-side.
+When an agent has `parser_schema` set, `ResolveAgent` builds a tool from it via `buildLangchainToolFromSchema(parser_name, parser_description, parser_schema)` (`src/shared/utils/buildZodSchema.ts`). The function compiles a custom schema DSL — `{ type: 'string' | 'number' | 'boolean' | 'object' | 'array', properties, items, enum, optional, default, description }` — into a Zod schema, then wraps it as a `DynamicStructuredTool` whose `func` is `async () => {}`. The tool exists only to advertise its schema to the model — its return value is empty. Useful when you want the agent to produce a structured payload as one of its tool calls without actually executing anything server-side.
 
 ## Common pitfalls
 

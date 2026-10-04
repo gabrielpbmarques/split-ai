@@ -1,0 +1,42 @@
+import {
+  BadRequestException,
+  Controller,
+  Headers,
+  Post,
+  type RawBodyRequest,
+  Req,
+  Res,
+} from '@nestjs/common';
+import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { FastifyReply } from 'fastify';
+import type { FastifyRequest } from 'fastify';
+
+import { StripeWebhookService } from 'src/modules/billing/stripe-webhook/stripe-webhook.service';
+import { Public } from 'src/shared/decorators/public.decorator';
+
+@ApiTags('billing')
+@Controller('payment')
+export class StripeWebhookController {
+  constructor(private readonly stripeWebhookService: StripeWebhookService) {}
+
+  @Post('webhook')
+  @Public()
+  @ApiOkResponse()
+  async handle(
+    @Headers('stripe-signature') signature: string,
+    @Req() req: RawBodyRequest<FastifyRequest>,
+    @Res() res: FastifyReply,
+  ): Promise<FastifyReply> {
+    if (!signature) {
+      throw new BadRequestException('Cabeçalho stripe-signature ausente');
+    }
+
+    if (!req.rawBody) {
+      throw new BadRequestException('Corpo da requisição ausente');
+    }
+
+    await this.stripeWebhookService.execute(signature, req.rawBody.toString());
+
+    return res.status(200).send({ received: true });
+  }
+}

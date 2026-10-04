@@ -20,9 +20,16 @@ import * as bcrypt from 'bcryptjs';
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 
-import { config } from '../src/config';
-import { OrganizationEntity, PlanEntity, UserEntity } from '../src/entities';
-import { BillingPeriod, PlanType } from '../src/entities/plan.entity';
+import { env } from 'src/shared/config/env';
+import {
+  OrganizationEntity,
+  PlanEntity,
+  UserEntity,
+} from 'src/infrastructure/database/schema';
+import {
+  BillingPeriod,
+  PlanType,
+} from 'src/infrastructure/database/schema/plan.entity';
 
 const MAIA_OWNER_EMAIL = 'support@nexguard.app';
 const MAIA_OWNER_PASSWORD = process.env.MAIA_OWNER_PASSWORD ?? 'changeme-maia';
@@ -40,7 +47,7 @@ async function upsertPlan(
 async function main(): Promise<void> {
   const dataSource = new DataSource({
     type: 'postgres',
-    url: config.databaseUrl,
+    url: env.DATABASE_URL,
     entities: [__dirname + '/../src/**/*.entity{.ts,.js}'],
     synchronize: true,
   });

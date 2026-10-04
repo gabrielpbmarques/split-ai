@@ -1,0 +1,23 @@
+import { Module } from '@nestjs/common';
+
+import { TransactionExecutorModule } from 'src/infrastructure/database/transaction-executor/transaction-executor.module';
+import { ManageCreditsModule } from 'src/modules/billing/manage-credits/manage-credits.module';
+import { PaymentRepositoryModule } from 'src/modules/billing/repositories/payment.repository.module';
+import { StripeWebhookController } from 'src/modules/billing/stripe-webhook/stripe-webhook.controller';
+import { StripeWebhookService } from 'src/modules/billing/stripe-webhook/stripe-webhook.service';
+import { ActivateOrganizationModule } from 'src/modules/organizations/activate-organization/activate-organization.module';
+import { DeactivateOrganizationModule } from 'src/modules/organizations/deactivate-organization/deactivate-organization.module';
+
+@Module({
+  imports: [
+    TransactionExecutorModule,
+    ActivateOrganizationModule,
+    DeactivateOrganizationModule,
+    ManageCreditsModule,
+    PaymentRepositoryModule,
+  ],
+  providers: [StripeWebhookService],
+  controllers: [StripeWebhookController],
+  exports: [StripeWebhookService],
+})
+export class StripeWebhookModule {}

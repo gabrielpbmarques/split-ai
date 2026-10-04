@@ -20,7 +20,9 @@ const argv = process.argv.slice(2);
 const DRY = argv.includes('--dry');
 const onlyIdx = argv.indexOf('--only');
 const ONLY =
-  onlyIdx >= 0 ? new Set(argv[onlyIdx + 1].split(',').map((s) => s.trim())) : null;
+  onlyIdx >= 0
+    ? new Set(argv[onlyIdx + 1].split(',').map((s) => s.trim()))
+    : null;
 
 const EXTERNAL_SPECIFIER: Record<string, string> = {
   ConfigModule: '@nestjs/config',
@@ -62,7 +64,8 @@ function specifierFor(target: string, current: string): string {
     return './' + path.basename(target).replace(/\.ts$/, '');
   }
   return (
-    'src/' + path.relative(SRC, target).replace(/\.ts$/, '').split(path.sep).join('/')
+    'src/' +
+    path.relative(SRC, target).replace(/\.ts$/, '').split(path.sep).join('/')
   );
 }
 
@@ -75,7 +78,11 @@ function groupOf(specifier: string): number {
 function renderImportBlock(entries: Map<string, Set<string>>): string {
   const groups: string[][] = [[], [], []];
   const sorted = [...entries.entries()].sort(([a], [b]) =>
-    a.toLowerCase() < b.toLowerCase() ? -1 : a.toLowerCase() > b.toLowerCase() ? 1 : 0,
+    a.toLowerCase() < b.toLowerCase()
+      ? -1
+      : a.toLowerCase() > b.toLowerCase()
+        ? 1
+        : 0,
   );
   for (const [specifier, names] of sorted) {
     const list = [...names].sort((a, b) => {
@@ -156,7 +163,11 @@ function rewriteModule(
       }
       const clause = stmt.importClause;
       const bindings = clause?.namedBindings;
-      if (!clause || clause.name || (bindings && !ts.isNamedImports(bindings))) {
+      if (
+        !clause ||
+        clause.name ||
+        (bindings && !ts.isNamedImports(bindings))
+      ) {
         throw new Error(
           `${mod.name}: side-effect, default or namespace import '${(stmt.moduleSpecifier as ts.StringLiteral).text}' cannot be regenerated — rewrite by hand (${relative(mod.file)})`,
         );
@@ -189,7 +200,8 @@ function rewriteModule(
   const newMeta = `{\n  ${props.join(',\n  ')},\n}`;
 
   /* ---- splice the new body in ---- */
-  let out = source.slice(0, meta.getStart(sf)) + newMeta + source.slice(meta.getEnd());
+  let out =
+    source.slice(0, meta.getStart(sf)) + newMeta + source.slice(meta.getEnd());
 
   /* ---- rebuild the import block ---- */
   const needed = referencedIdentifiers(newMeta);
@@ -229,9 +241,7 @@ function rewriteModule(
   const importBlock = renderImportBlock(entries);
 
   // Everything from the first non-import statement onward is preserved as-is.
-  const lastImport = [...sf.statements]
-    .filter(ts.isImportDeclaration)
-    .pop();
+  const lastImport = [...sf.statements].filter(ts.isImportDeclaration).pop();
   const headEnd = lastImport ? lastImport.getEnd() : 0;
   out = importBlock + '\n\n' + out.slice(headEnd).replace(/^[\s\n]*/, '');
 
@@ -263,7 +273,9 @@ for (const collision of plan.collisions) {
 }
 for (const p of plan.modules) {
   for (const u of p.unresolved) {
-    blockers.push(`${p.module}: ${u.consumer} injects ${u.symbol}, no module exports it`);
+    blockers.push(
+      `${p.module}: ${u.consumer} injects ${u.symbol}, no module exports it`,
+    );
   }
 }
 if (blockers.length) {
@@ -317,7 +329,9 @@ for (const [scope, plans] of scopes) {
     if (p.removed.length) detail.push(c.red(`-${p.removed.length}`));
     if (p.added.length) detail.push(c.green(`+${p.added.length}`));
     if (p.dropExports) detail.push(c.dim('exports'));
-    console.log(`      ${c.green('✓')} ${p.module.padEnd(40)} ${detail.join(' ')}`);
+    console.log(
+      `      ${c.green('✓')} ${p.module.padEnd(40)} ${detail.join(' ')}`,
+    );
     write(mod.file, next, '');
     written++;
   }
@@ -326,7 +340,9 @@ for (const [scope, plans] of scopes) {
 /* 3 ── AppModule: drop the retired InfrastructureModule ------------- */
 console.log(c.bold('\n[3/4] app.module.ts'));
 if (ONLY) {
-  console.log(`   ${c.dim('= pulado (--only): rode sem --only para finalizar a árvore')}`);
+  console.log(
+    `   ${c.dim('= pulado (--only): rode sem --only para finalizar a árvore')}`,
+  );
 }
 const appFile = path.join(SRC, 'app.module.ts');
 let appSource = ONLY ? '' : fs.readFileSync(appFile, 'utf8');
@@ -352,7 +368,9 @@ if (ONLY) {
 }
 for (const retired of ONLY ? [] : plan.retired) {
   if (!RETIRED_MODULES.has(retired.module)) continue;
-  console.log(`   ${c.red('-')} ${retired.module.padEnd(40)} ${c.dim(relative(retired.file))}`);
+  console.log(
+    `   ${c.red('-')} ${retired.module.padEnd(40)} ${c.dim(relative(retired.file))}`,
+  );
   if (!DRY) {
     fs.rmSync(retired.file, { force: true });
     deleted++;
@@ -366,7 +384,9 @@ console.log(
 );
 console.log(
   DRY
-    ? c.dim('rode sem --dry para aplicar, depois `bun run lint` e `bun run build`')
+    ? c.dim(
+        'rode sem --dry para aplicar, depois `bun run lint` e `bun run build`',
+      )
     : c.dim('próximo: bun run lint && bun run build'),
 );
 console.log('');

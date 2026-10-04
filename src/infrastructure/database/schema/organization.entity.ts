@@ -1,0 +1,114 @@
+import {
+  Column,
+  CreateDateColumn,
+  DeleteDateColumn,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+
+import { AgentEntity } from 'src/infrastructure/database/schema/agent.entity';
+import { PlanEntity } from 'src/infrastructure/database/schema/plan.entity';
+import { UserEntity } from 'src/infrastructure/database/schema/user.entity';
+import { OrganizationStatus } from 'src/shared/contracts';
+import type { Organization } from 'src/shared/contracts';
+
+@Entity('organizations')
+@Index('organizations_chat_embed_token_uq', ['chat_embed_token'], {
+  unique: true,
+  where: '"deleted_at" IS NULL',
+})
+export class OrganizationEntity implements Organization {
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
+
+  @Column({ type: 'text' })
+  name!: string;
+
+  @Column({ type: 'text', nullable: true })
+  acronym!: string;
+
+  @Column({ type: 'text' })
+  email_domain!: string;
+
+  @Column({
+    type: 'enum',
+    enum: ['active', 'inactive'],
+    default: 'active',
+  })
+  status!: OrganizationStatus;
+
+  @Column({ type: 'text', nullable: true })
+  contact_name!: string;
+
+  @Column({ type: 'text', nullable: true })
+  contact_email!: string;
+
+  @Column({ type: 'uuid', nullable: true })
+  created_by!: string;
+
+  @Column({
+    type: 'timestamp',
+    name: 'activated_at',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
+  activated_at!: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  deactivated_at!: Date;
+
+  @Column({ type: 'text', nullable: true })
+  database_url!: string | null;
+
+  @ManyToOne(() => PlanEntity)
+  @JoinColumn({ name: 'plan_id' })
+  plan!: PlanEntity;
+
+  @Column({ type: 'boolean', default: false })
+  chat_embed_enabled!: boolean;
+
+  @Column({ type: 'text', nullable: true })
+  chat_embed_token!: string | null;
+
+  @Column({ type: 'uuid', nullable: true })
+  chat_embed_agent_id!: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  chat_embed_primary_color!: string | null;
+
+  @Column({
+    type: 'enum',
+    enum: ['bottom-right', 'bottom-left', 'top-right', 'top-left'],
+    default: 'bottom-right',
+  })
+  chat_embed_button_position!:
+    | 'bottom-right'
+    | 'bottom-left'
+    | 'top-right'
+    | 'top-left';
+
+  @Column({ type: 'text', nullable: true })
+  chat_embed_greeting!: string | null;
+
+  @Column({ type: 'boolean', default: false })
+  chat_embed_welcome_enabled!: boolean;
+
+  @CreateDateColumn({ type: 'timestamp' })
+  created_at!: Date;
+
+  @UpdateDateColumn({ type: 'timestamp' })
+  updated_at!: Date;
+
+  @DeleteDateColumn({ type: 'timestamp', nullable: true })
+  deleted_at!: Date | null;
+
+  @OneToMany(() => UserEntity, (user) => user.organization)
+  users!: UserEntity[];
+
+  @OneToMany(() => AgentEntity, (agent) => agent.organization)
+  agents!: AgentEntity[];
+}

@@ -1,6 +1,6 @@
 ---
 name: eleven-labs
-description: "Use ONLY when building ElevenLabs-specific voice features (text-to-speech, voice cloning, speech-to-text, sound effects, voice isolator/changer, conversational AI). Reference knowledge base — ElevenLabs is not yet wired; the app's current voice path is Google TTS, so do not load this for generic text-to-speech work."
+description: "Use ONLY when building ElevenLabs-specific voice features (text-to-speech, voice cloning, speech-to-text, sound effects, voice isolator/changer, conversational AI). Reference knowledge base. In code ElevenLabs is the second implementation of the TEXT_TO_SPEECH port (TTS_PROVIDER=elevenlabs); Google TTS is the default, so do not load this for generic text-to-speech work."
 ---
 
 # ElevenLabs Documentation

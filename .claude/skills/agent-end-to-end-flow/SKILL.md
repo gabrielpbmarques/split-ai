@@ -5,7 +5,7 @@ description: 'Use for the cross-cutting AI agent lifecycle map: agent create + s
 
 This skill is the **end-to-end map** of how a chat request becomes a streamed AI response in `split-ai`. It is intentionally redundant with the four area skills it links to — the goal is one place where the whole pipeline is visible at once. When an area skill exists, prefer it for surgical edits inside that area; come back here when a change crosses areas (e.g., adding a new prompt variable that has to flow from a use case → resolver → tool → vector store).
 
-> All paths are relative to `split-ai/`. Line numbers are approximate hints, not exact citations — they drift with every edit, so open the file and confirm before quoting one in a PR. `synchronize: true` plus auto-embedding makes incidental edits easy.
+> All paths are relative to `split-ai/`. Line numbers are approximate hints, not exact citations — they drift with every edit, so open the file and confirm before quoting one in a PR.
 
 ---
 
@@ -14,13 +14,13 @@ This skill is the **end-to-end map** of how a chat request becomes a streamed AI
 | Layer               | Technology                                                                      |
 | ------------------- | ------------------------------------------------------------------------------- |
 | Runtime             | Node.js + Bun + Fastify (NestJS 10)                                             |
-| LLM                 | Anthropic AI (`ChatAnthropic`) via `@langchain/anthropic`                       |
-| Embeddings          | Voyage AI (`VoyageEmbeddings`) — `voyage-3-large`, 1024 dims                    |
+| LLM                 | `ChatAnthropic` built only by the `CHAT_MODEL` port (`AnthropicChatModelFactory`; `FakeListChatModel` in mock mode) |
+| Embeddings          | `EMBEDDINGS` port — Voyage `voyage-3-large`, 1024 dims (`MockEmbeddings` in tests)          |
 | Agent orchestration | `langchain` v1 `createAgent` + `@langchain/langgraph` (streamMode: `updates`)   |
-| Vector store        | Supabase pgvector on table `documents`, function `match_documents`              |
-| Relational store    | PostgreSQL on Supabase (TypeORM, `synchronize: true`)                           |
+| Vector store        | `VECTOR_STORE` port — Supabase pgvector (`documents`, `match_documents`); `MemoryVectorStore` in tests |
+| Relational store    | PostgreSQL on Supabase (TypeORM, migrations in `src/infrastructure/database/migrations/`) |
 | Conversation memory | `@langchain/langgraph-checkpoint-postgres` `PostgresSaver` (singleton, same DB) |
-| Source ingestion    | `@spider-cloud/spider-client` for web pages + PDF loader                        |
+| Source ingestion    | `SITE_CRAWLER` port (Spider) for web pages + PDF/DOCX/text processors              |
 | Tracing             | LangSmith via `LangChainTracer` (always-on)                                     |
 | Error reporting     | Sentry (prod only)                                                              |
 | HTTP transport      | Fastify response **hijack** for chunked plain-text streaming                    |
@@ -48,7 +48,7 @@ Default port is **`4000`** (`src/main.ts:115`). There is **no global API prefix*
 │     POST /agent/load-sites        → LoadAgentSitesService                    │
 │     POST /support/source/generate → GenerateAgentSourceService               │
 │                                                                              │
-│     Spider crawl + PDF loader → SupabaseService.createVectorStore()          │
+│     Spider crawl + PDF loader → VECTOR_STORE.upsertChunks()                  │
 │     → SupabaseVectorStore.fromDocuments(chunks, embeddings, {                │
 │           tableName: 'documents', queryName: 'match_documents',              │
 │           filter: { source_type, agent_id, source_id }                       │
@@ -56,14 +56,13 @@ Default port is **`4000`** (`src/main.ts:115`). There is **no global API prefix*
 │                                                                              │
 ├──────────────────────────────────────────────────────────────────────────────┤
 │  Phase C — Receive a question                                                │
-│     POST /support/question  (streaming)  → QuestionController.execute        │
+│     POST /support/question  (streaming)  → QuestionController.handle         │
 │     POST /chat/attendant    (one-shot)   → AttendantController.handle        │
 │                                                                              │
-│     CompositeAuthGuard   (Bearer → AuthGuard; ApiKey → ApiKeyGuard)          │
-│         AuthGuard          (JWT signature verified via JWT_SECRET)           │
-│         ApiKeyGuard        (token → org via chat_embed_token, role=service)  │
-│     ActiveOrgGuard       (rejects inactive organizations)                    │
-│     @Roles(...)          (admin/user)                                        │
+│     AuthenticationGuard (global; Bearer JWT / BravoHub JWT / ApiKey via    │
+│         TokenVerifier → PrincipalResolverService → request.user)            │
+│     AuthorizationGuard  (global; @RequirePermissions('chat.ask' |           │
+│         'chat.attend') + @RequireActiveOrganization())                       │
 │                                                                              │
 ├──────────────────────────────────────────────────────────────────────────────┤
 │  Phase D — Orchestrate the response                                          │
@@ -90,7 +89,7 @@ Default port is **`4000`** (`src/main.ts:115`). There is **no global API prefix*
 ├──────────────────────────────────────────────────────────────────────────────┤
 │  Phase E — Tool calls from inside the runnable                               │
 │     vector_similarity_search({ query, agent_id, source_type })               │
-│         → LoadVectorStoreService.execute({ agent_id, source_type })          │
+│         → VECTOR_STORE.loadIndex({ agent_id, source_type })                   │
 │         → ExecuteSimilaritySearchService.execute(store, query)               │
 │             ↳ ContextualCompressionRetriever                                 │
 │                 ↳ asRetriever(k=50)  → candidates (recall only)              │
@@ -124,9 +123,9 @@ Default port is **`4000`** (`src/main.ts:115`). There is **no global API prefix*
 
 | Item           | Value                                                                          |
 | -------------- | ------------------------------------------------------------------------------ |
-| Controller     | `src/components/ArtificialIntelligence/CreateAgent/create-agent.controller.ts` |
+| Controller     | `src/modules/agents/create-agent/create-agent.controller.ts` |
 | Handler        | `CreateAgentController.execute`                                                |
-| Guards         | `AuthGuard`, `@Roles('admin')`                                                 |
+| Guards         | global; `@RequirePermissions('agent.write')`                                   |
 | Service        | `CreateAgentService.execute(dto, user)`                                        |
 | Success status | `201`                                                                          |
 
@@ -181,7 +180,7 @@ Differences vs the generic `CreateAgent`:
 
 | Field                | Behavior                                                                                                                 |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `model`              | DTO value → otherwise `null` (uses `config.aiModel` at runtime) — no hard-coded default                                  |
+| `model`              | DTO value → otherwise `null` (uses `env.AI_MODEL` at runtime) — no hard-coded default                                    |
 | `database_tool`      | DTO value → otherwise `false`                                                                                            |
 | `vector_search_tool` | DTO value → otherwise `false`                                                                                            |
 | `organization_id`    | admin → `dto.organizationId ?? null`; non-admin → `user.organization_id`                                                 |
@@ -232,14 +231,14 @@ Two separate list endpoints with different scopes coexist on purpose — don't m
 
 ### 2.5 Entities
 
-#### `agents` — `src/entities/agent.entity.ts`
+#### `agents` — `src/infrastructure/database/schema/agent.entity.ts`
 
 | Column                    | Type      | Nullable | Default    | Notes                                                                |
 | ------------------------- | --------- | -------- | ---------- | -------------------------------------------------------------------- |
 | `id`                      | `uuid` PK | no       | generated  |                                                                      |
 | `name`                    | text      | no       | —          |                                                                      |
 | `agent_identifier`        | text      | yes      | null       | alt lookup key (human handle)                                        |
-| `model`                   | text      | yes      | null       | falls back to `config.aiModel` at runtime                            |
+| `model`                   | text      | yes      | null       | falls back to `env.AI_MODEL` at runtime                              |
 | `temperature`             | float     | yes      | `0.4`      |                                                                      |
 | `with_history`            | bool      | no       | `true`     | gates the checkpointer                                               |
 | `parser_schema`           | jsonb     | yes      | null       | drives the parser tool                                               |
@@ -254,7 +253,7 @@ Two separate list endpoints with different scopes coexist on purpose — don't m
 
 OneToMany → `AgentInstructionEntity`.
 
-#### `agents_instructions` — `src/entities/agent-instruction.entity.ts`
+#### `agents_instructions` — `src/infrastructure/database/schema/agent-instruction.entity.ts`
 
 | Column                    | Type      | Notes                             |
 | ------------------------- | --------- | --------------------------------- |
@@ -265,7 +264,7 @@ OneToMany → `AgentInstructionEntity`.
 
 **Versioned**. `AgentInstructionRepository.findLatestByAgentId(agentId)` returns the row with the largest `created_at`. `updateLatestByAgentId(agentId, instructions)` mutates the latest row in place (does **not** create a new version unless the agent has none). If you want true versioning, switch `update` to `create`.
 
-### 2.6 `AIInstructions` shape — `src/types/models/ai-instructions.model.ts`
+### 2.6 `AIInstructions` shape — `src/shared/contracts/models/ai-instructions.model.ts`
 
 ```ts
 export type AIInstructions = {
@@ -279,7 +278,7 @@ Field-name mixing is intentional. `NormalizePromptInstructions` reads these lite
 
 ### 2.7 Parser tool: `parser_schema` → Zod → `DynamicStructuredTool`
 
-`src/utils/buildZodSchema.ts` compiles a custom JSON DSL into a Zod schema and wraps it as a tool whose `func: async () => {}` returns `undefined`. It exists **only to advertise its schema to the model** so the model can emit a structured argument matching the shape. Inserting side-effects here will surprise callers — many assume parser tools are inert.
+`src/shared/utils/buildZodSchema.ts` compiles a custom JSON DSL into a Zod schema and wraps it as a tool whose `func: async () => {}` returns `undefined`. It exists **only to advertise its schema to the model** so the model can emit a structured argument matching the shape. Inserting side-effects here will surprise callers — many assume parser tools are inert.
 
 ```ts
 type SchemaDef = {
@@ -315,7 +314,7 @@ const docs = await spiderService.crawl(sites, {
   return_format: 'text',
 });
 
-return supabaseService.createVectorStore(docs, {
+return vectorStore.upsertChunks(chunks, {
   source_type: 'site',
   agent_id: agentId,
   source_id: sourceId,
@@ -328,7 +327,7 @@ DTO is two strings: `sites` (comma-separated or single URL, passed straight to S
 
 ### 3.2 `POST /support/source/generate` (admin + user)
 
-`Source/GenerateAgentSource/generate-agent-source.service.ts`. Accepts:
+`src/modules/sources/generate-agent-source/generate-agent-source.service.ts`. Accepts:
 
 ```ts
 class GenerateAgentSourceDto {
@@ -345,8 +344,8 @@ Flow (`execute()`):
 1. Resolve `agentId` by id-or-identifier (`isUuid` regex first).
 2. If `buffer` is present:
    - Create a `sources` row with `status: 'processing'`.
-   - `loadPdfService.executeFromBuffer(buffer)` → chunks.
-   - `supabaseService.createVectorStore(chunks, { source_type: sourceType ?? 'pdf', agent_id, source_id })`.
+   - `loadPdfService.execute(buffer)` → chunks.
+   - `vectorStore.upsertChunks(chunks, { source_type: sourceType ?? 'pdf', agent_id, source_id })`.
 3. If `url` is present:
    - Split on commas.
    - Per URL: create `sources` row → call `LoadAgentSitesService.execute(url, agentId, sourceId)`.
@@ -356,7 +355,7 @@ Flow (`execute()`):
 
 ### 3.3 `DELETE /support/source/:id`
 
-`Source/DeleteSource/delete-source.service.ts:16-41`:
+`src/modules/sources/delete-source/delete-source.service.ts`:
 
 ```ts
 await this.supabaseClient
@@ -369,9 +368,9 @@ await this.sourceRepository.delete(id);
 
 The pgvector wipe is **tied to `source_id`** in metadata. If a source was ingested without `source_id`, this leaves orphan chunks in the vector store — flag during code review.
 
-### 3.4 `SupabaseService.createVectorStore` — the write path
+### 3.4 `VECTOR_STORE.upsertChunks` — the write path
 
-`src/infrastructure/providers/supabase.provider.ts:22-47`:
+`src/infrastructure/integration/supabase/supabase-vector-store.gateway.ts` (`SupabaseVectorStoreGateway`; `MockVectorStoreGateway` in `INTEGRATION_MODE=mock`):
 
 ```ts
 const chunks = docs.map(
@@ -392,9 +391,9 @@ await SupabaseVectorStore.fromDocuments(chunks, this.embeddings, {
 return chunks.length;
 ```
 
-- The injected `embeddings` is `VOYAGE_EMBEDDINGS` (Voyage `voyage-3-large`, 1024 dims; `config.embeddingModel` env var).
+- The injected `embeddings` is the `EMBEDDINGS` port (Voyage `voyage-3-large`, 1024 dims; `EMBEDDING_MODEL` env var).
 - **Caller metadata overrides chunk metadata** when keys collide — be aware if Spider already set `agent_id` somehow.
-- `cleanInvalidUnicode()` (`src/utils/clearInvalidUnicode.ts`) only removes NUL bytes — other invalid surrogates still slip through.
+- `cleanInvalidUnicode()` (`src/shared/utils/clearInvalidUnicode.ts`) only removes NUL bytes — other invalid surrogates still slip through.
 
 ### 3.5 The `documents` table and `match_documents` function
 
@@ -429,12 +428,13 @@ The `sources` table (also a TypeORM entity) is the catalog — one row per inges
 
 ### 4.1 `POST /support/question` (streaming)
 
-`AIChat/Question/question.controller.ts:16-52`:
+`src/modules/chat/question/question.controller.ts`:
 
 ```ts
-@UseGuards(CompositeAuthGuard, ActiveOrgGuard)
 @Post()
-async execute(@Res() res, @Body(...) dto: QuestionDto, @AuthUser() user) {
+@RequirePermissions('chat.ask')
+@RequireActiveOrganization()
+async execute(@Res() res, @Body() dto: QuestionDto, @AuthUser() user) {
   res.hijack();
   res.raw.writeHead(200, {
     'Content-Type': 'text/plain; charset=utf-8',
@@ -466,13 +466,13 @@ Why hijack:
 
 ### 4.2 `POST /chat/attendant` (non-streaming)
 
-`AIChat/Attendant/attendant.controller.ts:16-30`:
+`src/modules/chat/attendant/attendant.controller.ts`:
 
 ```ts
-@UseGuards(AuthGuard, ActiveOrgGuard)
 @Post()
-async handle(@Res() res, @Body(...) dto, @AuthUser() user) {
-  try {
+@RequirePermissions('chat.attend')
+@RequireActiveOrganization()
+async handle(@Res() res, @Body() dto, @AuthUser() user) {
     const result = await this.attendantService.execute(dto, user);
     res.status(200).send(result);
   } catch (err) {
@@ -556,7 +556,7 @@ This is how out-of-credits orgs are kept out of chat — `ConsumeCreditsService`
 
 ## 5. Phase D — `QuestionService` orchestration
 
-`AIChat/Question/question.service.ts:24-102`. Sequential, no `Promise.all` except inside `ResolveAgent`.
+`src/modules/chat/question/question.service.ts`. Sequential.
 
 ### 5.1 Credit gate (lines 32-40)
 
@@ -608,7 +608,7 @@ try {
     'user',
   );
 } catch (err) {
-  console.error('Failed to record chat message:', err); // swallowed, never rethrown
+  this.logger.error('Failed to record chat message', error);
 }
 ```
 
@@ -701,7 +701,7 @@ const [chat, tools] = await Promise.all([loadChat(agent), loadTools(agent)]);
 ### 6.3 `loadChat`
 
 ```ts
-const model = agent.model || config.aiModel;
+const chat = this.chatModelFactory.create({ model: agent.model, temperature: agent.temperature });
 
 // Adaptive-thinking-only Claude families (MODELS_WITHOUT_SAMPLING_PARAMS)
 // reject `temperature` with a 400; omit it for them (passing `undefined`
@@ -801,7 +801,7 @@ if (agent.with_history) {
 `LoadCheckpointerService` (`LoadCheckpointer/load-checkpointer.service.ts`):
 
 - Singleton via `static saver: PostgresSaver`.
-- `onModuleInit`: `PostgresSaver.fromConnString(config.databaseUrl)` then `await saver.setup()` (creates checkpoint tables if absent).
+- `onModuleInit`: `PostgresSaver.fromConnString(env.DATABASE_URL)` then `await saver.setup()` (creates checkpoint tables if absent).
 - Same Postgres instance as TypeORM. Tables live alongside your entities — don't drop or rename them in migrations.
 
 Caller-supplied `MemorySaver` (in-memory) is for transient memory in one-shot tool invocations. Pass it via the third arg to `resolveAgentService.execute(...)`.
@@ -852,13 +852,13 @@ const configurable = {
     thread_id: `${agent.organization_id}_${metadata.session_id}`,
   },
   callbacks: [this.tracer], // LangChainTracer
-  tags: [config.env, agent.id, metadata.organization_id],
-  metadata: { userId, sessionId, environment: config.env },
+  tags: [env.NODE_ENV, agent.id, metadata.organization_id].filter(Boolean),
+  metadata: { userId, sessionId, environment: env.NODE_ENV },
 };
 ```
 
 - **`thread_id` = `${organization_id}_${session_id}`.** This is the checkpointer key that binds a conversation. If you migrate stored threads, migrate this format too.
-- LangSmith tracer is constructed in the service constructor: `new LangChainTracer({ projectName: config.langchainProject })`. It's **always on** — ensure `LANGSMITH_*` env vars exist in any new environment, or expect noisy 4xx from the tracer.
+- LangSmith tracer is constructed in the service constructor: `new LangChainTracer({ projectName: env.LANGCHAIN_PROJECT })`. It's **always on** — ensure `LANGSMITH_*` env vars exist in any new environment, or expect noisy 4xx from the tracer.
 - The `as any` is intentional — `createAgent`'s inferred input type is overly strict; the runtime accepts `{ messages: BaseMessage[] }`.
 
 ### 7.3 Streaming path (lines 72-77, handler at 104-129)
@@ -894,7 +894,7 @@ return AgentFinalResponseSchema.parse(result.structuredResponse).finalAnswer;
 
 **Parsing throws** if the model returns an off-schema response. Wrapped by the outer `try`, so the user sees the generic pt-BR error.
 
-### 7.5 `AgentFinalResponseSchema` — `src/types/agent-response.ts`
+### 7.5 `AgentFinalResponseSchema` — `src/shared/contracts/agent-response.ts`
 
 ```ts
 export const AgentFinalResponseSchema = z.object({
@@ -922,13 +922,13 @@ async execute(params: RecordTokenUsageDto): Promise<void> {
       model: params.model,
       ...params,
     });
-  } catch (err) { console.error('Failed to record token usage:', err); }
+  } catch (error) { this.logger.error('Falha ao registrar uso de tokens', error); }
 }
 ```
 
 Writes to `token_usage`. Errors swallowed (consistent with `RecordChatMessage`).
 
-**`(agent.chat as any).model` reads the model name back.** If the agent record has `model = null` and `config.aiModel` is unset, the recorded row gets `undefined` or `null` — verify both at deploy.
+**`(agent.chat as any).model` reads the model name back.** If the agent record has `model = null` and `AI_MODEL` is unset, the recorded row gets `undefined` or `null` — verify both at deploy.
 
 Token usage rows are only produced when `agent.organization_id` is truthy (admin/global agents with `organization_id = null` don't produce usage rows).
 
@@ -973,7 +973,7 @@ Four things to internalize:
 3. **Retrieval is threshold-based, so the tool can return an empty string.** Nothing clearing the rerank cutoff is a designed outcome, not a failure — check the `logger.warn` from `VoyageRerankCompressor` before assuming retrieval is broken.
 4. **Joining drops sources and scores.** Chunks are separated by a blank line so the model sees boundaries, but `metadata.relevance_score` is discarded. If you need citations, return a structured payload and update the LLM-side consumer (today there is none).
 
-#### `LoadVectorStore.execute(filter)` (lines 16-31 of `load-vector-store.service.ts`)
+#### `VECTOR_STORE.loadIndex(filter)` (`supabase-vector-store.gateway.ts`)
 
 ```ts
 SupabaseVectorStore.fromExistingIndex(this.embeddings, {
@@ -990,7 +990,7 @@ SupabaseVectorStore.fromExistingIndex(this.embeddings, {
 
 ```ts
 const retriever = new ContextualCompressionRetriever({
-  baseRetriever: vectorStore.asRetriever({ k: config.vectorSearchCandidateK }),
+  baseRetriever: vectorStore.asRetriever({ k: env.VECTOR_SEARCH_CANDIDATE_K }),
   baseCompressor: this.rerankDocumentsService.execute(),
 });
 
@@ -1004,15 +1004,15 @@ return retriever.invoke(question);
 
 #### `RerankDocuments.execute()` → `VoyageRerankCompressor`
 
-`compressDocuments(documents, query)` keeps `relevanceScore >= config.vectorSearchMinScore` (default **0.8**), caps at `config.vectorSearchMaxResults` (default 10), stamps `metadata.relevance_score`, and returns `[]` with a `logger.warn` when nothing clears the bar.
+`compressDocuments(documents, query)` keeps `relevanceScore >= env.VECTOR_SEARCH_MIN_SCORE` (default **0.8**), caps at `env.VECTOR_SEARCH_MAX_RESULTS` (default 10), stamps `metadata.relevance_score`, and returns `[]` with a `logger.warn` when nothing clears the bar.
 
 The threshold sits on the cross-encoder score, never on the cosine score: `match_documents` already orders rows by `embedding <=> query_embedding`, so cutting on that same value adds nothing the ordering did not already encode, and a bi-encoder's scale is not comparable across queries. Observed pt-BR ranges: direct answer 0.87–0.96, partial match ~0.76, related-but-wrong ~0.49, off-topic 0.20–0.34.
 
-Backed by `VOYAGE_RERANK_SERVICE` (`src/infrastructure/providers/voyage-rerank.provider.ts`), a plain `fetch` wrapper over `POST https://api.voyageai.com/v1/rerank` using the same `VOYAGEAI_API_KEY` as the embeddings.
+Backed by the `RERANKER` port (`src/infrastructure/integration/voyage/voyage-reranker.gateway.ts`): `ResilientClient` (timeout, circuit breaker, SSRF allowlist) over `POST https://api.voyageai.com/v1/rerank`, response validated by `voyage.contracts.ts`, same `VOYAGEAI_API_KEY` as the embeddings.
 
 ### 8.2 `execute_sql` (database tool)
 
-`src/components/Tools/LoadDatabaseTool/load-database-tool.service.ts`. Feature-gated, per-org.
+`src/modules/retrieval/load-database-tool/load-database-tool.service.ts`. Feature-gated, per-org.
 
 **Pré-requisitos** (todos checados em `ResolveAgent.maybeLoadDatabaseTool`):
 
@@ -1065,7 +1065,7 @@ async execute(sessionId, userId, agentId, message, from /* 'user' | 'agent' */) 
     await messageRepository.create({ session_id: sessionId, user_id: userId,
                                      agent_id: agentId, message, from });
   } catch (err) {
-    console.error('Failed to record chat message:', err);   // never throws
+    this.logger.error('Failed to record chat message', error);
   }
 }
 ```
@@ -1107,7 +1107,7 @@ private readonly CREDITS_PER_AI_RESPONSE = 3;
 | `agents_instructions`       | `AgentInstructionEntity`      | `CreateAgent`, `CreateAttendantAgent`, `UpdateAgent.update`                                         |
 | `sessions`                  | `SessionEntity`               | `CreateSessionIfNotExists`, expiration in same                                                      |
 | `messages`                  | `MessageEntity`               | `RecordChatMessage` (auto-embeds)                                                                   |
-| `documents`                 | (Supabase, no TypeORM entity) | `SupabaseService.createVectorStore`, `DeleteSource`                                                 |
+| `documents`                 | (Supabase, no TypeORM entity) | `VECTOR_STORE.upsertChunks`, `DeleteSource`                                                 |
 | `sources`                   | `SourceEntity`                | `GenerateAgentSource`, `DeleteSource`                                                               |
 | `token_usage`               | `TokenUsageEntity`            | `RecordTokenUsage` (per stream step + per non-stream call)                                          |
 | `credit_balances`           | `CreditBalanceEntity`         | `ManageCredits`                                                                                     |
@@ -1122,7 +1122,7 @@ private readonly CREDITS_PER_AI_RESPONSE = 3;
 
 ## 11. Reference: every env var the flow reads
 
-Read via `src/config.ts` (or directly by an SDK where the Field column says so):
+Read via `src/shared/config/env.ts` (or directly by an SDK where the Field column says so):
 
 | Env var                                     | Field                    | Purpose                                                                                  |
 | ------------------------------------------- | ------------------------ | ---------------------------------------------------------------------------------------- |
@@ -1145,7 +1145,7 @@ Read via `src/config.ts` (or directly by an SDK where the Field column says so):
 | `JWT_SECRET`                                | — (read by guard)        | `AuthGuard.verifyJwt` verifies the JWT signature/expiry with it — see §4.3               |
 | `BRAVOHUB_JWT_SECRET`, `BRAVOHUB_ORG_ID`    | `bravohubJwtSecret`, …   | verify the forwarded BravoHub token + attribute its org — see §4.3                       |
 
-Not used in the chat path but read by the same `config.ts`: SendGrid, Twilio, Stripe, MongoDB, Redis.
+Not used in the chat path but read by the same `env.ts`: SendGrid, Twilio, Stripe, ElevenLabs.
 
 > `.env` is checked in with live secrets (Supabase service key, Stripe live keys, Twilio, LangSmith). Don't echo, log, paste into messages, or commit changes that move them. Surface needs in PR descriptions instead.
 
@@ -1155,89 +1155,64 @@ Not used in the chat path but read by the same `config.ts`: SendGrid, Twilio, St
 
 ```
 AppModule
-├── TypeOrmModule.forRoot(synchronize: true, autoLoadEntities: true)
-├── ThrottlerModule (60s TTL, 10 req) / ScheduleModule / DevtoolsModule
-├── ComponentsModule                        # wiring only — imports, no exports
-│   ├── AIChatModule                        # wiring only
-│   │   ├── QuestionModule
-│   │   │   imports: ApiKeyRepositoryModule, OrganizationRepositoryModule,
-│   │   │            CreateSessionIfNotExistsModule, RecordChatMessageModule,
-│   │   │            ResolveAgentModule, GenerateAiResponseModule
-│   │   │   providers: QuestionService, AuthGuard, ApiKeyGuard, CompositeAuthGuard
-│   │   │            (the two repository modules are there for ApiKeyGuard, not the service)
-│   │   └── AttendantModule
-│   │       imports: CreateSessionIfNotExistsModule, RecordChatMessageModule,
-│   │                ResolveAgentModule, GenerateAiResponseModule
-│   ├── ArtificialIntelligenceModule        # wiring only
-│   │   ├── ResolveAgentModule
-│   │   │   imports: AgentRepositoryModule, AgentInstructionRepositoryModule,
-│   │   │            BuildSystemPromptModule, LoadCheckpointerModule,
-│   │   │            forwardRef(() => LoadAgentToolsModule)
-│   │   ├── GenerateAiResponseModule        imports: — (the service has an empty constructor)
-│   │   ├── BuildSystemPromptModule         imports: NormalizePromptInstructionsModule
-│   │   ├── ExecuteSimilaritySearchModule   imports: RerankDocumentsModule
-│   │   ├── RerankDocumentsModule           imports: VoyageRerankProviderModule
-│   │   ├── LoadVectorStoreModule           imports: SupabaseProviderModule,
-│   │   │                                            VoyageEmbeddingsProviderModule
-│   │   ├── LoadAgentSitesModule            imports: SpiderProviderModule, SupabaseProviderModule
-│   │   ├── AppendConnectionToolsModule     imports: AgentConnectionRepositoryModule,
-│   │   │                                            forwardRef(() => InvokeConnectedAgentModule)
-│   │   ├── InvokeConnectedAgentModule      imports: forwardRef(() => ResolveAgentModule)
-│   │   ├── LoadCheckpointerModule / NormalizePromptInstructionsModule   imports: —
-│   │   └── CreateAgentModule, UpdateAgentModule, ListAgentsModule, …
-│   ├── LoadAgentToolsModule
-│   │   imports: LoadVectorSearchToolModule, MaybeLoadDatabaseToolModule,
-│   │            forwardRef(() => AppendConnectionToolsModule)
-│   ├── MaybeLoadDatabaseToolModule
-│   │   imports: LoadDatabaseToolModule, OrganizationRepositoryModule,
-│   │            OrganizationFeatureRepositoryModule
-│   ├── SessionModule, CreditsModule, SourceModule, TokenUsageModule, …   # wiring only
-│   └── … (Auth, Email, OCR, Organization, Payment, Pdf, Register, Report,
-│          User, Whatsapp, ApiKey, AgentConnection, Analytics, Dashboard)
-└── HealthModule
+├── AppLoggerModule (pino)
+├── TypeOrmModule.forRoot(entities: ENTITIES, migrations: MIGRATIONS, synchronize: false)
+├── IntegrationModule                        @Global() — PAYMENTS, MESSAGING, EMAIL, EMBEDDINGS, VECTOR_STORE,
+│                                            RERANKER, CHAT_MODEL, SITE_CRAWLER, FILE_STORAGE, TEXT_TO_SPEECH,
+│                                            OCR, CUSTOMER_DATABASE (live gateway or mock per INTEGRATION_MODE)
+├── AuthModule                               two APP_GUARDs; exports AccessScopeService, PrincipalResolverService
+├── HealthModule                             /health/startup, /health/live, /health/ready
+├── AgentRuntimeContractsModule              @Global() — AGENT_RESOLVER via lazy ModuleRef (PC-008)
+├── ChatModule                               # aggregator: imports = exports
+│   ├── QuestionModule       imports: CreateSessionIfNotExistsModule, RecordChatMessageModule,
+│   │                                 ResolveAgentModule, GenerateAiResponseModule
+│   ├── AttendantModule      imports: the same four
+│   └── RecordChatMessageModule   imports: MessageRepositoryModule (embeds via EMBEDDINGS)
+├── AgentRuntimeModule                       # aggregator
+│   ├── ResolveAgentModule   imports: AgentRepositoryModule, AgentInstructionRepositoryModule,
+│   │                                 BuildSystemPromptModule, LoadCheckpointerModule, LoadAgentToolsModule
+│   ├── GenerateAiResponseModule  imports: —
+│   ├── BuildSystemPromptModule   imports: NormalizePromptInstructionsModule
+│   ├── AppendConnectionToolsModule  imports: AgentConnectionRepositoryModule, InvokeConnectedAgentModule
+│   ├── InvokeConnectedAgentModule   imports: —  (AGENT_RESOLVER port, no cycle)
+│   └── LoadCheckpointerModule / NormalizePromptInstructionsModule   imports: —
+├── RetrievalModule                          # aggregator
+│   ├── LoadAgentToolsModule        imports: LoadVectorSearchToolModule, MaybeLoadDatabaseToolModule,
+│   │                                        AppendConnectionToolsModule
+│   ├── LoadVectorSearchToolModule  imports: ExecuteSimilaritySearchModule   (VECTOR_STORE port)
+│   ├── ExecuteSimilaritySearchModule imports: RerankDocumentsModule
+│   ├── RerankDocumentsModule       imports: —  (RERANKER port)
+│   ├── MaybeLoadDatabaseToolModule imports: LoadDatabaseToolModule, OrganizationRepositoryModule,
+│   │                                        OrganizationFeatureRepositoryModule
+│   └── LoadDatabaseToolModule      imports: —  (CUSTOMER_DATABASE port)
+├── AgentsModule, SourcesModule, SessionsModule, BillingModule, ReportsModule, …   # aggregators
+└── …
 
 Imported à la carte by whoever injects them:
-  src/repositories/<name>.repository.module.ts
-      forFeature([XEntity]) + provides/exports exactly one repository.
-      MessageRepositoryModule additionally imports VoyageEmbeddingsProviderModule
-      (MessageRepository auto-embeds every message on create).
-  src/infrastructure/providers/<name>.provider.module.ts
-      spreads one provider array, exports that provider's tokens.
-      SupabaseProviderModule imports VoyageEmbeddingsProviderModule (SUPABASE_SERVICE
-      injects VOYAGE_EMBEDDINGS); GcpStorage/GoogleVoice import ConfigModule.
+  src/modules/<domain>/repositories/<name>.repository.module.ts   forFeature([XEntity]) + one repository
+  TransactionExecutorModule, AuthModule, and each use case's own module for its service
 ```
 
-**Hard rule (from `[[architecture]]`):** a module's `imports` array is exactly the
-modules supplying what its own providers/controllers/**guards** inject — nothing
-more. There is no `RepositoriesModule` / `InfrastructureModule`; importing a scope
-aggregator (`ArtificialIntelligenceModule`, `SessionModule`, …) to reach one
-service inside it is the #1 review comment. Aggregators carry no `exports`.
-`AppModule` no longer imports anything from `infrastructure/`, so a provider
-factory runs only when a module that needs it is instantiated. Check wiring with
+**Hard rule:** a module's `imports` array is exactly the modules supplying what its
+own providers/controllers/guards inject — nothing more. There is no
+`RepositoriesModule` / `InfrastructureModule`; aggregators are never imported to
+reach one service; no `forwardRef` (cycles go through ports). Check wiring with
 `bun run di:verify` and `bun run di:boot-check`.
 
 ---
 
 ## 13. Dead and orphan code in the chat surface
 
-Verified by `grep`:
-
-| Path                          | Status                                                                               | Why                                                                                                        |
-| ----------------------------- | ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| `AIChat/AnalyticsAsk/`        | **empty placeholder** — no files                                                     | safe to ignore until a use case is scaffolded                                                              |
-| `AIChat/ExtractDocumentData/` | files exist but `ExtractDocumentDataModule` is **never imported**                    | endpoint won't boot; do not extend or reference from other code without first wiring it into a live module |
-| `RecordChatMessageModule`     | imported by `QuestionModule` and `AttendantModule` directly (not via `AIChatModule`) | if you add a third chat entry, import this module into its parent                                          |
-
-If the task is to revive `ExtractDocumentData`, also remember it depends on `GenerateAiResponseService`, `ResolveAgentService`, and `RecordChatMessageService` — import all three modules.
+None left after the phase-3 topology move: `src/modules/chat/` holds `question/`, `attendant/` and `record-chat-message/`, all wired through `ChatModule`. The old `AnalyticsAsk/` and `ExtractDocumentData/` folders were removed; OCR lives in `src/modules/sources/extract-ocr-text/` behind the `OCR` port.
 
 ---
 
 ## 14. Pitfalls (the seven things that bite first)
 
-1. **`contexto` vs `context` (`create-attendant-agent.service.ts:38`).** Attendant agents render empty `CTX:` blocks in their system prompt. Fix the key spelling or extend the normalizer to accept both — and decide what to do with stored rows.
-2. **`AuthGuard` verifies the JWT signature (`auth.guard.ts`, `verifyJwt` → `jsonwebtoken.verify(token, JWT_SECRET)`).** Tampered/expired/unsigned tokens are rejected. `JWT_SECRET` must be set in every environment and match the issuer (`GenerateTokenService`). (Historical: this guard once base64-decoded the payload without verifying — that gap is now closed; don't reintroduce it.)
-3. **`synchronize: true` on production (`app.module.ts:24`).** Entity changes alter the live Supabase schema on boot. Touching an entity is a deploy event — coordinate with the manual SQL files in `migrations/`.
-4. **`MessageRepository.create` auto-embeds.** Every message costs an embedding. No cache. High-volume agents will spend on this — first optimization target if Voyage costs spike.
+1. **Attendant instructions use the `AIInstructions` keys** (`context`, `objetivo`, `diretrizes`) since phase 7; rows written before that carry `contexto` and render an empty `CTX:` block — migrate them by hand if an old attendant misbehaves. `ResolveAgent` answers 404 for an agent without any instructions row.
+2. **`TokenVerifier` verifies the JWT signature** (`jsonwebtoken.verify(token, env.JWT_SECRET)`); `JWT_SECRET` must match the issuer (`GenerateTokenService`) in every environment.
+3. **Schema changes are migrations** (`synchronize: false`). An entity edit without a migration fails `db:check` and `/health/startup` stays 503 until the CI `migrate` job runs.
+4. **`RecordChatMessageService` embeds every message** through the `EMBEDDINGS` port. No cache. High-volume agents will spend on this — first optimization target if Voyage costs spike.
 5. **Stream chunk classifier is exhaustive of two branches only.** Tool reasoning and other shapes are silently dropped. If you want to surface anything else, add a branch — do not break the existing two (`finalAnswer` is what the controller writes to the socket).
 6. **`thread_id = ${org_id}_${session_id}`.** Change this format and all existing checkpointer threads detach from their sessions — chat history "forgets" everyone.
 7. **`vector_search_tool=true` with zero chunks tagged for the agent.** The description tells the model to always retrieve, so it does — and gets back an empty join. Either ingest sources first or disable the tool until they exist.

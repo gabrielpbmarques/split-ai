@@ -103,12 +103,12 @@ When a use case returns a **subset of an entity's fields**, create a dedicated t
 
 ### Where to define it
 
-In `src/types/models/`, in the same file as the base type — or in its own file if it represents a distinct concept.
+In `src/shared/contracts/models/`, in the same file as the base type — or in its own file if it represents a distinct concept.
 
 ### Pattern
 
 ```typescript
-// In src/types/models/user.model.ts
+// In src/shared/contracts/models/user.model.ts
 export interface User {
   id: string;
   name: string;
@@ -144,8 +144,8 @@ export type UserProfile = Pick<
 
 After adding a new type, ensure it's exported through the barrel:
 
-- `src/types/models/index.ts` re-exports the file
-- `src/types/index.ts` re-exports `models/`
+- `src/shared/contracts/models/index.ts` re-exports the file
+- `src/shared/contracts/index.ts` re-exports `models/`
 
 ## Principle 4: Avoid Redundant Safety Checks
 
@@ -153,7 +153,7 @@ Before adding a null/undefined check, ask: **"Is this value already guaranteed b
 
 ### Context awareness checklist
 
-1. **Is the user authenticated?** If `@UseGuards(AuthGuard)` + `@AuthUser()` are used, the user object is guaranteed.
+1. **Is the user authenticated?** On any route without `@Public()`, the global guards guarantee `request.user`; `@AuthUser()` never returns undefined.
 2. **Is the input validated?** If `@Body(new ValidationPipe())` is used with a DTO, required fields are guaranteed to exist.
 3. **Is the entity guaranteed to exist?** If a previous step in the same `execute()` already threw `NotFoundException`, subsequent code can trust the entity exists.
 

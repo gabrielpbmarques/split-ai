@@ -8,9 +8,61 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 It's a NestJS 10 + Fastify backend for an AI assistant product (chat, OCR, source ingestion, voice, WhatsApp, billing). The AI pipeline is built on LangChain / LangGraph with Anthropic Claude models for chat and Voyage AI for retrieval — `voyage-3-large` (1024 dims) for embeddings and `rerank-2.5` as a cross-encoder reranker; vector storage in Supabase/pgvector, and PostgreSQL (also hosted on Supabase) as the primary store via TypeORM. It is independent of the BravoHub products — no shared database, no shared auth contract. Tenant-specific data access is opt-in via the per-org `database_url` + the `database_connection` feature flag (see "Per-org database connection feature" below).
 
+## The specification: `ai-agents-engineering/docs/backend/rules/`
+
+The architecture of this repository **is** the rule set in the sibling repository `gabrielpbmarques/ai-agents-engineering`, folder `docs/backend/rules/` (`../ai-agents-engineering/docs/backend/rules/` when both are checked out side by side). Read the rule that owns the area before changing it; this file does not restate the rules, it records where this product **differs** from them and what is specific to it.
+
+| Rule file | Owns | Here |
+| --- | --- | --- |
+| `00-visao-geral.md` | index, stack | stack deviations below (bun, TypeORM, Jest) |
+| `01-topologia.md` | `src/` layout, `modules/<domain>/<use-case>`, `infrastructure/`, `shared/` | tree below; no global `/api` prefix |
+| `02-convencoes-fundamentais.md` | `strict`, no comments, no `any`, absolute imports, kebab-case | identifiers in **English**, messages in Portuguese; `lint:comments` |
+| `03-modulo-nest.md` | module `imports` discipline, aggregators, `@Global()` | `IntegrationModule` + `AgentRuntimeContractsModule` are the only globals besides `AuthModule` guards; `di:verify` / `di:boot-check` |
+| `04-anatomia-caso-de-uso.md` | one use case = one module/controller/endpoint | the only exception is `QuestionController` (NDJSON streaming) |
+| `05-controllers-services-dtos.md` | `handle()`, `execute()`, `@Res() FastifyReply`, DTOs, repositories, tests | pagination helpers and `requireOrganizationId` below |
+| `06-injecao-dependencia.md` | tokens, ports, `useExisting` | `AGENT_RESOLVER` uses a lazy `ModuleRef` factory (PC-008) |
+| `07-interceptors-decorators.md` | exception filter, `ErrorResponse`, logging, health | `GlobalExceptionFilter`, pino, `/health/{startup,live,ready}` |
+| `08-autenticacao-autorizacao.md` | guards, permissions, `AccessScopeService` | this app **issues** its own JWT (PC-001) and accepts a BravoHub token (PC-002); decorator names below |
+| `09-banco-de-dados.md` | schema, soft delete, `tx?`, migrations | TypeORM instead of Drizzle; no baseline migration (PC-017) |
+| `10-integracoes-externas.md` | gateway → Zod contract → mapper → domain, `ResilientClient`, mock mode | twelve ports, `INTEGRATION_MODE` default |
+| `11-fluxo-de-raciocinio-nova-funcionalidade.md` | **how to implement a new feature**: 18 questions, plan before code, implementation order | mandatory for every feature; the PR template carries its closing checklist |
+| `12-problemas-conhecidos.md` | the `PC-NNN` register protocol | this repo's register is `docs/problemas-conhecidos.md` (PC-001…PC-018) |
+
+**Name mapping.** The rules use Portuguese identifiers; this code base keeps English ones (decision in `docs/plano-refatoracao-backend-rules.md` §2). Translate when reading a rule:
+
+| Rule | Here |
+| --- | --- |
+| `@Publico()` / `@ExigirPermissoes('x.y')` / `@Usuario()` | `@Public()` / `@RequirePermissions('x.y')` / `@User()` (aliased `AuthUser` in controllers) |
+| `AccessScopeService.garantirPode` | `AccessScopeService.ensureCan(user, permission, { organizationId }, message)` |
+| `RepositorioPedidos` / `ModuloRepositorioPedidos` | `OrderRepository` / `OrderRepositoryModule` (`src/modules/<domain>/repositories/`) |
+| `executor-transacao.executar(trabalho)` | `TransactionExecutor.run(async (tx) => …)` |
+| `colunasCicloDeVida` | `created_at` / `updated_at` / `deleted_at` columns declared on each entity |
+| `MockConnector` / `HttpConnector` / `source-registry` | `integration/mock/*` fakes and per-source gateways; no record-collection connectors exist (every integration is an imperative call) |
+| `@AcaoAuditoria`, `EVENT_PUBLISHER`, `audit_logs` | not implemented; no event bus or audit trail in this product yet |
+
+**New feature = rule `11` first.** Answer its 18 questions, write the plan in its Part 2 format, show it to the requester, then implement in the Part 3 order (schema → models → modules → use cases → tests → verification). `.github/pull_request_template.md` is its Part 4 checklist adapted to this repo.
+
+## Conscious deviations from the rules
+
+| Topic | Rule | Decision here | Why |
+| --- | --- | --- | --- |
+| ORM | Drizzle + `pg` | **TypeORM 0.3** with `EntityManager` as `tx`, `migration:generate` for migrations | 22 entities and `PostgresSaver` already on `pg`; a rewrite was ruled out by the requester |
+| Package manager | pnpm | **bun** (`bun.lock`, Dockerfile, CI) | |
+| Tests | Vitest + Testcontainers | **Jest** (`ts-jest`); e2e against a Postgres from `TEST_DATABASE_URL` (CI service container), Testcontainers only as local fallback | |
+| Identity | Resource Server, external IdP | this app **issues** HS256 JWTs (`/auth/login`, SMS, invites) — PC-001 | product requirement |
+| Identifiers | domain language (Portuguese) | **English** folders/classes/columns, Portuguese user-facing messages and Swagger | 400+ files and external consumers (widget, BravoHub) |
+| Global prefix | `app.setGlobalPrefix(env.API_PREFIX)` | **none**; routes mount at each `@Controller()` path | widget, Cloud Run health and BravoHub depend on current paths |
+| Permissions | `papeis`/`permissoes` tables | **derived**: `src/auth/permissions.ts` grants over `(role, org_role)` | no product need for per-user grants yet |
+| `INTEGRATION_MODE` default | `mock` | `mock` only when `NODE_ENV=test`, `live` otherwise | existing dev `.env` files carry real keys |
+| `ResilientClient` everywhere | every external call | only hand-written HTTP (Voyage rerank); SDKs keep their stack — PC-013 | |
+| `isolatedModules` | on | **off** — PC-014 | conflicts with `consistent-type-imports` under `emitDecoratorMetadata` |
+| `noUncheckedIndexedAccess` | on | **off** for now (82 legitimate indexings) | listed as follow-up in the plan |
+| Baseline migration | required | none; the three migrations are deltas over the production schema — PC-017 | production schema predates migrations |
+| Rate limiting | `ThrottlerGuard` per route is the only `@UseGuards` | kept on the SMS routes only | |
+
 ## Package manager
 
-**Use `bun`.** The lockfile is `bun.lock`, the Dockerfile uses `bun`, and CI runs `bun install && bun run lint`. The README's `bun install` line is correct; the `package.json` scripts call `nest`/`jest` directly so they work under either bun or npm, but stay on bun to keep the lockfile honest.
+**Use `bun`.** The lockfile is `bun.lock`, the Dockerfile uses `bun`, and CI runs `bun install` then `format:check`, `lint`, `typecheck`, `test`, `test:e2e` and `build`. The `package.json` scripts call `nest`/`jest` directly so they work under either bun or npm, but stay on bun to keep the lockfile honest.
 
 ## Commands
 
@@ -19,142 +71,134 @@ bun install                                 # install deps
 bun run start:dev                           # watch mode (default port 4000)
 bun run start:prod                          # run compiled dist/main
 bun run build                               # nest build → dist/
-bun run lint                                # eslint --fix on src,test
-bun run test                                # jest (unit)
-bun run test:e2e                            # jest with test/jest-e2e.json
+bun run lint                                # eslint + lint:comments (check only; CI runs this)
+bun run lint:fix                            # eslint --fix
+bun run lint:comments --fix                 # strip comments under src/
+bun run typecheck                           # tsc --noEmit
+bun run format:check                        # prettier --check
+bun run test                                # jest (unit + pure-function specs under src/)
+TEST_DATABASE_URL=postgres://postgres@127.0.0.1:5432/split_ai_test bun run test:e2e   # e2e (needs a Postgres; see Tests)
 bun run test:cov                            # coverage
 bun jest src/path/to/file.spec.ts           # single file
 bun jest -t "test name fragment"            # single test by name
-docker compose up                           # api + local Redis
+bun run di:verify && bun run di:boot-check  # module wiring: static reachability + real Nest container (DataSource stubbed)
+bun run db:generate src/infrastructure/database/migrations/<timestamp>-<name>   # against a DB mirroring production
+bun run db:check | db:migrate | db:revert | db:show
+docker compose up                           # api + local Redis + Postgres (for e2e)
 ```
 
-The dev server defaults to **port 4000** (`PORT || 4000` in `src/main.ts`). The README's NestJS-template snippets imply 3000 — ignore them.
+The dev server defaults to **port 4000** (`PORT` default in `src/shared/config/env.ts`).
 
 ## How guidance is organized: rules, scoped-rules, skills
 
-Project guidance lives at three loading tiers. Pick the right tier when adding new guidance:
-
-- **Rules — always-on.** This `CLAUDE.md` (root) is the single source of truth for universal invariants: the "Hard rules", "Things that bite", "Service & reasoning conventions", and the per-org DB feature. Skills must **point to** these, not restate them.
-- **Scoped-rules — auto-load by path.** Path-scoped rules in `.claude/rules/*.md` (YAML `paths:` glob frontmatter) re-load whenever you read a matching file and survive `/compact`. They stay thin: a handful of must-not-break invariants + a pointer to the deep skill, so subsystem gotchas surface without the model having to open a skill:
-  - `.claude/rules/src-scaffolding.md` (`src/**/*.ts`) — scaffolding index (→ `architecture` / `code-patterns` / `import-and-naming-conventions`).
-  - `.claude/rules/aichat-streaming.md` (`src/components/AIChat/**/*.ts`) — chat-streaming invariants (→ `ai-chat-flows`).
-  - `.claude/rules/ai-agent.md` (`src/components/ArtificialIntelligence/**/*.ts` + `ai-instructions.model.ts`) — agent config/runtime invariants (→ `ai-agent-configuration` / `ai-agent-runtime`).
-  - `.claude/rules/agent-tools.md` (`src/components/Tools/**/*.ts` + `buildZodSchema.ts`) — tool + SQL-guardrail invariants (→ `ai-agent-tools-and-rag`).
-  - `.claude/rules/rag-ingestion.md` (`Source/`, `OCR/`, `LoadAgentSites/`, `supabase.provider.ts`) — ingestion metadata contract: chunks must carry `agent_id` + `source_id` (→ `ai-agent-tools-and-rag`).
-- **Skills — on-demand.** `.claude/skills/` holds twelve SKILL.md files. Only the one-line `description` is in context each turn (it competes for a small budget — keep descriptions short and trigger-led); the body loads when invoked. Use skills for depth and worked examples.
-
-**General code skills** (the conventions also live as Hard rules above):
-
-- `architecture` — module hierarchy, scope/use-case pattern, repository/provider patterns
-- `code-patterns` — controller/service/DTO templates, error handling, parallel async
-- `import-and-naming-conventions` — paths, suffixes, casing, commit format
-- `thinking-flow` — worked examples for the "Service & reasoning conventions" rules below
-- `tech-stack` — every external integration, token, and env var
-
-**AI pipeline** (most engineering work lives here — LangChain/LangGraph + Voyage embeddings + Supabase pgvector):
-
-- `agent-end-to-end-flow` — the cross-cutting map: agent create + source ingestion → `/support/question` / `/chat/attendant` → `ResolveAgent` → `GenerateAIResponse` → LangGraph → tools → pgvector → persistence/billing. **Start here for any change crossing the AI areas below.**
-- `ai-agent-configuration` — agent CRUD, `AIInstructions`, prompt construction, parser schemas, `agents` / `agents_instructions` tables
-- `ai-agent-runtime` — `ResolveAgent`, `GenerateAIResponse`, LangGraph streaming, structured responses, `thread_id` memory via `PostgresSaver`, LangSmith tracing
-- `ai-agent-tools-and-rag` — LangChain tools (`vector_similarity_search`, `execute_sql` with guardrails, parser), pgvector behavior, Spider ingestion, Voyage `voyage-3-large` embeddings, and the `rerank-2.5` cross-encoder + relevance threshold that replaced top-K retrieval
-- `ai-chat-flows` — `src/components/AIChat/`, the `/support/question` NDJSON streaming endpoint, `/chat/attendant`, Fastify response hijacking, session/credit/message persistence
-
-**Model & integration reference (knowledge bases — not always wired):**
-
-- `langchain-anthropic-integration` — `ChatAnthropic` config reference from `@langchain/anthropic` (instantiation, prompt caching, citations, context management). The `ChatVertexAI` migration is already done — read this before changing the LLM provider config. (For Claude model IDs/pricing, use the `claude-api` skill; for other library docs, prefer context7.)
-- `eleven-labs` — ElevenLabs API reference (TTS, voice cloning, STT, sound effects, voice changer, conversational AI). Knowledge base for building **ElevenLabs-specific** voice features. **Provider is wired but unused**: `eleven-labs.provider.ts` exposes `ELEVEN_LABS_SERVICE` (`textToSpeech` returns MP3 `Uint8Array`, a drop-in for the Google seam; plus `textToSpeechStream` / `speechToText`) via `@elevenlabs/elevenlabs-js`. No endpoint consumes it yet — the **active** voice path is still Google TTS (`ConvertTextToSpeech` + `google-voice.provider.ts`). Config lives in `src/config.ts` (`elevenLabs*`, key `ELEVENLABS_API_KEY`).
-
-**Read the relevant skill before scaffolding new code.** This file intentionally doesn't restate skill bodies.
+- **Always-on.** This `CLAUDE.md`: the pointer to the rules, the deviations, the product-specific invariants below. Skills point here, never restate.
+- **Scoped-rules** (`.claude/rules/*.md`, YAML `paths:` frontmatter, reload on matching files and survive `/compact`):
+  - `src-scaffolding.md` (`src/**/*.ts`) — the invariants most often broken when adding code.
+  - `aichat-streaming.md` (`src/modules/chat/**`) — NDJSON streaming invariants.
+  - `ai-agent.md` (`agents/`, `agent-runtime/`, `retrieval/`, `ai-instructions.model.ts`) — agent config/runtime invariants.
+  - `agent-tools.md` (`retrieval/**`, `build-zod-schema.ts`) — tool + SQL-guardrail invariants.
+  - `rag-ingestion.md` (`sources/`, `load-agent-sites/`, `integration/supabase/**`) — chunks must carry `agent_id` + `source_id`.
+  - `tests.md` (`test/**`, `src/**/*.spec.ts`) — the two test layers and the e2e harness.
+- **Skills** (`.claude/skills/`, body loads on demand): `architecture`, `code-patterns`, `import-and-naming-conventions`, `thinking-flow`, `tech-stack` are this repo's **delta** over rules `01`–`06` (paths, names, templates); the AI pipeline is in `agent-end-to-end-flow` (start here for cross-area changes), `ai-agent-configuration`, `ai-agent-runtime`, `ai-agent-tools-and-rag`, `ai-chat-flows`; `langchain-anthropic-integration` and `eleven-labs` are vendored library references.
+- **Docs** (`docs/`): `plano-refatoracao-backend-rules.md` (the migration plan, phases 0–9 with status), `problemas-conhecidos.md` (PC register), `decisoes-de-dominio.md` (domain decisions that used to live in comments), and the product runbooks `analytics-agent-team-setup.md`, `oracle-analytics-subagents-payloads.md`, `bravohub-analytics-integration.md`.
 
 ## Architecture in one screen
 
 ```
 src/
-  main.ts                    Fastify bootstrap, request/response logging, Sentry in prod
-  app.module.ts              Root — TypeOrmModule.forRoot, Components, Health
-  config.ts                  Plain object reading process.env (not @nestjs/config registerAs)
-  auth/                      AuthGuard, ActiveOrgGuard
-  decorators/                @Roles, @User (alias as AuthUser in controllers)
-  entities/                  TypeORM entities + barrel index.ts
-  repositories/              Repository wrappers, each paired with its own <name>.repository.module.ts
-                             (forFeature([Entity]) + provides/exports that one repository)
-  infrastructure/providers/  External SDK wrappers (Voyage embeddings, Voyage rerank, GCS, Twilio, SendGrid, Stripe,
-                             Supabase, Spider, Google TTS, ElevenLabs voice), each paired with its own
-                             <name>.provider.module.ts exporting that provider's tokens
-  components/                Feature modules — PascalCase Scope/ → PascalCase UseCase/ → kebab-case files
-                             Notable scopes: AIChat/, ArtificialIntelligence/, Tools/ (just LoadDatabaseTool
-                             + LoadVectorSearchTool — generic, tenant-agnostic), Organization/,
-                             Source/, Session/, Credits/, Payment/, Whatsapp/, OCR/, etc.
-  health/                    Liveness endpoint
-  observability/             Sentry init
-  services/                  One-off non-NestJS helpers (e.g., cep.service.ts axios wrapper) —
-                             NOT the home for feature services; those live under components/
-  types/models/              Plain TS interfaces + barrel
-  utils/                     Pure helper functions
-migrations/                  Raw SQL migration files — applied by hand, NOT TypeORM migrations
+  main.ts                    Fastify bootstrap (createFastifyAdapter, global pipe, pino, Swagger)
+  app.module.ts              Root — AppLoggerModule, TypeOrmModule.forRoot(ENTITIES, MIGRATIONS), IntegrationModule,
+                             AuthModule, HealthModule, one aggregator module per domain
+  auth/                      Global guards, TokenVerifier, PrincipalResolverService, AccessScopeService, permissions,
+                             request-user.ts (requireUserId / requireOrganizationId)
+  infrastructure/
+    database/schema/         TypeORM entities + barrel exporting ENTITIES (the only place tables are declared)
+    database/migrations/     MIGRATIONS (run by the CI `migrate` job, never at boot); data-source.ts for the CLI
+    database/transaction-executor/   TransactionExecutor.run(async (tx) => …)
+    integration/             The ONLY place that talks to an external service (rule 10):
+      integration.module.ts  @Global() — publishes every port below (mock or live per INTEGRATION_MODE)
+      <name>.port.ts         Symbol token + interface: PAYMENTS, MESSAGING, EMAIL, EMBEDDINGS, VECTOR_STORE,
+                             RERANKER, CHAT_MODEL, SITE_CRAWLER, FILE_STORAGE, TEXT_TO_SPEECH, OCR, CUSTOMER_DATABASE
+      http-client/           ResilientClient (timeout, retry+backoff, circuit breaker, SSRF guard, correlation)
+      <source>/              stripe, twilio, sendgrid, supabase, voyage, anthropic, spider, google, eleven-labs,
+                             customer-database: <source>.contracts.ts (Zod of the external payload),
+                             <source>.mappers.ts (+ spec), <source>-<port>.gateway.ts (the adapter)
+      mock/                  In-memory implementation of every port (INTEGRATION_MODE=mock, default in tests)
+      integration.health.ts  Per-upstream state (READY | NOT_CONFIGURED | MOCK) reported by /health/ready
+  modules/<domain>/          agents, agent-runtime, retrieval, voice, chat, sessions, sources, agent-connections,
+                             organizations, members, users, auth-flows, api-keys, billing, reports, notifications, whatsapp
+    <domain>.module.ts       Aggregator: imports + exports the use-case modules, nothing else
+    <use-case>/              One use case = one module = one controller = one endpoint (kebab-case files)
+    repositories/            <name>.repository.ts + <name>.repository.module.ts (forFeature + provides/exports)
+    contracts/               Ports (Symbol token + interface) published to other domains, when needed
+  shared/
+    config/env.ts            Zod-validated, frozen `env` object — the ONLY place that reads process.env
+    contracts/               Shared TS types + barrel, ErrorResponse, pagination (PageRequest/PageResult/toPaginatedResponse)
+    decorators/              @Public, @RequirePermissions, @RequireActiveOrganization, @User
+    http/                    Fastify adapter factory, validation pipe, exception filter, error mapper, pagination.dto, health/
+    observability/           correlation (AsyncLocalStorage), pino logger module, Sentry init
+    utils/                   Pure helper functions, kebab-case
+scripts/refactor-di/         di:verify / di:boot-check      scripts/lint/no-comments.ts     scripts/test/prepare-database.ts
+test/                        e2e per domain + support/ (test-app, factories, database) + global-setup
 ```
 
-**Hard rules** (also in skills, repeated here because they are the most common review feedback):
+## Product-specific invariants (what the rules do not say)
 
-1. A module's `imports` array lists **exactly** the modules that supply what its own providers/controllers/guards inject — nothing more. One repository → `XRepositoryModule` (`src/repositories/<name>.repository.module.ts`); one infra token → `XProviderModule` (`src/infrastructure/providers/<name>.provider.module.ts`); one sibling service → that use case's own module. **Never** import a scope aggregator (`ArtificialIntelligenceModule`, `SessionModule`, …) to reach one service inside it, and never import a module "just in case". There is no `RepositoriesModule` / `InfrastructureModule` any more — they were deleted.
-2. One use case = one module = one controller = one endpoint. Controller handler is `handle` or `execute`; service public method is `execute`.
-3. Controllers always use `@Res() res: FastifyReply` and a try/catch — never rely on Nest's default response handling.
-4. DTOs validated via `class-validator` with `@Body(new ValidationPipe())` per-handler (there is no global `ValidationPipe`).
-5. User-facing error messages are in Portuguese; identifiers stay English.
-6. Every new entity must be barrel-exported from `src/entities/index.ts`, and its repository needs a sibling `<name>.repository.module.ts` doing `TypeOrmModule.forFeature([XEntity])` + `providers`/`exports: [XRepository]`. `forFeature` is module-local: importing a module that registered an entity does **not** give you its `Repository<T>`.
-7. Inject every constructor dependency as `private readonly` — all services/controllers use constructor DI.
-8. Scope modules (`ai-chat.module.ts`, `artificial-intelligence.module.ts`, `components.module.ts`, …) are **wiring only**: `imports` of their use-case modules, no `providers`, no `controllers`, **no `exports`**. Their single job is making controllers register. To consume a service, import the use-case module that exports it.
+- **`AuthenticatedUser.id` and `organization_id` are `string | null`** (service principals, guests, platform admins without org). A handler that needs them calls `requireUserId(user)` / `requireOrganizationId(user)` (`src/auth/request-user.ts`, 403 when absent). Never `!`.
+- **Permissions catalog** (`src/auth/permissions.ts`): platform `admin`/`user` are staff (`agent.*`, `source.*`, `session.read`, `report.read`, `analytics.read`, `voice.synthesize`, `organization.read`); only `admin` has `agent.manage`, `organization.manage`, `user.manage`; `guest` has `account.access` + chat; `service` (API key, embed token, BravoHub) has only `chat.ask`; `member.manage` / `api-key.manage` follow `org_role` (`owner`/`admin`). `@RequireActiveOrganization()` guards chat and conversation routes; `ResolveAgentService` also refuses agents of inactive organizations.
+- **`TokenVerifier`** (`src/auth/token.verifier.ts`) is the only class that knows token formats: native HS256 JWT (`env.JWT_SECRET`, issued by `GenerateTokenService`), the BravoHub HS512 token (`env.BRAVOHUB_JWT_SECRET`), and `Authorization: ApiKey <token>` resolved against `api_keys` (`findValidByHash(sha256)`) with fallback to `organizations.chat_embed_token`.
+- **Whitelabel model.** `users.org_role` (`owner` > `admin` > `member`) travels in the JWT. `PlanEntity` carries `max_agents` / `max_users` (`null` = unbounded), `unlimited` (bypasses credit billing **and** quotas — MAIA playground) and `monthly_credits` (granted on org creation). Seed MAIA + base plans with `bun run seed:maia` (ts-node/CommonJS, PC-006).
+- **Pagination**: list query DTOs extend `PaginationDto`; repositories return `PageResult`; services return `toPaginatedResponse()` → `{ items, total, totalPages, page, limit }`. Listing methods take `fields?: readonly K[]` before `tx?` and return `Pick<Entity, K>[]`.
+- **Transactions** live in services (`TransactionExecutor.run`), `tx` is the last argument of every repository write; used by `CreateOrganization`, `StripeWebhook`, `CreateAgent`, `UpdateAgent`. External effects run after the commit.
+- **Soft delete everywhere** except the trails `token_usage` and `credit_transactions`; unique indexes are partial (`WHERE "deleted_at" IS NULL`); raw `from('table')` subqueries must filter `deleted_at` themselves.
+- **No global API prefix.** Health at `/health/startup` (503 while migrations are pending), `/health/live`, `/health/ready` (database + memory + per-integration state). Swagger at `/docs` only with `SWAGGER_ENABLED=true` outside production.
+- **Bootstrap order is fixed** (`src/main.ts`): `dotenv/config` → `createFastifyAdapter()` (helmet without CSP/frameguard for the embed widget, multipart, `x-request-id` correlation) → pino (`AppLoggerModule`, redacts auth headers) → CORS from `ALLOWED_ORIGINS` (empty = reflect any origin; `*` rejected) → global pipe → shutdown hooks → Swagger → listen. `DevtoolsModule` is skipped under `NODE_ENV=test` (PC-018).
+- **`env.ts` is the only reader of `process.env`**; new variable → Zod schema **and** `.env.example`. Never paste secret values into messages or commits.
+- **Lint beyond the rules**: `import/order` (builtin → external → `src/…`), `check-file` kebab-case, `no-restricted-imports` for `./` `../` (schema folder excepted), `no-console`, `no-inline-comments`, `no-warning-comments`, `consistent-type-imports` (the rule keeps value imports for decorated constructor params — never hand-write `import type` on those), `no-explicit-any` (specs excepted), and `scripts/lint/no-comments.ts` as the last step of `bun run lint`. Knowledge that used to live in comments is in `docs/decisoes-de-dominio.md`.
+- **Three deliberate casts**: TypeORM `update()` payloads (`as QueryDeepPartialEntity<Entity>`, PC-015), Fastify plugin registration (`as unknown as AdapterPlugin`, PC-016), LangChain dual-identity types (`as unknown as BaseRetrieverInterface` / `VectorStoreInterface` / `Embeddings`, PC-005, PC-012).
 
-Run `bun run scripts/refactor-di/verify.ts` after touching module wiring — it walks every module and reports any injection its `imports` no longer reach, plus controllers unreachable from `AppModule`.
+## External integrations (rule `10`)
 
-## Service & reasoning conventions
+- **Ports.** `PAYMENTS` (Stripe: `createCheckout`, `parseWebhookEvent` → internal `PaymentEvent` union), `MESSAGING` (Twilio SMS/WhatsApp + `parseInboundWhatsapp`), `EMAIL` (SendGrid), `EMBEDDINGS` (LangChain `Embeddings`, Voyage), `VECTOR_STORE` (`upsertChunks` / `loadIndex` / `deleteBySourceId` over Supabase pgvector, returns LangChain `VectorStoreInterface`), `RERANKER` (Voyage `rerank-2.5` via `ResilientClient`), `CHAT_MODEL` (`ChatAnthropic` factory — the only `new ChatAnthropic` in the repo), `SITE_CRAWLER` (Spider), `FILE_STORAGE` (GCS), `TEXT_TO_SPEECH` (Google, or ElevenLabs via `TTS_PROVIDER`), `OCR` (Google Vision), `CUSTOMER_DATABASE` (per-request TypeORM `DataSource` to the tenant's DB). Inject by token, type by interface; every interface extends `IntegrationGateway` (`name`, `state()`); the module imports nothing for it.
+- **External field names stay in `<source>.contracts.ts` / `<source>.mappers.ts`.** A payload outside the contract is rejected (`BadRequestException` on webhooks, `BadGatewayException` on responses), never defaulted. `grep -rE "axios|fetch\(" src/modules` must stay empty (the only hit is browser-side JS inside the embed page template).
+- **Missing credentials never break the boot.** A live gateway without its key reports `NOT_CONFIGURED` and throws `ServiceUnavailableException` only when called. Google clients rely on ADC and are built lazily (`READY`).
+- **`ResilientClient`**: `AbortController` timeout, retry with backoff + jitter on `GET`/`HEAD`/`OPTIONS` and 408/425/429/5xx only, circuit breaker per dependency, `redirect: 'error'`, `x-request-id` propagation, SSRF guard (http/https only; loopback/private/link-local/metadata blocked; allowlist `HTTP_ALLOWED_HOSTS`, default `api.voyageai.com`). A new host goes into the allowlist.
+- **`CUSTOMER_DATABASE`** validates the host against `CUSTOMER_DATABASE_ALLOWED_HOSTS` (internal networks only with `CUSTOMER_DATABASE_ALLOW_INTERNAL_NETWORK=true`), applies `CUSTOMER_DATABASE_*_TIMEOUT_MS`, and the SQL guard (`detectDialect`, `sanitizeSqlQuery`, `assertScoped`) is the pure module `integration/customer-database/sql-guard.ts`.
+- **Env:** `INTEGRATION_MODE`, `HTTP_TIMEOUT_MS`, `HTTP_RETRIES`, `HTTP_BACKOFF_BASE_MS`, `HTTP_CIRCUIT_FAILURE_THRESHOLD`, `HTTP_CIRCUIT_OPEN_MS`, `HTTP_ALLOWED_HOSTS`, `ANTHROPIC_BASE_URL` (defaults to the DeepSeek Anthropic-compatible endpoint the code used to hard-code; set it explicitly to reach Anthropic), `TTS_PROVIDER`, `GCS_AUDIO_BUCKET`.
 
-How to think about a service before writing it (worked before/after examples in the `thinking-flow` skill):
+## AI pipeline essentials
 
-1. **Push work to the database/repository.** Don't fetch full rows and discard fields in TS — add an optional `select` (or a dedicated query) so the repository returns exactly what's needed. Prefer one optimized query over in-service transformation.
-2. **Type every public method's return explicitly.** Each `execute()` declares its return type; for a strict subset of an entity, define a `Pick<>` type in `src/types/models/` and barrel-export it.
-3. **Skip checks the call chain already guarantees.** `AuthGuard` guarantees `user`; `@Body(new ValidationPipe())` guarantees required DTO fields; a prior `NotFoundException` guarantees the entity exists. Don't re-check them.
-4. **Early return; keep the happy path flat.** Validate and throw `NestJS` exceptions at the top, then proceed. Don't catch in services — let exceptions bubble to the controller's try/catch.
-5. **Parallelize independent async work.** `Promise.all` when all must succeed; `Promise.allSettled` for fire-and-forget side effects.
+- **Flow:** `POST /support/question` (NDJSON) or `POST /chat/attendant` → `CreateSessionIfNotExists` → `ResolveAgent` (`CHAT_MODEL`, tools, `PostgresSaver` checkpointer when `with_history`) → `GenerateAiResponse` (`createAgent`, `responseFormat: AgentFinalResponseSchema`, `handleStreamResponse`) → `RecordChatMessage` (embeds via `EMBEDDINGS`). `thread_id` is `conversationId ?? session.id`, prefixed by the organization; changing the format detaches every stored thread.
+- **Retrieval is threshold-based, not top-K.** `vector_similarity_search` fetches `VECTOR_SEARCH_CANDIDATE_K` (50) candidates for recall and `VoyageRerankCompressor` keeps those scoring `>= VECTOR_SEARCH_MIN_SCORE` (0.8), capped at `VECTOR_SEARCH_MAX_RESULTS` (10). Empty results are by design; the `warn` with the best score is the tuning signal. Never move the cutoff onto the cosine score.
+- **A search costs two Voyage calls** (embed + rerank) on the same `VOYAGEAI_API_KEY`; without a default payment method the quota is 3 RPM / 10K TPM (PC-007).
+- **Ingestion** (`sources/process-*-source`, `load-agent-sites`) must tag every chunk with `agent_id` + `source_id` before `VECTOR_STORE.upsertChunks`; the `documents` table, `match_documents` and the pgvector index live only in Supabase and are applied by hand in its SQL editor.
+- **Attendant agents** store instructions under the `AIInstructions` keys (`context`, `objetivo`, `diretrizes`); `ResolveAgent` answers 404 for an agent without instructions.
 
 ## Per-org database connection feature
 
-Single, opt-in mechanism for an agent to query its organization's own database. Replaces the older BravoHub-specific tool belt and the `organization_analytics_config` table. No HTTP gateway in the middle — the tool builds a TypeORM `DataSource` per request against the customer's DB directly.
+Single, opt-in mechanism for an agent to query its organization's own database.
 
-- **Endpoint:** `POST /support/question` (`src/components/AIChat/Question/`) is the single entry point for all chat. It streams NDJSON via Fastify response hijacking (`application/x-ndjson`). Guarded by **`CompositeAuthGuard`** (`src/auth/composite-auth.guard.ts`), which dispatches on the `Authorization` scheme:
-  - `Authorization: Bearer <jwt>` → `AuthGuard` (user-facing browser/app traffic; `request.user` is the JWT payload, including `organization_id`).
-  - `Authorization: ApiKey <token>` → `ApiKeyGuard` (server-to-server). The guard resolves the token first against the `api_keys` table (hashed, revocable, expirable secret key), then falls back to a `chat_embed_token` (`chat_embed_enabled=true`, via `OrganizationRepository.findActiveByEmbedToken`), and populates `request.user` with the resolved `organization_id` plus `role: 'service'`. The `role === 'service'` carve-out in `QuestionService` keeps S2S calls **out of credit billing** while still associating them with the right org. (Orgs on an `unlimited` plan are also skipped from billing, regardless of role.)
-- **Pré-requisitos para o agente usar a tool de banco** (o gate real em `ResolveAgentService.maybeLoadDatabaseTool`; `chat_embed` **não** faz parte dele — é auth-path, via `ApiKeyGuard`):
-  1. Agente com `database_tool = true` e `organization_id` apontando para a org.
-  2. `organizations.database_url` populado com uma conn-string (`postgres://...` ou `mysql://...`).
-  3. Linha em `organization_features` ligando a org à feature `database_connection` (seedada por SQL aplicado à mão no Supabase) com `enabled = true`.
-- **Tool wiring:** `ResolveAgentService.loadTools` (`resolve-agent.service.ts`) faz, para agentes com `database_tool=true`: lookup da org via `OrganizationRepository`, check da feature via `OrganizationFeatureRepository.isEnabledForOrganization(orgId, 'database_connection')`, e injeta `LoadDatabaseToolService.execute({ databaseUrl: org.database_url })`. Qualquer pré-requisito faltando → skip silencioso (a tool não aparece para o LLM).
-- **`LoadDatabaseTool`** (`src/components/Tools/LoadDatabaseTool/`) detecta o dialeto pelo prefixo da URL (`postgres://`/`postgresql://` → Postgres; `mysql://`/`mysql2://` → MySQL). Constrói o `DataSource` lazy via TypeORM por chamada. Sanitização: statement única; allow-list do primeiro verbo (`SELECT`/`INSERT`/`UPDATE`; em modo read-only apenas `SELECT`); deny regex `DELETE|ALTER|DROP|CREATE|REPLACE|TRUNCATE` mesmo após verbo permitido; força `LIMIT 5` quando não há LIMIT. Agentes BravoHub-scoped (`config.bravohubScopedAgents`) rodam company-scoped read-only via `scopeCompanyId`.
-- **Knowledge externo (schema do banco do cliente, docs internos):** ingerir como `Source` do agente (via `/agent/load-sites`, OCR ou outras rotas de Source). `LoadVectorSearchTool` (já existente) filtra por `agent_id` na busca semântica.
-- **A tabela `documents` e a função `match_documents` vivem só no Supabase.** O diretório `migrations/` foi removido no commit `cfa5375` e `scripts/apply-pgvector-migration.ts` não existe mais — não há nenhum `.sql` versionado no repo. A assinatura em uso é a padrão do LangChain, `match_documents(query_embedding vector, match_count int, filter jsonb)`, retornando `(id, content, metadata, similarity)` com `similarity = 1 - (embedding <=> query_embedding)` (maior = melhor). `synchronize` do TypeORM não toca nisso: não cria a extensão `vector`, o índice cosine nem a função. Qualquer mudança de schema vetorial é aplicada à mão no SQL editor do Supabase.
-- **Features migrations:** as tabelas `features` + `organization_features` (com a feature `database_connection` seedada) e a coluna `organizations.database_url` também foram criadas por SQL aplicado à mão. Os arquivos citados por versões antigas deste documento (`migrations/create_features_tables.sql`, `migrations/add_organization_database_url.sql`) **não existem mais no repo** — o estado real está no Supabase.
-- **Required env vars:** `ANTHROPIC_API_KEY` (Claude — lido por `ChatAnthropic` automaticamente), `VOYAGEAI_API_KEY` (usada pelos **dois** providers Voyage: lida do env pelo `VoyageEmbeddings` e via `config.voyageApiKey` pelo reranker), `EMBEDDING_MODEL` (set to `voyage-3-large`, 1024 dims via `outputDimension` hard-coded em `voyage-embeddings.provider.ts`), `ORCHESTRATOR_MODEL` (default `claude-sonnet-4-6`). Opcionais de retrieval, todos com default no `src/config.ts`: `RERANK_MODEL` (`rerank-2.5`), `VECTOR_SEARCH_CANDIDATE_K` (`50`), `VECTOR_SEARCH_MIN_SCORE` (`0.8`), `VECTOR_SEARCH_MAX_RESULTS` (`10`). Não há mais `ANALYTICS_ASK_API_KEY`/`BRAVOHUB_*` — auth S2S é per-org via `chat_embed_token`.
+- **Pré-requisitos** (gate em `MaybeLoadDatabaseToolService`): agente com `database_tool = true` e `organization_id`; `organizations.database_url` (`postgres://` ou `mysql://`); linha em `organization_features` ligando a org à feature `database_connection` com `enabled = true` (tabelas `features` / `organization_features` e a coluna `database_url` foram criadas por SQL manual no Supabase). Qualquer pré-requisito faltando → a tool não aparece para o LLM.
+- **`LoadDatabaseTool`** monta `execute_sql` sobre a porta `CUSTOMER_DATABASE`: statement única; allow-list do primeiro verbo (`SELECT`/`INSERT`/`UPDATE`; read-only só `SELECT`); deny regex `DELETE|ALTER|DROP|CREATE|REPLACE|TRUNCATE`; `LIMIT 5` forçado. Agentes em `env.BRAVOHUB_SCOPED_AGENTS` rodam company-scoped read-only (`assertScoped` em `company_id`), e `BuildSystemPromptService` injeta a diretriz de isolamento por código.
+- **Auth S2S** é per-org: `Authorization: ApiKey <api_keys secret>` ou o `chat_embed_token` da organização; `role: 'service'` fica fora da cobrança de créditos.
+- **Env:** `ANTHROPIC_API_KEY`, `VOYAGEAI_API_KEY`, `EMBEDDING_MODEL` (`voyage-3-large`), `ORCHESTRATOR_MODEL` (default `claude-sonnet-4-6`), `RERANK_MODEL`, `VECTOR_SEARCH_*`.
+
+## Tests
+
+- **Two layers.** Unit specs (`src/**/*.spec.ts`) only for pure functions and self-contained modules (mappers, `sql-guard`, http-client, permissions, `AccessScopeService`, `TokenVerifier`, `VoyageRerankCompressor`, utils) plus the two Nest-module specs `auth-layer.spec.ts` and `http-layer.spec.ts`. A service spec that mocks a repository is **not** added; the behaviour goes to `test/<domain>.e2e-spec.ts`.
+- **One e2e file per domain** (`test/*.e2e-spec.ts`, serial): happy path, 400 with `details`, 401, 403 (permission and organization scope), 404 per use case. `createTestApp()` boots the real `AppModule` on Fastify with `INTEGRATION_MODE=mock`; fixtures from `test/support/factories.ts`; `t.reset()` truncates every table in `beforeEach`.
+- **Database.** `test/global-setup.ts` uses `TEST_DATABASE_URL` (CI: `postgres:16-alpine` service container; local: `docker compose up postgres`) or a Testcontainers Postgres, then `scripts/test/prepare-database.ts` synchronizes the schema from the entities and marks the migrations applied (PC-017).
 
 ## Things that bite
 
-- **`synchronize: true` is enabled** (`src/app.module.ts:24`). Schema is reflected from entity decorators on every boot — including against the Supabase production DB if those credentials are used. Be careful: renaming a column or changing a type on an entity will alter the live schema. Coordinate schema changes by hand in the Supabase SQL editor and discuss before touching entities pointed at prod. **Note:** there is no `migrations/` directory any more (deleted in `cfa5375`) and no `.sql` file anywhere in the repo — the `documents` table, the `match_documents` function and the pgvector index live only in the Supabase project and are invisible to `synchronize`.
-- **Retrieval can legitimately return nothing.** `vector_similarity_search` is no longer top-K: the dense search fetches `VECTOR_SEARCH_CANDIDATE_K` candidates (default 50) purely for recall, and a Voyage `rerank-2.5` cross-encoder keeps only those scoring `>= VECTOR_SEARCH_MIN_SCORE` (default 0.8), capped at `VECTOR_SEARCH_MAX_RESULTS`. A question where nothing clears the bar yields an empty string to the LLM **by design** — `VoyageRerankCompressor` logs a `warn` with the best score seen, which is the signal to tune the env var rather than to remove the threshold. Never move the cutoff onto the cosine score: `match_documents` already orders rows by exactly that value, so filtering on it adds no signal, and a bi-encoder's scale is not comparable across queries.
-- **A search costs two Voyage calls now** (one embed + one rerank) against the **same** `VOYAGEAI_API_KEY` quota. Rate limits are org-wide and tier-based: with no _default_ payment method every model group is capped at **3 RPM / 10K TPM** and the 429 body reads `"You have not yet added your payment method"`. Tier 1 (a default card) lifts `voyage-3-large` to 3M TPM / 2000 RPM and `rerank-2.5` to 2M TPM / 2000 RPM, keeping the 200M free rerank tokens. Two traps: a card can sit in the dashboard **without being the default** and not count, and after fixing it the dashboard flips several minutes before the enforcement layer does — verify with a burst of concurrent calls, never with the dashboard.
-- **`ContextualCompressionRetriever` must come from `@langchain/classic`**, not `langchain` (the classic retrievers moved packages; `langchain@1.2.x` no longer exports them). And the `as unknown as BaseRetrieverInterface` cast in `execute-similarity-search.service.ts` is load-bearing: under `NodeNext`, `@langchain/community` resolves its CJS typings back to the ESM ones, so both packages see the same declaration under two identities. Removing the cast breaks `bun run build`.
-- **Three auth guards coexist; pick the right one.** There is no global guard — every handler picks per-`@UseGuards`.
-  - `AuthGuard` (`src/auth/auth.guard.ts`) — JWT-only. Protects almost everything.
-  - `ApiKeyGuard` (`src/auth/api-key.guard.ts`) — extracts the token from `Authorization: ApiKey <token>` and resolves it in two steps: **(1)** a real secret key from the `api_keys` table via `ApiKeyRepository.findValidByHash(sha256(token))` (not revoked, not expired) → sets `request.user` with `organization_id`, `api_key_id`, `scopes`, `role: 'service'`; **(2)** fallback to the publishable widget token via `OrganizationRepository.findActiveByEmbedToken` (matches `chat_embed_token` AND `chat_embed_enabled=true`). Secret keys are the sanctioned S2S credential (revocable + expirable); the embed token stays only for the browser widget.
-  - `CompositeAuthGuard` (`src/auth/composite-auth.guard.ts`) — dispatches on the `Authorization` scheme to one of the above. Just delegates — `request.user` is now populated by whichever guard ran. When wiring a new endpoint, register both `AuthGuard` and `ApiKeyGuard` (which depends on `ApiKeyRepository` + `OrganizationRepository`) as providers in the use-case module; `CompositeAuthGuard` resolves them via DI.
-- **`AuthGuard` verifies the JWT signature** via `verifyJwt` (`src/auth/auth.guard.ts`), which calls `jsonwebtoken.verify(token, process.env.JWT_SECRET)` — `JWT_SECRET` must be set and match the issuer (`GenerateTokenService`). Tampered/expired/unsigned tokens are rejected with `UnauthorizedException`. (Historical note: this guard used to base64-decode without verifying; that gap is now closed.)
-- **Whitelabel auth model (multi-user + plans + API keys).** Org-scoped roles live on `users.org_role` (`owner` > `admin` > `member`), carried in the JWT and enforced by `OrgRoleGuard` + `@OrgRoles(...)` (`src/auth/org-role.guard.ts`, `src/decorators/org-roles.decorator.ts`). Plan benefits live on `PlanEntity`: `max_agents` / `max_users` (`null` = unbounded), `unlimited` (bypasses credit billing **and** quotas — used by the MAIA playground), and `monthly_credits` (granted on org creation). API keys: `api_keys` table + `ApiKeyRepository`, CRUD under `src/components/ApiKey/` (`POST /api-key/{create,list,revoke}`, owner/admin only). Member invites under `src/components/Organization/Members/` (`POST /organization/members/{invite,accept,list,role,remove}`). Seed the MAIA org + base plans with `bun run seed:maia` (ts-node/CommonJS — running the script directly under bun's ESM loader hits a TypeORM `emitDecoratorMetadata` TDZ).
-- **No global API prefix.** Routes are mounted at the path declared on each `@Controller(...)` (e.g., `/support/question`), not `/api/...`. If any doc or template snippet implies `/api/...` or a global `ValidationPipe`, the code wins.
-- **`.env` is checked in with live secrets** (Supabase service key, Stripe live keys, Twilio credentials, LangSmith keys). Don't echo, log, paste into messages, or commit changes that move them. If a task needs new secrets, edit `.env` locally but don't commit; surface the variable name in the PR description instead.
-- **TS is loose**: `strictNullChecks: false`, `noImplicitAny: false`, `@typescript-eslint/no-explicit-any: off`. Write type-safe code anyway, but don't waste time fighting `any` in existing files unless the task is a cleanup.
-- **`eslint-plugin-import` enforces order**: builtin → external → internal (`src/...`) → parent → sibling → index, alphabetized, blank line between groups. `bun run lint --fix` resolves most violations automatically.
-- **`bravohub-analytics-workspace/CLAUDE.md` doesn't apply here.** Its scope rule says it only fires when `pwd` ends in `bravohub-analytics-workspace`. When `cd`'d into `split-ai/`, this file takes over.
+- **Schema changes go through migrations; `synchronize` is off.** Entity → `bun run db:generate …` against a mirror of production → review (`CREATE INDEX CONCURRENTLY` + `transaction = false` on big tables) → commit entity and migration together. `db:check` fails when they diverge (PC-011).
+- **`ContextualCompressionRetriever` comes from `@langchain/classic`** (PC-005); `@langchain/langgraph` must stay aligned with the version `langchain@1.x` expects (`MemorySaver` must be a `BaseCheckpointSaver`).
+- **TypeORM scripts run under ts-node/CommonJS**, never under bun's ESM loader (PC-006): `db:*`, `seed:maia`, `test:db:prepare`.
+- **`.env` is git-ignored; `.env.example` is the template.** Missing `DATABASE_URL` or `JWT_SECRET` aborts the boot listing every problem.
+- **`bravohub-analytics-workspace/CLAUDE.md` doesn't apply here.** Its scope rule fires only when `pwd` ends in `bravohub-analytics-workspace`.
 
 ## Commit & CI
 
 - Conventional Commits enforced by commitlint (`build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test`). Subject in lowercase, no trailing period, blank line before body.
-- Husky `pre-commit` runs `lint-staged` → ESLint + Prettier on staged files (specs excluded from ESLint).
-- `.github/workflows/ci-cd.yml`: PRs run lint only. Pushes to `main` build a Docker image, push to Artifact Registry, and `gcloud run deploy split-ai` in `southamerica-east1` with `min-instances 1, max-instances 2, 4Gi, 4 CPU`. The Cloud Run service binds to `$PORT`, which is why `main.ts` reads `process.env.PORT` first.
+- Husky `pre-commit` runs `lint-staged` → ESLint + Prettier on staged files.
+- `.github/workflows/ci-cd.yml`: PRs run `format:check`, `lint`, `typecheck`, `test`, `test:e2e` (Postgres service container) and `build`. Pushes to `main` run the `migrate` job (`db:migrate`, concurrency 1) and then build the Docker image and `gcloud run deploy split-ai` in `southamerica-east1` (`min-instances 1, max-instances 2, 4Gi, 4 CPU`). Cloud Run binds `$PORT`, which is why `env.PORT` has no hard-coded production value.

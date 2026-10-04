@@ -62,8 +62,14 @@ function forFeatureEntities(mod: ModuleInfo): Set<string> {
   return entities;
 }
 
+const globalSymbols = new Set<string>();
+for (const mod of graph.modules.values()) {
+  if (!mod.isGlobal) continue;
+  for (const sym of exposedBy(mod.name)) globalSymbols.add(sym);
+}
+
 function visibleTo(mod: ModuleInfo): Set<string> {
-  const visible = new Set<string>();
+  const visible = new Set<string>(globalSymbols);
   for (const p of [...mod.providers, ...mod.controllers]) {
     if (p.name) visible.add(p.name);
     if (p.provide) visible.add(p.provide);
@@ -106,7 +112,10 @@ for (const mod of graph.modules.values()) {
 
   for (const p of mod.providers) {
     if (p.dynamic && /\binject\s*:/.test(p.text)) {
-      unchecked.push({ module: mod.name, text: p.text.replace(/\s+/g, ' ').slice(0, 90) });
+      unchecked.push({
+        module: mod.name,
+        text: p.text.replace(/\s+/g, ' ').slice(0, 90),
+      });
     }
   }
 
@@ -193,10 +202,14 @@ for (const dup of graph.duplicates) {
 }
 
 for (const p of problems) {
-  console.log(`  ✗ ${p.module} :: ${p.consumer} -> ${p.symbol}  (${relative(p.file)})`);
+  console.log(
+    `  ✗ ${p.module} :: ${p.consumer} -> ${p.symbol}  (${relative(p.file)})`,
+  );
 }
 for (const m of orphaned) {
-  console.log(`  ✗ ${m.name} has controllers but is not reachable from AppModule`);
+  console.log(
+    `  ✗ ${m.name} has controllers but is not reachable from AppModule`,
+  );
 }
 
 if (problems.length || orphaned.length || graph.duplicates.length) {

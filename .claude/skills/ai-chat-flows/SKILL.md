@@ -1,22 +1,22 @@
 ---
 name: ai-chat-flows
-description: 'Use for the chat orchestration: /support/question NDJSON streaming and /chat/attendant, Fastify response hijacking for chunked streaming, and wiring chat into sessions, credits, and message persistence. Scope: src/components/AIChat/.'
+description: 'Use for the chat orchestration: /support/question NDJSON streaming and /chat/attendant, Fastify response hijacking for chunked streaming, and wiring chat into sessions, credits, and message persistence. Scope: src/modules/chat/.'
 ---
 
 ## Scope
 
-`AIChatModule` (`src/components/AIChat/ai-chat.module.ts`) only registers `QuestionModule` and `AttendantModule`. Those are the only live entry points. The other directories (`AnalyticsAsk/`, `ExtractDocumentData/`, `RecordChatMessage/`) are either empty or internal-only — see the "dead and internal modules" section below.
+`ChatModule` (`src/modules/chat/chat.module.ts`) aggregates `QuestionModule`, `AttendantModule` and the internal `RecordChatMessageModule`. The two controllers are the only chat entry points.
 
 ## Live endpoints
 
 | Route                    | Method                       | Streams?             | Auth                                    | DTO                    |
 | ------------------------ | ---------------------------- | -------------------- | --------------------------------------- | ---------------------- |
-| `POST /support/question` | `QuestionController.execute` | yes (Fastify hijack) | `CompositeAuthGuard` + `ActiveOrgGuard` | `QuestionDto`          |
-| `POST /chat/attendant`   | `AttendantController.handle` | no                   | `AuthGuard` + `ActiveOrgGuard`          | `QuestionDto` (reused) |
+| `POST /support/question` | `QuestionController.handle`  | yes (Fastify hijack) | `chat.ask` (JWT, ApiKey or BravoHub) + active org | `QuestionDto`          |
+| `POST /chat/attendant`   | `AttendantController.handle` | no                   | `chat.attend` (JWT only) + active org             | `QuestionDto` (reused) |
 
-`QuestionDto` (`src/components/AIChat/Question/question.dto.ts`): `question` (required), `agentId` (required), optional `phone`, `name`, `conversationId` (drives thread memory), and `variables?: Record<string, string>` (per-call prompt variables surfaced to the agent; server-controlled keys `sessionId`/`conversationId`/`threadId`/`organizationId` always override anything passed here). No `organizationId`/`companyId` — those are dead since `CompositeAuthGuard` always resolves the org (from JWT or from the `chat_embed_token` looked up by `ApiKeyGuard`). Attendant imports it from the Question folder — keep them in sync.
+`QuestionDto` (`src/modules/chat/question/question.dto.ts`): `question` (required), `agentId` (required), optional `phone`, `name`, `conversationId` (drives thread memory), and `variables?: Record<string, string>` (per-call prompt variables surfaced to the agent; server-controlled keys `sessionId`/`conversationId`/`threadId`/`organizationId` always override anything passed here). No `organizationId`/`companyId` in the DTO — the organization always comes from `AuthenticatedUser` (JWT, API key or embed token resolved by `TokenVerifier`). Attendant imports it from the Question folder — keep them in sync.
 
-## Question flow — orchestrator at src/components/AIChat/Question/question.service.ts
+## Question flow — orchestrator at src/modules/chat/question/question.service.ts
 
 1. **Credit gate.** A request is `billable` only when `user.organization_id` is set **and** `user.role !== 'service'` (S2S API-key callers carry `role: 'service'` so they skip billing while still being scoped to the right org). For billable requests, call `consumeCreditsService.checkCredits(orgId)`; throw `ForbiddenException('Créditos insuficientes. Por favor, adquira mais créditos para continuar.')` when out.
 2. **Session.** `createSessionIfNotExistsService.execute({ agent_id, user_id, organization_id })` — idempotent.
@@ -43,7 +43,7 @@ await this.questionService.execute(dto, user, (event) => {
 - Headers must be written **before** the first `res.raw.write`. If you add an early validation that throws after a chunk is emitted, the client sees partial NDJSON events followed by an `error` event then a `done` event — by design (see `catch` block).
 - `X-Accel-Buffering: no` defeats nginx/Cloud Run proxy buffering. Don't drop it.
 
-## Attendant flow — src/components/AIChat/Attendant/attendant.service.ts
+## Attendant flow — src/modules/chat/attendant/attendant.service.ts
 
 Same shape as Question, with three deliberate differences:
 
@@ -55,13 +55,8 @@ The controller's catch block currently returns `error.message` as the body on 50
 
 ## RecordChatMessage — the only internal use case
 
-- `src/components/AIChat/RecordChatMessage/record-chat-message.service.ts` writes to `messages` via `MessageRepository.create({ session_id, user_id, agent_id, from, message })`. `from` is `'user' | 'agent'`. The service catches every error and `console.error`s it; it never throws. Use this everywhere chat history is recorded — do not call `MessageRepository` directly from the orchestrators.
-- `RecordChatMessageModule` is imported by `QuestionModule` and `AttendantModule` (not by `AIChatModule`). If you add a third chat entry point, import `RecordChatMessageModule` into that use case's module.
-
-## Dead and orphan modules
-
-- **`AnalyticsAsk/`** — empty placeholder. No files exist. Safe to ignore until a use case is scaffolded here.
-- **`ExtractDocumentData/`** — files exist (`controller`, `service`, `dto`, `module`) but `ExtractDocumentDataModule` is **never imported anywhere** (`grep -rn "ExtractDocumentDataModule" src/` returns only the definition). The endpoint will not boot. Do not extend or reference from other code without first wiring it into `AIChatModule` or another live module. If the task is to revive it, also remember to register any new entities and check that the DTO/service compile.
+- `src/modules/chat/record-chat-message/record-chat-message.service.ts` writes to `messages` via `MessageRepository.create({ session_id, user_id, agent_id, from, message })`. `from` is `'user' | 'agent'`. The service embeds the text through the `EMBEDDINGS` port, catches every error and logs it with the Nest `Logger`; it never throws. Use this everywhere chat history is recorded — do not call `MessageRepository` directly from the orchestrators.
+- `RecordChatMessageModule` is imported by `QuestionModule` and `AttendantModule`. If you add a third chat entry point, import `RecordChatMessageModule` into that use case's module.
 
 ## Common pitfalls
 
