@@ -1,5 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 
+import { Executor } from 'src/infrastructure/database/database.types';
 import {
   CreditTransactionEntity,
   TransactionType,
@@ -21,20 +22,26 @@ export class ManageCreditsService {
     type: TransactionType,
     description?: string,
     metadata?: Record<string, any>,
+    tx?: Executor,
   ): Promise<CreditTransactionEntity> {
     // Get current balance
-    let balance =
-      await this.creditBalanceRepository.findByOrganizationId(organizationId);
+    let balance = await this.creditBalanceRepository.findByOrganizationId(
+      organizationId,
+      tx,
+    );
 
     if (!balance) {
       // Create initial balance if doesn't exist
-      balance = await this.creditBalanceRepository.create({
-        organization_id: organizationId,
-        total_credits: 0,
-        used_credits: 0,
-        available_credits: 0,
-        reserved_credits: 0,
-      });
+      balance = await this.creditBalanceRepository.create(
+        {
+          organization_id: organizationId,
+          total_credits: 0,
+          used_credits: 0,
+          available_credits: 0,
+          reserved_credits: 0,
+        },
+        tx,
+      );
     }
 
     const balanceBefore = balance.available_credits;
@@ -63,29 +70,37 @@ export class ManageCreditsService {
     }
 
     // Create transaction record
-    const transaction = await this.creditTransactionRepository.create({
-      organization_id: organizationId,
-      type,
-      amount,
-      balance_before: balanceBefore,
-      balance_after: balanceAfter,
-      description,
-      metadata,
-      status: TransactionStatus.COMPLETED,
-    });
+    const transaction = await this.creditTransactionRepository.create(
+      {
+        organization_id: organizationId,
+        type,
+        amount,
+        balance_before: balanceBefore,
+        balance_after: balanceAfter,
+        description,
+        metadata,
+        status: TransactionStatus.COMPLETED,
+      },
+      tx,
+    );
 
     // Update balance
     if (type === TransactionType.CONSUMPTION) {
       await this.creditBalanceRepository.consumeCredits(
         organizationId,
         credits,
+        tx,
       );
     } else if (
       type === TransactionType.PURCHASE ||
       type === TransactionType.BONUS ||
       type === TransactionType.REFUND
     ) {
-      await this.creditBalanceRepository.addCredits(organizationId, credits);
+      await this.creditBalanceRepository.addCredits(
+        organizationId,
+        credits,
+        tx,
+      );
     }
 
     return transaction;

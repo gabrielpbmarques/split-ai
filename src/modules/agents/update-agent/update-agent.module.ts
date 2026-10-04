@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { AuthModule } from 'src/auth/auth.module';
+import { TransactionExecutorModule } from 'src/infrastructure/database/transaction-executor/transaction-executor.module';
 import { AgentInstructionRepositoryModule } from 'src/modules/agents/repositories/agent-instruction.repository.module';
 import { AgentRepositoryModule } from 'src/modules/agents/repositories/agent.repository.module';
 import { UpdateAgentController } from 'src/modules/agents/update-agent/update-agent.controller';
@@ -8,6 +9,7 @@ import { UpdateAgentService } from 'src/modules/agents/update-agent/update-agent
 
 @Module({
   imports: [
+    TransactionExecutorModule,
     AuthModule,
     AgentInstructionRepositoryModule,
     AgentRepositoryModule,

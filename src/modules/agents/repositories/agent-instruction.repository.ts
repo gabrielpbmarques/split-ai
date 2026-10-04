@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindManyOptions, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 
+import { Executor } from 'src/infrastructure/database/database.types';
 import { AgentInstructionEntity } from 'src/infrastructure/database/schema/agent-instruction.entity';
 
 @Injectable()
@@ -13,19 +14,14 @@ export class AgentInstructionRepository {
 
   async create(
     data: Partial<AgentInstructionEntity>,
+    tx?: Executor,
   ): Promise<AgentInstructionEntity> {
-    const entity = this.repository.create(data);
-    return await this.repository.save(entity);
+    const repo = this.repo(tx);
+    return repo.save(repo.create(data));
   }
 
   async findByAgentId(agentId: string): Promise<AgentInstructionEntity | null> {
     return await this.repository.findOne({ where: { agent_id: agentId } });
-  }
-
-  async find(
-    options: FindManyOptions<AgentInstructionEntity>,
-  ): Promise<AgentInstructionEntity[]> {
-    return await this.repository.find(options);
   }
 
   async findLatestByAgentId(
@@ -42,12 +38,17 @@ export class AgentInstructionRepository {
   async updateLatestByAgentId(
     agentId: string,
     instructions: any,
+    tx?: Executor,
   ): Promise<AgentInstructionEntity> {
     const latest = await this.findLatestByAgentId(agentId);
     if (latest) {
       latest.instructions = instructions;
-      return await this.repository.save(latest);
+      return this.repo(tx).save(latest);
     }
-    return await this.create({ agent_id: agentId, instructions });
+    return this.create({ agent_id: agentId, instructions }, tx);
+  }
+
+  private repo(tx?: Executor): Repository<AgentInstructionEntity> {
+    return tx ? tx.getRepository(AgentInstructionEntity) : this.repository;
   }
 }

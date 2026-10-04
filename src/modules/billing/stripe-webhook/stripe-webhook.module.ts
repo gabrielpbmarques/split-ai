@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { TransactionExecutorModule } from 'src/infrastructure/database/transaction-executor/transaction-executor.module';
 import { StripeProviderModule } from 'src/infrastructure/stripe/stripe.provider.module';
 import { ManageCreditsModule } from 'src/modules/billing/manage-credits/manage-credits.module';
 import { PaymentRepositoryModule } from 'src/modules/billing/repositories/payment.repository.module';
@@ -10,6 +11,7 @@ import { DeactivateOrganizationModule } from 'src/modules/organizations/deactiva
 
 @Module({
   imports: [
+    TransactionExecutorModule,
     ActivateOrganizationModule,
     DeactivateOrganizationModule,
     ManageCreditsModule,

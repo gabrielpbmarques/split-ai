@@ -19,14 +19,18 @@ describe('CreateAgentService', () => {
   beforeEach(() => {
     agentRepository = {
       create: jest.fn().mockResolvedValue({ id: 'agent-1' }),
-      count: jest.fn(),
+      countByOrganization: jest.fn(),
     };
     agentInstructionRepository = { create: jest.fn().mockResolvedValue({}) };
     organizationRepository = { findByIdWithPlan: jest.fn() };
+    const transactionExecutor = {
+      run: (work: (tx: unknown) => Promise<unknown>) => work('tx'),
+    };
     service = new CreateAgentService(
       agentRepository,
       agentInstructionRepository,
       organizationRepository,
+      transactionExecutor as any,
     );
   });
 
@@ -39,6 +43,11 @@ describe('CreateAgentService', () => {
 
     expect(agentRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({ organization_id: 'org-1', user_id: 'user-1' }),
+      'tx',
+    );
+    expect(agentInstructionRepository.create).toHaveBeenCalledWith(
+      { agent_id: 'agent-1', instructions: dto.instructions },
+      'tx',
     );
   });
 
@@ -46,7 +55,7 @@ describe('CreateAgentService', () => {
     organizationRepository.findByIdWithPlan.mockResolvedValue({
       plan: { unlimited: false, max_agents: 2 },
     });
-    agentRepository.count.mockResolvedValue(2);
+    agentRepository.countByOrganization.mockResolvedValue(2);
 
     await expect(service.execute(dto, user)).rejects.toThrow(
       ForbiddenException,
@@ -61,7 +70,7 @@ describe('CreateAgentService', () => {
 
     await service.execute(dto, user);
 
-    expect(agentRepository.count).not.toHaveBeenCalled();
+    expect(agentRepository.countByOrganization).not.toHaveBeenCalled();
     expect(agentRepository.create).toHaveBeenCalled();
   });
 });

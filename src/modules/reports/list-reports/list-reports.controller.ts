@@ -29,8 +29,8 @@ export class ListReportsController {
     @Res() res: FastifyReply,
     @Query() dto: ListReportsDto,
     @AuthUser() user: AuthenticatedUser,
-  ) {
-    const reports = await this.listReportsService.execute(user, dto);
-    return res.status(200).send(reports);
+  ): Promise<FastifyReply> {
+    const result = await this.listReportsService.execute(user, dto);
+    return res.status(200).send(result);
   }
 }

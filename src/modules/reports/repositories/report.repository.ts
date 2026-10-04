@@ -1,13 +1,24 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-  FindManyOptions,
-  FindOneOptions,
-  Repository,
-  SelectQueryBuilder,
-} from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 
 import { ReportEntity } from 'src/infrastructure/database/schema/report.entity';
+import {
+  PageRequest,
+  PageResult,
+  skipOf,
+} from 'src/shared/contracts/pagination';
+
+export interface ReportFilters {
+  organization_id?: string;
+  agent_id?: string;
+  agent_ids?: string[];
+  sentiment?: 'positive' | 'negative' | 'neutral';
+  type?: 'appointment' | 'order' | 'faq';
+  startDate?: Date;
+  endDate?: Date;
+  createdAtDay?: Date;
+}
 
 @Injectable()
 export class ReportRepository {
@@ -29,33 +40,10 @@ export class ReportRepository {
     return await this.repository.findOne({ where: { id } });
   }
 
-  async findOne(
-    options: FindOneOptions<ReportEntity>,
-  ): Promise<ReportEntity | null> {
-    return await this.repository.findOne(options);
-  }
-
-  async find(options?: FindManyOptions<ReportEntity>): Promise<ReportEntity[]> {
-    return await this.repository.find(options);
-  }
-
-  async count(options?: FindManyOptions<ReportEntity>): Promise<number> {
-    return await this.repository.count(options);
-  }
-
   // Analytics helpers
   private applyFilters(
     qb: SelectQueryBuilder<ReportEntity>,
-    filters: {
-      organization_id?: string;
-      agent_id?: string;
-      agent_ids?: string[];
-      sentiment?: 'positive' | 'negative' | 'neutral';
-      type?: 'appointment' | 'order' | 'faq';
-      startDate?: Date;
-      endDate?: Date;
-      createdAtDay?: Date; // if provided, ignores start/end
-    } = {},
+    filters: ReportFilters = {},
   ): SelectQueryBuilder<ReportEntity> {
     qb.where('1=1');
     if (filters.organization_id) {
@@ -91,6 +79,21 @@ export class ReportRepository {
       }
     }
     return qb;
+  }
+
+  async listPaginated(
+    filters: ReportFilters,
+    page: PageRequest,
+  ): Promise<PageResult<ReportEntity>> {
+    const qb = this.repository.createQueryBuilder('r');
+    this.applyFilters(qb, filters);
+    const [items, total] = await qb
+      .orderBy('r.created_at', 'DESC')
+      .skip(skipOf(page))
+      .take(page.limit)
+      .getManyAndCount();
+
+    return { items, total };
   }
 
   async countAll(

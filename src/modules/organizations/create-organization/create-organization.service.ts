@@ -5,6 +5,7 @@ import { AuthenticatedUser } from 'src/auth/authenticated-user';
 import { TransactionType } from 'src/infrastructure/database/schema/credit-transaction.entity';
 import { OrganizationEntity } from 'src/infrastructure/database/schema/organization.entity';
 import { PlanType } from 'src/infrastructure/database/schema/plan.entity';
+import { TransactionExecutor } from 'src/infrastructure/database/transaction-executor/transaction-executor.service';
 import { ManageCreditsService } from 'src/modules/billing/manage-credits/manage-credits.service';
 import { PlanRepository } from 'src/modules/billing/repositories/plan.repository';
 import { CreateOrganizationDto } from 'src/modules/organizations/create-organization/create-organization.dto';
@@ -18,6 +19,7 @@ export class CreateOrganizationService {
     private readonly planRepository: PlanRepository,
     private readonly manageCreditsService: ManageCreditsService,
     private readonly userRepository: UserRepository,
+    private readonly transactionExecutor: TransactionExecutor,
   ) {}
 
   async execute(
@@ -48,30 +50,29 @@ export class CreateOrganizationService {
       plan: plan,
     };
 
-    const organization = await this.organizationRepository.create(entity);
+    return this.transactionExecutor.run(async (tx) => {
+      const organization = await this.organizationRepository.create(entity, tx);
 
-    // Self-serve flow: the creator becomes the organization owner when they do
-    // not already belong to one. Platform admins acting on behalf of others
-    // (already linked to an organization) are left untouched.
-    if (user.id && !user.organization_id) {
-      await this.userRepository.update(user.id, {
-        organization_id: organization.id,
-        org_role: 'owner',
-      });
-    }
+      if (user.id && !user.organization_id) {
+        await this.userRepository.update(
+          user.id,
+          { organization_id: organization.id, org_role: 'owner' },
+          tx,
+        );
+      }
 
-    // Grant the plan's initial credits (e.g. the free tier allowance) so the
-    // organization can start using the product immediately.
-    if (plan.monthly_credits && plan.monthly_credits > 0) {
-      await this.manageCreditsService.execute(
-        organization.id,
-        plan.monthly_credits,
-        TransactionType.BONUS,
-        'Créditos iniciais do plano',
-        { planType: plan.type, planId: plan.id },
-      );
-    }
+      if (plan.monthly_credits && plan.monthly_credits > 0) {
+        await this.manageCreditsService.execute(
+          organization.id,
+          plan.monthly_credits,
+          TransactionType.BONUS,
+          'Créditos iniciais do plano',
+          { planType: plan.type, planId: plan.id },
+          tx,
+        );
+      }
 
-    return organization;
+      return organization;
+    });
   }
 }

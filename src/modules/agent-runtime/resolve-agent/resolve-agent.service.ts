@@ -42,14 +42,8 @@ export class ResolveAgentService {
     memorySaver?: MemorySaver,
     connectionContext?: { depth: number; visited: string[] },
   ): Promise<ResolvedAgent> {
-    const isUuid =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-        agentId,
-      );
-    const agent = await this.agentRepository.findOne({
-      where: isUuid ? { id: agentId } : { agent_identifier: agentId },
-      relations: ['organization'],
-    });
+    const agent =
+      await this.agentRepository.findByIdOrIdentifierWithOrganization(agentId);
 
     if (!agent) {
       throw new NotFoundException('Agente não encontrado');

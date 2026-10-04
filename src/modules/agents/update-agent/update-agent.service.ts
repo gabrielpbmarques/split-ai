@@ -3,6 +3,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { AccessScopeService } from 'src/auth/access-scope.service';
 import { AuthenticatedUser } from 'src/auth/authenticated-user';
 import { AgentEntity } from 'src/infrastructure/database/schema';
+import { TransactionExecutor } from 'src/infrastructure/database/transaction-executor/transaction-executor.service';
 import { AgentInstructionRepository } from 'src/modules/agents/repositories/agent-instruction.repository';
 import { AgentRepository } from 'src/modules/agents/repositories/agent.repository';
 import { UpdateAgentDto } from 'src/modules/agents/update-agent/update-agent.dto';
@@ -13,6 +14,7 @@ export class UpdateAgentService {
     private readonly agentRepository: AgentRepository,
     private readonly agentInstructionRepository: AgentInstructionRepository,
     private readonly accessScope: AccessScopeService,
+    private readonly transactionExecutor: TransactionExecutor,
   ) {}
 
   async execute(
@@ -70,16 +72,19 @@ export class UpdateAgentService {
       }
     }
 
-    if (Object.keys(updateData).length > 0) {
-      await this.agentRepository.update(agent.id, updateData);
-    }
+    await this.transactionExecutor.run(async (tx) => {
+      if (Object.keys(updateData).length > 0) {
+        await this.agentRepository.update(agent.id, updateData, tx);
+      }
 
-    if (dto.instructions !== undefined) {
-      await this.agentInstructionRepository.updateLatestByAgentId(
-        agent.id,
-        dto.instructions,
-      );
-    }
+      if (dto.instructions !== undefined) {
+        await this.agentInstructionRepository.updateLatestByAgentId(
+          agent.id,
+          dto.instructions,
+          tx,
+        );
+      }
+    });
 
     return { id: agent.id };
   }

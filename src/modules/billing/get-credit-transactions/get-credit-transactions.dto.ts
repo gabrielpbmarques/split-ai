@@ -1,16 +1,3 @@
-import { Type } from 'class-transformer';
-import { IsInt, IsOptional, Min } from 'class-validator';
+import { PaginationDto } from 'src/shared/http/pagination.dto';
 
-export class GetCreditTransactionsQueryDto {
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  limit?: number;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(0)
-  offset?: number;
-}
+export class GetCreditTransactionsQueryDto extends PaginationDto {}

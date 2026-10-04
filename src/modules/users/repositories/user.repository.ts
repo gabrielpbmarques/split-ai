@@ -2,7 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
+import { Executor } from 'src/infrastructure/database/database.types';
 import { UserEntity } from 'src/infrastructure/database/schema';
+import {
+  PageRequest,
+  PageResult,
+  skipOf,
+} from 'src/shared/contracts/pagination';
 
 @Injectable()
 export class UserRepository {
@@ -11,8 +17,18 @@ export class UserRepository {
     private userRepository: Repository<UserEntity>,
   ) {}
 
-  async findAll(): Promise<UserEntity[]> {
-    return this.userRepository.find();
+  async listPaginated<TField extends keyof UserEntity = keyof UserEntity>(
+    page: PageRequest,
+    fields?: readonly TField[],
+  ): Promise<PageResult<Pick<UserEntity, TField>>> {
+    const [items, total] = await this.userRepository.findAndCount({
+      select: fields ? [...fields] : undefined,
+      order: { created_at: 'ASC' },
+      skip: skipOf(page),
+      take: page.limit,
+    });
+
+    return { items: items as Pick<UserEntity, TField>[], total };
   }
 
   async findById(id: string): Promise<UserEntity | null> {
@@ -55,22 +71,22 @@ export class UserRepository {
     });
   }
 
-  async findByOrganization(organizationId: string): Promise<UserEntity[]> {
-    return this.userRepository.find({
+  async listByOrganizationPaginated<
+    TField extends keyof UserEntity = keyof UserEntity,
+  >(
+    organizationId: string,
+    page: PageRequest,
+    fields?: readonly TField[],
+  ): Promise<PageResult<Pick<UserEntity, TField>>> {
+    const [items, total] = await this.userRepository.findAndCount({
       where: { organization_id: organizationId },
-      select: [
-        'id',
-        'name',
-        'email',
-        'phone',
-        'role',
-        'org_role',
-        'status',
-        'created_at',
-        'updated_at',
-      ],
+      select: fields ? [...fields] : undefined,
       order: { created_at: 'ASC' },
+      skip: skipOf(page),
+      take: page.limit,
     });
+
+    return { items: items as Pick<UserEntity, TField>[], total };
   }
 
   async countByOrganization(organizationId: string): Promise<number> {
@@ -113,8 +129,12 @@ export class UserRepository {
   async update(
     id: string,
     data: Partial<UserEntity>,
+    tx?: Executor,
   ): Promise<UserEntity | null> {
-    await this.userRepository.update(id, data);
+    await (tx ? tx.getRepository(UserEntity) : this.userRepository).update(
+      id,
+      data,
+    );
     return this.findById(id);
   }
 

@@ -1,7 +1,12 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 
 import { PaymentEntity } from 'src/infrastructure/database/schema';
+import { GetPaymentHistoryQueryDto } from 'src/modules/billing/get-payment-history/get-payment-history.dto';
 import { PaymentRepository } from 'src/modules/billing/repositories/payment.repository';
+import {
+  PaginatedResponse,
+  toPaginatedResponse,
+} from 'src/shared/contracts/pagination';
 
 @Injectable()
 export class GetPaymentHistoryService {
@@ -9,17 +14,16 @@ export class GetPaymentHistoryService {
 
   async execute(
     organizationId: string,
-    limit = 50,
-    offset = 0,
-  ): Promise<PaymentEntity[]> {
+    dto: GetPaymentHistoryQueryDto,
+  ): Promise<PaginatedResponse<PaymentEntity>> {
     if (!organizationId) {
-      throw new BadRequestException('Organization not found');
+      throw new BadRequestException('Organização não encontrada');
     }
 
-    return this.paymentRepository.findByOrganizationId(
+    const page = await this.paymentRepository.listByOrganizationPaginated(
       organizationId,
-      limit,
-      offset,
+      dto,
     );
+    return toPaginatedResponse(page, dto);
   }
 }

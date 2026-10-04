@@ -1,6 +1,8 @@
 import { IsOptional, IsString, MaxLength } from 'class-validator';
 
-export class ListOrganizationsDto {
+import { PaginationDto } from 'src/shared/http/pagination.dto';
+
+export class ListOrganizationsDto extends PaginationDto {
   @IsOptional()
   @IsString()
   @MaxLength(255)

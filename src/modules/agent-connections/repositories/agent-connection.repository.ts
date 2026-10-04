@@ -4,6 +4,17 @@ import { Repository } from 'typeorm';
 
 import { AgentConnectionEntity } from 'src/infrastructure/database/schema/agent-connection.entity';
 
+export interface AgentConnectionView {
+  id: string;
+  childAgentId: string;
+  childAgentName: string | null;
+  childAgentIdentifier: string | null;
+  toolName: string;
+  toolDescription: string;
+  enabled: boolean;
+  position: number;
+}
+
 @Injectable()
 export class AgentConnectionRepository {
   constructor(
@@ -22,14 +33,39 @@ export class AgentConnectionRepository {
    * All connections of a principal (enabled and disabled), with the child
    * agent eagerly loaded for the visual canvas. Ordered for stable rendering.
    */
-  async findByPrincipalAgentId(
+  async existsToolName(
     principalAgentId: string,
-  ): Promise<AgentConnectionEntity[]> {
-    return this.repository.find({
-      where: { principal_agent_id: principalAgentId },
-      relations: ['childAgent'],
-      order: { position: 'ASC', created_at: 'ASC' },
-    });
+    toolName: string,
+    excludeId?: string,
+  ): Promise<boolean> {
+    const qb = this.repository
+      .createQueryBuilder('c')
+      .where('c.principal_agent_id = :principalAgentId', { principalAgentId })
+      .andWhere('c.tool_name = :toolName', { toolName });
+    if (excludeId) qb.andWhere('c.id != :excludeId', { excludeId });
+    return (await qb.getCount()) > 0;
+  }
+
+  async listViewsByPrincipalAgentId(
+    principalAgentId: string,
+  ): Promise<AgentConnectionView[]> {
+    return this.repository
+      .createQueryBuilder('c')
+      .leftJoin('c.childAgent', 'child')
+      .select([
+        'c.id AS "id"',
+        'c.child_agent_id AS "childAgentId"',
+        'child.name AS "childAgentName"',
+        'child.agent_identifier AS "childAgentIdentifier"',
+        'c.tool_name AS "toolName"',
+        'c.tool_description AS "toolDescription"',
+        'c.enabled AS "enabled"',
+        'c.position AS "position"',
+      ])
+      .where('c.principal_agent_id = :principalAgentId', { principalAgentId })
+      .orderBy('c.position', 'ASC')
+      .addOrderBy('c.created_at', 'ASC')
+      .getRawMany<AgentConnectionView>();
   }
 
   /**

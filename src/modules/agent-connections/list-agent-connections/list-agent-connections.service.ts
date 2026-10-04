@@ -2,19 +2,11 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { AccessScopeService } from 'src/auth/access-scope.service';
 import { AuthenticatedUser } from 'src/auth/authenticated-user';
-import { AgentConnectionRepository } from 'src/modules/agent-connections/repositories/agent-connection.repository';
+import {
+  AgentConnectionRepository,
+  AgentConnectionView,
+} from 'src/modules/agent-connections/repositories/agent-connection.repository';
 import { AgentRepository } from 'src/modules/agents/repositories/agent.repository';
-
-interface AgentConnectionView {
-  id: string;
-  childAgentId: string;
-  childAgentName: string | null;
-  childAgentIdentifier: string | null;
-  toolName: string;
-  toolDescription: string;
-  enabled: boolean;
-  position: number;
-}
 
 interface ListAgentConnectionsResult {
   principalAgentId: string;
@@ -46,23 +38,14 @@ export class ListAgentConnectionsService {
     );
 
     const connections =
-      await this.agentConnectionRepository.findByPrincipalAgentId(
+      await this.agentConnectionRepository.listViewsByPrincipalAgentId(
         principalAgentId,
       );
 
     return {
       principalAgentId,
       canvasLayout: principal.canvas_layout ?? null,
-      connections: connections.map((connection) => ({
-        id: connection.id,
-        childAgentId: connection.child_agent_id,
-        childAgentName: connection.childAgent?.name ?? null,
-        childAgentIdentifier: connection.childAgent?.agent_identifier ?? null,
-        toolName: connection.tool_name,
-        toolDescription: connection.tool_description,
-        enabled: connection.enabled,
-        position: connection.position,
-      })),
+      connections,
     };
   }
 }

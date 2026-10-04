@@ -1,4 +1,4 @@
-import { Controller, Post, Res } from '@nestjs/common';
+import { Body, Controller, Post, Res } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiForbiddenResponse,
@@ -9,6 +9,7 @@ import {
 import { FastifyReply } from 'fastify';
 
 import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import { ListApiKeysDto } from 'src/modules/api-keys/list-api-keys/list-api-keys.dto';
 import { ListApiKeysService } from 'src/modules/api-keys/list-api-keys/list-api-keys.service';
 import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
 import { User as AuthUser } from 'src/shared/decorators/user.decorator';
@@ -27,8 +28,12 @@ export class ListApiKeysController {
   async handle(
     @Res() res: FastifyReply,
     @AuthUser() user: AuthenticatedUser,
+    @Body() dto: ListApiKeysDto,
   ): Promise<FastifyReply> {
-    const result = await this.listApiKeysService.execute(user.organization_id);
+    const result = await this.listApiKeysService.execute(
+      user.organization_id,
+      dto,
+    );
     return res.status(200).send(result);
   }
 }

@@ -1,33 +1,38 @@
 import { Injectable } from '@nestjs/common';
 
+import { UserEntity } from 'src/infrastructure/database/schema';
+import { ListMembersDto } from 'src/modules/members/list-members/list-members.dto';
 import { UserRepository } from 'src/modules/users/repositories/user.repository';
-import { OrgRole, UserRole, UserStatus } from 'src/shared/contracts';
+import {
+  PaginatedResponse,
+  toPaginatedResponse,
+} from 'src/shared/contracts/pagination';
 
-export interface MemberListItem {
-  id: string;
-  name: string;
-  email: string;
-  role: UserRole;
-  org_role: OrgRole;
-  status: UserStatus;
-  created_at: Date;
-}
+const MEMBER_FIELDS = [
+  'id',
+  'name',
+  'email',
+  'role',
+  'org_role',
+  'status',
+  'created_at',
+] as const satisfies readonly (keyof UserEntity)[];
+
+export type MemberListItem = Pick<UserEntity, (typeof MEMBER_FIELDS)[number]>;
 
 @Injectable()
 export class ListMembersService {
   constructor(private readonly userRepository: UserRepository) {}
 
-  async execute(organizationId: string): Promise<MemberListItem[]> {
-    const users = await this.userRepository.findByOrganization(organizationId);
-
-    return users.map((user) => ({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      org_role: user.org_role,
-      status: user.status,
-      created_at: user.created_at,
-    }));
+  async execute(
+    organizationId: string,
+    dto: ListMembersDto,
+  ): Promise<PaginatedResponse<MemberListItem>> {
+    const page = await this.userRepository.listByOrganizationPaginated(
+      organizationId,
+      dto,
+      MEMBER_FIELDS,
+    );
+    return toPaginatedResponse(page, dto);
   }
 }

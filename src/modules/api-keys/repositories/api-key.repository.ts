@@ -3,6 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, MoreThan, Or, Repository } from 'typeorm';
 
 import { ApiKeyEntity } from 'src/infrastructure/database/schema/api-key.entity';
+import {
+  PageRequest,
+  PageResult,
+  skipOf,
+} from 'src/shared/contracts/pagination';
 
 @Injectable()
 export class ApiKeyRepository {
@@ -30,11 +35,22 @@ export class ApiKeyRepository {
     });
   }
 
-  async listByOrganization(organizationId: string): Promise<ApiKeyEntity[]> {
-    return this.apiKeyRepository.find({
+  async listByOrganizationPaginated<
+    TField extends keyof ApiKeyEntity = keyof ApiKeyEntity,
+  >(
+    organizationId: string,
+    page: PageRequest,
+    fields?: readonly TField[],
+  ): Promise<PageResult<Pick<ApiKeyEntity, TField>>> {
+    const [items, total] = await this.apiKeyRepository.findAndCount({
       where: { organization_id: organizationId },
+      select: fields ? [...fields] : undefined,
       order: { created_at: 'DESC' },
+      skip: skipOf(page),
+      take: page.limit,
     });
+
+    return { items: items as Pick<ApiKeyEntity, TField>[], total };
   }
 
   async findByIdForOrganization(

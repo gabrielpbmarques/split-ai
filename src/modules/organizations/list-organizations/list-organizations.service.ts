@@ -1,6 +1,12 @@
 import { Injectable } from '@nestjs/common';
 
+import { OrganizationEntity } from 'src/infrastructure/database/schema';
+import { ListOrganizationsDto } from 'src/modules/organizations/list-organizations/list-organizations.dto';
 import { OrganizationRepository } from 'src/modules/organizations/repositories/organization.repository';
+import {
+  PaginatedResponse,
+  toPaginatedResponse,
+} from 'src/shared/contracts/pagination';
 
 @Injectable()
 export class ListOrganizationsService {
@@ -8,19 +14,14 @@ export class ListOrganizationsService {
     private readonly organizationRepository: OrganizationRepository,
   ) {}
 
-  async execute(filters?: {
-    name?: string;
-    acronym?: string;
-    email_domain?: string;
-    contact_name?: string;
-    contact_email?: string;
-    status?: string;
-    plan?: string;
-    activated_at?: string;
-  }) {
-    if (filters && Object.keys(filters).some((key) => filters[key])) {
-      return this.organizationRepository.findWithFilters(filters);
-    }
-    return this.organizationRepository.findAll();
+  async execute(
+    dto: ListOrganizationsDto,
+  ): Promise<PaginatedResponse<OrganizationEntity>> {
+    const { page, limit, ...filters } = dto;
+    const result = await this.organizationRepository.listPaginated(filters, {
+      page,
+      limit,
+    });
+    return toPaginatedResponse(result, { page, limit });
   }
 }

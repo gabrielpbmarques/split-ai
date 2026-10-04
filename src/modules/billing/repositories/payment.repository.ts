@@ -2,10 +2,16 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
+import { Executor } from 'src/infrastructure/database/database.types';
 import {
   PaymentEntity,
   PaymentStatus,
 } from 'src/infrastructure/database/schema/payment.entity';
+import {
+  PageRequest,
+  PageResult,
+  skipOf,
+} from 'src/shared/contracts/pagination';
 
 @Injectable()
 export class PaymentRepository {
@@ -35,24 +41,26 @@ export class PaymentRepository {
     });
   }
 
-  async findByOrganizationId(
+  async listByOrganizationPaginated(
     organizationId: string,
-    limit = 50,
-    offset = 0,
-  ): Promise<PaymentEntity[]> {
-    return this.paymentRepository.find({
+    page: PageRequest,
+  ): Promise<PageResult<PaymentEntity>> {
+    const [items, total] = await this.paymentRepository.findAndCount({
       where: { organization_id: organizationId },
       order: { created_at: 'DESC' },
-      take: limit,
-      skip: offset,
+      skip: skipOf(page),
+      take: page.limit,
       relations: ['plan'],
     });
+
+    return { items, total };
   }
 
   async updateStatus(
     id: string,
     status: PaymentStatus,
     additionalData?: Partial<PaymentEntity>,
+    tx?: Executor,
   ): Promise<PaymentEntity | null> {
     const updateData: Partial<PaymentEntity> = { status, ...additionalData };
 
@@ -62,7 +70,9 @@ export class PaymentRepository {
       updateData.failed_at = new Date();
     }
 
-    await this.paymentRepository.update(id, updateData);
+    await (
+      tx ? tx.getRepository(PaymentEntity) : this.paymentRepository
+    ).update(id, updateData);
     return this.findById(id);
   }
 

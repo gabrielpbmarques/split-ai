@@ -33,12 +33,10 @@ export class GetCreditTransactionsController {
     @Query()
     query: GetCreditTransactionsQueryDto,
   ) {
-    const transactions = await this.getCreditTransactionsService.execute(
+    const result = await this.getCreditTransactionsService.execute(
       user.organization_id,
-      query.limit ?? 100,
-      query.offset ?? 0,
+      query,
     );
-
-    return res.status(200).send(transactions);
+    return res.status(200).send(result);
   }
 }

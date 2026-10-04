@@ -1,4 +1,4 @@
-import { Controller, Get, Res } from '@nestjs/common';
+import { Controller, Get, Query, Res } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiForbiddenResponse,
@@ -8,6 +8,7 @@ import {
 } from '@nestjs/swagger';
 import { FastifyReply } from 'fastify';
 
+import { ListAllAgentsDto } from 'src/modules/agents/list-all-agents/list-all-agents.dto';
 import { ListAllAgentsService } from 'src/modules/agents/list-all-agents/list-all-agents.service';
 import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
 
@@ -22,8 +23,11 @@ export class ListAllAgentsController {
   @ApiBearerAuth()
   @ApiUnauthorizedResponse({ description: 'Token ausente ou inválido' })
   @ApiForbiddenResponse({ description: 'Permissão insuficiente' })
-  async handle(@Res() res: FastifyReply): Promise<FastifyReply> {
-    const data = await this.listAllAgentsService.execute();
-    return res.status(200).send({ data });
+  async handle(
+    @Query() dto: ListAllAgentsDto,
+    @Res() res: FastifyReply,
+  ): Promise<FastifyReply> {
+    const result = await this.listAllAgentsService.execute(dto);
+    return res.status(200).send(result);
   }
 }

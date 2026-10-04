@@ -36,6 +36,17 @@ import { AppLoggerModule } from 'src/shared/observability/logger.module';
       url: env.DATABASE_URL,
       entities: ENTITIES,
       synchronize: true,
+      poolSize: env.DATABASE_POOL_MAX,
+      extra: {
+        min: env.DATABASE_POOL_MIN,
+        max: env.DATABASE_POOL_MAX,
+        idleTimeoutMillis: 30_000,
+        connectionTimeoutMillis: env.DATABASE_CONNECTION_TIMEOUT_MS,
+        statement_timeout: env.DATABASE_STATEMENT_TIMEOUT_MS,
+        query_timeout: env.DATABASE_STATEMENT_TIMEOUT_MS,
+        idle_in_transaction_session_timeout: 60_000,
+        keepAlive: true,
+      },
     }),
     DevtoolsModule.register({
       http: !env.isProduction,

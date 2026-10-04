@@ -8,6 +8,7 @@ import Stripe from 'stripe';
 
 import { TransactionType } from 'src/infrastructure/database/schema/credit-transaction.entity';
 import { PaymentStatus } from 'src/infrastructure/database/schema/payment.entity';
+import { TransactionExecutor } from 'src/infrastructure/database/transaction-executor/transaction-executor.service';
 import { STRIPE_CLIENT } from 'src/infrastructure/stripe/stripe.tokens';
 import { ManageCreditsService } from 'src/modules/billing/manage-credits/manage-credits.service';
 import { PaymentRepository } from 'src/modules/billing/repositories/payment.repository';
@@ -24,6 +25,7 @@ export class StripeWebhookService {
     private readonly manageCreditsService: ManageCreditsService,
     private readonly activateOrganizationService: ActivateOrganizationService,
     private readonly deactivateOrganizationService: DeactivateOrganizationService,
+    private readonly transactionExecutor: TransactionExecutor,
   ) {}
 
   async execute(
@@ -105,33 +107,32 @@ export class StripeWebhookService {
       return;
     }
 
-    // Update payment status
-    await this.paymentRepository.updateStatus(
-      payment.id,
-      PaymentStatus.SUCCEEDED,
-      {
-        receipt_url: paymentIntent.latest_charge
-          ? typeof paymentIntent.latest_charge === 'string'
-            ? null
-            : (paymentIntent.latest_charge as any)?.receipt_url
-          : null,
-      },
-    );
-
-    // Add credits to organization
     const credits = parseInt(paymentIntent.metadata?.credits || '0', 10);
-    if (credits > 0) {
-      await this.manageCreditsService.execute(
-        payment.organization_id,
-        credits,
-        TransactionType.PURCHASE,
-        `Pagamento aprovado - ${credits} créditos adicionados`,
-        {
-          paymentId: payment.id,
-          stripePaymentIntentId: paymentIntent.id,
-        },
+    const receiptUrl =
+      paymentIntent.latest_charge &&
+      typeof paymentIntent.latest_charge !== 'string'
+        ? ((paymentIntent.latest_charge as any)?.receipt_url ?? null)
+        : null;
+
+    await this.transactionExecutor.run(async (tx) => {
+      await this.paymentRepository.updateStatus(
+        payment.id,
+        PaymentStatus.SUCCEEDED,
+        { receipt_url: receiptUrl },
+        tx,
       );
-    }
+
+      if (credits > 0) {
+        await this.manageCreditsService.execute(
+          payment.organization_id,
+          credits,
+          TransactionType.PURCHASE,
+          `Pagamento aprovado - ${credits} créditos adicionados`,
+          { paymentId: payment.id, stripePaymentIntentId: paymentIntent.id },
+          tx,
+        );
+      }
+    });
 
     this.logger.log(
       `Payment succeeded for organization ${payment.organization_id}: ${credits} credits added`,

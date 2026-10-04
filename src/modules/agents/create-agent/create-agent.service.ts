@@ -1,6 +1,7 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 
 import { AuthenticatedUser } from 'src/auth/authenticated-user';
+import { TransactionExecutor } from 'src/infrastructure/database/transaction-executor/transaction-executor.service';
 import { CreateAgentDto } from 'src/modules/agents/create-agent/create-agent.dto';
 import { AgentInstructionRepository } from 'src/modules/agents/repositories/agent-instruction.repository';
 import { AgentRepository } from 'src/modules/agents/repositories/agent.repository';
@@ -12,6 +13,7 @@ export class CreateAgentService {
     private readonly agentRepository: AgentRepository,
     private readonly agentInstructionRepository: AgentInstructionRepository,
     private readonly organizationRepository: OrganizationRepository,
+    private readonly transactionExecutor: TransactionExecutor,
   ) {}
 
   async execute(
@@ -20,26 +22,33 @@ export class CreateAgentService {
   ): Promise<{ id: string }> {
     await this.assertWithinAgentQuota(user.organization_id);
 
-    const agent = await this.agentRepository.create({
-      name: dto.name,
-      agent_identifier: dto.agentIdentifier ?? null,
-      model: dto.model ?? 'claude-haiku-4-5-20251001',
-      temperature: dto.temperature ?? 0.4,
-      with_history: dto.withHistory ?? true,
-      // Coalesce to the column default (true), not null: a null here would make
-      // ResolveAgent silently skip the tool via its gating checks.
-      database_tool: dto.databaseTool ?? true,
-      vector_search_tool: dto.vectorSearchTool ?? true,
-      parser_schema: dto.parser?.schema ?? null,
-      parser_name: dto.parser?.name ?? null,
-      parser_description: dto.parser?.description ?? null,
-      organization_id: user.organization_id,
-      user_id: user.id,
-    });
+    const agent = await this.transactionExecutor.run(async (tx) => {
+      const created = await this.agentRepository.create(
+        {
+          name: dto.name,
+          agent_identifier: dto.agentIdentifier ?? null,
+          model: dto.model ?? 'claude-haiku-4-5-20251001',
+          temperature: dto.temperature ?? 0.4,
+          with_history: dto.withHistory ?? true,
+          // Coalesce to the column default (true), not null: a null here would make
+          // ResolveAgent silently skip the tool via its gating checks.
+          database_tool: dto.databaseTool ?? true,
+          vector_search_tool: dto.vectorSearchTool ?? true,
+          parser_schema: dto.parser?.schema ?? null,
+          parser_name: dto.parser?.name ?? null,
+          parser_description: dto.parser?.description ?? null,
+          organization_id: user.organization_id,
+          user_id: user.id,
+        },
+        tx,
+      );
 
-    await this.agentInstructionRepository.create({
-      agent_id: agent.id,
-      instructions: dto.instructions,
+      await this.agentInstructionRepository.create(
+        { agent_id: created.id, instructions: dto.instructions },
+        tx,
+      );
+
+      return created;
     });
 
     return { id: agent.id };
@@ -59,9 +68,8 @@ export class CreateAgentService {
       return;
     }
 
-    const currentAgents = await this.agentRepository.count({
-      where: { organization_id: organizationId },
-    });
+    const currentAgents =
+      await this.agentRepository.countByOrganization(organizationId);
 
     if (currentAgents >= plan.max_agents) {
       throw new ForbiddenException(

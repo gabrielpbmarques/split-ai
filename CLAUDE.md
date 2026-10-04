@@ -118,11 +118,12 @@ Run `bun run scripts/refactor-di/verify.ts` after touching module wiring — it 
 
 How to think about a service before writing it (worked before/after examples in the `thinking-flow` skill):
 
-1. **Push work to the database/repository.** Don't fetch full rows and discard fields in TS — add an optional `select` (or a dedicated query) so the repository returns exactly what's needed. Prefer one optimized query over in-service transformation.
+1. **Push work to the database/repository.** Repositories expose **named methods only** (no `find(options)` / `findOne(options)` / `count(options)` passthroughs). Listing methods take `fields?: readonly K[]` before `tx?` and return `Pick<Entity, K>[]`; the service declares its fields in an `as const` and returns the rows untouched. Paginated listings take `PageRequest` (`{ page, limit }`), run the page and the `count` together (`findAndCount` or `Promise.all`) and return `PageResult`; the service wraps it with `toPaginatedResponse()` into `{ items, total, totalPages, page, limit }` (`src/shared/contracts/pagination.ts`). Query DTOs for lists extend `PaginationDto` (`src/shared/http/pagination.dto.ts`).
 2. **Type every public method's return explicitly.** Each `execute()` declares its return type; for a strict subset of an entity, define a `Pick<>` type in `src/shared/contracts/models/` and barrel-export it.
 3. **Skip checks the call chain already guarantees.** The global guards guarantee `user` on every non-public route; `@Body(new ValidationPipe())` guarantees required DTO fields; a prior `NotFoundException` guarantees the entity exists. Don't re-check them.
 4. **Early return; keep the happy path flat.** Validate and throw `NestJS` exceptions at the top, then proceed. Don't catch in services or controllers — let exceptions bubble to `GlobalExceptionFilter`.
 5. **Parallelize independent async work.** `Promise.all` when all must succeed; `Promise.allSettled` for fire-and-forget side effects.
+6. **Transactions belong to the service, never to the repository.** Inject `TransactionExecutor` (`src/infrastructure/database/transaction-executor/`, module `TransactionExecutorModule`) and wrap the writes in `run(async (tx) => …)`, passing `tx` as the **last argument** of every repository write inside the callback (`create(data, tx)`, `update(id, data, tx)`). Repositories resolve `tx ? tx.getRepository(Entity) : this.repository` and never open transactions. Pre-checks and the final re-read stay outside; external effects (e-mail, Stripe, cache invalidation) run after the commit. Used by `CreateOrganization`, `StripeWebhook`, `CreateAgent`, `UpdateAgent`.
 
 ## Per-org database connection feature
 

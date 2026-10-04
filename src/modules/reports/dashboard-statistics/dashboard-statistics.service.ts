@@ -99,8 +99,11 @@ export class DashboardStatisticsService {
     }
 
     // Get total conversations (unique sessions)
-    const sessions = await this.sessionRepository.find({ where });
-    const totalConversations = sessions.length;
+    const totalConversations = await this.sessionRepository.countByFilter({
+      organizationId: where.organization_id,
+      agentId: where.agent_id,
+      createdBetween: [startDate, endDate],
+    });
 
     // Calculate satisfaction rate from reports (ReportEntity)
     const reportWhere: any = {
@@ -115,13 +118,19 @@ export class DashboardStatisticsService {
       reportWhere.agent_id = agentId;
     }
 
-    const totalReports = await this.reportRepository.count({
-      where: reportWhere,
-    });
-
-    const positiveReports = await this.reportRepository.count({
-      where: { ...reportWhere, sentiment: 'positive' },
-    });
+    const reportFilters = {
+      organization_id: reportWhere.organization_id,
+      agent_id: reportWhere.agent_id,
+      startDate,
+      endDate,
+    };
+    const [totalReports, positiveReports] = await Promise.all([
+      this.reportRepository.countAll(reportFilters),
+      this.reportRepository.countAll({
+        ...reportFilters,
+        sentiment: 'positive',
+      }),
+    ]);
 
     const satisfactionRate =
       totalReports > 0
@@ -146,12 +155,11 @@ export class DashboardStatisticsService {
     const tokensUsed = tokenStats.total_tokens;
 
     // Get active agents count
-    const activeAgents = await this.agentRepository.count({
-      where:
-        user.role !== 'admin' && user.organization_id
-          ? { organization_id: user.organization_id }
-          : {},
-    });
+    const activeAgents = await this.agentRepository.countByOrganization(
+      user.role !== 'admin' && user.organization_id
+        ? user.organization_id
+        : undefined,
+    );
 
     return {
       totalConversations,

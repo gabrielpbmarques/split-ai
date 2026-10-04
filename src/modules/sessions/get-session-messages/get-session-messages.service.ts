@@ -30,6 +30,8 @@ export interface ConversationDetail {
   }[];
 }
 
+const MESSAGE_FIELDS = ['id', 'from', 'message', 'created_at'] as const;
+
 @Injectable()
 export class GetSessionMessagesService {
   constructor(
@@ -46,9 +48,7 @@ export class GetSessionMessagesService {
     sessionId: string,
   ): Promise<ConversationDetail> {
     // Get session
-    const sessionEntity = await this.sessionRepository.findOne({
-      where: { id: sessionId },
-    });
+    const sessionEntity = await this.sessionRepository.findById(sessionId);
 
     if (!sessionEntity) {
       throw new NotFoundException('Sessão não encontrada');
@@ -90,11 +90,10 @@ export class GetSessionMessagesService {
     }
 
     // Get messages
-    const messages = await this.messageRepository.find({
-      where: { session_id: sessionId },
-      order: { created_at: 'ASC' },
-      select: ['id', 'from', 'message', 'created_at'],
-    });
+    const messages = await this.messageRepository.listBySession(
+      sessionId,
+      MESSAGE_FIELDS,
+    );
 
     // Calculate credits used
     const creditsUsed =
@@ -110,12 +109,7 @@ export class GetSessionMessagesService {
         remaining_tokens: 0,
         tokens_used: creditsUsed,
       },
-      messages: messages.map((msg) => ({
-        id: msg.id,
-        from: msg.from as 'user' | 'agent',
-        message: msg.message,
-        created_at: msg.created_at,
-      })),
+      messages,
     };
   }
 }

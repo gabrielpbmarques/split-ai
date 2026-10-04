@@ -8,6 +8,7 @@ import {
 } from '@nestjs/swagger';
 import { FastifyReply } from 'fastify';
 
+import { ListSourcesDto } from 'src/modules/sources/list-sources/list-sources.dto';
 import { ListSourcesService } from 'src/modules/sources/list-sources/list-sources.service';
 import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
 
@@ -23,14 +24,10 @@ export class ListSourcesController {
   @ApiUnauthorizedResponse({ description: 'Token ausente ou inválido' })
   @ApiForbiddenResponse({ description: 'Permissão insuficiente' })
   async handle(
-    @Query('agent_id') agentId: string,
+    @Query() dto: ListSourcesDto,
     @Res() res: FastifyReply,
-  ): Promise<any> {
-    if (!agentId) {
-      return { error: 'agent_id é obrigatório', statusCode: 400 };
-    }
-
-    const sources = await this.listSourcesService.execute(agentId);
-    return res.status(200).send(sources);
+  ): Promise<FastifyReply> {
+    const result = await this.listSourcesService.execute(dto);
+    return res.status(200).send(result);
   }
 }

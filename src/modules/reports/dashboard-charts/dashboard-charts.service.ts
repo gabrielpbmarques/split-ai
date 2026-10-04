@@ -77,16 +77,16 @@ export class DashboardChartsService {
     }
 
     // Get sentiment counts from reports
+    const filters = {
+      organization_id: where.organization_id,
+      agent_id: where.agent_id,
+      startDate,
+      endDate,
+    };
     const [positive, negative, neutral] = await Promise.all([
-      this.reportRepository.count({
-        where: { ...where, sentiment: 'positive' },
-      }),
-      this.reportRepository.count({
-        where: { ...where, sentiment: 'negative' },
-      }),
-      this.reportRepository.count({
-        where: { ...where, sentiment: 'neutral' },
-      }),
+      this.reportRepository.countAll({ ...filters, sentiment: 'positive' }),
+      this.reportRepository.countAll({ ...filters, sentiment: 'negative' }),
+      this.reportRepository.countAll({ ...filters, sentiment: 'neutral' }),
     ]);
 
     return {
@@ -129,7 +129,11 @@ export class DashboardChartsService {
         where.agent_id = agentId;
       }
 
-      const count = await this.sessionRepository.count({ where });
+      const count = await this.sessionRepository.countByFilter({
+        organizationId: where.organization_id,
+        agentId: where.agent_id,
+        createdBetween: [dayStart, dayEnd],
+      });
 
       labels.push(
         currentDate.toLocaleDateString('pt-BR', { weekday: 'short' }),

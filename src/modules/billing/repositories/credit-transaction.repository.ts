@@ -2,10 +2,16 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, Repository } from 'typeorm';
 
+import { Executor } from 'src/infrastructure/database/database.types';
 import {
   CreditTransactionEntity,
   TransactionType,
 } from 'src/infrastructure/database/schema/credit-transaction.entity';
+import {
+  PageRequest,
+  PageResult,
+  skipOf,
+} from 'src/shared/contracts/pagination';
 
 @Injectable()
 export class CreditTransactionRepository {
@@ -16,9 +22,12 @@ export class CreditTransactionRepository {
 
   async create(
     data: Partial<CreditTransactionEntity>,
+    tx?: Executor,
   ): Promise<CreditTransactionEntity> {
-    const transaction = this.creditTransactionRepository.create(data);
-    return this.creditTransactionRepository.save(transaction);
+    const repo = tx
+      ? tx.getRepository(CreditTransactionEntity)
+      : this.creditTransactionRepository;
+    return repo.save(repo.create(data));
   }
 
   async findById(id: string): Promise<CreditTransactionEntity | null> {
@@ -28,18 +37,19 @@ export class CreditTransactionRepository {
     });
   }
 
-  async findByOrganizationId(
+  async listByOrganizationPaginated(
     organizationId: string,
-    limit = 100,
-    offset = 0,
-  ): Promise<CreditTransactionEntity[]> {
-    return this.creditTransactionRepository.find({
+    page: PageRequest,
+  ): Promise<PageResult<CreditTransactionEntity>> {
+    const [items, total] = await this.creditTransactionRepository.findAndCount({
       where: { organization_id: organizationId },
       order: { created_at: 'DESC' },
-      take: limit,
-      skip: offset,
+      skip: skipOf(page),
+      take: page.limit,
       relations: ['user', 'plan'],
     });
+
+    return { items, total };
   }
 
   async findByDateRange(

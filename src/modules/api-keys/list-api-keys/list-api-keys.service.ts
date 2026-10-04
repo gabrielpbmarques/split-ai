@@ -1,25 +1,37 @@
 import { Injectable } from '@nestjs/common';
 
+import { ListApiKeysDto } from 'src/modules/api-keys/list-api-keys/list-api-keys.dto';
 import { ApiKeyRepository } from 'src/modules/api-keys/repositories/api-key.repository';
 import { ApiKeyListItem } from 'src/shared/contracts';
+import {
+  PaginatedResponse,
+  toPaginatedResponse,
+} from 'src/shared/contracts/pagination';
+
+const API_KEY_FIELDS = [
+  'id',
+  'name',
+  'key_prefix',
+  'scopes',
+  'last_used_at',
+  'expires_at',
+  'revoked_at',
+  'created_at',
+] as const satisfies readonly (keyof ApiKeyListItem)[];
 
 @Injectable()
 export class ListApiKeysService {
   constructor(private readonly apiKeyRepository: ApiKeyRepository) {}
 
-  async execute(organizationId: string): Promise<ApiKeyListItem[]> {
-    const apiKeys =
-      await this.apiKeyRepository.listByOrganization(organizationId);
-
-    return apiKeys.map((apiKey) => ({
-      id: apiKey.id,
-      name: apiKey.name,
-      key_prefix: apiKey.key_prefix,
-      scopes: apiKey.scopes,
-      last_used_at: apiKey.last_used_at,
-      expires_at: apiKey.expires_at,
-      revoked_at: apiKey.revoked_at,
-      created_at: apiKey.created_at,
-    }));
+  async execute(
+    organizationId: string,
+    dto: ListApiKeysDto,
+  ): Promise<PaginatedResponse<ApiKeyListItem>> {
+    const page = await this.apiKeyRepository.listByOrganizationPaginated(
+      organizationId,
+      dto,
+      API_KEY_FIELDS,
+    );
+    return toPaginatedResponse(page, dto);
   }
 }

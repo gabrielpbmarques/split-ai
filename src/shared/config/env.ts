@@ -35,6 +35,18 @@ const envSchema = z.object({
   SWAGGER_ENABLED: booleanFlag,
 
   DATABASE_URL: z.string().min(1),
+  DATABASE_POOL_MIN: z.coerce.number().int().min(0).default(1),
+  DATABASE_POOL_MAX: z.coerce.number().int().min(1).default(10),
+  DATABASE_STATEMENT_TIMEOUT_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(30_000),
+  DATABASE_CONNECTION_TIMEOUT_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(10_000),
 
   JWT_SECRET: z.string().min(1),
   JWT_EXPIRATION_HOURS: z.coerce.number().int().positive().default(24),

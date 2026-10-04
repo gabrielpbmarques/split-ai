@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { TransactionExecutorModule } from 'src/infrastructure/database/transaction-executor/transaction-executor.module';
 import { ManageCreditsModule } from 'src/modules/billing/manage-credits/manage-credits.module';
 import { PlanRepositoryModule } from 'src/modules/billing/repositories/plan.repository.module';
 import { CreateOrganizationController } from 'src/modules/organizations/create-organization/create-organization.controller';
@@ -9,6 +10,7 @@ import { UserRepositoryModule } from 'src/modules/users/repositories/user.reposi
 
 @Module({
   imports: [
+    TransactionExecutorModule,
     ManageCreditsModule,
     OrganizationRepositoryModule,
     PlanRepositoryModule,

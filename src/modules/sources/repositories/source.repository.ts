@@ -3,6 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { SourceEntity } from 'src/infrastructure/database/schema/source.entity';
+import {
+  PageRequest,
+  PageResult,
+  skipOf,
+} from 'src/shared/contracts/pagination';
 
 @Injectable()
 export class SourceRepository {
@@ -20,11 +25,18 @@ export class SourceRepository {
     return await this.repository.findOne({ where: { id } });
   }
 
-  async findByAgentId(agentId: string): Promise<SourceEntity[]> {
-    return await this.repository.find({
+  async listByAgentPaginated(
+    agentId: string,
+    page: PageRequest,
+  ): Promise<PageResult<SourceEntity>> {
+    const [items, total] = await this.repository.findAndCount({
       where: { agent_id: agentId },
       order: { created_at: 'DESC' },
+      skip: skipOf(page),
+      take: page.limit,
     });
+
+    return { items, total };
   }
 
   async updateStatus(

@@ -2,7 +2,12 @@ import { Injectable } from '@nestjs/common';
 
 import { AuthenticatedUser } from 'src/auth/authenticated-user';
 import { AgentConnectionRepository } from 'src/modules/agent-connections/repositories/agent-connection.repository';
+import { ListAgentsDto } from 'src/modules/agents/list-agents/list-agents.dto';
 import { AgentRepository } from 'src/modules/agents/repositories/agent.repository';
+import {
+  PaginatedResponse,
+  toPaginatedResponse,
+} from 'src/shared/contracts/pagination';
 
 /**
  * Item da lista de agentes. `is_tool` / `is_principal` são derivados das
@@ -17,6 +22,8 @@ interface AgentListItemView {
   is_principal: boolean;
 }
 
+const AGENT_LIST_FIELDS = ['id', 'agent_identifier', 'name'] as const;
+
 @Injectable()
 export class ListAgentsService {
   constructor(
@@ -24,25 +31,32 @@ export class ListAgentsService {
     private readonly agentConnectionRepository: AgentConnectionRepository,
   ) {}
 
-  async execute(user: AuthenticatedUser): Promise<AgentListItemView[]> {
+  async execute(
+    user: AuthenticatedUser,
+    dto: ListAgentsDto,
+  ): Promise<PaginatedResponse<AgentListItemView>> {
     const isAdmin = user.role === 'admin';
 
-    const agents = await this.agentRepository.find({
-      select: ['id', 'agent_identifier', 'name'],
-      where: isAdmin ? undefined : { organization_id: user.organization_id },
-    });
+    const page = await this.agentRepository.listPaginated(
+      { organizationId: isAdmin ? undefined : user.organization_id },
+      dto,
+      AGENT_LIST_FIELDS,
+    );
+    const agents = page.items;
 
     const { principalIds, childIds } =
       await this.agentConnectionRepository.getRoleFlagsByOrganization(
         isAdmin ? undefined : user.organization_id,
       );
 
-    return agents.map((agent) => ({
+    const items = agents.map((agent) => ({
       id: agent.id,
       agent_identifier: agent.agent_identifier,
       name: agent.name,
       is_tool: childIds.has(agent.id),
       is_principal: principalIds.has(agent.id),
     }));
+
+    return toPaginatedResponse({ items, total: page.total }, dto);
   }
 }

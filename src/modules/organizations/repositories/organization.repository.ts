@@ -1,8 +1,25 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOptionsWhere } from 'typeorm';
+import { Repository } from 'typeorm';
 
+import { Executor } from 'src/infrastructure/database/database.types';
 import { OrganizationEntity } from 'src/infrastructure/database/schema';
+import {
+  PageRequest,
+  PageResult,
+  skipOf,
+} from 'src/shared/contracts/pagination';
+
+export interface OrganizationFilters {
+  name?: string;
+  acronym?: string;
+  email_domain?: string;
+  contact_name?: string;
+  contact_email?: string;
+  status?: string;
+  plan?: string;
+  activated_at?: string;
+}
 
 @Injectable()
 export class OrganizationRepository {
@@ -11,28 +28,10 @@ export class OrganizationRepository {
     private organizationRepository: Repository<OrganizationEntity>,
   ) {}
 
-  async findOne(
-    where:
-      | FindOptionsWhere<OrganizationEntity>
-      | FindOptionsWhere<OrganizationEntity>[],
-  ): Promise<OrganizationEntity | null> {
-    return this.organizationRepository.findOne({ where });
-  }
-
-  async findAll(): Promise<OrganizationEntity[]> {
-    return this.organizationRepository.find();
-  }
-
-  async findWithFilters(filters: {
-    name?: string;
-    acronym?: string;
-    email_domain?: string;
-    contact_name?: string;
-    contact_email?: string;
-    status?: string;
-    plan?: string;
-    activated_at?: string;
-  }): Promise<OrganizationEntity[]> {
+  async listPaginated(
+    filters: OrganizationFilters,
+    page: PageRequest,
+  ): Promise<PageResult<OrganizationEntity>> {
     const queryBuilder =
       this.organizationRepository.createQueryBuilder('organization');
 
@@ -86,7 +85,13 @@ export class OrganizationRepository {
       });
     }
 
-    return queryBuilder.getMany();
+    const [items, total] = await queryBuilder
+      .orderBy('organization.name', 'ASC')
+      .skip(skipOf(page))
+      .take(page.limit)
+      .getManyAndCount();
+
+    return { items, total };
   }
 
   async findById(id: string): Promise<OrganizationEntity | null> {
@@ -111,17 +116,27 @@ export class OrganizationRepository {
     return this.organizationRepository.findOneBy({ email_domain: emailDomain });
   }
 
-  async create(data: Partial<OrganizationEntity>): Promise<OrganizationEntity> {
-    const organization = this.organizationRepository.create(data);
-    return this.organizationRepository.save(organization);
+  async create(
+    data: Partial<OrganizationEntity>,
+    tx?: Executor,
+  ): Promise<OrganizationEntity> {
+    const repo = this.repo(tx);
+    return repo.save(repo.create(data));
   }
 
   async update(
     id: string,
     data: Partial<OrganizationEntity>,
+    tx?: Executor,
   ): Promise<OrganizationEntity | null> {
-    await this.organizationRepository.update(id, data);
-    return this.findById(id);
+    await this.repo(tx).update(id, data);
+    return this.repo(tx).findOne({ where: { id } });
+  }
+
+  private repo(tx?: Executor): Repository<OrganizationEntity> {
+    return tx
+      ? tx.getRepository(OrganizationEntity)
+      : this.organizationRepository;
   }
 
   async updateEmbedSettings(

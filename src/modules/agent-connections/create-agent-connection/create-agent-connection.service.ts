@@ -95,11 +95,11 @@ export class CreateAgentConnectionService {
       );
     }
 
-    const siblings =
-      await this.agentConnectionRepository.findByPrincipalAgentId(
-        dto.principalAgentId,
-      );
-    if (siblings.some((connection) => connection.tool_name === dto.toolName)) {
+    const toolNameTaken = await this.agentConnectionRepository.existsToolName(
+      dto.principalAgentId,
+      dto.toolName,
+    );
+    if (toolNameTaken) {
       throw new ConflictException(
         'Já existe uma conexão com este toolName neste agente principal.',
       );

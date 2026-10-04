@@ -31,16 +31,12 @@ export class UpdateAgentConnectionService {
     }
 
     if (dto.toolName && dto.toolName !== connection.tool_name) {
-      const siblings =
-        await this.agentConnectionRepository.findByPrincipalAgentId(
-          connection.principal_agent_id,
-        );
-      if (
-        siblings.some(
-          (sibling) =>
-            sibling.id !== connection.id && sibling.tool_name === dto.toolName,
-        )
-      ) {
+      const toolNameTaken = await this.agentConnectionRepository.existsToolName(
+        connection.principal_agent_id,
+        dto.toolName,
+        connection.id,
+      );
+      if (toolNameTaken) {
         throw new ConflictException(
           'Já existe uma conexão com este toolName neste agente principal.',
         );

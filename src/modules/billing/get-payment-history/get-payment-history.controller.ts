@@ -33,11 +33,10 @@ export class GetPaymentHistoryController {
     @Query()
     query: GetPaymentHistoryQueryDto,
   ) {
-    const payments = await this.getPaymentHistoryService.execute(
+    const result = await this.getPaymentHistoryService.execute(
       user.organization_id,
-      query.limit ?? 50,
-      query.offset ?? 0,
+      query,
     );
-    return res.status(200).send(payments);
+    return res.status(200).send(result);
   }
 }
