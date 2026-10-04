@@ -21,11 +21,7 @@ export class ListSessionsController {
     @User() user: UserEntity,
     @Res() res: FastifyReply,
   ): Promise<FastifyReply> {
-    try {
-      const sessions = await this.listSessionsService.execute(user, dto);
-      return res.status(200).send(sessions);
-    } catch (error: any) {
-      return res.status(500).send({ error: error.message });
-    }
+    const sessions = await this.listSessionsService.execute(user, dto);
+    return res.status(200).send(sessions);
   }
 }

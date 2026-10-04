@@ -28,11 +28,7 @@ export class ListOrganizationsController {
     },
     @Res() res: FastifyReply,
   ) {
-    try {
-      const result = await this.listOrganizationsService.execute(query);
-      return res.status(200).send(result);
-    } catch (error: any) {
-      return res.status(500).send(error);
-    }
+    const result = await this.listOrganizationsService.execute(query);
+    return res.status(200).send(result);
   }
 }

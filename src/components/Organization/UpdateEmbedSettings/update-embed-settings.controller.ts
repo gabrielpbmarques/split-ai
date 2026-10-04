@@ -18,13 +18,7 @@ export class UpdateEmbedSettingsController {
     @Body() dto: UpdateEmbedSettingsDto,
     @Res() res: FastifyReply,
   ) {
-    try {
-      const result = await this.service.execute(id, dto);
-      return res.status(200).send(result);
-    } catch (error: any) {
-      return res.status(error.status || 500).send({
-        message: error.message || 'Erro ao atualizar configurações do embed',
-      });
-    }
+    const result = await this.service.execute(id, dto);
+    return res.status(200).send(result);
   }
 }

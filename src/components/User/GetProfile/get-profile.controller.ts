@@ -16,11 +16,7 @@ export class GetProfileController {
     @Res() res: FastifyReply,
     @AuthUser() user: User,
   ): Promise<FastifyReply> {
-    try {
-      const result = await this.getProfileService.execute(user.id);
-      return res.status(200).send(result);
-    } catch (error: any) {
-      return res.status(error.status || 500).send(error.message);
-    }
+    const result = await this.getProfileService.execute(user.id);
+    return res.status(200).send(result);
   }
 }

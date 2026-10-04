@@ -28,15 +28,11 @@ export class CreateApiKeyController {
     @Body(new ValidationPipe()) dto: CreateApiKeyDto,
     @AuthUser() user: User,
   ): Promise<FastifyReply> {
-    try {
-      const result = await this.createApiKeyService.execute(
-        dto,
-        user.organization_id,
-        user.id ?? null,
-      );
-      return res.status(201).send(result);
-    } catch (error: any) {
-      return res.status(error.status || 500).send(error.message);
-    }
+    const result = await this.createApiKeyService.execute(
+      dto,
+      user.organization_id,
+      user.id ?? null,
+    );
+    return res.status(201).send(result);
   }
 }

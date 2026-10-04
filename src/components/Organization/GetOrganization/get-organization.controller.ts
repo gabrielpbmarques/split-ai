@@ -15,11 +15,7 @@ export class GetOrganizationController {
   @UseGuards(AuthGuard)
   @Roles('admin', 'user')
   async handle(@Res() res: FastifyReply, @Param('id') id: string) {
-    try {
-      const result = await this.getOrganizationService.execute(id);
-      return res.status(200).send(result);
-    } catch (error: any) {
-      return res.status(500).send(error);
-    }
+    const result = await this.getOrganizationService.execute(id);
+    return res.status(200).send(result);
   }
 }

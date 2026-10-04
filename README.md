@@ -45,6 +45,9 @@ src/
   main.ts                    bootstrap Fastify
   app.module.ts              TypeORM + módulos de componentes + health
   shared/config/env.ts       schema Zod do ambiente (único lugar que lê process.env)
+  shared/http/               adapter Fastify, pipe de validação global, filtro de exceção, health (/health/{startup,live,ready})
+  shared/observability/      correlação de request (x-request-id) e logger pino
+  shared/contracts/          ErrorResponse
   auth/                      guards (JWT, ApiKey, composto, papéis de organização)
   components/<Scope>/<UseCase>/   um caso de uso = um módulo = um controller = um endpoint
   repositories/              wrappers TypeORM, um módulo por repositório

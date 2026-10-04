@@ -27,12 +27,8 @@ export class UpdateAgentController {
   @UseGuards(AuthGuard)
   @Roles('admin')
   async list(@Res() res: FastifyReply): Promise<FastifyReply> {
-    try {
-      const data = await this.updateAgentService.list();
-      return res.status(200).send({ data });
-    } catch (error: any) {
-      return res.status(error.status || 500).send(error.message);
-    }
+    const data = await this.updateAgentService.list();
+    return res.status(200).send({ data });
   }
 
   @Get(':id')
@@ -43,12 +39,8 @@ export class UpdateAgentController {
     @Res() res: FastifyReply,
     @AuthUser() user: User,
   ): Promise<FastifyReply> {
-    try {
-      const data = await this.updateAgentService.getOne(id, user);
-      return res.status(200).send({ data });
-    } catch (error: any) {
-      return res.status(error.status || 500).send(error.message);
-    }
+    const data = await this.updateAgentService.getOne(id, user);
+    return res.status(200).send({ data });
   }
 
   @Patch(':id')
@@ -60,11 +52,7 @@ export class UpdateAgentController {
     @Res() res: FastifyReply,
     @AuthUser() user: User,
   ): Promise<FastifyReply> {
-    try {
-      const data = await this.updateAgentService.update(id, dto, user);
-      return res.status(200).send({ data });
-    } catch (error: any) {
-      return res.status(error.status || 500).send(error.message);
-    }
+    const data = await this.updateAgentService.update(id, dto, user);
+    return res.status(200).send({ data });
   }
 }

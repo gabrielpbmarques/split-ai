@@ -110,6 +110,8 @@ Dono das regras: `07`, `01`.
 
 Pronto quando: nenhum controller tem `catch` fora dos dois de streaming; toda resposta de erro tem o formato `ErrorResponse`; `grep console. src` vazio.
 
+**Status: concluída, exceto o item 9 (auditoria), adiado para depois da Fase 5 por criar tabela com `synchronize: true` apontando para produção.** Desvios: só `QuestionController` faz streaming (o `AttendantController` responde JSON normal), então há um único `try/catch` remanescente; CORS ficou por allowlist opcional (`ALLOWED_ORIGINS`; vazio reflete qualquer origem porque o widget público roda em domínios de clientes, e `*` é rejeitado pelo schema); helmet sem CSP, `frameguard` e CORP pelo mesmo motivo; o webhook do WhatsApp recebe `Record<string, string>` e o upload de fonte lê `req.body`, ambos fora do pipe global até ganharem contrato Zod na Fase 6; `GET /health` foi substituído pelas três rotas sem alias (o deploy do Cloud Run não configura probe HTTP). Correção colateral: o workflow passava `NODE_ENV=ENV` literal ao Cloud Run, o que falharia na validação de env.
+
 ### Fase 2 — Autenticação e autorização
 
 Dono das regras: `08`, `07`.

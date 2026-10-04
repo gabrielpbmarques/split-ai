@@ -21,12 +21,7 @@ export class GetDashboardDataController {
     @Query() query: any,
     @UserDecorator() user: User,
   ) {
-    try {
-      const data = await this.getDashboardDataService.execute(user, query);
-      return res.status(200).send(data);
-    } catch (error: any) {
-      const status = (error && (error.status || error.statusCode)) || 500;
-      return res.status(status).send(error.message || 'Internal server error');
-    }
+    const data = await this.getDashboardDataService.execute(user, query);
+    return res.status(200).send(data);
   }
 }

@@ -14,11 +14,7 @@ export class LoadAgentSitesController {
   @UseGuards(AuthGuard)
   @Roles('admin')
   async handle(@Res() res: FastifyReply, @Body() body: LoadAgentSitesDto) {
-    try {
-      await this.loadAgentSitesService.execute(body.sites, body.agentId);
-      return res.status(200).send({ message: 'Sites loaded successfully' });
-    } catch (error: any) {
-      return res.status(500).send({ message: 'Failed to load sites' });
-    }
+    await this.loadAgentSitesService.execute(body.sites, body.agentId);
+    return res.status(200).send({ message: 'Sites loaded successfully' });
   }
 }

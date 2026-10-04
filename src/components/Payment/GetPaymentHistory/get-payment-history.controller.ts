@@ -28,16 +28,11 @@ export class GetPaymentHistoryController {
     @Query(new ValidationPipe({ transform: true }))
     query: GetPaymentHistoryQueryDto,
   ) {
-    try {
-      const payments = await this.getPaymentHistoryService.execute(
-        user.organization_id,
-        query.limit ?? 50,
-        query.offset ?? 0,
-      );
-      return res.status(200).send(payments);
-    } catch (error: any) {
-      const status = (error && (error.status || error.statusCode)) || 500;
-      return res.status(status).send(error.message || 'Internal server error');
-    }
+    const payments = await this.getPaymentHistoryService.execute(
+      user.organization_id,
+      query.limit ?? 50,
+      query.offset ?? 0,
+    );
+    return res.status(200).send(payments);
   }
 }

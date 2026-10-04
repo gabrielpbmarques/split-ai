@@ -28,15 +28,11 @@ export class RemoveMemberController {
     @Body(new ValidationPipe()) dto: RemoveMemberDto,
     @AuthUser() user: User,
   ): Promise<FastifyReply> {
-    try {
-      const result = await this.removeMemberService.execute(
-        dto,
-        user.organization_id,
-        user.id ?? null,
-      );
-      return res.status(200).send(result);
-    } catch (error: any) {
-      return res.status(error.status || 500).send(error.message);
-    }
+    const result = await this.removeMemberService.execute(
+      dto,
+      user.organization_id,
+      user.id ?? null,
+    );
+    return res.status(200).send(result);
   }
 }

@@ -21,15 +21,10 @@ export class GetReportConversationController {
     @User() user: UserEntity,
     @Res() res: FastifyReply,
   ): Promise<FastifyReply> {
-    try {
-      const conversation = await this.getReportConversationService.execute(
-        user,
-        reportId,
-      );
-      return res.status(200).send(conversation);
-    } catch (error: any) {
-      const status = error.status || 500;
-      return res.status(status).send({ error: error.message });
-    }
+    const conversation = await this.getReportConversationService.execute(
+      user,
+      reportId,
+    );
+    return res.status(200).send(conversation);
   }
 }

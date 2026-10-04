@@ -16,15 +16,11 @@ export class ListSourcesController {
     @Query('agent_id') agentId: string,
     @Res() res: FastifyReply,
   ): Promise<any> {
-    try {
-      if (!agentId) {
-        return { error: 'agent_id é obrigatório', statusCode: 400 };
-      }
-
-      const sources = await this.listSourcesService.execute(agentId);
-      return res.status(200).send(sources);
-    } catch (error: any) {
-      return res.status(500).send({ error: 'Internal server error' });
+    if (!agentId) {
+      return { error: 'agent_id é obrigatório', statusCode: 400 };
     }
+
+    const sources = await this.listSourcesService.execute(agentId);
+    return res.status(200).send(sources);
   }
 }

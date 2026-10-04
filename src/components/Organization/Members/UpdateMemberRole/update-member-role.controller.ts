@@ -30,14 +30,10 @@ export class UpdateMemberRoleController {
     @Body(new ValidationPipe()) dto: UpdateMemberRoleDto,
     @AuthUser() user: User,
   ): Promise<FastifyReply> {
-    try {
-      const result = await this.updateMemberRoleService.execute(
-        dto,
-        user.organization_id,
-      );
-      return res.status(200).send(result);
-    } catch (error: any) {
-      return res.status(error.status || 500).send(error.message);
-    }
+    const result = await this.updateMemberRoleService.execute(
+      dto,
+      user.organization_id,
+    );
+    return res.status(200).send(result);
   }
 }

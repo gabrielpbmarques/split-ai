@@ -19,11 +19,7 @@ export class AttendantController {
     @Body() dto: QuestionDto,
     @AuthUser() user: User,
   ) {
-    try {
-      const result = await this.attendantService.execute(dto, user);
-      return res.status(200).send(result);
-    } catch (error: any) {
-      return res.status(500).send(error.message);
-    }
+    const result = await this.attendantService.execute(dto, user);
+    return res.status(200).send(result);
   }
 }

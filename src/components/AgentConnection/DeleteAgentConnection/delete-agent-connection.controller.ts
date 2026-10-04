@@ -30,14 +30,10 @@ export class DeleteAgentConnectionController {
     @Body(new ValidationPipe()) dto: DeleteAgentConnectionDto,
     @AuthUser() user: User,
   ): Promise<FastifyReply> {
-    try {
-      const result = await this.deleteAgentConnectionService.execute(
-        dto.id,
-        user,
-      );
-      return res.status(200).send(result);
-    } catch (error: any) {
-      return res.status(error.status || 500).send(error.message);
-    }
+    const result = await this.deleteAgentConnectionService.execute(
+      dto.id,
+      user,
+    );
+    return res.status(200).send(result);
   }
 }

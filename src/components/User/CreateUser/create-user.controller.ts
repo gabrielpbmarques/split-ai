@@ -24,13 +24,7 @@ export class CreateUserController {
     @Body(new ValidationPipe()) dto: CreateUserDto,
     @Res() res: FastifyReply,
   ) {
-    try {
-      const result = await this.createUserService.execute(dto);
-      return res.status(201).send(result);
-    } catch (error: any) {
-      const status = error.status || error.statusCode || 500;
-      const message = error.message || 'Erro interno do servidor';
-      return res.status(status).send({ statusCode: status, message });
-    }
+    const result = await this.createUserService.execute(dto);
+    return res.status(201).send(result);
   }
 }

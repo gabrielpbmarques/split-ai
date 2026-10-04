@@ -13,11 +13,26 @@ const csvList = z
       .filter(Boolean),
   );
 
+const booleanFlag = z
+  .enum(['true', 'false'])
+  .default('false')
+  .transform((value) => value === 'true');
+
+const originList = csvList.refine(
+  (origins) => !origins.includes('*'),
+  'ALLOWED_ORIGINS não aceita "*"; liste as origens explicitamente',
+);
+
 const envSchema = z.object({
   NODE_ENV: nodeEnv.default('development'),
   ENV: nodeEnv.optional(),
   PORT: z.coerce.number().int().min(1).max(65_535).default(4000),
   FRONTEND_URL: z.string().url().optional(),
+  ALLOWED_ORIGINS: originList,
+  LOG_LEVEL: z
+    .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace'])
+    .default('info'),
+  SWAGGER_ENABLED: booleanFlag,
 
   DATABASE_URL: z.string().min(1),
 

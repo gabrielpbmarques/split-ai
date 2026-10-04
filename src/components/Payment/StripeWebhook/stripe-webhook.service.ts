@@ -1,4 +1,9 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { ManageCreditsService } from 'src/components/Credits/ManageCredits/manage-credits.service';
 import { ActivateOrganizationService } from 'src/components/Organization/ActivateOrganization/activate-organization.service';
 import { DeactivateOrganizationService } from 'src/components/Organization/DeactivateOrganization/deactivate-organization.service';
@@ -37,7 +42,7 @@ export class StripeWebhookService {
       this.logger.error(
         `Webhook signature verification failed: ${err.message}`,
       );
-      throw new Error('Webhook signature verification failed');
+      throw new BadRequestException('Assinatura do webhook inválida');
     }
 
     this.logger.log(`Processing webhook event: ${event.type}`);

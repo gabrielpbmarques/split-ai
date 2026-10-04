@@ -13,13 +13,7 @@ export class RegenerateEmbedTokenController {
   @UseGuards(AuthGuard)
   @Roles('admin')
   async handle(@Param('id') id: string, @Res() res: FastifyReply) {
-    try {
-      const result = await this.service.execute(id);
-      return res.status(200).send(result);
-    } catch (error: any) {
-      return res
-        .status(error.status || 500)
-        .send({ message: error.message || 'Erro ao regenerar token do embed' });
-    }
+    const result = await this.service.execute(id);
+    return res.status(200).send(result);
   }
 }

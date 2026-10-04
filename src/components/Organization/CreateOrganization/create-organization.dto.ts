@@ -26,7 +26,7 @@ export class CreateOrganizationDto {
   @IsString()
   created_by: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   plan?: PlanType;
 

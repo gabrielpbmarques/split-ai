@@ -1,4 +1,9 @@
-import { IsDate, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  IsDateString,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class CreateSessionIfNotExistsDto {
   @IsString()
@@ -13,7 +18,7 @@ export class CreateSessionIfNotExistsDto {
   @IsOptional()
   organization_id?: string;
 
-  @IsDate()
+  @IsDateString()
   @IsOptional()
-  expires_at?: Date;
+  expires_at?: string;
 }

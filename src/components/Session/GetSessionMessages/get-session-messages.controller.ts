@@ -22,15 +22,10 @@ export class GetSessionMessagesController {
     @User() user: UserEntity,
     @Res() res: FastifyReply,
   ): Promise<FastifyReply> {
-    try {
-      const messages = await this.getSessionMessagesService.execute(
-        user,
-        sessionId,
-      );
-      return res.status(200).send(messages);
-    } catch (error: any) {
-      const status = error.status || 500;
-      return res.status(status).send({ error: error.message });
-    }
+    const messages = await this.getSessionMessagesService.execute(
+      user,
+      sessionId,
+    );
+    return res.status(200).send(messages);
   }
 }

@@ -16,11 +16,7 @@ export class DeleteSourceController {
     @Param('id') id: string,
     @Res() res: FastifyReply,
   ): Promise<FastifyReply> {
-    try {
-      await this.deleteSourceService.execute(id);
-      return res.status(204).send();
-    } catch (error: any) {
-      return res.status(error.status || 500).send({ message: error.message });
-    }
+    await this.deleteSourceService.execute(id);
+    return res.status(204).send();
   }
 }

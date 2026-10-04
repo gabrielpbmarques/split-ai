@@ -12,26 +12,16 @@ export class PublicEmbedController {
   @Public()
   @Header('Content-Type', 'application/javascript; charset=utf-8')
   async script(@Res() res: FastifyReply) {
-    try {
-      const js = this.service.getEmbedScript();
-      res.raw.setHeader('Cache-Control', 'public, max-age=300');
-      return res.status(200).send(js);
-    } catch (error: any) {
-      return res.status(500).send('// error generating script');
-    }
+    const js = this.service.getEmbedScript();
+    res.raw.setHeader('Cache-Control', 'public, max-age=300');
+    return res.status(200).send(js);
   }
 
   @Get('chat')
   @Public()
   @Header('Content-Type', 'text/html; charset=utf-8')
   async page(@Res() res: FastifyReply) {
-    try {
-      const html = this.service.getEmbedChatHtml();
-      return res.status(200).send(html);
-    } catch (error: any) {
-      return res
-        .status(500)
-        .send('<!doctype html><html><body>Erro</body></html>');
-    }
+    const html = this.service.getEmbedChatHtml();
+    return res.status(200).send(html);
   }
 }

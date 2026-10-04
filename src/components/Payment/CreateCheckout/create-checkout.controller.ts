@@ -27,33 +27,25 @@ export class CreateCheckoutController {
     @Res() res: FastifyReply,
     @UserDecorator() user: User,
   ) {
-    try {
-      const organizationId =
-        user.role === 'admin'
-          ? dto.organizationId || user.organization_id
-          : user.organization_id;
+    const organizationId =
+      user.role === 'admin'
+        ? dto.organizationId || user.organization_id
+        : user.organization_id;
 
-      if (!organizationId) {
-        throw new BadRequestException('Organization ID is required');
-      }
-
-      const successUrl =
-        dto.successUrl || `${env.FRONTEND_URL}/payment/success`;
-      const cancelUrl = dto.cancelUrl || `${env.FRONTEND_URL}/payment/cancel`;
-
-      const result = await this.createCheckoutService.execute({
-        organizationId,
-        planType: dto.planType,
-        successUrl,
-        cancelUrl,
-      });
-
-      return res.status(200).send(result);
-    } catch (error: any) {
-      const status = (error && (error.status || error.statusCode)) || 500;
-      return res
-        .status(status)
-        .send(error.message || 'Failed to create checkout session');
+    if (!organizationId) {
+      throw new BadRequestException('Organization ID is required');
     }
+
+    const successUrl = dto.successUrl || `${env.FRONTEND_URL}/payment/success`;
+    const cancelUrl = dto.cancelUrl || `${env.FRONTEND_URL}/payment/cancel`;
+
+    const result = await this.createCheckoutService.execute({
+      organizationId,
+      planType: dto.planType,
+      successUrl,
+      cancelUrl,
+    });
+
+    return res.status(200).send(result);
   }
 }

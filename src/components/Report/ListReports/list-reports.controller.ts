@@ -20,11 +20,7 @@ export class ListReportsController {
     @Query() dto: ListReportsDto,
     @AuthUser() user: User,
   ) {
-    try {
-      const reports = await this.listReportsService.execute(user, dto);
-      return res.status(200).send(reports);
-    } catch (error: any) {
-      return res.status(500).send(error);
-    }
+    const reports = await this.listReportsService.execute(user, dto);
+    return res.status(200).send(reports);
   }
 }

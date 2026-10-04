@@ -20,14 +20,10 @@ export class CreateSessionIfNotExistsController {
     @Res() res: FastifyReply,
     @Body() body: CreateSessionIfNotExistsDto,
   ) {
-    try {
-      await this.createSessionIfNotExistsService.execute({
-        agent_id: body.agent_id,
-        user_id: user.id,
-      });
-      return res.status(200).send('Session created successfully');
-    } catch (error: any) {
-      return res.status(500).send(error);
-    }
+    await this.createSessionIfNotExistsService.execute({
+      agent_id: body.agent_id,
+      user_id: user.id,
+    });
+    return res.status(200).send('Session created successfully');
   }
 }

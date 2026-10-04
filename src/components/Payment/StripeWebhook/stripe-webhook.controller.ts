@@ -1,4 +1,12 @@
-import { Controller, Headers, Post, Req, Res } from '@nestjs/common';
+import {
+  BadRequestException,
+  Controller,
+  Headers,
+  Post,
+  RawBodyRequest,
+  Req,
+  Res,
+} from '@nestjs/common';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { Public } from 'src/auth/auth.guard';
 import { env } from 'src/shared/config/env';
@@ -13,31 +21,23 @@ export class StripeWebhookController {
   @Public()
   async handle(
     @Headers('stripe-signature') signature: string,
-    @Req() req: FastifyRequest,
+    @Req() req: RawBodyRequest<FastifyRequest>,
     @Res() res: FastifyReply,
-  ) {
-    try {
-      if (!signature) {
-        return res.status(400).send('Missing stripe-signature header');
-      }
-
-      const rawBody = (req as any).rawBody;
-      if (!rawBody) {
-        return res.status(400).send('Missing raw body');
-      }
-
-      await this.stripeWebhookService.execute(
-        signature,
-        rawBody.toString(),
-        env.STRIPE_WEBHOOK_SECRET,
-      );
-
-      return res.status(200).send({ received: true });
-    } catch (error: any) {
-      const status = (error && (error.status || error.statusCode)) || 400;
-      return res
-        .status(status)
-        .send(error.message || 'Webhook processing failed');
+  ): Promise<FastifyReply> {
+    if (!signature) {
+      throw new BadRequestException('Cabeçalho stripe-signature ausente');
     }
+
+    if (!req.rawBody) {
+      throw new BadRequestException('Corpo da requisição ausente');
+    }
+
+    await this.stripeWebhookService.execute(
+      signature,
+      req.rawBody.toString(),
+      env.STRIPE_WEBHOOK_SECRET,
+    );
+
+    return res.status(200).send({ received: true });
   }
 }

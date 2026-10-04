@@ -30,14 +30,10 @@ export class SaveAgentConnectionLayoutController {
     @Body(new ValidationPipe()) dto: SaveAgentConnectionLayoutDto,
     @AuthUser() user: User,
   ): Promise<FastifyReply> {
-    try {
-      const result = await this.saveAgentConnectionLayoutService.execute(
-        dto,
-        user,
-      );
-      return res.status(200).send(result);
-    } catch (error: any) {
-      return res.status(error.status || 500).send(error.message);
-    }
+    const result = await this.saveAgentConnectionLayoutService.execute(
+      dto,
+      user,
+    );
+    return res.status(200).send(result);
   }
 }

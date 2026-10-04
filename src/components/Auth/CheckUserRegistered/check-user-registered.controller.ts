@@ -11,18 +11,11 @@ export class CheckUserRegisteredController {
 
   @Post('check-user-registered')
   async handle(@Res() res: FastifyReply, @Body() body: { phone: string }) {
-    try {
-      const result = await this.checkUserRegisteredService.execute(body.phone);
+    const result = await this.checkUserRegisteredService.execute(body.phone);
 
-      return res.status(200).send({
-        success: true,
-        data: result,
-      });
-    } catch (error: any) {
-      return res.status(500).send({
-        success: false,
-        error: error.message,
-      });
-    }
+    return res.status(200).send({
+      success: true,
+      data: result,
+    });
   }
 }

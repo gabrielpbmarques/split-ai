@@ -13,12 +13,7 @@ export class GetStripePublicKeyController {
   @Get('stripe-public-key')
   @Public()
   async handle(@Res() res: FastifyReply) {
-    try {
-      const data = await this.getStripePublicKeyService.execute();
-      return res.status(200).send(data);
-    } catch (error: any) {
-      const status = (error && (error.status || error.statusCode)) || 500;
-      return res.status(status).send(error.message || 'Internal server error');
-    }
+    const data = await this.getStripePublicKeyService.execute();
+    return res.status(200).send(data);
   }
 }

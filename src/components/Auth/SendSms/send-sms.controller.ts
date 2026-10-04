@@ -22,12 +22,8 @@ export class SendSmsController {
     @Body(new ValidationPipe()) sendSmsDto: SendSmsDto,
     @Res() res: FastifyReply,
   ) {
-    try {
-      const result = await this.sendSmsService.execute(sendSmsDto);
-      return res.status(200).send(result);
-    } catch (error: any) {
-      return res.status(error.status || 500).send(error.message);
-    }
+    const result = await this.sendSmsService.execute(sendSmsDto);
+    return res.status(200).send(result);
   }
 
   @Post('verify-sms')
@@ -35,11 +31,7 @@ export class SendSmsController {
     @Body(new ValidationPipe()) verifySmsDto: VerifySmsDto,
     @Res() res: FastifyReply,
   ) {
-    try {
-      const result = await this.sendSmsService.verify(verifySmsDto);
-      return res.status(200).send(result);
-    } catch (error: any) {
-      return res.status(error.status || 500).send(error.message);
-    }
+    const result = await this.sendSmsService.verify(verifySmsDto);
+    return res.status(200).send(result);
   }
 }

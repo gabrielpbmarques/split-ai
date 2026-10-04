@@ -13,11 +13,7 @@ export class LoginController {
     @Body(new ValidationPipe()) loginDto: LoginDto,
     @Res() res: FastifyReply,
   ) {
-    try {
-      const result = await this.loginService.execute(loginDto);
-      return res.status(200).send(result);
-    } catch (error: any) {
-      return res.status(error.status || 500).send(error.message);
-    }
+    const result = await this.loginService.execute(loginDto);
+    return res.status(200).send(result);
   }
 }

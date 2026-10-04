@@ -11,12 +11,7 @@ export class GetPlansController {
   @Get('plans')
   @Public()
   async handle(@Res() res: FastifyReply) {
-    try {
-      const plans = await this.getPlansService.execute();
-      return res.status(200).send(plans);
-    } catch (error: any) {
-      const status = (error && (error.status || error.statusCode)) || 500;
-      return res.status(status).send(error.message || 'Internal server error');
-    }
+    const plans = await this.getPlansService.execute();
+    return res.status(200).send(plans);
   }
 }

@@ -28,14 +28,10 @@ export class InviteMemberController {
     @Body(new ValidationPipe()) dto: InviteMemberDto,
     @AuthUser() user: User,
   ): Promise<FastifyReply> {
-    try {
-      const result = await this.inviteMemberService.execute(
-        dto,
-        user.organization_id,
-      );
-      return res.status(201).send(result);
-    } catch (error: any) {
-      return res.status(error.status || 500).send(error.message);
-    }
+    const result = await this.inviteMemberService.execute(
+      dto,
+      user.organization_id,
+    );
+    return res.status(201).send(result);
   }
 }

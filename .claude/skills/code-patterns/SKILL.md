@@ -1,6 +1,6 @@
 ---
 name: code-patterns
-description: 'Use for controller/service/DTO templates and review: error handling, per-handler ValidationPipe, service composition, Promise.all vs allSettled, handler naming (handle/execute), and the NestJS CLI scaffolding commands.'
+description: 'Use for controller/service/DTO templates and review: error handling via GlobalExceptionFilter, global ValidationPipe, service composition, Promise.all vs allSettled, handler naming (handle/execute), and the NestJS CLI scaffolding commands.'
 ---
 
 ### Creating a new component (scope)
@@ -59,12 +59,8 @@ export class CreateOrderController {
     @AuthUser() user: User,
     @Res() res: FastifyReply,
   ) {
-    try {
-      const result = await this.createOrderService.execute(body, user);
-      return res.status(200).send(result);
-    } catch (error: any) {
-      return res.status(error.status || 500).send(error.message);
-    }
+    const result = await this.createOrderService.execute(body, user);
+    return res.status(201).send(result);
   }
 }
 ```
@@ -74,37 +70,22 @@ export class CreateOrderController {
 1. **Controller name** = scope name in lowercase. The `@Controller('auth')` prefix matches the component, NOT the use case. So `LoginController`, `RegisterDeviceController`, etc all use `@Controller('auth')`.
 2. **One handler method per controller**: Named `handle` (preferred) or `execute`. Never create multiple HTTP method handlers in one controller.
 3. **Always use @Res() with FastifyReply**`@Res()``FastifyReply`: Never use NestJS default response handling.
-4. **Always use @Body(new ValidationPipe())**`@Body(new ValidationPipe())` for request body validation.
-5. **Use @Query(new ValidationPipe({ transform: true }))**`@Query(new ValidationPipe({ transform: true }))` for query parameter DTOs — include `transform: true` to enable class-transformer.
-6. **Try/catch wraps the service call**: The controller delegates ALL logic to the service and only handles HTTP response formatting.
+4. **Validation is global** (`createValidationPipe()` in `main.ts`): plain `@Body() dto: XDto` / `@Query() dto: XDto` are validated with whitelist + forbidNonWhitelisted + forbidUnknownValues. Every DTO field carries a class-validator decorator; numeric query fields add `@Type(() => Number)`.
+5. **No try/catch.** Exceptions propagate to `GlobalExceptionFilter`, which answers with `ErrorResponse`. Request-level checks throw `BadRequestException` etc.
+6. **The controller delegates ALL logic to the service** and only maps the result to a status code (201 create, 200 read/update with body, 204 no body).
 7. **Use @AuthUser() decorator**`@AuthUser()` (aliased from `User`) to extract the authenticated user when needed.
 8. **Decorator order**: `@HttpMethod()` → `@UseGuards(AuthGuard)` → `@Roles(...)`.
 9. **No business logic** in controllers — controllers are thin wrappers that delegate to services.
 
-### Error handling in controllers
+### Error handling
 
-Standard pattern:
-
-```typescript
-try {
-  const result = await this.myService.execute(dto);
-  return res.status(200).send(result);
-} catch (error: any) {
-  return res.status(error.status || 500).send(error.message);
-}
-```
-
-For endpoints returning structured errors:
+Nothing in the controller. `GlobalExceptionFilter` (`src/shared/http/exception.filter.ts`, registered as `APP_FILTER`) converts any exception through `buildErrorResponse` (`src/shared/http/error-mapper.ts`) into:
 
 ```typescript
-catch (error: any) {
-  return res.status(error.status || 500).send({
-    statusCode: error.status || 500,
-    message: error.message,
-    error: error.status >= 500 ? 'Internal Server Error' : 'Bad Request',
-  });
-}
+{ category, code, message, status, correlationId, timestamp, path, details? }
 ```
+
+`HttpException` → its status (`code = HTTP_<status>`); `ZodError` → 400 `VALIDATION_FAILED`; anything else → 500 `INTERNAL_ERROR` with a generic message in production. Validation failures carry `details: [{ field, message }]`.
 
 ## Service Pattern
 

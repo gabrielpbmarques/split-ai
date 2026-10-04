@@ -28,17 +28,12 @@ export class GetCreditTransactionsController {
     @Query(new ValidationPipe({ transform: true }))
     query: GetCreditTransactionsQueryDto,
   ) {
-    try {
-      const transactions = await this.getCreditTransactionsService.execute(
-        user.organization_id,
-        query.limit ?? 100,
-        query.offset ?? 0,
-      );
+    const transactions = await this.getCreditTransactionsService.execute(
+      user.organization_id,
+      query.limit ?? 100,
+      query.offset ?? 0,
+    );
 
-      return res.status(200).send(transactions);
-    } catch (error: any) {
-      const status = (error && (error.status || error.statusCode)) || 500;
-      return res.status(status).send(error.message || 'Internal server error');
-    }
+    return res.status(200).send(transactions);
   }
 }

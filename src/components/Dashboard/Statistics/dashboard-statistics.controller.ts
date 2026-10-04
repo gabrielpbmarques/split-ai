@@ -22,14 +22,7 @@ export class DashboardStatisticsController {
     @Query() dto: DashboardStatisticsDto,
     @AuthUser() user: User,
   ) {
-    try {
-      const statistics = await this.dashboardStatisticsService.execute(
-        user,
-        dto,
-      );
-      return res.status(200).send(statistics);
-    } catch (error: any) {
-      return res.status(500).send({ error: error.message });
-    }
+    const statistics = await this.dashboardStatisticsService.execute(user, dto);
+    return res.status(200).send(statistics);
   }
 }

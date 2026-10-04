@@ -22,11 +22,7 @@ export class CreateAttendantAgentController {
     @Body() dto: CreateAttendantAgentDto,
     @AuthUser() user: User,
   ) {
-    try {
-      const result = await this.createAttendantAgentService.execute(dto, user);
-      return res.status(200).send(result);
-    } catch (error: any) {
-      return res.status(500).send(error.message);
-    }
+    const result = await this.createAttendantAgentService.execute(dto, user);
+    return res.status(200).send(result);
   }
 }

@@ -8,7 +8,7 @@ description: 'Use when scaffolding modules, use cases, controllers, services, DT
 ```text
 src/
   app.module.ts          # Root module — imports TypeOrmModule.forRoot, ComponentsModule, HealthModule
-  main.ts                # Bootstrap — Fastify adapter. NOTE: no global ValidationPipe and no global "api" prefix; see CLAUDE.md "Things that bite". Validation is per-handler (@Body(new ValidationPipe())); routes mount at each @Controller(...) path.
+  main.ts                # Bootstrap — createFastifyAdapter() + global createValidationPipe() + nestjs-pino. No global "api" prefix; routes mount at each @Controller(...) path. See CLAUDE.md "Things that bite".
   shared/config/env.ts   # Zod-validated frozen env object (only place that reads process.env)
   auth/                  # Guards (e.g., AuthGuard, RoleGuard, DomainSpecificGuards)
   components/            # Feature modules organized by scope
@@ -317,10 +317,10 @@ Middleware implementations live in `src/middleware/`. The `MiddlewareModule` reg
 ## Controllers
 
 - Use Fastify types (`FastifyReply`) for `@Res()`.
-- Apply `@ValidationPipe()` on `@Body()` for DTO validation.
+- DTOs are validated by the global pipe; plain `@Body() dto: XDto` is enough.
 - DTOs use `class-validator` decorators (`@IsString`, `@IsNotEmpty`, `@IsEmail`, etc.).
 - Controller method is typically named `handle` for single-action controllers, or uses semantic naming like `login`.
-- Error handling: try/catch returning `res.status(error.status || 500).send(error.message)`.
+- Error handling: none in the controller; exceptions reach `GlobalExceptionFilter` and become `ErrorResponse`.
 
 ## Services
 

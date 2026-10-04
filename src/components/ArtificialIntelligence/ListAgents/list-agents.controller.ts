@@ -15,11 +15,7 @@ export class ListAgentsController {
   @UseGuards(AuthGuard)
   @Roles('admin', 'user')
   async handle(@Res() res: FastifyReply, @AuthUser() user: User) {
-    try {
-      const agents = await this.listAgentsService.execute(user);
-      return res.status(200).send(agents);
-    } catch (error: any) {
-      return res.status(500).send({ error: error.message });
-    }
+    const agents = await this.listAgentsService.execute(user);
+    return res.status(200).send(agents);
   }
 }

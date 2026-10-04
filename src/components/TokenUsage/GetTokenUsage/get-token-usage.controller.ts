@@ -25,25 +25,21 @@ export class GetTokenUsageController {
     @AuthUser() user: UserEntity,
     @Res() res: FastifyReply,
   ) {
-    try {
-      const isAdmin = user.role === 'admin';
+    const isAdmin = user.role === 'admin';
 
-      if (!isAdmin) {
-        if (!user.organization_id) {
-          throw new ForbiddenException(
-            'User does not belong to an organization and cannot view token usage.',
-          );
-        }
+    if (!isAdmin) {
+      if (!user.organization_id) {
+        throw new ForbiddenException(
+          'User does not belong to an organization and cannot view token usage.',
+        );
       }
-
-      const result = await this.getTokenUsageService.execute(
-        dto,
-        user.organization_id,
-      );
-
-      return res.status(200).send(result);
-    } catch (error: any) {
-      return res.status(error.status || 500).send(error);
     }
+
+    const result = await this.getTokenUsageService.execute(
+      dto,
+      user.organization_id,
+    );
+
+    return res.status(200).send(result);
   }
 }

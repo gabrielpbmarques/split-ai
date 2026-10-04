@@ -1,51 +1,18 @@
-import { IsString } from 'class-validator';
-
-export class WebhookDto {
-  @IsString()
-  SmsMessageSid: string;
-
-  @IsString()
-  NumMedia: string;
-
-  @IsString()
-  ProfileName: string;
-
-  @IsString()
-  MessageType: string;
-
-  @IsString()
-  SmsSid: string;
-
-  @IsString()
-  WaId: string;
-
-  @IsString()
-  SmsStatus: string;
-
-  @IsString()
-  Body: string;
-
-  @IsString()
-  To: string;
-
-  @IsString()
-  NumSegments: string;
-
-  @IsString()
-  ReferralNumMedia: string;
-
-  @IsString()
-  MessageSid: string;
-
-  @IsString()
-  AccountSid: string;
-
-  @IsString()
-  ChannelMetadata: string;
-
-  @IsString()
-  From: string;
-
-  @IsString()
-  ApiVersion: string;
+export interface WebhookDto {
+  SmsMessageSid?: string;
+  NumMedia?: string;
+  ProfileName?: string;
+  MessageType?: string;
+  SmsSid?: string;
+  WaId?: string;
+  SmsStatus?: string;
+  Body?: string;
+  To?: string;
+  NumSegments?: string;
+  ReferralNumMedia?: string;
+  MessageSid?: string;
+  AccountSid?: string;
+  ChannelMetadata?: string;
+  From?: string;
+  ApiVersion?: string;
 }

@@ -15,11 +15,7 @@ export class AcceptInviteController {
     @Res() res: FastifyReply,
     @Body(new ValidationPipe()) dto: AcceptInviteDto,
   ): Promise<FastifyReply> {
-    try {
-      const result = await this.acceptInviteService.execute(dto);
-      return res.status(200).send(result);
-    } catch (error: any) {
-      return res.status(error.status || 500).send(error.message);
-    }
+    const result = await this.acceptInviteService.execute(dto);
+    return res.status(200).send(result);
   }
 }

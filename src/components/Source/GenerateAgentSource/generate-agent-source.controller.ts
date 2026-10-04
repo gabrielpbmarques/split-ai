@@ -1,10 +1,44 @@
-import { Body, Controller, Post, Res, Req } from '@nestjs/common';
+import {
+  BadRequestException,
+  Controller,
+  Post,
+  Req,
+  Res,
+} from '@nestjs/common';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { Roles } from 'src/decorators/roles.decorator';
 import { AgentSource } from 'src/types/agent-source';
 
-import { GenerateAgentSourceDto } from './generate-agent-source.dto';
 import { GenerateAgentSourceService } from './generate-agent-source.service';
+
+interface MultipartField {
+  value?: string;
+}
+
+interface MultipartFile {
+  filename?: string;
+  mimetype?: string;
+  toBuffer(): Promise<Buffer>;
+}
+
+type GenerateAgentSourceBody = Record<string, unknown> & {
+  file?: MultipartFile;
+};
+
+function fieldValue(
+  body: GenerateAgentSourceBody,
+  name: string,
+): string | undefined {
+  const raw = body[name];
+
+  if (typeof raw === 'string') {
+    return raw;
+  }
+
+  const value = (raw as MultipartField | undefined)?.value;
+
+  return typeof value === 'string' ? value : undefined;
+}
 
 @Controller('agent')
 export class GenerateAgentSourceController {
@@ -15,59 +49,34 @@ export class GenerateAgentSourceController {
   @Post('generate-source')
   @Roles('admin')
   async handle(
-    @Body() generateAgentSourceDto: GenerateAgentSourceDto,
     @Req() req: FastifyRequest,
     @Res() res: FastifyReply,
   ): Promise<FastifyReply> {
-    try {
-      const body: any = (req as any).body || {};
+    const body = (req.body ?? {}) as GenerateAgentSourceBody;
+    const file = body.file;
+    const hasFile = Boolean(file && typeof file.toBuffer === 'function');
+    const buffer = hasFile ? await file.toBuffer() : undefined;
+    const url = fieldValue(body, 'url');
 
-      const file = body.file;
-      const hasFile = file && typeof file.toBuffer === 'function';
-      const buffer: Buffer | undefined = hasFile
-        ? await file.toBuffer()
-        : undefined;
-
-      const sourceType: AgentSource | undefined = hasFile
-        ? body.sourceType?.value || undefined
-        : generateAgentSourceDto.sourceType;
-
-      const agentId: string | undefined = hasFile
-        ? body.agentId?.value || undefined
-        : generateAgentSourceDto.agentId;
-
-      const url: string | undefined = hasFile
-        ? body.url?.value || undefined
-        : generateAgentSourceDto.url;
-
-      const fileName: string | undefined = hasFile
-        ? file.filename || body.fileName?.value || undefined
-        : generateAgentSourceDto.fileName;
-
-      const mimeType: string | undefined = hasFile
-        ? file.mimetype || undefined
-        : undefined;
-
-      if (!buffer && (!url || !url.trim())) {
-        return res
-          .status(400)
-          .send('Informe ao menos uma URL (url) ou um arquivo (file)');
-      }
-
-      await this.generateAgentSourceService.execute({
-        url,
-        buffer,
-        sourceType,
-        agentId,
-        fileName,
-        mimeType,
-      });
-
-      return res
-        .status(200)
-        .send({ message: 'Fonte de conhecimento processada com sucesso' });
-    } catch (error: any) {
-      return res.status(error.status || 500).send(error.message);
+    if (!buffer && (!url || !url.trim())) {
+      throw new BadRequestException(
+        'Informe ao menos uma URL (url) ou um arquivo (file)',
+      );
     }
+
+    await this.generateAgentSourceService.execute({
+      url,
+      buffer,
+      sourceType: fieldValue(body, 'sourceType') as AgentSource | undefined,
+      agentId: fieldValue(body, 'agentId'),
+      fileName: hasFile
+        ? file.filename || fieldValue(body, 'fileName')
+        : fieldValue(body, 'fileName'),
+      mimeType: hasFile ? file.mimetype : undefined,
+    });
+
+    return res
+      .status(200)
+      .send({ message: 'Fonte de conhecimento processada com sucesso' });
   }
 }
