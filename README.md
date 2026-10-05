@@ -63,4 +63,4 @@ Guia completo para quem trabalha no código: `CLAUDE.md`, com as regras de arqui
 
 ## Deploy
 
-Push em `main` constrói a imagem Docker, publica no Artifact Registry e faz `gcloud run deploy split-ai` em `southamerica-east1` (`.github/workflows/ci-cd.yml`). O serviço lê `PORT` do Cloud Run.
+A API roda no Railway, que faz build e deploy fora do CI deste repositório; as variáveis de ambiente (incluindo `ALLOWED_ORIGINS`) ficam no painel do Railway. Push em `main` roda o CI e o job `migrate` (`.github/workflows/ci-cd.yml`), que aplica as migrations pendentes. O serviço lê `PORT` do ambiente.

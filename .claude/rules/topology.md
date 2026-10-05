@@ -40,7 +40,7 @@ The order is fixed because each step depends on the previous one (correlation mu
 9. `app.listen({ port: env.PORT, host: '0.0.0.0' })`.
 </rules>
 
-There is no `app.setGlobalPrefix(...)`: routes mount at each `@Controller()` path because Cloud Run health checks and existing clients depend on the current paths.
+There is no `app.setGlobalPrefix(...)`: routes mount at each `@Controller()` path because health checks and existing clients depend on the current paths.
 
 <critical_rule>
 A route registered directly on the Fastify instance (Swagger UI, static files, a Fastify plugin) bypasses the Nest guards. Whoever registers it protects it in the registration itself (an `onRequest` hook, or disabling it outside development). See `docs/problemas-conhecidos.md` for related entries.
