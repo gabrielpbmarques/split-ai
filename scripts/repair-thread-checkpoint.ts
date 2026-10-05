@@ -2,14 +2,14 @@
  * Deletes a corrupted LangGraph checkpoint so a thread poisoned by a dangling
  * `tool_use` (a run that died after the tool call was persisted but before its
  * `tool_result`) can chat again. Every LangGraph turn on the same
- * `thread_id = ${organization_id}_${session_id}` replays that broken history,
+ * `thread_id = ${conversation_id ?? session_id}` replays that broken history,
  * which Anthropic rejects with a 400 until the checkpoint is cleared.
  *
  *   bun run repair:thread                     # clears the default poisoned thread
  *   bun run repair:thread <threadId> [...]    # clears the given thread(s)
  *
  * Run it through the `repair:thread` npm script (ts-node + CommonJS), NOT
- * directly via bun's ESM loader — same reasoning as scripts/seed-maia.ts.
+ * directly via bun's ESM loader (PC-006 in docs/problemas-conhecidos.md).
  *
  * This is a manual hotfix for threads already corrupted. New corruption is
  * prevented at runtime by the `sanitize-tool-call-history` middleware in
@@ -25,7 +25,7 @@ import { env } from 'src/shared/config/env';
 
 // The thread flagged in the LangSmith trace. Override via argv.
 const DEFAULT_THREAD_IDS = [
-  'a32cb64c-c469-49da-b7ca-2503a48788a9_20e899ea-d201-43cf-be2b-8780a3b4dcc4',
+  '20e899ea-d201-43cf-be2b-8780a3b4dcc4',
 ];
 
 // LangGraph PostgresSaver tables, in FK-safe delete order (writes/blobs first).

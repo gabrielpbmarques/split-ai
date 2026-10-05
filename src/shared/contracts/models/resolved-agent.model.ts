@@ -13,6 +13,5 @@ export interface ResolvedAgent {
   runnableOpts: RunnableChatOpts;
   tools?: AgentTool[];
   sites?: string[];
-  organization_id?: string;
   runnable: AgentRunnable;
 }

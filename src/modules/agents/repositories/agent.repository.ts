@@ -12,9 +12,10 @@ import {
 } from 'src/shared/contracts/pagination';
 import { isUuid } from 'src/shared/utils/is-uuid';
 
-export interface AgentListFilter {
-  readonly organizationId?: string;
-}
+export type AgentDatabaseConnection = Pick<
+  AgentEntity,
+  'database_url' | 'database_tables' | 'database_sample_rows'
+>;
 
 export interface AgentWithLatestInstructions {
   id: string;
@@ -65,33 +66,34 @@ export class AgentRepository {
     });
   }
 
-  async findByIdOrIdentifierWithOrganization(
+  async findByIdOrIdentifier(
     idOrIdentifier: string,
   ): Promise<AgentEntity | null> {
     return this.repository.findOne({
       where: isUuid(idOrIdentifier)
         ? { id: idOrIdentifier }
         : { agent_identifier: idOrIdentifier },
-      relations: ['organization'],
     });
   }
 
-  async countByOrganization(organizationId?: string): Promise<number> {
-    return this.repository.count({
-      where: organizationId ? { organization_id: organizationId } : {},
+  async findDatabaseConnection(
+    id: string,
+  ): Promise<AgentDatabaseConnection | null> {
+    return this.repository.findOne({
+      where: { id },
+      select: ['id', 'database_url', 'database_tables', 'database_sample_rows'],
     });
+  }
+
+  async count(): Promise<number> {
+    return this.repository.count();
   }
 
   async listPaginated<TField extends keyof AgentEntity = keyof AgentEntity>(
-    filter: AgentListFilter,
     page: PageRequest,
     fields?: readonly TField[],
   ): Promise<PageResult<Pick<AgentEntity, TField>>> {
-    const where = filter.organizationId
-      ? { organization_id: filter.organizationId }
-      : {};
     const [items, total] = await this.repository.findAndCount({
-      where,
       select: fields ? [...fields] : undefined,
       order: { created_at: 'DESC' },
       skip: skipOf(page),

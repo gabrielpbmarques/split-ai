@@ -18,9 +18,6 @@ export class ReportEntity {
   @Column({ type: 'uuid', nullable: false })
   agent_id!: string;
 
-  @Column({ type: 'uuid', nullable: true })
-  organization_id!: string;
-
   @Column({
     type: 'enum',
     enum: ['appointment', 'order', 'faq'],

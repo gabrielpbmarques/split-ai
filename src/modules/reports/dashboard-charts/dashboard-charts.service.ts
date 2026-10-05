@@ -1,10 +1,5 @@
 import { Injectable } from '@nestjs/common';
 
-import type { AuthenticatedUser } from 'src/auth/authenticated-user';
-import {
-  type TokenUsageFilters,
-  TokenUsageRepository,
-} from 'src/modules/billing/repositories/token-usage.repository';
 import type {
   DashboardChartsDto,
   DashboardCharts,
@@ -16,7 +11,6 @@ import {
 } from 'src/modules/reports/repositories/report.repository';
 import { MessageRepository } from 'src/modules/sessions/repositories/message.repository';
 import { SessionRepository } from 'src/modules/sessions/repositories/session.repository';
-import { scopedOrganizationId } from 'src/shared/utils/scoped-organization-id';
 
 @Injectable()
 export class DashboardChartsService {
@@ -24,31 +18,18 @@ export class DashboardChartsService {
     private readonly sessionRepository: SessionRepository,
     private readonly messageRepository: MessageRepository,
     private readonly reportRepository: ReportRepository,
-    private readonly tokenUsageRepository: TokenUsageRepository,
   ) {}
 
-  async execute(
-    user: AuthenticatedUser,
-    dto: DashboardChartsDto,
-  ): Promise<DashboardCharts> {
+  async execute(dto: DashboardChartsDto): Promise<DashboardCharts> {
     const { startDate, endDate } = this.getDateRange(dto);
 
     const sentimentData = await this.getSentimentData(
-      user,
       startDate,
       endDate,
       dto.agentId,
     );
 
     const conversationsData = await this.getConversationsData(
-      user,
-      startDate,
-      endDate,
-      dto.agentId,
-    );
-
-    const tokensData = await this.getTokensData(
-      user,
       startDate,
       endDate,
       dto.agentId,
@@ -57,18 +38,15 @@ export class DashboardChartsService {
     return {
       sentiment: sentimentData,
       conversations: conversationsData,
-      tokens: tokensData,
     };
   }
 
   private async getSentimentData(
-    user: AuthenticatedUser,
     startDate: Date,
     endDate: Date,
     agentId?: string,
   ): Promise<ChartData> {
     const filters: ReportFilters = {
-      organization_id: scopedOrganizationId(user),
       agent_id: agentId,
       startDate,
       endDate,
@@ -91,14 +69,12 @@ export class DashboardChartsService {
   }
 
   private async getConversationsData(
-    user: AuthenticatedUser,
     startDate: Date,
     endDate: Date,
     agentId?: string,
   ): Promise<ChartData> {
     const labels: string[] = [];
     const data: number[] = [];
-    const organizationId = scopedOrganizationId(user);
 
     const currentDate = new Date(startDate);
     while (currentDate <= endDate) {
@@ -108,7 +84,6 @@ export class DashboardChartsService {
       dayEnd.setHours(23, 59, 59, 999);
 
       const count = await this.sessionRepository.countByFilter({
-        organizationId,
         agentId,
         createdBetween: [dayStart, dayEnd],
       });
@@ -133,65 +108,6 @@ export class DashboardChartsService {
           borderColor: '#8B3FE4',
           backgroundColor: 'rgba(139, 63, 228, 0.1)',
           tension: 0.4,
-        },
-      ],
-    };
-  }
-
-  private async getTokensData(
-    user: AuthenticatedUser,
-    startDate: Date,
-    endDate: Date,
-    agentId?: string,
-  ): Promise<ChartData> {
-    const labels: string[] = [];
-    const data: number[] = [];
-    const organizationId = scopedOrganizationId(user);
-
-    const monthsToShow = 6;
-    const currentDate = new Date(endDate);
-    currentDate.setMonth(currentDate.getMonth() - monthsToShow + 1);
-
-    for (let i = 0; i < monthsToShow; i++) {
-      const monthStart = new Date(
-        currentDate.getFullYear(),
-        currentDate.getMonth(),
-        1,
-      );
-      const monthEnd = new Date(
-        currentDate.getFullYear(),
-        currentDate.getMonth() + 1,
-        0,
-        23,
-        59,
-        59,
-        999,
-      );
-
-      const tokenFilters: TokenUsageFilters = {
-        start_date: monthStart,
-        end_date: monthEnd,
-        organization_id: organizationId,
-        agent_id: agentId,
-      };
-
-      const tokenStats =
-        await this.tokenUsageRepository.getTotals(tokenFilters);
-      const tokens = tokenStats.total_tokens;
-
-      labels.push(monthStart.toLocaleDateString('pt-BR', { month: 'short' }));
-      data.push(Math.round(tokens / 1000));
-
-      currentDate.setMonth(currentDate.getMonth() + 1);
-    }
-
-    return {
-      labels,
-      datasets: [
-        {
-          label: 'Tokens (milhares)',
-          data,
-          backgroundColor: '#E14C9A',
         },
       ],
     };

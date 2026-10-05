@@ -2,18 +2,27 @@
 paths:
   - 'src/modules/retrieval/**/*.ts'
   - 'src/shared/utils/build-zod-schema.ts'
+  - 'src/infrastructure/integration/customer-database/**'
 ---
 
-# Scoped rule — `src/modules/retrieval/`
+# Agent tools and SQL guardrails — `src/modules/retrieval/`
 
-Thin path-scoped reminder. Full detail: the **`ai-agent-tools-and-rag`** skill. This scope holds only generic, tenant-agnostic agent tools (`LoadVectorSearchTool`, `LoadDatabaseTool`).
+Thin path-scoped reminder. Full detail: the **`ai-agent-tools-and-rag`** skill. This scope holds the generic agent tools (`load-vector-search-tool`, `load-database-tool`), the tool-belt assembly (`load-agent-tools`) and the retrieval pipeline (`execute-similarity-search`, `rerank-documents`).
 
-Must-not-break invariants:
+<rules>
+- **One tool = one use-case module = one service.** Each tool lives in its own `<verb>-<noun>/` folder with a single `@Injectable()` whose `execute(...)` returns an `AgentTool`. Never bundle several tools into one service; copy `load-vector-search-tool` / `load-database-tool` as the template.
+- **The parser tool's `func` stays inert.** `buildLangchainToolFromSchema` (`src/shared/utils/build-zod-schema.ts`) returns `tool(async () => {}, …)`: its only job is to let the model emit a schema-shaped argument. Call sites assume parser tools have no side effects.
+- **`vector_similarity_search` is threshold-based, not top-K.** The dense search only produces candidates (`VECTOR_SEARCH_CANDIDATE_K`, default 50); the Voyage `rerank-2.5` cross-encoder keeps those with `relevance_score >= VECTOR_SEARCH_MIN_SCORE` (default 0.8), capped at `VECTOR_SEARCH_MAX_RESULTS`. An empty result is a designed outcome. Before "fixing" missing context, read the `VoyageRerankCompressor` warning (it logs the best score) and consider lowering the threshold. Never move the cutoff onto the cosine score: `match_documents` already orders by it, so it carries no extra signal.
+- **Tool descriptions are Portuguese and product-agnostic.** They are rendered into the system prompt, so wording changes model behavior (the "always call vector search first" line, the SQL "REGRAS DE OURO").
+</rules>
 
-- **One tool = one module = one service.** Each tool gets its own directory under `Tools/` with a single `@Injectable()` service exposing `execute(ctx): DynamicStructuredTool<...>`. Never bundle multiple tools into one service; never place tool modules outside this scope. Copy `LoadVectorSearchTool` / `LoadDatabaseTool` as the template.
-- **The parser tool's `func` stays inert.** `buildLangchainToolFromSchema` (`src/shared/utils/buildZodSchema.ts`) returns `tool(async () => {}, …)` — a no-op whose only job is to let the model emit a schema-shaped argument. Never give it side-effects; call sites assume parser tools do nothing.
-- **`vector_similarity_search` is threshold-based, not top-K.** The dense search only generates candidates (`VECTOR_SEARCH_CANDIDATE_K`, default 50); a Voyage `rerank-2.5` cross-encoder then keeps only `relevance_score >= VECTOR_SEARCH_MIN_SCORE` (default 0.8), capped at `VECTOR_SEARCH_MAX_RESULTS`. **An empty return is a designed outcome**, not a bug — before "fixing" a report of missing context, read the `logger.warn` from `VoyageRerankCompressor` (it prints the best score seen) and consider lowering the env threshold instead of removing it. Never move the threshold onto the cosine score: `match_documents` already orders by that value, so it carries no extra signal.
-- **Tool descriptions are pt-BR and tenant-agnostic** — no product- or org-specific copy. They are also rendered into the system prompt, so wording changes the model's behavior (e.g. the "always call vector search first" line, the SQL "REGRAS DE OURO").
-- **`LoadDatabaseTool` SQL guardrails (`sanitizeSqlQuery`) — keep all of them:** single statement only; first-verb allow-list (`select`/`insert`/`update`; in read-only mode only `select`); deny regex `\b(DELETE|ALTER|DROP|CREATE|REPLACE|TRUNCATE)\b` even after an allowed verb; append ` LIMIT 5` when no `LIMIT` is present. Dialect detected from the URL prefix (`postgres`/`postgresql` → Postgres, `mysql`/`mysql2` → MySQL); others → `BadRequestException`.
-- **Targets the customer's own DB per request — but the tenant filter is not fully gone.** Legacy BravoHub-scoped agents (`config.bravohubScopedAgents`, matched by `agent.id`/`agent_identifier`) still run **company-scoped and read-only** via `scopeCompanyId` (`{ column: 'company_id', value }`) with `readOnly` forced. Don't assume every call is unscoped when touching `ResolveAgentService.maybeLoadDatabaseTool`.
-- **`database_tool` is feature-gated.** `ResolveAgent` injects it only when `agents.database_tool=true` **and** `organization_id` set **and** `organization_features.database_connection` enabled **and** `organizations.database_url` populated. `chat_embed` is **not** part of this gate (it's an auth-path concern). Any missing prerequisite → the tool is silently absent (the LLM never sees it). Check these before debugging a "tool ignored" report.
+## `execute_sql`
+
+The tool is opt-in **per agent**. `MaybeLoadDatabaseToolService` adds it only when `agents.database_tool = true` **and** `agents.database_url` is set. `database_url` is `select: false` on the entity and is read only through `AgentRepository.findDatabaseConnection(id)`, together with the optional allow-list `database_tables` and `database_sample_rows`. A missing prerequisite means the LLM never sees the tool — check these columns before debugging a "tool ignored" report.
+
+<rules>
+- Keep every guardrail in `sanitizeSqlQuery` (`integration/customer-database/sql-guard.ts`, pure, with spec): single statement; first-verb allow-list (`select`/`insert`/`update`, only `select` in read-only mode); deny regex `\b(DELETE|ALTER|DROP|CREATE|REPLACE|TRUNCATE)\b` even after an allowed verb; ` LIMIT 5` appended when no `LIMIT` is present.
+- Dialect comes from the URL prefix (`postgres`/`postgresql` → PostgreSQL, `mysql`/`mysql2` → MySQL); anything else is rejected. The DTOs validate the same prefixes.
+- Connections go through the `CUSTOMER_DATABASE` port (host allowlist, timeouts); never open a `DataSource` from this scope.
+- `database_url` is a secret: never log it or return it from an endpoint.
+</rules>

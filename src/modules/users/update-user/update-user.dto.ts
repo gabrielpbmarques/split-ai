@@ -3,7 +3,6 @@ import {
   IsIn,
   IsOptional,
   IsString,
-  IsUUID,
   MaxLength,
 } from 'class-validator';
 
@@ -31,8 +30,4 @@ export class UpdateUserDto {
   @IsOptional()
   @IsIn(['active', 'inactive'])
   status?: UserStatus;
-
-  @IsOptional()
-  @IsUUID()
-  organization_id?: string | null;
 }

@@ -5,14 +5,12 @@ import { CreateAgentController } from 'src/modules/agents/create-agent/create-ag
 import { CreateAgentService } from 'src/modules/agents/create-agent/create-agent.service';
 import { AgentInstructionRepositoryModule } from 'src/modules/agents/repositories/agent-instruction.repository.module';
 import { AgentRepositoryModule } from 'src/modules/agents/repositories/agent.repository.module';
-import { OrganizationRepositoryModule } from 'src/modules/organizations/repositories/organization.repository.module';
 
 @Module({
   imports: [
     TransactionExecutorModule,
     AgentInstructionRepositoryModule,
     AgentRepositoryModule,
-    OrganizationRepositoryModule,
   ],
   controllers: [CreateAgentController],
   providers: [CreateAgentService],

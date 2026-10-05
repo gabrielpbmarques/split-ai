@@ -4,7 +4,6 @@ import {
   bearer,
   createAgent,
   createMessage,
-  createOrganization,
   createReport,
   createSession,
   createUser,
@@ -22,17 +21,11 @@ describe('reports (e2e)', () => {
   afterAll(() => t.close());
 
   async function seed() {
-    const organization = await createOrganization(t.dataSource);
-    const user = await createUser(t.dataSource, {
-      organization_id: organization.id,
-    });
-    const agent = await createAgent(t.dataSource, {
-      organization_id: organization.id,
-    });
+    const user = await createUser(t.dataSource);
+    const agent = await createAgent(t.dataSource);
     const session = await createSession(t.dataSource, {
       agent_id: agent.id,
       user_id: user.id,
-      organization_id: organization.id,
     });
     await createMessage(t.dataSource, {
       session_id: session.id,
@@ -47,28 +40,22 @@ describe('reports (e2e)', () => {
     const report = await createReport(t.dataSource, {
       session_id: session.id,
       agent_id: agent.id,
-      organization_id: organization.id,
       sentiment: 'positive',
       type: 'appointment',
     });
-    return { organization, user, agent, session, report };
+    return { user, agent, session, report };
   }
 
-  it('GET /report lists the organization reports with filters and pagination', async () => {
+  it('GET /report lists every report with filters and pagination', async () => {
     const { user, agent } = await seed();
-    const other = await createOrganization(t.dataSource);
-    const otherAgent = await createAgent(t.dataSource, {
-      organization_id: other.id,
-    });
+    const otherAgent = await createAgent(t.dataSource);
     const otherSession = await createSession(t.dataSource, {
       agent_id: otherAgent.id,
-      organization_id: other.id,
       user_id: user.id,
     });
     await createReport(t.dataSource, {
       session_id: otherSession.id,
       agent_id: otherAgent.id,
-      organization_id: other.id,
       sentiment: 'negative',
     });
 
@@ -77,7 +64,7 @@ describe('reports (e2e)', () => {
       .get('/report')
       .set('Authorization', bearer(user))
       .expect(200);
-    expect(list.body.total).toBe(1);
+    expect(list.body.total).toBe(2);
 
     const filtered = await t
       .http()
@@ -94,16 +81,16 @@ describe('reports (e2e)', () => {
       .set('Authorization', bearer(user))
       .expect(400);
 
-    const admin = await createUser(t.dataSource, { role: 'admin' });
-    const all = await t
+    const byOtherAgent = await t
       .http()
       .get('/report')
-      .set('Authorization', bearer(admin))
+      .query({ sentiment: 'negative', agent_id: otherAgent.id })
+      .set('Authorization', bearer(user))
       .expect(200);
-    expect(all.body.total).toBe(2);
+    expect(byOtherAgent.body.total).toBe(1);
   });
 
-  it('GET /report/:id and /report/:id/conversation respect the organization scope', async () => {
+  it('GET /report/:id and /report/:id/conversation return the report and its messages', async () => {
     const { user, report } = await seed();
 
     const one = await t
@@ -126,15 +113,6 @@ describe('reports (e2e)', () => {
       .set('Authorization', bearer(user))
       .expect(404);
 
-    const outsider = await createUser(t.dataSource, {
-      organization_id: (await createOrganization(t.dataSource)).id,
-    });
-    await t
-      .http()
-      .get(`/report/${report.id}`)
-      .set('Authorization', bearer(outsider))
-      .expect(403);
-
     const guest = await createUser(t.dataSource, { role: 'guest' });
     await t
       .http()
@@ -143,7 +121,7 @@ describe('reports (e2e)', () => {
       .expect(403);
   });
 
-  it('dashboards aggregate statistics, charts and dashboard-data for the organization', async () => {
+  it('dashboards aggregate statistics, charts and dashboard-data', async () => {
     const { user } = await seed();
 
     const statistics = await t
@@ -165,6 +143,7 @@ describe('reports (e2e)', () => {
       .set('Authorization', bearer(user))
       .expect(200);
     expect(charts.body.sentiment.datasets[0].data).toEqual([1, 0, 0]);
+    expect(charts.body).not.toHaveProperty('tokens');
 
     const data = await t
       .http()

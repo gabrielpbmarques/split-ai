@@ -66,10 +66,6 @@ const envSchema = z.object({
 
   JWT_SECRET: z.string().min(1),
   JWT_EXPIRATION_HOURS: z.coerce.number().int().positive().default(24),
-  BRAVOHUB_JWT_SECRET: z.string().min(1).optional(),
-  BRAVOHUB_ORG_ID: z.string().min(1).optional(),
-  BRAVOHUB_SCOPED_AGENTS: csvList,
-  AUTH_PRINCIPAL_CACHE_TTL_MS: z.coerce.number().int().min(0).default(30_000),
 
   ANTHROPIC_API_KEY: z.string().min(1).optional(),
   ANTHROPIC_BASE_URL: z
@@ -92,19 +88,11 @@ const envSchema = z.object({
 
   SENTRY_DSN: z.string().url().optional(),
 
-  SENDGRID_API_KEY: z.string().min(1).optional(),
-  SENDGRID_EMAIL_DEFAULT_FROM: z.string().min(1).optional(),
-
   TWILIO_ACCOUNT_SID: z.string().min(1).optional(),
   TWILIO_AUTH_TOKEN: z.string().min(1).optional(),
-  TWILIO_PHONE_NUMBER: z.string().min(1).optional(),
   TWILIO_WHATSAPP_NUMBER: z.string().min(1).optional(),
 
   SPIDER_API_KEY: z.string().min(1).optional(),
-
-  STRIPE_SECRET_KEY: z.string().min(1).optional(),
-  STRIPE_PUBLISHABLE_KEY: z.string().min(1).optional(),
-  STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
 
   TTS_PROVIDER: z.enum(['google', 'elevenlabs']).default('google'),
   GCS_AUDIO_BUCKET: z.string().min(1).default('alert-calls-audios'),

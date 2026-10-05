@@ -8,11 +8,9 @@ import {
 } from '@nestjs/swagger';
 import { FastifyReply } from 'fastify';
 
-import { AuthenticatedUser } from 'src/auth/authenticated-user';
 import { DeleteAgentConnectionDto } from 'src/modules/agent-connections/delete-agent-connection/delete-agent-connection.dto';
 import { DeleteAgentConnectionService } from 'src/modules/agent-connections/delete-agent-connection/delete-agent-connection.service';
 import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
-import { User as AuthUser } from 'src/shared/decorators/user.decorator';
 
 @ApiTags('agent-connections')
 @Controller('agent-connection')
@@ -30,9 +28,8 @@ export class DeleteAgentConnectionController {
   async handle(
     @Res() res: FastifyReply,
     @Body() dto: DeleteAgentConnectionDto,
-    @AuthUser() user: AuthenticatedUser,
   ): Promise<FastifyReply> {
-    await this.deleteAgentConnectionService.execute(dto.id, user);
+    await this.deleteAgentConnectionService.execute(dto.id);
     return res.status(204).send();
   }
 }

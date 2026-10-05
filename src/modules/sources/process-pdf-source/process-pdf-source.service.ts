@@ -16,14 +16,13 @@ export class ProcessPdfSourceService {
   ) {}
 
   async execute(params: ProcessSourceInput): Promise<number> {
-    const { buffer, sourceType, agentId, organizationId, sourceId } = params;
+    const { buffer, sourceType, agentId, sourceId } = params;
 
     const chunks = await this.loadPdfService.execute(buffer);
     const metadata = buildSourceMetadata({
       sourceType,
       defaultSourceType: 'pdf',
       agentId,
-      organizationId,
       sourceId,
     });
 

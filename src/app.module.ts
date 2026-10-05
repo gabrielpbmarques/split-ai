@@ -12,13 +12,8 @@ import { AgentConnectionsModule } from 'src/modules/agent-connections/agent-conn
 import { AgentRuntimeModule } from 'src/modules/agent-runtime/agent-runtime.module';
 import { AgentRuntimeContractsModule } from 'src/modules/agent-runtime/contracts/agent-runtime-contracts.module';
 import { AgentsModule } from 'src/modules/agents/agents.module';
-import { ApiKeysModule } from 'src/modules/api-keys/api-keys.module';
 import { AuthFlowsModule } from 'src/modules/auth-flows/auth-flows.module';
-import { BillingModule } from 'src/modules/billing/billing.module';
 import { ChatModule } from 'src/modules/chat/chat.module';
-import { MembersModule } from 'src/modules/members/members.module';
-import { NotificationsModule } from 'src/modules/notifications/notifications.module';
-import { OrganizationsModule } from 'src/modules/organizations/organizations.module';
 import { ReportsModule } from 'src/modules/reports/reports.module';
 import { RetrievalModule } from 'src/modules/retrieval/retrieval.module';
 import { SessionsModule } from 'src/modules/sessions/sessions.module';
@@ -68,13 +63,8 @@ import { AppLoggerModule } from 'src/shared/observability/logger.module';
     AgentRuntimeModule,
     AgentRuntimeContractsModule,
     AgentsModule,
-    ApiKeysModule,
     AuthFlowsModule,
-    BillingModule,
     ChatModule,
-    MembersModule,
-    NotificationsModule,
-    OrganizationsModule,
     ReportsModule,
     RetrievalModule,
     SessionsModule,

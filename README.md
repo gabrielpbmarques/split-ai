@@ -1,6 +1,6 @@
 # split-ai
 
-Backend NestJS 10 + Fastify de um assistente de IA multi-organização: chat com agentes (LangChain / LangGraph + Anthropic Claude), ingestão de fontes (sites, PDF, DOCX, OCR), busca semântica (Voyage AI + Supabase pgvector), voz, WhatsApp, API keys e cobrança (Stripe).
+Motor de IA pessoal em NestJS 11 + Fastify 5: chat com agentes (LangChain / LangGraph + Anthropic Claude), agentes como ferramentas de outros agentes, ingestão de fontes (sites, PDF, DOCX, OCR), busca semântica (Voyage AI + Supabase pgvector), consulta a banco externo por agente, voz e WhatsApp. Uma instalação, poucos usuários, sem organizações nem cobrança.
 
 ## Requisitos
 
@@ -32,7 +32,6 @@ bun run test             # jest (unitários)
 bun run test:e2e         # e2e contra um Postgres (TEST_DATABASE_URL ou `docker compose up postgres`)
 bun run di:verify        # confere se cada módulo importa o que seus providers injetam
 bun run di:boot-check    # monta o container Nest sem banco
-bun run seed:maia        # seed da organização MAIA e planos base
 bun run db:migrate       # aplica migrations pendentes (CI faz isso antes do deploy)
 bun run db:show          # lista migrations aplicadas e pendentes
 bun run db:generate <caminho>  # gera migration a partir do diff entidades × banco
@@ -52,15 +51,15 @@ src/
   shared/http/               adapter Fastify, pipe de validação global, filtro de exceção, health (/health/{startup,live,ready})
   shared/observability/      correlação de request (x-request-id), logger pino, Sentry
   shared/contracts/          tipos compartilhados (barrel) e ErrorResponse
-  shared/decorators/         @Public, @RequirePermissions, @RequireActiveOrganization, @User
+  shared/decorators/         @Public, @RequirePermissions, @User
   shared/utils/              funções puras
-  auth/                      guards globais (autenticação + autorização por permissão), TokenVerifier, AccessScopeService
+  auth/                      guards globais (autenticação JWT + autorização por permissão derivada do papel), TokenVerifier
   modules/<dominio>/         domínios de negócio: <dominio>.module.ts (agregador), <caso-de-uso>/, repositories/, contracts/
   infrastructure/database/schema/  entidades TypeORM + ENTITIES
-  infrastructure/<recurso>/  SDKs externos (stripe, twilio, sendgrid, supabase, spider, anthropic, voyage-*, gcp-storage, google-voice, eleven-labs)
+  infrastructure/integration/  portas + adaptadores externos (twilio, supabase, spider, anthropic, voyage, google, eleven-labs, customer-database) e mocks
 ```
 
-Guia completo para quem trabalha no código: `CLAUDE.md`. Plano de refatoração em andamento: `docs/plano-refatoracao-backend-rules.md`.
+Guia completo para quem trabalha no código: `CLAUDE.md`, com as regras de arquitetura em `.claude/rules/` e o fluxo de nova funcionalidade na skill `new-feature-flow`.
 
 ## Deploy
 

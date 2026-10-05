@@ -8,10 +8,8 @@ import {
 } from '@nestjs/swagger';
 import { FastifyReply } from 'fastify';
 
-import { AuthenticatedUser } from 'src/auth/authenticated-user';
 import { GetAgentService } from 'src/modules/agents/get-agent/get-agent.service';
 import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
-import { User as AuthUser } from 'src/shared/decorators/user.decorator';
 
 @ApiTags('agents')
 @Controller('agent')
@@ -26,10 +24,9 @@ export class GetAgentController {
   @ApiForbiddenResponse({ description: 'Permissão insuficiente' })
   async handle(
     @Param('id') id: string,
-    @AuthUser() user: AuthenticatedUser,
     @Res() res: FastifyReply,
   ): Promise<FastifyReply> {
-    const data = await this.getAgentService.execute(id, user);
+    const data = await this.getAgentService.execute(id);
     return res.status(200).send({ data });
   }
 }

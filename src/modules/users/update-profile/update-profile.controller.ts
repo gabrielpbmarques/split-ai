@@ -9,7 +9,6 @@ import {
 import { FastifyReply } from 'fastify';
 
 import { AuthenticatedUser } from 'src/auth/authenticated-user';
-import { requireUserId } from 'src/auth/request-user';
 import { UpdateProfileDto } from 'src/modules/users/update-profile/update-profile.dto';
 import { UpdateProfileService } from 'src/modules/users/update-profile/update-profile.service';
 import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
@@ -31,10 +30,7 @@ export class UpdateProfileController {
     @Body() dto: UpdateProfileDto,
     @AuthUser() user: AuthenticatedUser,
   ): Promise<FastifyReply> {
-    const result = await this.updateProfileService.execute(
-      requireUserId(user),
-      dto,
-    );
+    const result = await this.updateProfileService.execute(user.id, dto);
     return res.status(200).send(result);
   }
 }

@@ -16,7 +16,7 @@ export class ProcessDocxSourceService {
   ) {}
 
   async execute(params: ProcessSourceInput): Promise<number> {
-    const { buffer, sourceType, agentId, organizationId, sourceId } = params;
+    const { buffer, sourceType, agentId, sourceId } = params;
 
     const { value } = await mammoth.extractRawText({ buffer });
     const text = (value ?? '').trim();
@@ -29,7 +29,6 @@ export class ProcessDocxSourceService {
       sourceType,
       defaultSourceType: 'docx',
       agentId,
-      organizationId,
       sourceId,
     });
 

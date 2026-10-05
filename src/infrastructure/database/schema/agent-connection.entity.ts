@@ -12,7 +12,6 @@ import {
 } from 'typeorm';
 
 import { AgentEntity } from 'src/infrastructure/database/schema/agent.entity';
-import { OrganizationEntity } from 'src/infrastructure/database/schema/organization.entity';
 
 @Entity('agent_connections')
 @Index(
@@ -27,9 +26,6 @@ import { OrganizationEntity } from 'src/infrastructure/database/schema/organizat
 export class AgentConnectionEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
-
-  @Column({ type: 'uuid' })
-  organization_id!: string;
 
   @Column({ type: 'uuid' })
   principal_agent_id!: string;
@@ -64,8 +60,4 @@ export class AgentConnectionEntity {
   @ManyToOne(() => AgentEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'child_agent_id' })
   childAgent!: AgentEntity;
-
-  @ManyToOne(() => OrganizationEntity)
-  @JoinColumn({ name: 'organization_id' })
-  organization!: OrganizationEntity;
 }

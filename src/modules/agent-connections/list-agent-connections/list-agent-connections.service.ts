@@ -1,7 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
-import { AccessScopeService } from 'src/auth/access-scope.service';
-import type { AuthenticatedUser } from 'src/auth/authenticated-user';
 import {
   AgentConnectionRepository,
   type AgentConnectionView,
@@ -19,23 +17,13 @@ export class ListAgentConnectionsService {
   constructor(
     private readonly agentConnectionRepository: AgentConnectionRepository,
     private readonly agentRepository: AgentRepository,
-    private readonly accessScope: AccessScopeService,
   ) {}
 
-  async execute(
-    principalAgentId: string,
-    user: AuthenticatedUser,
-  ): Promise<ListAgentConnectionsResult> {
+  async execute(principalAgentId: string): Promise<ListAgentConnectionsResult> {
     const principal = await this.agentRepository.findById(principalAgentId);
     if (!principal) {
       throw new NotFoundException('Agente principal não encontrado.');
     }
-    this.accessScope.ensureCan(
-      user,
-      'agent-connection.manage',
-      { organizationId: principal.organization_id },
-      'Agente não pertence à sua organização.',
-    );
 
     const connections =
       await this.agentConnectionRepository.listViewsByPrincipalAgentId(

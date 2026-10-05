@@ -9,12 +9,7 @@ import type { FastifyRequest } from 'fastify';
 
 import { IS_PUBLIC_KEY } from 'src/auth/auth.constants';
 import { PrincipalResolverService } from 'src/auth/principal-resolver.service';
-import { type AuthScheme, TokenVerifier } from 'src/auth/token.verifier';
-
-const SCHEMES: Record<string, AuthScheme> = {
-  bearer: 'bearer',
-  apikey: 'apikey',
-};
+import { TokenVerifier } from 'src/auth/token.verifier';
 
 @Injectable()
 export class AuthenticationGuard implements CanActivate {
@@ -24,7 +19,7 @@ export class AuthenticationGuard implements CanActivate {
     private readonly principalResolver: PrincipalResolverService,
   ) {}
 
-  async canActivate(context: ExecutionContext): Promise<boolean> {
+  canActivate(context: ExecutionContext): boolean {
     if (context.getType() !== 'http') {
       return true;
     }
@@ -47,18 +42,18 @@ export class AuthenticationGuard implements CanActivate {
       throw new UnauthorizedException('Token de acesso ausente');
     }
 
-    if (!scheme) {
+    if (scheme !== 'bearer') {
       throw new UnauthorizedException('Esquema de autenticação não suportado');
     }
 
-    const principal = await this.tokenVerifier.verify(scheme, token);
-    request.user = await this.principalResolver.resolve(principal);
+    const payload = this.tokenVerifier.verify(token);
+    request.user = this.principalResolver.resolve(payload);
 
     return true;
   }
 
   private parseAuthorization(header: string | undefined): {
-    scheme?: AuthScheme;
+    scheme?: string;
     token?: string;
   } {
     if (!header) {
@@ -68,6 +63,6 @@ export class AuthenticationGuard implements CanActivate {
     const [rawScheme, ...rest] = header.trim().split(/\s+/);
     const token = rest.join(' ').trim() || undefined;
 
-    return { scheme: SCHEMES[rawScheme.toLowerCase()], token };
+    return { scheme: rawScheme.toLowerCase(), token };
   }
 }

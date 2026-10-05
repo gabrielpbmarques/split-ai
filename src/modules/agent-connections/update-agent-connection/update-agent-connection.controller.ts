@@ -8,11 +8,9 @@ import {
 } from '@nestjs/swagger';
 import { FastifyReply } from 'fastify';
 
-import { AuthenticatedUser } from 'src/auth/authenticated-user';
 import { UpdateAgentConnectionDto } from 'src/modules/agent-connections/update-agent-connection/update-agent-connection.dto';
 import { UpdateAgentConnectionService } from 'src/modules/agent-connections/update-agent-connection/update-agent-connection.service';
 import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
-import { User as AuthUser } from 'src/shared/decorators/user.decorator';
 
 @ApiTags('agent-connections')
 @Controller('agent-connection')
@@ -30,9 +28,8 @@ export class UpdateAgentConnectionController {
   async handle(
     @Res() res: FastifyReply,
     @Body() dto: UpdateAgentConnectionDto,
-    @AuthUser() user: AuthenticatedUser,
   ): Promise<FastifyReply> {
-    const result = await this.updateAgentConnectionService.execute(dto, user);
+    const result = await this.updateAgentConnectionService.execute(dto);
     return res.status(200).send(result);
   }
 }

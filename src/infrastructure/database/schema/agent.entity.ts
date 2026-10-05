@@ -11,7 +11,6 @@ import {
 } from 'typeorm';
 
 import { AgentInstructionEntity } from 'src/infrastructure/database/schema/agent-instruction.entity';
-import { OrganizationEntity } from 'src/infrastructure/database/schema/organization.entity';
 import { UserEntity } from 'src/infrastructure/database/schema/user.entity';
 
 @Entity('agents')
@@ -49,6 +48,15 @@ export class AgentEntity {
   @Column({ type: 'boolean', nullable: true, default: true })
   database_tool!: boolean | null;
 
+  @Column({ type: 'text', nullable: true, select: false })
+  database_url!: string | null;
+
+  @Column('text', { array: true, nullable: true })
+  database_tables!: string[] | null;
+
+  @Column({ type: 'int', nullable: true })
+  database_sample_rows!: number | null;
+
   @Column('text', { array: true, nullable: true })
   sites!: string[] | null;
 
@@ -64,13 +72,6 @@ export class AgentEntity {
   @ManyToOne(() => UserEntity, (user) => user.agents)
   @JoinColumn({ name: 'user_id' })
   user!: UserEntity;
-
-  @Column({ type: 'uuid', nullable: true })
-  organization_id!: string | null;
-
-  @ManyToOne(() => OrganizationEntity, (organization) => organization.agents)
-  @JoinColumn({ name: 'organization_id' })
-  organization!: OrganizationEntity;
 
   @CreateDateColumn()
   created_at!: Date;

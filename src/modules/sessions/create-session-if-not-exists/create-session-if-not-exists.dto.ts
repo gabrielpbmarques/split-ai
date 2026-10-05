@@ -18,11 +18,6 @@ export class CreateSessionIfNotExistsDto {
   user_id?: string;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  organization_id?: string;
-
-  @IsOptional()
   @IsDateString()
   expires_at?: string;
 }

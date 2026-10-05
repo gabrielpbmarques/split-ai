@@ -1,12 +1,7 @@
 import { randomUUID } from 'crypto';
 
 import { UserEntity } from 'src/infrastructure/database/schema';
-import {
-  bearer,
-  createOrganization,
-  createUser,
-  PASSWORD,
-} from 'test/support/factories';
+import { bearer, createUser, PASSWORD } from 'test/support/factories';
 import { createTestApp, type TestApp } from 'test/support/test-app';
 
 describe('users (e2e)', () => {
@@ -21,13 +16,11 @@ describe('users (e2e)', () => {
 
   it('POST /user creates a user (admin only) and refuses duplicated e-mail or phone with 409', async () => {
     const admin = await createUser(t.dataSource, { role: 'admin' });
-    const organization = await createOrganization(t.dataSource);
     const payload = {
       name: 'Criado',
       email: 'criado@example.test',
       phone: '5511912345678',
       password: PASSWORD,
-      organization_id: organization.id,
     };
 
     const { body } = await t

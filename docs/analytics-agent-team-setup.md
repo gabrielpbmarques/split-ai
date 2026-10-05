@@ -6,7 +6,7 @@ Decompõe o agente monolítico de analytics **`a951e928-2b86-4737-8aee-88fde5eb2
 
 > **Pré-requisito de código já aplicado neste repo:** `CreateAgentDto`/`UpdateAgentDto` + services agora expõem `databaseTool` / `vectorSearchTool`. Sem isso, o Narrador nasceria com `database_tool=true` (default da coluna) e carregaria o schema, derrotando o isolamento.
 
-Todas as chamadas: `Authorization: Bearer <jwt owner|admin|member>`. Sem prefixo `/api`. Substitua `<ORG_ID>` pela organização do supervisor.
+Todas as chamadas: `Authorization: Bearer <jwt admin|user>`. Sem prefixo `/api`.
 
 ---
 
@@ -25,7 +25,7 @@ Todas as chamadas: `Authorization: Bearer <jwt owner|admin|member>`. Sem prefixo
 GET /agent/a951e928-2b86-4737-8aee-88fde5eb27d6
 ```
 
-Anote `model`, `withHistory`, `organization_id`, `parser` e **as `instructions` atuais**. O PATCH do Passo 4 preserva o `id` e o histórico, mas **sobrescreve as instruções** — guarde-as para reverter.
+Anote `model`, `withHistory`, `parser` e **as `instructions` atuais**. O PATCH do Passo 4 preserva o `id` e o histórico, mas **sobrescreve as instruções** — guarde-as para reverter.
 
 ---
 
@@ -100,7 +100,7 @@ POST /agent/create
 ## Passo 3 — Validar que os flags pegaram (obrigatório)
 
 ```sql
-SELECT name, agent_identifier, model, database_tool, vector_search_tool, with_history, organization_id
+SELECT name, agent_identifier, model, database_tool, vector_search_tool, with_history, (database_url IS NOT NULL) AS has_db_url
 FROM agents
 WHERE agent_identifier IN ('analytics-sql-analyst','analytics-insights-narrator');
 ```
@@ -194,22 +194,14 @@ POST /agent-connection/create
 
 ## Passo 7 — Checklist de gating do `database_tool` (antes do teste fim-a-fim)
 
-Todos precisam ser verdadeiros, senão `execute_sql` some silenciosamente para o Analista SQL:
+Os dois precisam ser verdadeiros no próprio agente, senão `execute_sql` some silenciosamente para o Analista SQL:
 
 ```sql
--- (a) filho SQL com flag e org corretos (mesma org do supervisor)
-SELECT database_tool, organization_id FROM agents WHERE agent_identifier = 'analytics-sql-analyst';
-
--- (b) feature database_connection habilitada para a org
-SELECT of.enabled
-FROM organization_features of
-JOIN features f ON f.id = of.feature_id
-WHERE f.key = 'database_connection' AND of.organization_id = '<ORG_ID>';
-
--- (c) connection string preenchida
-SELECT (database_url IS NOT NULL) AS has_db_url, chat_embed_enabled, (chat_embed_token IS NOT NULL) AS has_token
-FROM organizations WHERE id = '<ORG_ID>';
+SELECT database_tool, (database_url IS NOT NULL) AS has_db_url, database_tables, database_sample_rows
+FROM agents WHERE agent_identifier = 'analytics-sql-analyst';
 ```
+
+Para configurar: `PATCH /agent/analytics-sql-analyst` com `{ "databaseTool": true, "databaseUrl": "postgres://…", "databaseTables": ["…"], "databaseSampleRows": 0 }`. A URL nunca volta pela API.
 
 ---
 
@@ -246,10 +238,10 @@ No NDJSON: supervisor chama `consultar_dados_sql` → recebe dados brutos → (s
 
 ## Caveats operacionais
 
-- **Billing v1 não mede tokens dos filhos.** `invokeConnectedAgent` não reporta uso; `QuestionService` cobra créditos 1× no nível do principal. Decompor multiplica o custo Anthropic real (~2–3× na Opção A) sem refletir na fatura. Dívida explícita até v2 medir filhos. Orgs `unlimited` e chamadas `role: 'service'` já ficam fora do billing.
+- **Custo multiplicado.** Decompor multiplica o custo Anthropic real (~2–3× na Opção A): cada filho é uma execução completa do modelo. Não há billing nem medição de tokens no produto; acompanhe pelo LangSmith.
 - **Latência sequencial.** O Analista SQL reinicializa um `DataSource` TypeORM e roda `getTableInfo()` **a cada chamada** (sem cache). Perguntas conceituais cortam caminho (supervisor responde via vector search).
 - **`recursionLimit ~25`** (default LangGraph, sem override). O risco real está no grafo do filho SQL em queries que erram repetidas vezes — por isso o teto de 3 tentativas no prompt.
-- **`execute_sql` é read-only + company-scoped para agentes BravoHub.** Para chamadas com escopo de empresa (token BravoHub verificado), o `LoadDatabaseTool` roda em `readOnly` (bloqueia INSERT/UPDATE além de DELETE/ALTER/DROP/CREATE/REPLACE/TRUNCATE) e exige o predicado `company_id = <escopo>` (rejeita outra empresa, `IN`, faixas/desigualdades). O escopo é derivado do JWT e propagado até o Analista SQL. Detalhes: **`bravohub-analytics-integration.md`**. Para outros orgs (sem escopo), o comportamento antigo se mantém (aceita INSERT/UPDATE). Isolamento por regex é defesa-em-profundidade — não substitui um usuário de banco read-only por empresa.
+- **`execute_sql` aceita SELECT/INSERT/UPDATE.** O escopo por empresa (`company_id`) do BravoHub foi removido junto com a integração. Para garantir leitura apenas, use na `databaseUrl` um usuário de banco read-only — o guard por regex é defesa em profundidade, não isolamento.
 
 ---
 

@@ -3,7 +3,6 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
-  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -22,10 +21,6 @@ export class SourceEntity {
 
   @Column({ type: 'uuid' })
   agent_id!: string;
-
-  @Index('sources_organization_id_idx')
-  @Column({ type: 'uuid', nullable: true })
-  organization_id!: string | null;
 
   @ManyToOne(() => AgentEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'agent_id' })

@@ -12,7 +12,7 @@ import type {
 } from 'src/infrastructure/integration/customer-database.port';
 import type { IntegrationState } from 'src/infrastructure/integration/integration.state';
 
-const MOCK_SCHEMA = `CREATE TABLE customers (id INTEGER, name TEXT, company_id INTEGER)`;
+const MOCK_SCHEMA = `CREATE TABLE customers (id INTEGER, name TEXT)`;
 
 export class MockCustomerDatabaseGateway implements CustomerDatabaseGateway {
   readonly name = 'customer-database';

@@ -1,12 +1,7 @@
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import type { MemorySaver } from '@langchain/langgraph';
 import type { PostgresSaver } from '@langchain/langgraph-checkpoint-postgres';
-import {
-  ForbiddenException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { createAgent, createMiddleware } from 'langchain';
 
 import type { AgentEntity } from 'src/infrastructure/database/schema';
@@ -51,17 +46,10 @@ export class ResolveAgentService {
     memorySaver?: MemorySaver,
     connectionContext?: { depth: number; visited: string[] },
   ): Promise<ResolvedAgent> {
-    const agent =
-      await this.agentRepository.findByIdOrIdentifierWithOrganization(agentId);
+    const agent = await this.agentRepository.findByIdOrIdentifier(agentId);
 
     if (!agent) {
       throw new NotFoundException('Agente não encontrado');
-    }
-
-    if (agent.organization?.status === 'inactive') {
-      throw new ForbiddenException(
-        'A organização responsável por este agente está inativa.',
-      );
     }
 
     const latestInstructions =
@@ -73,26 +61,16 @@ export class ResolveAgentService {
 
     const runnableOpts = { withHistory: !!agent.with_history };
 
-    const scopeCompanyId =
-      promptVariables?.companyId != null &&
-      `${promptVariables.companyId}` !== ''
-        ? String(promptVariables.companyId)
-        : undefined;
-
     const chat = this.loadChat(agent);
     const tools = await this.loadAgentToolsService.execute(
       agent,
       connectionContext,
-      scopeCompanyId,
     );
 
     const systemPrompt = await this.buildSystemPromptService.execute(
       latestInstructions.instructions,
       tools,
-      {
-        ...promptVariables,
-        organizationId: agent.organization_id,
-      },
+      promptVariables,
     );
 
     const isDelegatedChild = (connectionContext?.depth ?? 0) > 0;
@@ -119,7 +97,6 @@ export class ResolveAgentService {
       tools,
       runnableOpts,
       sites: agent.sites ?? undefined,
-      organization_id: agent.organization_id ?? undefined,
       runnable,
     };
   }

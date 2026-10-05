@@ -4,14 +4,7 @@ import {
   AgentEntity,
   AgentInstructionEntity,
 } from 'src/infrastructure/database/schema';
-import {
-  bearer,
-  createAgent,
-  createAgentConnection,
-  createOrganization,
-  createPlan,
-  createUser,
-} from 'test/support/factories';
+import { bearer, createAgent, createUser } from 'test/support/factories';
 import { createTestApp, type TestApp } from 'test/support/test-app';
 
 const instructions = {
@@ -30,18 +23,9 @@ describe('agents (e2e)', () => {
   beforeEach(() => t.reset());
   afterAll(() => t.close());
 
-  async function staffInOrganization(role: 'user' | 'admin' = 'user') {
-    const organization = await createOrganization(t.dataSource);
-    const user = await createUser(t.dataSource, {
-      organization_id: organization.id,
-      role,
-    });
-    return { organization, user };
-  }
-
   describe('POST /agent/create', () => {
-    it('creates the agent with its instructions scoped to the user organization', async () => {
-      const { organization, user } = await staffInOrganization();
+    it('creates the agent with its instructions and owner', async () => {
+      const user = await createUser(t.dataSource);
 
       const { body } = await t
         .http()
@@ -56,7 +40,7 @@ describe('agents (e2e)', () => {
       expect(agent).toMatchObject({
         name: 'Vendas',
         agent_identifier: 'vendas',
-        organization_id: organization.id,
+        user_id: user.id,
         vector_search_tool: true,
       });
 
@@ -66,20 +50,53 @@ describe('agents (e2e)', () => {
       expect(stored.instructions).toEqual(instructions);
     });
 
-    it('enforces the plan max_agents quota (403), validates the body (400) and blocks guests (403)', async () => {
-      const plan = await createPlan(t.dataSource, { max_agents: 1 });
-      const organization = await createOrganization(t.dataSource, { plan });
-      const user = await createUser(t.dataSource, {
-        organization_id: organization.id,
+    it('stores the external database connection without exposing the url', async () => {
+      const user = await createUser(t.dataSource);
+
+      const { body } = await t
+        .http()
+        .post('/agent/create')
+        .set('Authorization', bearer(user))
+        .send({
+          name: 'Analista',
+          instructions,
+          databaseTool: true,
+          databaseUrl: 'postgres://reader:secret@db.example.test:5432/loja',
+          databaseTables: ['pedidos', 'clientes'],
+          databaseSampleRows: 0,
+        })
+        .expect(201);
+
+      const stored = await t.dataSource
+        .getRepository(AgentEntity)
+        .createQueryBuilder('a')
+        .addSelect('a.database_url')
+        .where('a.id = :id', { id: body.id })
+        .getOneOrFail();
+      expect(stored).toMatchObject({
+        database_url: 'postgres://reader:secret@db.example.test:5432/loja',
+        database_tables: ['pedidos', 'clientes'],
+        database_sample_rows: 0,
       });
-      await createAgent(t.dataSource, { organization_id: organization.id });
+
+      const read = await t
+        .http()
+        .get(`/agent/${body.id}`)
+        .set('Authorization', bearer(user))
+        .expect(200);
+      expect(JSON.stringify(read.body)).not.toContain('secret');
 
       await t
         .http()
         .post('/agent/create')
         .set('Authorization', bearer(user))
-        .send({ name: 'Segundo', instructions })
-        .expect(403);
+        .send({ name: 'x', instructions, databaseUrl: 'sqlite://local.db' })
+        .expect(400);
+    });
+
+    it('validates the body (400), blocks guests (403) and anonymous callers (401)', async () => {
+      const user = await createUser(t.dataSource);
+
       await t
         .http()
         .post('/agent/create')
@@ -102,7 +119,7 @@ describe('agents (e2e)', () => {
     });
 
     it('creates an attendant agent with the default directives merged in', async () => {
-      const { user } = await staffInOrganization();
+      const user = await createUser(t.dataSource);
 
       const { body } = await t
         .http()
@@ -125,14 +142,13 @@ describe('agents (e2e)', () => {
   });
 
   describe('GET /agent/:id, GET /agent/list, GET /agent', () => {
-    it('reads by id or identifier within the organization and refuses other organizations', async () => {
-      const { organization, user } = await staffInOrganization();
+    it('reads by id or identifier, including agents created by someone else', async () => {
+      const user = await createUser(t.dataSource);
       const agent = await createAgent(t.dataSource, {
-        organization_id: organization.id,
         agent_identifier: 'suporte',
       });
-      const foreign = await createAgent(t.dataSource, {
-        organization_id: (await createOrganization(t.dataSource)).id,
+      const othersAgent = await createAgent(t.dataSource, {
+        user_id: (await createUser(t.dataSource)).id,
       });
 
       const byId = await t
@@ -154,9 +170,9 @@ describe('agents (e2e)', () => {
 
       await t
         .http()
-        .get(`/agent/${foreign.id}`)
+        .get(`/agent/${othersAgent.id}`)
         .set('Authorization', bearer(user))
-        .expect(403);
+        .expect(200);
       await t
         .http()
         .get(`/agent/${randomUUID()}`)
@@ -164,20 +180,11 @@ describe('agents (e2e)', () => {
         .expect(404);
     });
 
-    it('lists only the organization agents with pagination; admins list everything', async () => {
-      const { organization, user } = await staffInOrganization();
-      await createAgent(t.dataSource, {
-        organization_id: organization.id,
-        name: 'A',
-      });
-      await createAgent(t.dataSource, {
-        organization_id: organization.id,
-        name: 'B',
-      });
-      await createAgent(t.dataSource, {
-        organization_id: (await createOrganization(t.dataSource)).id,
-        name: 'C',
-      });
+    it('lists every agent with pagination; the full listing is admin only', async () => {
+      const user = await createUser(t.dataSource);
+      await createAgent(t.dataSource, { name: 'A' });
+      await createAgent(t.dataSource, { name: 'B' });
+      await createAgent(t.dataSource, { name: 'C' });
 
       const list = await t
         .http()
@@ -185,7 +192,7 @@ describe('agents (e2e)', () => {
         .query({ limit: 1 })
         .set('Authorization', bearer(user))
         .expect(200);
-      expect(list.body).toMatchObject({ total: 2, totalPages: 2, limit: 1 });
+      expect(list.body).toMatchObject({ total: 3, totalPages: 3, limit: 1 });
       expect(list.body.items[0]).toHaveProperty('is_tool');
 
       await t
@@ -205,11 +212,9 @@ describe('agents (e2e)', () => {
   });
 
   describe('PATCH /agent/:id', () => {
-    it('updates fields and instructions, keeps the organization for non-admins', async () => {
-      const { organization, user } = await staffInOrganization();
-      const agent = await createAgent(t.dataSource, {
-        organization_id: organization.id,
-      });
+    it('updates fields, instructions and the database connection', async () => {
+      const user = await createUser(t.dataSource);
+      const agent = await createAgent(t.dataSource);
 
       await t
         .http()
@@ -220,7 +225,7 @@ describe('agents (e2e)', () => {
           temperature: 0.7,
           sites: ['https://example.test'],
           instructions: { ...instructions, objetivo: 'Novo objetivo' },
-          organizationId: randomUUID(),
+          databaseTables: ['pedidos'],
         })
         .expect(200);
 
@@ -231,7 +236,7 @@ describe('agents (e2e)', () => {
         name: 'Renomeado',
         temperature: 0.7,
         sites: ['https://example.test'],
-        organization_id: organization.id,
+        database_tables: ['pedidos'],
       });
 
       await t
@@ -239,6 +244,12 @@ describe('agents (e2e)', () => {
         .patch(`/agent/${agent.id}`)
         .set('Authorization', bearer(user))
         .send({ temperature: 'quente' })
+        .expect(400);
+      await t
+        .http()
+        .patch(`/agent/${agent.id}`)
+        .set('Authorization', bearer(user))
+        .send({ organizationId: randomUUID() })
         .expect(400);
       await t
         .http()
@@ -251,11 +262,9 @@ describe('agents (e2e)', () => {
 
   describe('POST /agent/load-sites', () => {
     it('crawls through the mocked site crawler and indexes into the mocked vector store (admin only)', async () => {
-      const { organization, user } = await staffInOrganization();
+      const user = await createUser(t.dataSource);
       const admin = await createUser(t.dataSource, { role: 'admin' });
-      const agent = await createAgent(t.dataSource, {
-        organization_id: organization.id,
-      });
+      const agent = await createAgent(t.dataSource);
 
       await t
         .http()
@@ -273,14 +282,10 @@ describe('agents (e2e)', () => {
   });
 
   describe('agent connections', () => {
-    it('connects two agents of the same organization, lists, updates, saves layout and deletes', async () => {
-      const { organization, user } = await staffInOrganization();
-      const principal = await createAgent(t.dataSource, {
-        organization_id: organization.id,
-      });
-      const child = await createAgent(t.dataSource, {
-        organization_id: organization.id,
-      });
+    it('connects two agents, lists, updates, saves layout and deletes', async () => {
+      const user = await createUser(t.dataSource);
+      const principal = await createAgent(t.dataSource);
+      const child = await createAgent(t.dataSource);
 
       const created = await t
         .http()
@@ -373,43 +378,6 @@ describe('agents (e2e)', () => {
         .post('/agent-connection/delete')
         .set('Authorization', bearer(user))
         .send({ id: created.body.id })
-        .expect(404);
-    });
-
-    it('refuses connecting agents of different organizations and hides foreign connections', async () => {
-      const { organization, user } = await staffInOrganization();
-      const principal = await createAgent(t.dataSource, {
-        organization_id: organization.id,
-      });
-      const other = await createOrganization(t.dataSource);
-      const foreignChild = await createAgent(t.dataSource, {
-        organization_id: other.id,
-      });
-      const foreignPrincipal = await createAgent(t.dataSource, {
-        organization_id: other.id,
-      });
-      const foreign = await createAgentConnection(t.dataSource, {
-        organization_id: other.id,
-        principal_agent_id: foreignPrincipal.id,
-        child_agent_id: foreignChild.id,
-      });
-
-      await t
-        .http()
-        .post('/agent-connection/create')
-        .set('Authorization', bearer(user))
-        .send({
-          principalAgentId: principal.id,
-          childAgentId: foreignChild.id,
-          toolName: 'x',
-          toolDescription: 'x',
-        })
-        .expect(403);
-      await t
-        .http()
-        .post('/agent-connection/delete')
-        .set('Authorization', bearer(user))
-        .send({ id: foreign.id })
         .expect(404);
     });
   });

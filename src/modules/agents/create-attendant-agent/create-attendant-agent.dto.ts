@@ -41,11 +41,6 @@ export class CreateAttendantAgentDto {
   instructions!: AIInstructions;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  organizationId?: string;
-
-  @IsOptional()
   @IsBoolean()
   databaseTool?: boolean;
 

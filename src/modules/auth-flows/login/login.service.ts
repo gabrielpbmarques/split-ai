@@ -11,10 +11,7 @@ import type { LoginDto } from 'src/modules/auth-flows/login/login.dto';
 import { UserRepository } from 'src/modules/users/repositories/user.repository';
 
 export interface LoginResult {
-  user: Pick<
-    UserEntity,
-    'id' | 'name' | 'email' | 'organization_id' | 'role' | 'phone'
-  >;
+  user: Pick<UserEntity, 'id' | 'name' | 'email' | 'role' | 'phone'>;
   token: string;
   expiresAt: Date;
 }
@@ -35,7 +32,7 @@ export class LoginService {
 
     if (user.status !== 'active') {
       throw new BadRequestException(
-        'Usuário não está ativo. Complete a verificação do seu telefone para ativar sua conta.',
+        'Usuário não está ativo. Peça ao administrador para ativar sua conta.',
       );
     }
 
@@ -55,7 +52,6 @@ export class LoginService {
         id: user.id,
         name: user.name,
         email: user.email,
-        organization_id: user.organization_id,
         role: user.role,
         phone: user.phone,
       },

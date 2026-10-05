@@ -10,7 +10,6 @@ import {
 } from 'src/shared/contracts/pagination';
 
 export interface ReportFilters {
-  organization_id?: string;
   agent_id?: string;
   agent_ids?: string[];
   sentiment?: 'positive' | 'negative' | 'neutral';
@@ -45,11 +44,6 @@ export class ReportRepository {
     filters: ReportFilters = {},
   ): SelectQueryBuilder<ReportEntity> {
     qb.where('1=1');
-    if (filters.organization_id) {
-      qb.andWhere('r.organization_id = :organization_id', {
-        organization_id: filters.organization_id,
-      });
-    }
     if (filters.agent_ids && filters.agent_ids.length > 0) {
       qb.andWhere('r.agent_id IN (:...agent_ids)', {
         agent_ids: filters.agent_ids,

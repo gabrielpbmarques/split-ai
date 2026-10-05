@@ -73,24 +73,6 @@ export class AgentConnectionRepository {
     });
   }
 
-  async findByOrganization(
-    organizationId: string,
-  ): Promise<AgentConnectionEntity[]> {
-    return this.repository.find({
-      where: { organization_id: organizationId },
-      order: { position: 'ASC', created_at: 'ASC' },
-    });
-  }
-
-  async findByIdForOrganization(
-    id: string,
-    organizationId: string,
-  ): Promise<AgentConnectionEntity | null> {
-    return this.repository.findOne({
-      where: { id, organization_id: organizationId },
-    });
-  }
-
   async findById(id: string): Promise<AgentConnectionEntity | null> {
     return this.repository.findOne({ where: { id } });
   }
@@ -108,11 +90,11 @@ export class AgentConnectionRepository {
     return count > 0;
   }
 
-  async getRoleFlagsByOrganization(
-    organizationId?: string,
-  ): Promise<{ principalIds: Set<string>; childIds: Set<string> }> {
+  async getAllRoleFlags(): Promise<{
+    principalIds: Set<string>;
+    childIds: Set<string>;
+  }> {
     const rows = await this.repository.find({
-      where: organizationId ? { organization_id: organizationId } : undefined,
       select: ['principal_agent_id', 'child_agent_id'],
     });
     const principalIds = new Set<string>();
@@ -144,7 +126,7 @@ export class AgentConnectionRepository {
     );
   }
 
-  async deleteById(id: string, organizationId: string): Promise<void> {
-    await this.repository.softDelete({ id, organization_id: organizationId });
+  async deleteById(id: string): Promise<void> {
+    await this.repository.softDelete(id);
   }
 }

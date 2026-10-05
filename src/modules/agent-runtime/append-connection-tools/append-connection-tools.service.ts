@@ -20,7 +20,6 @@ export class AppendConnectionToolsService {
     dbAgent: AgentEntity,
     tools: AgentTool[],
     connectionContext?: { depth: number; visited: string[] },
-    scopeCompanyId?: string,
   ): Promise<void> {
     const depth = connectionContext?.depth ?? 0;
     const visited = connectionContext?.visited ?? [dbAgent.id];
@@ -55,7 +54,6 @@ export class AppendConnectionToolsService {
                 depth: depth + 1,
                 visited: [...visited, connection.child_agent_id],
               },
-              scopeCompanyId,
             );
           },
         }),

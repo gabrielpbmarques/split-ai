@@ -41,8 +41,6 @@ export class UserRepository {
         'email',
         'phone',
         'role',
-        'org_role',
-        'organization_id',
         'origin',
         'status',
         'created_at',
@@ -60,48 +58,12 @@ export class UserRepository {
         'email',
         'password_hash',
         'phone',
-        'organization_id',
         'role',
-        'org_role',
         'origin',
         'status',
-        'invite_token_hash',
         'created_at',
         'updated_at',
       ],
-    });
-  }
-
-  async listByOrganizationPaginated<
-    TField extends keyof UserEntity = keyof UserEntity,
-  >(
-    organizationId: string,
-    page: PageRequest,
-    fields?: readonly TField[],
-  ): Promise<PageResult<Pick<UserEntity, TField>>> {
-    const [items, total] = await this.userRepository.findAndCount({
-      where: { organization_id: organizationId },
-      select: fields ? [...fields] : undefined,
-      order: { created_at: 'ASC' },
-      skip: skipOf(page),
-      take: page.limit,
-    });
-
-    return { items: items as Pick<UserEntity, TField>[], total };
-  }
-
-  async countByOrganization(organizationId: string): Promise<number> {
-    return this.userRepository.count({
-      where: { organization_id: organizationId },
-    });
-  }
-
-  async findByIdInOrganization(
-    id: string,
-    organizationId: string,
-  ): Promise<UserEntity | null> {
-    return this.userRepository.findOne({
-      where: { id, organization_id: organizationId },
     });
   }
 

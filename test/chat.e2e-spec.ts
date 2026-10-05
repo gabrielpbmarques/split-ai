@@ -3,13 +3,7 @@ import {
   SessionEntity,
 } from 'src/infrastructure/database/schema';
 import type { StreamEvent } from 'src/shared/contracts';
-import {
-  bearer,
-  createAgent,
-  createApiKey,
-  createOrganization,
-  createUser,
-} from 'test/support/factories';
+import { bearer, createAgent, createUser } from 'test/support/factories';
 import { createTestApp, type TestApp } from 'test/support/test-app';
 
 function parseNdjson(text: string): StreamEvent[] {
@@ -30,13 +24,8 @@ describe('chat (e2e)', () => {
   afterAll(() => t.close());
 
   it('POST /support/question streams NDJSON events from the mocked model and persists both messages', async () => {
-    const organization = await createOrganization(t.dataSource);
-    const user = await createUser(t.dataSource, {
-      organization_id: organization.id,
-    });
-    const agent = await createAgent(t.dataSource, {
-      organization_id: organization.id,
-    });
+    const user = await createUser(t.dataSource);
+    const agent = await createAgent(t.dataSource);
 
     const res = await t
       .http()
@@ -60,42 +49,28 @@ describe('chat (e2e)', () => {
     expect(messages.map((m) => m.from).sort()).toEqual(['agent', 'user']);
   });
 
-  it('accepts an API key as a service principal and refuses inactive organizations', async () => {
-    const organization = await createOrganization(t.dataSource);
-    const agent = await createAgent(t.dataSource, {
-      organization_id: organization.id,
-    });
-    const { secret } = await createApiKey(t.dataSource, {
-      organization_id: organization.id,
-    });
+  it('lets a guest chat and refuses the removed ApiKey scheme (401)', async () => {
+    const guest = await createUser(t.dataSource, { role: 'guest' });
+    const agent = await createAgent(t.dataSource);
 
     const res = await t
       .http()
       .post('/support/question')
-      .set('Authorization', `ApiKey ${secret}`)
+      .set('Authorization', bearer(guest))
       .send({ question: 'Qual o horário?', agentId: agent.id })
       .expect(200);
     expect(parseNdjson(res.text).at(-1)).toEqual({ type: 'done' });
 
-    const inactive = await createOrganization(t.dataSource, {
-      status: 'inactive',
-    });
-    const blocked = await createUser(t.dataSource, {
-      organization_id: inactive.id,
-    });
     await t
       .http()
       .post('/support/question')
-      .set('Authorization', bearer(blocked))
+      .set('Authorization', 'ApiKey sk_live_qualquer')
       .send({ question: 'x', agentId: agent.id })
-      .expect(403);
+      .expect(401);
   });
 
   it('validates the body (400) and requires a token (401)', async () => {
-    const organization = await createOrganization(t.dataSource);
-    const user = await createUser(t.dataSource, {
-      organization_id: organization.id,
-    });
+    const user = await createUser(t.dataSource);
 
     await t
       .http()
@@ -111,10 +86,7 @@ describe('chat (e2e)', () => {
   });
 
   it('writes an error event instead of a 500 when the agent does not exist', async () => {
-    const organization = await createOrganization(t.dataSource);
-    const user = await createUser(t.dataSource, {
-      organization_id: organization.id,
-    });
+    const user = await createUser(t.dataSource);
 
     const res = await t
       .http()
@@ -128,14 +100,9 @@ describe('chat (e2e)', () => {
     expect(events.at(-1)).toEqual({ type: 'done' });
   });
 
-  it('POST /chat/attendant answers synchronously for an organization user', async () => {
-    const organization = await createOrganization(t.dataSource);
-    const user = await createUser(t.dataSource, {
-      organization_id: organization.id,
-    });
-    const agent = await createAgent(t.dataSource, {
-      organization_id: organization.id,
-    });
+  it('POST /chat/attendant answers synchronously for an authenticated user', async () => {
+    const user = await createUser(t.dataSource);
+    const agent = await createAgent(t.dataSource);
 
     const res = await t
       .http()

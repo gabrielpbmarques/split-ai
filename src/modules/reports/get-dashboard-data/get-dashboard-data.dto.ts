@@ -16,11 +16,6 @@ export class GetDashboardDataDto {
   @IsOptional()
   @IsString()
   @MaxLength(64)
-  organization_id?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(64)
   agent_id?: string;
 
   @IsOptional()

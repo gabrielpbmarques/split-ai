@@ -8,10 +8,8 @@ import {
 } from '@nestjs/swagger';
 import { FastifyReply } from 'fastify';
 
-import { AuthenticatedUser } from 'src/auth/authenticated-user';
 import { GetSourceService } from 'src/modules/sources/get-source/get-source.service';
 import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
-import { User as AuthUser } from 'src/shared/decorators/user.decorator';
 
 @ApiTags('sources')
 @Controller('source')
@@ -26,10 +24,9 @@ export class GetSourceController {
   @ApiForbiddenResponse({ description: 'Permissão insuficiente' })
   async handle(
     @Param('id') id: string,
-    @AuthUser() user: AuthenticatedUser,
     @Res() res: FastifyReply,
   ): Promise<FastifyReply> {
-    const source = await this.getSourceService.execute(id, user);
+    const source = await this.getSourceService.execute(id);
     return res.status(200).send(source);
   }
 }

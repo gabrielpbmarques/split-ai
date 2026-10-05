@@ -21,9 +21,6 @@ export class SessionEntity {
   @Column({ type: 'text', nullable: false })
   agent_id!: string;
 
-  @Column({ type: 'uuid', nullable: true })
-  organization_id!: string | null;
-
   @OneToMany(() => MessageEntity, (message) => message.session)
   messages!: MessageEntity[];
 

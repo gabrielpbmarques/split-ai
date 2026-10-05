@@ -57,12 +57,10 @@ const IGNORED_PREFIXES = ['/health'];
           paths: [
             'req.headers.authorization',
             'req.headers.cookie',
-            'req.headers["stripe-signature"]',
             '*.password',
             '*.password_hash',
             '*.token',
             '*.secret',
-            '*.key_hash',
           ],
           censor: '[REDACTED]',
         },

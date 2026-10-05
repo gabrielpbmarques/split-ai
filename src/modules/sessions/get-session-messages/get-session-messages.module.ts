@@ -1,8 +1,6 @@
 import { Module } from '@nestjs/common';
 
-import { AuthModule } from 'src/auth/auth.module';
 import { AgentRepositoryModule } from 'src/modules/agents/repositories/agent.repository.module';
-import { CreditTransactionRepositoryModule } from 'src/modules/billing/repositories/credit-transaction.repository.module';
 import { GetSessionMessagesController } from 'src/modules/sessions/get-session-messages/get-session-messages.controller';
 import { GetSessionMessagesService } from 'src/modules/sessions/get-session-messages/get-session-messages.service';
 import { MessageRepositoryModule } from 'src/modules/sessions/repositories/message.repository.module';
@@ -11,9 +9,7 @@ import { UserRepositoryModule } from 'src/modules/users/repositories/user.reposi
 
 @Module({
   imports: [
-    AuthModule,
     AgentRepositoryModule,
-    CreditTransactionRepositoryModule,
     MessageRepositoryModule,
     SessionRepositoryModule,
     UserRepositoryModule,

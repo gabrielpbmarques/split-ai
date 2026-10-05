@@ -1,7 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
-import { AccessScopeService } from 'src/auth/access-scope.service';
-import type { AuthenticatedUser } from 'src/auth/authenticated-user';
 import type { AgentEntity } from 'src/infrastructure/database/schema';
 import { TransactionExecutor } from 'src/infrastructure/database/transaction-executor/transaction-executor.service';
 import { AgentInstructionRepository } from 'src/modules/agents/repositories/agent-instruction.repository';
@@ -13,24 +11,15 @@ export class UpdateAgentService {
   constructor(
     private readonly agentRepository: AgentRepository,
     private readonly agentInstructionRepository: AgentInstructionRepository,
-    private readonly accessScope: AccessScopeService,
     private readonly transactionExecutor: TransactionExecutor,
   ) {}
 
   async execute(
     idOrIdentifier: string,
     dto: UpdateAgentDto,
-    user: AuthenticatedUser,
   ): Promise<{ id: string }> {
     const agent = await this.resolveAgent(idOrIdentifier);
     if (!agent) throw new NotFoundException('Agente não encontrado.');
-
-    this.accessScope.ensureCan(
-      user,
-      'agent.write',
-      { organizationId: agent.organization_id },
-      'Você não tem acesso a este agente.',
-    );
 
     const updateData: Partial<AgentEntity> = {};
     if (dto.name !== undefined) updateData.name = dto.name;
@@ -47,16 +36,14 @@ export class UpdateAgentService {
     if (dto.sites !== undefined)
       updateData.sites = dto.sites && dto.sites.length ? dto.sites : null;
 
-    if (user.role === 'admin') {
-      const orgFromDtoRaw = dto.organizationId;
-      if (orgFromDtoRaw !== undefined) {
-        const normalized =
-          typeof orgFromDtoRaw === 'string' && orgFromDtoRaw.trim().length === 0
-            ? null
-            : orgFromDtoRaw;
-        updateData.organization_id = normalized ?? null;
-      }
-    }
+    if (dto.databaseUrl !== undefined)
+      updateData.database_url = dto.databaseUrl;
+    if (dto.databaseTables !== undefined)
+      updateData.database_tables = dto.databaseTables?.length
+        ? dto.databaseTables
+        : null;
+    if (dto.databaseSampleRows !== undefined)
+      updateData.database_sample_rows = dto.databaseSampleRows;
 
     if (dto.parser !== undefined) {
       if (dto.parser === null) {
