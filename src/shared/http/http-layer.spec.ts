@@ -153,7 +153,7 @@ describe('HTTP layer (adapter + validation pipe + exception filter)', () => {
     });
   });
 
-  it('sets security headers, including CSP and frame protection', async () => {
+  it('sets security headers, including CSP, frame and cross-origin isolation', async () => {
     const response = await app.inject({
       method: 'GET',
       url: '/pedidos/inexistente',
@@ -166,6 +166,12 @@ describe('HTTP layer (adapter + validation pipe + exception filter)', () => {
     );
     expect(response.headers['content-security-policy']).toContain(
       "default-src 'self'",
+    );
+    expect(response.headers['cross-origin-resource-policy']).toBe(
+      'same-origin',
+    );
+    expect(response.headers['cross-origin-embedder-policy']).toBe(
+      'require-corp',
     );
   });
 });
