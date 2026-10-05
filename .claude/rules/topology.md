@@ -31,7 +31,7 @@ The order is fixed because each step depends on the previous one (correlation mu
 <rules>
 1. `import 'dotenv/config'` is the first line.
 2. Build the app with `createFastifyAdapter()` from `src/shared/http/fastify-adapter.ts`. Tests use the same factory; never assemble a separate adapter for tests.
-3. HTTP hardening lives in the adapter factory: helmet, multipart, `x-request-id` correlation hook.
+3. HTTP hardening lives in the adapter factory: helmet with its default CSP and frameguard (a route that needs inline scripts or framing gets a scoped exception, never a global switch-off), multipart, `x-request-id` correlation hook.
 4. `AppLoggerModule` (pino) is the logger.
 5. CORS from `env.ALLOWED_ORIGINS` (empty reflects any origin; `*` is rejected by the schema).
 6. `app.useGlobalPipes(createValidationPipe())`.

@@ -21,10 +21,8 @@ export async function createFastifyAdapter(): Promise<FastifyAdapter> {
 
   const { default: helmet } = await import('@fastify/helmet');
   await adapter.register(helmet as unknown as AdapterPlugin, {
-    contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false,
     crossOriginResourcePolicy: false,
-    frameguard: false,
   });
 
   const { default: multipart } = await import('@fastify/multipart');
