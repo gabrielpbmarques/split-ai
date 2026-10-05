@@ -32,7 +32,7 @@ export class LoadAgentToolsService {
     }
 
     if (dbAgent.vector_search_tool) {
-      tools.push(await this.loadVectorSearchToolService.execute());
+      tools.push(await this.loadVectorSearchToolService.execute(dbAgent.id));
     }
 
     const databaseTool =

@@ -30,10 +30,10 @@ buildLangchainToolFromSchema(name, description, schemaDef): DynamicStructuredToo
 new DynamicStructuredTool({
   name: 'vector_similarity_search',
   description: 'IMPORTANTE: SEMPRE use esta ferramenta antes de responder. ...',
-  schema: z.object({ query, agent_id, source_type }),
-  func: async ({ query, agent_id, source_type }) => {
-    const store = await loadVectorStoreService.execute({
-      agent_id,
+  schema: z.object({ query, source_type }),
+  func: async ({ query, source_type }) => {
+    const store = await this.vectorStore.loadIndex({
+      agent_id: agentId,
       source_type,
     });
     const docs = await executeSimilaritySearchService.execute(store, query);
@@ -45,7 +45,7 @@ new DynamicStructuredTool({
 - The description prompts the model to **always** call this tool first when the flag is on. Removing that line will shift agent behavior toward not retrieving — make the change deliberate.
 - The tool returns `pageContent` joined by a blank line (`\n\n`), so the model sees chunk boundaries. `metadata.relevance_score` is stamped on each surviving document by the reranker but dropped here; if you need citations, return a structured payload and update consumers (today there are none beyond the LLM).
 - **An empty string is a valid return.** Since retrieval became threshold-based, a query where nothing clears the rerank cutoff yields zero documents. That is the designed behaviour — do not "fix" it by removing the threshold.
-- `agent_id` is **filled by the model** based on the system-prompt template (which interpolates `{agentId}`). Make sure that prompt variable is set in any caller (it is for chat flows — see `[[ai-agent-runtime]]`).
+- **`agent_id` is bound by the server, not chosen by the model.** `LoadAgentToolsService` calls `execute(dbAgent.id)`, so each agent — principal or delegated child — searches only its own chunks. Keep `agent_id` out of the tool schema: letting the model fill it is how searches used to hit the wrong agent (the old `{agentId}` placeholder was never interpolated).
 
 ## Database tool — src/modules/retrieval/load-database-tool/load-database-tool.service.ts
 

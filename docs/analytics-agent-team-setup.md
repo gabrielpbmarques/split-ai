@@ -150,7 +150,7 @@ PATCH /agent/a951e928-2b86-4737-8aee-88fde5eb27d6
 
 > **Modelo do supervisor:** `claude-sonnet-4-6` é a escolha segura para orquestração multi-passo confiável. Depois de validado, você pode testar `claude-haiku-4-5-20251001` para reduzir custo, se a qualidade da orquestração se mantiver.
 >
-> **`vectorSearchTool: true`** só é útil se o supervisor tiver Sources ingeridos (contexto de negócio/glossário) sob o `agent_id` `a951e928…`. Se não tiver, troque para `false`. (Obs.: a description da tool `vector_similarity_search` usa o placeholder `{agentId}` que não é substituído em runtime — caveat pré-existente do projeto; se for usar busca vetorial a sério, confirme que o `agent_id` correto está sendo passado.)
+> **`vectorSearchTool: true`** só é útil se o supervisor tiver Sources ingeridos (contexto de negócio/glossário) sob o `agent_id` `a951e928…`. Se não tiver, troque para `false`. A busca é sempre restrita ao próprio agente: o `agent_id` é fixado pelo servidor, não pelo modelo.
 
 ---
 

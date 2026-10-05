@@ -144,7 +144,7 @@ Only `Authorization: Bearer <JWT>` is accepted. `TokenVerifier` verifies the HS2
 
 ### `vector_similarity_search`
 
-`LoadVectorSearchToolService` defines `{ query, agent_id, source_type ∈ business_context | memory | additional_directives }` and a Portuguese description that tells the model to always search first. The `{agentId}` text in that description is **not** interpolated; the model takes `agent_id` from the VRS block, so the attendant (which passes `agentId`) works out of the box while `/support/question` callers should send `agentId` in `variables`, and delegated children should have their own UUID written in their instructions.
+`LoadVectorSearchToolService.execute(agentId)` defines `{ query, source_type ∈ business_context | memory | additional_directives }` and a Portuguese description that tells the model to always search first. `agent_id` is bound in the closure to the resolved agent's UUID (`LoadAgentToolsService` passes `dbAgent.id`), so principals and delegated children each search only their own chunks, with no prompt variable or instruction involved.
 
 Retrieval is threshold-based: `asRetriever({ k: VECTOR_SEARCH_CANDIDATE_K })` (50) generates candidates, `VoyageRerankCompressor` keeps `relevance_score >= VECTOR_SEARCH_MIN_SCORE` (0.8) up to `VECTOR_SEARCH_MAX_RESULTS` (10), and the tool returns the page contents joined by blank lines. An empty result is a designed outcome; the compressor's warning logs the best score seen. Do not pass `filter` to `asRetriever` (the store already fixes it), import `ContextualCompressionRetriever` from `@langchain/classic` (PC-005), and keep the `as unknown as BaseRetrieverInterface` cast (PC-012). One search costs two Voyage calls (embed + rerank) on the same key (PC-007).
 
@@ -201,11 +201,10 @@ Each use-case module imports exactly what its classes inject; integration ports 
 1. **`thread_id` format** — change it and every conversation forgets its history.
 2. **Chunks without `agent_id` / `source_id`** — invisible to search / undeletable.
 3. **`execute_sql` missing** — check `database_tool` and `database_url` on the agent itself.
-4. **`{agentId}` is not interpolated** — make sure `agentId` reaches the VRS block or the instructions.
-5. **Empty retrieval** — read the `VoyageRerankCompressor` warning before touching code; tune `VECTOR_SEARCH_MIN_SCORE`.
-6. **`vector_search_tool = true` with nothing ingested** — the model always searches and gets nothing; ingest first or disable the tool.
-7. **Delegated children are stateless and depth-1** — specialists must carry everything they need in their own instructions.
-8. **Schema changes need migrations** — `synchronize` is off; `/health/startup` stays 503 until the CI `migrate` job runs.
+4. **Empty retrieval** — read the `VoyageRerankCompressor` warning before touching code; tune `VECTOR_SEARCH_MIN_SCORE`.
+5. **`vector_search_tool = true` with nothing ingested** — the model always searches and gets nothing; ingest first or disable the tool.
+6. **Delegated children are stateless and depth-1** — specialists must carry everything they need in their own instructions.
+7. **Schema changes need migrations** — `synchronize` is off; `/health/startup` stays 503 until the CI `migrate` job runs.
 
 ## 12. Where to go deeper
 
