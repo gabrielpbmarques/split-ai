@@ -1,4 +1,4 @@
-import type { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
+import type { FastifyCorsOptions } from '@fastify/cors';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
 
 import { env } from 'src/shared/config/env';
@@ -38,7 +38,7 @@ export async function createFastifyAdapter(): Promise<FastifyAdapter> {
   return adapter;
 }
 
-export function createCorsOptions(): CorsOptions {
+export function createCorsOptions(): FastifyCorsOptions {
   return {
     origin: env.ALLOWED_ORIGINS.length > 0 ? env.ALLOWED_ORIGINS : true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
