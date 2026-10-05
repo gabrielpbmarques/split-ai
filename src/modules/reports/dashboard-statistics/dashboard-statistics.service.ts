@@ -1,11 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import type { AuthenticatedUser } from 'src/auth/authenticated-user';
 import { AgentRepository } from 'src/modules/agents/repositories/agent.repository';
-import {
-  type TokenUsageFilters,
-  TokenUsageRepository,
-} from 'src/modules/billing/repositories/token-usage.repository';
 import type {
   DashboardStatisticsDto,
   DashboardStatistics,
@@ -16,7 +11,6 @@ import {
 } from 'src/modules/reports/repositories/report.repository';
 import { MessageRepository } from 'src/modules/sessions/repositories/message.repository';
 import { SessionRepository } from 'src/modules/sessions/repositories/session.repository';
-import { scopedOrganizationId } from 'src/shared/utils/scoped-organization-id';
 
 @Injectable()
 export class DashboardStatisticsService {
@@ -25,25 +19,19 @@ export class DashboardStatisticsService {
     private readonly messageRepository: MessageRepository,
     private readonly agentRepository: AgentRepository,
     private readonly reportRepository: ReportRepository,
-    private readonly tokenUsageRepository: TokenUsageRepository,
   ) {}
 
-  async execute(
-    user: AuthenticatedUser,
-    dto: DashboardStatisticsDto,
-  ): Promise<DashboardStatistics> {
+  async execute(dto: DashboardStatisticsDto): Promise<DashboardStatistics> {
     const { startDate, endDate } = this.getDateRange(dto);
     const previousPeriod = this.getPreviousPeriod(startDate, endDate);
 
     const currentStats = await this.getStatistics(
-      user,
       startDate,
       endDate,
       dto.agentId,
     );
 
     const previousStats = await this.getStatistics(
-      user,
       previousPeriod.start,
       previousPeriod.end,
       dto.agentId,
@@ -59,11 +47,6 @@ export class DashboardStatisticsService {
       previousStats.satisfactionRate,
     );
 
-    const tokensUsedChange = this.calculateChange(
-      currentStats.tokensUsed,
-      previousStats.tokensUsed,
-    );
-
     const activeAgentsChange = this.calculateChange(
       currentStats.activeAgents,
       previousStats.activeAgents,
@@ -74,29 +57,22 @@ export class DashboardStatisticsService {
       totalConversationsChange,
       satisfactionRate: currentStats.satisfactionRate,
       satisfactionRateChange,
-      tokensUsed: currentStats.tokensUsed,
-      tokensUsedChange,
       activeAgents: currentStats.activeAgents,
       activeAgentsChange,
     };
   }
 
   private async getStatistics(
-    user: AuthenticatedUser,
     startDate: Date,
     endDate: Date,
     agentId?: string,
   ): Promise<DashboardStatistics> {
-    const organizationId = scopedOrganizationId(user);
-
     const totalConversations = await this.sessionRepository.countByFilter({
-      organizationId,
       agentId,
       createdBetween: [startDate, endDate],
     });
 
     const reportFilters: ReportFilters = {
-      organization_id: organizationId,
       agent_id: agentId,
       startDate,
       endDate,
@@ -114,26 +90,13 @@ export class DashboardStatisticsService {
         ? Math.round((positiveReports / totalReports) * 100)
         : 100;
 
-    const tokenFilters: TokenUsageFilters = {
-      start_date: startDate,
-      end_date: endDate,
-      organization_id: organizationId,
-      agent_id: agentId,
-    };
-
-    const tokenStats = await this.tokenUsageRepository.getTotals(tokenFilters);
-    const tokensUsed = tokenStats.total_tokens;
-
-    const activeAgents =
-      await this.agentRepository.countByOrganization(organizationId);
+    const activeAgents = await this.agentRepository.count();
 
     return {
       totalConversations,
       totalConversationsChange: 0,
       satisfactionRate,
       satisfactionRateChange: 0,
-      tokensUsed,
-      tokensUsedChange: 0,
       activeAgents,
       activeAgentsChange: 0,
     };

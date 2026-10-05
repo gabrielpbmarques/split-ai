@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 
-import type { AuthenticatedUser } from 'src/auth/authenticated-user';
 import type { ReportEntity } from 'src/infrastructure/database/schema/report.entity';
 import type { ListReportsDto } from 'src/modules/reports/list-reports/list-reports.dto';
 import { ReportRepository } from 'src/modules/reports/repositories/report.repository';
@@ -13,16 +12,9 @@ import {
 export class ListReportsService {
   constructor(private readonly reportRepository: ReportRepository) {}
 
-  async execute(
-    user: AuthenticatedUser,
-    dto: ListReportsDto,
-  ): Promise<PaginatedResponse<ReportEntity>> {
+  async execute(dto: ListReportsDto): Promise<PaginatedResponse<ReportEntity>> {
     const page = await this.reportRepository.listPaginated(
       {
-        organization_id:
-          user.role === 'admin'
-            ? undefined
-            : (user.organization_id ?? undefined),
         sentiment: dto.sentiment,
         type: dto.type,
         agent_id: dto.agent_id,

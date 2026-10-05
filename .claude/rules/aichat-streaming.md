@@ -3,14 +3,14 @@ paths:
   - 'src/modules/chat/**/*.ts'
 ---
 
-# Scoped rule — `src/modules/chat/`
+# Chat streaming — `src/modules/chat/`
 
-Thin path-scoped reminder. Full detail: the **`ai-chat-flows`** skill. Live entry points only: `Question/` (`POST /support/question`, streams) and `Attendant/` (`POST /chat/attendant`, non-stream); both wired in `ai-chat.module.ts`.
+Thin path-scoped reminder. Full detail: the **`ai-chat-flows`** skill. Live entry points: `question/` (`POST /support/question`, NDJSON stream) and `attendant/` (`POST /chat/attendant`, synchronous). Both require `chat.ask` / `chat.attend`, which every role has, guests included.
 
-Must-not-break invariants:
-
-- **Don't `res.send(...)` / `return res.send(...)` after `res.hijack()`** in `QuestionController` — the socket is in raw mode; only `res.raw.write(...)`. Headers are written **before** the first chunk. Keep `X-Accel-Buffering: no` (defeats proxy buffering). This is the sanctioned exception to root Hard rule 3's `res.send` catch pattern — a hijacked controller must fall back to `res.raw.write` in its catch.
-- **Billing properties to preserve:** a request is billable only when `user.organization_id` is set **and** `user.role !== 'service'` **and** the org's plan is not `unlimited` (S2S API-key callers carry `role: 'service'` and skip billing; `unlimited` plans skip billing regardless of role). Credit is consumed **only after a non-empty `fullResponse`** — a failed/empty agent run never bills. Don't break any of these when refactoring the stream loop.
-- **Persist the user message before the AI call** (a failed run intentionally leaves a "user said X" row with no agent reply — keep it for retry/replay). Record via `RecordChatMessageService` only — never call `MessageRepository` directly; it swallows errors and never throws, so recording failures must not abort the chat.
-- **Attendant differs on purpose:** it resolves the agent first and scopes the session to `agent.organization_id` (not the caller's org), does **no** credit check, and returns the parsed `finalAnswer` string (`stream=false`). Don't "fix" the cross-org scoping without a product call.
-- **Dead/orphan modules:** `AnalyticsAsk/` is an empty placeholder; `ExtractDocumentData/` exists but its module is never imported (won't boot). Wire into a live module before extending.
+<rules>
+- **After `res.hijack()` in `QuestionController`, write only with `res.raw.write(...)`.** The socket is in raw mode: never `res.send(...)`. Headers are written before the first chunk; keep `X-Accel-Buffering: no` (defeats proxy buffering). This controller is the sanctioned exception to "no try/catch in controllers": its catch writes an `error` event and then `done` (PC-003).
+- **Persist the user message before the AI call.** A failed run intentionally leaves a "user said X" row with no agent reply, for retry and replay. Record only through `RecordChatMessageService` — it swallows errors so a recording failure never aborts the chat; never call `MessageRepository` directly.
+- **The agent reply is recorded only when `final` produced text.** An empty or failed run records nothing for the agent.
+- **Attendant differs on purpose:** it resolves the agent first, injects the caller's name/phone/id as prompt variables, and returns the parsed `finalAnswer` string instead of streaming.
+- There is no billing, credit check or tenant gate on chat anymore; do not reintroduce one without a product decision recorded in `docs/decisoes-de-dominio.md`.
+</rules>

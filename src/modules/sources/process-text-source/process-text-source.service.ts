@@ -15,14 +15,13 @@ export class ProcessTextSourceService {
   ) {}
 
   async execute(params: ProcessSourceInput): Promise<number> {
-    const { buffer, sourceType, agentId, organizationId, sourceId } = params;
+    const { buffer, sourceType, agentId, sourceId } = params;
 
     const chunks = chunkText(buffer.toString('utf-8'));
     const metadata = buildSourceMetadata({
       sourceType,
       defaultSourceType: 'text',
       agentId,
-      organizationId,
       sourceId,
     });
 

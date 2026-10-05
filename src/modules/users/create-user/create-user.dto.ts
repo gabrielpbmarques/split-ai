@@ -4,7 +4,6 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
-  IsUUID,
   MaxLength,
   MinLength,
 } from 'class-validator';
@@ -38,8 +37,4 @@ export class CreateUserDto {
   @IsOptional()
   @IsIn(['user', 'admin', 'guest'])
   role?: 'user' | 'admin' | 'guest';
-
-  @IsOptional()
-  @IsUUID()
-  organization_id?: string | null;
 }

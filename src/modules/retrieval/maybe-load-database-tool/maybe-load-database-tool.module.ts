@@ -1,16 +1,11 @@
 import { Module } from '@nestjs/common';
 
-import { OrganizationFeatureRepositoryModule } from 'src/modules/organizations/repositories/organization-feature.repository.module';
-import { OrganizationRepositoryModule } from 'src/modules/organizations/repositories/organization.repository.module';
+import { AgentRepositoryModule } from 'src/modules/agents/repositories/agent.repository.module';
 import { LoadDatabaseToolModule } from 'src/modules/retrieval/load-database-tool/load-database-tool.module';
 import { MaybeLoadDatabaseToolService } from 'src/modules/retrieval/maybe-load-database-tool/maybe-load-database-tool.service';
 
 @Module({
-  imports: [
-    LoadDatabaseToolModule,
-    OrganizationFeatureRepositoryModule,
-    OrganizationRepositoryModule,
-  ],
+  imports: [LoadDatabaseToolModule, AgentRepositoryModule],
   providers: [MaybeLoadDatabaseToolService],
   exports: [MaybeLoadDatabaseToolService],
 })

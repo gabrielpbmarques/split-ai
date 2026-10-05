@@ -4,11 +4,6 @@ const DENY_RE = /\b(DELETE|ALTER|DROP|CREATE|REPLACE|TRUNCATE)\b/i;
 const HAS_LIMIT_TAIL_RE = /\blimit\b\s+\d+(\s*,\s*\d+)?\s*;?\s*$/i;
 const DEFAULT_LIMIT = 5;
 
-export interface SqlScope {
-  readonly column: string;
-  readonly value: string | number;
-}
-
 export class UnsupportedDialectError extends Error {
   constructor(readonly scheme: string) {
     super(
@@ -69,38 +64,4 @@ export function sanitizeSqlQuery(
   }
 
   return query;
-}
-
-export function assertScoped(query: string, scope: SqlScope): void {
-  const column = String(scope.column).replace(/[^a-z0-9_]/gi, '');
-  const value = String(scope.value);
-
-  if (!column || !/^\d+$/.test(value)) {
-    throw new Error('escopo de empresa inválido.');
-  }
-
-  const qualifier = '(?:`?[a-z0-9_]+`?\\.)?';
-  const col = `\`?${column}\`?`;
-
-  const present = new RegExp(
-    `(?<![a-z0-9_\`])${qualifier}${col}\\s*=\\s*${value}(?![0-9])`,
-    'i',
-  ).test(query);
-
-  if (!present) {
-    throw new Error(
-      `toda query deve filtrar ${column} = ${value} (escopo da empresa).`,
-    );
-  }
-
-  const widens = new RegExp(
-    `(?<![a-z0-9_\`])${col}\\s*(?:in\\b|<>|!=|>=|<=|>|<|=\\s*(?!${value}(?![0-9]))\\d)`,
-    'i',
-  ).test(query);
-
-  if (widens) {
-    throw new Error(
-      `apenas ${column} = ${value} é permitido — sem IN, faixas, desigualdades ou outra empresa.`,
-    );
-  }
 }

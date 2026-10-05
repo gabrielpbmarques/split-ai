@@ -8,10 +8,8 @@ import {
 } from '@nestjs/swagger';
 import { FastifyReply } from 'fastify';
 
-import { AuthenticatedUser } from 'src/auth/authenticated-user';
 import { GetReportConversationService } from 'src/modules/reports/get-report-conversation/get-report-conversation.service';
 import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
-import { User } from 'src/shared/decorators/user.decorator';
 
 @ApiTags('reports')
 @Controller('report')
@@ -28,13 +26,10 @@ export class GetReportConversationController {
   @ApiForbiddenResponse({ description: 'Permissão insuficiente' })
   async handle(
     @Param('reportId') reportId: string,
-    @User() user: AuthenticatedUser,
     @Res() res: FastifyReply,
   ): Promise<FastifyReply> {
-    const conversation = await this.getReportConversationService.execute(
-      user,
-      reportId,
-    );
+    const conversation =
+      await this.getReportConversationService.execute(reportId);
     return res.status(200).send(conversation);
   }
 }

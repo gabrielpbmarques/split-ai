@@ -12,10 +12,6 @@ import {
 } from 'src/infrastructure/integration/customer-database.port';
 import { ElevenLabsTextToSpeechGateway } from 'src/infrastructure/integration/eleven-labs/eleven-labs-text-to-speech.gateway';
 import {
-  EMAIL,
-  type EmailGateway,
-} from 'src/infrastructure/integration/email.port';
-import {
   EMBEDDINGS,
   type EmbeddingsGateway,
 } from 'src/infrastructure/integration/embeddings.port';
@@ -33,32 +29,24 @@ import {
 } from 'src/infrastructure/integration/messaging.port';
 import { MockChatModelFactory } from 'src/infrastructure/integration/mock/mock-chat-model.factory';
 import { MockCustomerDatabaseGateway } from 'src/infrastructure/integration/mock/mock-customer-database.gateway';
-import { MockEmailGateway } from 'src/infrastructure/integration/mock/mock-email.gateway';
 import { MockEmbeddings } from 'src/infrastructure/integration/mock/mock-embeddings';
 import { MockFileStorageGateway } from 'src/infrastructure/integration/mock/mock-file-storage.gateway';
 import { MockMessagingGateway } from 'src/infrastructure/integration/mock/mock-messaging.gateway';
 import { MockOcrGateway } from 'src/infrastructure/integration/mock/mock-ocr.gateway';
-import { MockPaymentsGateway } from 'src/infrastructure/integration/mock/mock-payments.gateway';
 import { MockRerankerGateway } from 'src/infrastructure/integration/mock/mock-reranker.gateway';
 import { MockSiteCrawlerGateway } from 'src/infrastructure/integration/mock/mock-site-crawler.gateway';
 import { MockTextToSpeechGateway } from 'src/infrastructure/integration/mock/mock-text-to-speech.gateway';
 import { MockVectorStoreGateway } from 'src/infrastructure/integration/mock/mock-vector-store.gateway';
 import { OCR, type OcrReader } from 'src/infrastructure/integration/ocr.port';
 import {
-  PAYMENTS,
-  type PaymentsGateway,
-} from 'src/infrastructure/integration/payments.port';
-import {
   RERANKER,
   type RerankerGateway,
 } from 'src/infrastructure/integration/reranker.port';
-import { SendGridEmailGateway } from 'src/infrastructure/integration/sendgrid/sendgrid-email.gateway';
 import {
   SITE_CRAWLER,
   type SiteCrawler,
 } from 'src/infrastructure/integration/site-crawler.port';
 import { SpiderSiteCrawlerGateway } from 'src/infrastructure/integration/spider/spider-site-crawler.gateway';
-import { StripePaymentsGateway } from 'src/infrastructure/integration/stripe/stripe-payments.gateway';
 import { SupabaseVectorStoreGateway } from 'src/infrastructure/integration/supabase/supabase-vector-store.gateway';
 import {
   TEXT_TO_SPEECH,
@@ -86,24 +74,10 @@ function textToSpeechLive():
 
 const providers: Provider[] = [
   {
-    provide: PAYMENTS,
-    useFactory: select<PaymentsGateway>(
-      () => new StripePaymentsGateway(),
-      () => new MockPaymentsGateway(),
-    ),
-  },
-  {
     provide: MESSAGING,
     useFactory: select<MessagingGateway>(
       () => new TwilioMessagingGateway(),
       () => new MockMessagingGateway(),
-    ),
-  },
-  {
-    provide: EMAIL,
-    useFactory: select<EmailGateway>(
-      () => new SendGridEmailGateway(),
-      () => new MockEmailGateway(),
     ),
   },
   {
@@ -177,9 +151,7 @@ const providers: Provider[] = [
 @Module({
   providers,
   exports: [
-    PAYMENTS,
     MESSAGING,
-    EMAIL,
     EMBEDDINGS,
     VECTOR_STORE,
     RERANKER,

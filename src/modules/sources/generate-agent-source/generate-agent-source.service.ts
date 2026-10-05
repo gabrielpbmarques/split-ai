@@ -45,8 +45,9 @@ export class GenerateAgentSourceService {
   ): Promise<SourceEntity[]> {
     const { url, sourceType, fileName, mimeType } = params;
 
-    const { agentId, organizationId } =
-      await this.resolveSourceAgentService.execute(params.agentId);
+    const { agentId } = await this.resolveSourceAgentService.execute(
+      params.agentId,
+    );
 
     const createdSources: SourceEntity[] = [];
     const tasks: Promise<void>[] = [];
@@ -62,7 +63,6 @@ export class GenerateAgentSourceService {
       const buffer = params.buffer;
       const source = await this.sourceRepository.create({
         agent_id: agentId,
-        organization_id: organizationId ?? null,
         name: fileName || DEFAULT_FILE_NAME[kind],
         source_type: 'pdf' as SourceType,
         file_name: fileName,
@@ -76,7 +76,6 @@ export class GenerateAgentSourceService {
             buffer,
             sourceType,
             agentId,
-            organizationId,
             sourceId: source.id,
           }),
         ),
@@ -92,7 +91,6 @@ export class GenerateAgentSourceService {
       for (const siteUrl of sitesArray) {
         const source = await this.sourceRepository.create({
           agent_id: agentId,
-          organization_id: organizationId ?? null,
           name: extractDomainName(siteUrl),
           source_type: 'site' as SourceType,
           url: siteUrl,
@@ -125,7 +123,6 @@ export class GenerateAgentSourceService {
       buffer: Buffer;
       sourceType?: string;
       agentId: string;
-      organizationId: string | null;
       sourceId: string;
     },
   ): Promise<number> {

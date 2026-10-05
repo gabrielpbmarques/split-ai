@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 
 import { AgentRepositoryModule } from 'src/modules/agents/repositories/agent.repository.module';
-import { TokenUsageRepositoryModule } from 'src/modules/billing/repositories/token-usage.repository.module';
 import { DashboardStatisticsController } from 'src/modules/reports/dashboard-statistics/dashboard-statistics.controller';
 import { DashboardStatisticsService } from 'src/modules/reports/dashboard-statistics/dashboard-statistics.service';
 import { ReportRepositoryModule } from 'src/modules/reports/repositories/report.repository.module';
@@ -14,7 +13,6 @@ import { SessionRepositoryModule } from 'src/modules/sessions/repositories/sessi
     MessageRepositoryModule,
     ReportRepositoryModule,
     SessionRepositoryModule,
-    TokenUsageRepositoryModule,
   ],
   controllers: [DashboardStatisticsController],
   providers: [DashboardStatisticsService],

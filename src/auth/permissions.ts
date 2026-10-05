@@ -1,41 +1,31 @@
-import type { OrgRole, UserRole } from 'src/shared/contracts';
-
-export type PrincipalRole = UserRole | 'service';
+import type { UserRole } from 'src/shared/contracts';
 
 export interface PermissionSubject {
-  readonly role: PrincipalRole;
-  readonly org_role: OrgRole;
+  readonly role: UserRole;
 }
 
 type Grant = (subject: PermissionSubject) => boolean;
 
-const platformStaff: Grant = ({ role }) => role === 'admin' || role === 'user';
-const platformAdmin: Grant = ({ role }) => role === 'admin';
-const anyUser: Grant = ({ role }) => role !== 'service';
-const orgManager: Grant = ({ org_role }) =>
-  org_role === 'owner' || org_role === 'admin';
+const staff: Grant = ({ role }) => role === 'admin' || role === 'user';
+const admin: Grant = ({ role }) => role === 'admin';
 const everyone: Grant = () => true;
 
 export const PERMISSION_GRANTS = {
-  'account.access': anyUser,
+  'account.access': everyone,
   'chat.ask': everyone,
-  'chat.attend': anyUser,
-  'voice.synthesize': platformStaff,
-  'analytics.read': platformStaff,
-  'agent.read': platformStaff,
-  'agent.write': platformStaff,
-  'agent.manage': platformAdmin,
-  'agent-connection.manage': platformStaff,
-  'source.read': platformStaff,
-  'source.write': platformStaff,
-  'session.read': platformStaff,
-  'report.read': platformStaff,
-  'organization.read': platformStaff,
-  'organization.manage': platformAdmin,
-  'member.manage': orgManager,
-  'api-key.manage': orgManager,
-  'user.read': platformStaff,
-  'user.manage': platformAdmin,
+  'chat.attend': everyone,
+  'voice.synthesize': staff,
+  'analytics.read': staff,
+  'agent.read': staff,
+  'agent.write': staff,
+  'agent.manage': admin,
+  'agent-connection.manage': staff,
+  'source.read': staff,
+  'source.write': staff,
+  'session.read': staff,
+  'report.read': staff,
+  'user.read': staff,
+  'user.manage': admin,
 } as const satisfies Record<string, Grant>;
 
 export type Permission = keyof typeof PERMISSION_GRANTS;

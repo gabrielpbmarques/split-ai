@@ -5,7 +5,6 @@ import {
   bearer,
   createAgent,
   createMessage,
-  createOrganization,
   createSession,
   createUser,
 } from 'test/support/factories';
@@ -22,13 +21,8 @@ describe('sessions (e2e)', () => {
   afterAll(() => t.close());
 
   it('POST /session creates a session for the user and agent and reuses the active one', async () => {
-    const organization = await createOrganization(t.dataSource);
-    const user = await createUser(t.dataSource, {
-      organization_id: organization.id,
-    });
-    const agent = await createAgent(t.dataSource, {
-      organization_id: organization.id,
-    });
+    const user = await createUser(t.dataSource);
+    const agent = await createAgent(t.dataSource);
 
     await t
       .http()
@@ -57,31 +51,22 @@ describe('sessions (e2e)', () => {
     await t.http().post('/session').send({ agent_id: agent.id }).expect(401);
   });
 
-  it('GET /conversation/sessions lists the organization sessions with pagination and filters', async () => {
-    const organization = await createOrganization(t.dataSource);
-    const user = await createUser(t.dataSource, {
-      organization_id: organization.id,
-    });
-    const agent = await createAgent(t.dataSource, {
-      organization_id: organization.id,
-    });
+  it('GET /conversation/sessions lists every session with pagination and filters', async () => {
+    const user = await createUser(t.dataSource);
+    const agent = await createAgent(t.dataSource);
     const mine = await createSession(t.dataSource, {
       agent_id: agent.id,
       user_id: user.id,
-      organization_id: organization.id,
     });
     await createMessage(t.dataSource, {
       session_id: mine.id,
       message: 'primeira',
     });
-    const other = await createOrganization(t.dataSource);
-    const otherAgent = await createAgent(t.dataSource, {
-      organization_id: other.id,
-    });
-    await createSession(t.dataSource, {
+    const otherAgent = await createAgent(t.dataSource);
+    const otherUser = await createUser(t.dataSource);
+    const others = await createSession(t.dataSource, {
       agent_id: otherAgent.id,
-      user_id: user.id,
-      organization_id: other.id,
+      user_id: otherUser.id,
     });
 
     const list = await t
@@ -90,16 +75,29 @@ describe('sessions (e2e)', () => {
       .query({ page: 1, limit: 10 })
       .set('Authorization', bearer(user))
       .expect(200);
-    expect(list.body.total).toBe(1);
-    expect(list.body.items[0].id).toBe(mine.id);
+    expect(list.body.total).toBe(2);
 
     const filtered = await t
       .http()
       .get('/conversation/sessions')
-      .query({ agent_id: otherAgent.id })
+      .query({ agent_id: agent.id })
       .set('Authorization', bearer(user))
       .expect(200);
-    expect(filtered.body.total).toBe(0);
+    expect(filtered.body.total).toBe(1);
+    expect(filtered.body.items[0]).toMatchObject({
+      id: mine.id,
+      last_message: 'primeira',
+    });
+
+    const byUser = await t
+      .http()
+      .get('/conversation/sessions')
+      .query({ user_id: otherUser.id })
+      .set('Authorization', bearer(user))
+      .expect(200);
+    expect(byUser.body.items.map((item: { id: string }) => item.id)).toEqual([
+      others.id,
+    ]);
 
     await t
       .http()
@@ -116,18 +114,12 @@ describe('sessions (e2e)', () => {
       .expect(403);
   });
 
-  it('GET /conversation/sessions/:id/messages returns the session summary and messages within scope', async () => {
-    const organization = await createOrganization(t.dataSource);
-    const user = await createUser(t.dataSource, {
-      organization_id: organization.id,
-    });
-    const agent = await createAgent(t.dataSource, {
-      organization_id: organization.id,
-    });
+  it('GET /conversation/sessions/:id/messages returns the session summary and messages', async () => {
+    const user = await createUser(t.dataSource);
+    const agent = await createAgent(t.dataSource);
     const session = await createSession(t.dataSource, {
       agent_id: agent.id,
       user_id: user.id,
-      organization_id: organization.id,
     });
     await createMessage(t.dataSource, {
       session_id: session.id,
@@ -149,6 +141,7 @@ describe('sessions (e2e)', () => {
       id: session.id,
       agent_name: agent.name,
     });
+    expect(body.session).not.toHaveProperty('tokens_used');
     expect(body.messages).toHaveLength(2);
 
     await t
@@ -157,13 +150,11 @@ describe('sessions (e2e)', () => {
       .set('Authorization', bearer(user))
       .expect(404);
 
-    const outsider = await createUser(t.dataSource, {
-      organization_id: (await createOrganization(t.dataSource)).id,
-    });
+    const guest = await createUser(t.dataSource, { role: 'guest' });
     await t
       .http()
       .get(`/conversation/sessions/${session.id}/messages`)
-      .set('Authorization', bearer(outsider))
+      .set('Authorization', bearer(guest))
       .expect(403);
   });
 });

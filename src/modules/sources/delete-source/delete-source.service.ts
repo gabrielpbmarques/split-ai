@@ -1,7 +1,5 @@
 import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 
-import { AccessScopeService } from 'src/auth/access-scope.service';
-import type { AuthenticatedUser } from 'src/auth/authenticated-user';
 import {
   VECTOR_STORE,
   type VectorStoreGateway,
@@ -15,22 +13,14 @@ export class DeleteSourceService {
   constructor(
     private readonly sourceRepository: SourceRepository,
     @Inject(VECTOR_STORE) private readonly vectorStore: VectorStoreGateway,
-    private readonly accessScope: AccessScopeService,
   ) {}
 
-  async execute(id: string, user: AuthenticatedUser): Promise<void> {
+  async execute(id: string): Promise<void> {
     const source = await this.sourceRepository.findById(id);
 
     if (!source) {
       throw new NotFoundException('Fonte de conhecimento não encontrada');
     }
-
-    this.accessScope.ensureCan(
-      user,
-      'source.write',
-      { organizationId: source.organization_id },
-      'Você não tem acesso a esta fonte de conhecimento.',
-    );
 
     await this.vectorStore.deleteBySourceId(id);
     await this.sourceRepository.delete(id);

@@ -41,12 +41,10 @@ export class GenerateAiResponseService {
 
       const configurable: RunnableConfig = {
         configurable: {
-          thread_id: `${agent.organization_id}_${threadKey}`,
+          thread_id: threadKey,
         },
         callbacks: this.tracers,
-        tags: [env.NODE_ENV, agent.id, metadata.organization_id].filter(
-          (tag): tag is string => Boolean(tag),
-        ),
+        tags: [env.NODE_ENV, agent.id],
         metadata: {
           userId: metadata.user_id,
           sessionId: metadata.session_id,

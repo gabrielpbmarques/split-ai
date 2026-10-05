@@ -13,7 +13,6 @@ export type CreatedUser = Pick<
   | 'phone'
   | 'role'
   | 'status'
-  | 'organization_id'
   | 'created_at'
   | 'updated_at'
 >;
@@ -27,7 +26,7 @@ export class CreateUserService {
   }
 
   async execute(dto: CreateUserDto): Promise<CreatedUser> {
-    const { email, password, phone, role, organization_id, name } = dto;
+    const { email, password, phone, role, name } = dto;
 
     const existingByEmail = await this.userRepository.findByEmail(email);
     if (existingByEmail) {
@@ -48,7 +47,6 @@ export class CreateUserService {
       phone: cleanPhone,
       password_hash: hashedPassword,
       role: role ?? 'user',
-      organization_id: organization_id || null,
       status: 'active',
       created_at: new Date(),
       updated_at: new Date(),
@@ -61,7 +59,6 @@ export class CreateUserService {
       phone: newUser.phone,
       role: newUser.role,
       status: newUser.status,
-      organization_id: newUser.organization_id,
       created_at: newUser.created_at,
       updated_at: newUser.updated_at,
     };

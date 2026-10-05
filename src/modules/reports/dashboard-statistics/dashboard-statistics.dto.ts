@@ -25,8 +25,6 @@ export interface DashboardStatistics {
   totalConversationsChange: number;
   satisfactionRate: number;
   satisfactionRateChange: number;
-  tokensUsed: number;
-  tokensUsedChange: number;
   activeAgents: number;
   activeAgentsChange: number;
 }

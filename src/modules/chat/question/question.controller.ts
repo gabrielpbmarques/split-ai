@@ -12,7 +12,6 @@ import { AuthenticatedUser } from 'src/auth/authenticated-user';
 import { QuestionDto } from 'src/modules/chat/question/question.dto';
 import { QuestionService } from 'src/modules/chat/question/question.service';
 import type { StreamEvent } from 'src/shared/contracts';
-import { RequireActiveOrganization } from 'src/shared/decorators/active-organization.decorator';
 import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
 import { User as AuthUser } from 'src/shared/decorators/user.decorator';
 
@@ -23,7 +22,6 @@ export class QuestionController {
 
   @Post('question')
   @RequirePermissions('chat.ask')
-  @RequireActiveOrganization()
   @ApiOkResponse()
   @ApiBearerAuth()
   @ApiUnauthorizedResponse({ description: 'Token ausente ou inválido' })

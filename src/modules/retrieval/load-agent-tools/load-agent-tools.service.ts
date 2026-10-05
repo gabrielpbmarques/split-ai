@@ -18,7 +18,6 @@ export class LoadAgentToolsService {
   async execute(
     dbAgent: AgentEntity,
     connectionContext?: { depth: number; visited: string[] },
-    scopeCompanyId?: string,
   ): Promise<AgentTool[]> {
     const tools: AgentTool[] = [];
 
@@ -33,25 +32,19 @@ export class LoadAgentToolsService {
     }
 
     if (dbAgent.vector_search_tool) {
-      tools.push(await this.loadVectorSearchToolService.execute());
+      tools.push(await this.loadVectorSearchToolService.execute(dbAgent.id));
     }
 
-    if (dbAgent.database_tool && dbAgent.organization_id) {
-      const databaseTool = await this.maybeLoadDatabaseToolService.execute(
-        dbAgent.organization_id,
-        scopeCompanyId,
-        dbAgent,
-      );
-      if (databaseTool) {
-        tools.push(databaseTool);
-      }
+    const databaseTool =
+      await this.maybeLoadDatabaseToolService.execute(dbAgent);
+    if (databaseTool) {
+      tools.push(databaseTool);
     }
 
     await this.appendConnectionToolsService.execute(
       dbAgent,
       tools,
       connectionContext,
-      scopeCompanyId,
     );
 
     return tools;

@@ -153,14 +153,25 @@ describe('HTTP layer (adapter + validation pipe + exception filter)', () => {
     });
   });
 
-  it('sets security headers but does not block cross-origin embedding', async () => {
+  it('sets security headers, including CSP, frame and cross-origin isolation', async () => {
     const response = await app.inject({
       method: 'GET',
       url: '/pedidos/inexistente',
     });
 
     expect(response.headers['x-content-type-options']).toBe('nosniff');
-    expect(response.headers['x-frame-options']).toBeUndefined();
-    expect(response.headers['content-security-policy']).toBeUndefined();
+    expect(response.headers['x-frame-options']).toBe('SAMEORIGIN');
+    expect(response.headers['content-security-policy']).toContain(
+      "frame-ancestors 'self'",
+    );
+    expect(response.headers['content-security-policy']).toContain(
+      "default-src 'self'",
+    );
+    expect(response.headers['cross-origin-resource-policy']).toBe(
+      'same-origin',
+    );
+    expect(response.headers['cross-origin-embedder-policy']).toBe(
+      'require-corp',
+    );
   });
 });

@@ -19,12 +19,11 @@ export class InvokeConnectedAgentService {
     childAgentId: string,
     input: string,
     connectionContext: { depth: number; visited: string[] },
-    scopeCompanyId?: string,
   ): Promise<string> {
     try {
       const childAgent = await this.resolveAgentService.execute(
         childAgentId,
-        scopeCompanyId ? { companyId: scopeCompanyId } : undefined,
+        undefined,
         undefined,
         connectionContext,
       );
@@ -33,11 +32,7 @@ export class InvokeConnectedAgentService {
         { messages: [new HumanMessage(input)] },
         {
           configurable: { thread_id: `conn_${childAgent.id}` },
-          tags: [
-            env.NODE_ENV,
-            childAgent.id,
-            childAgent.organization_id,
-          ].filter((tag): tag is string => Boolean(tag)),
+          tags: [env.NODE_ENV, childAgent.id],
         },
       );
 

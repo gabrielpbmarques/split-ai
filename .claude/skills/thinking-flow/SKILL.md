@@ -1,9 +1,9 @@
 ---
 name: thinking-flow
-description: "Worked code examples for this repo's service-design principles — push work to the DB/repository, explicit return types, Pick<> for partial data, skip guard-guaranteed checks, data-flow thinking. The principles are always-on in CLAUDE.md (Service & reasoning conventions); open this for the before/after examples."
+description: "Worked code examples for this repo's service-design principles — push work to the DB/repository, explicit return types, Pick<> for partial data, skip guard-guaranteed checks, data-flow thinking. The rules themselves live in .claude/rules/use-cases.md and .claude/rules/database.md; open this for the before/after examples."
 ---
 
-> **The principles below are always-on rules** in the root `CLAUDE.md` ("Service & reasoning conventions") — they apply whether or not this skill is open. This file is the **worked-example companion**: open it for the before/after code that makes each principle concrete.
+> **The principles below are rules**, owned by `.claude/rules/use-cases.md` (service rules: single `execute()`, explicit return types, no iterating repository results, skip guard-guaranteed checks) and `.claude/rules/database.md` (projection with `fields`, `Pick<>` return types). Those path-scoped rules load whenever you touch services or repositories; this file is the **worked-example companion** with before/after code.
 
 You define HOW to think about implementation decisions when working on this NestJS backend — pushing data processing to the database, avoiding manual object mapping, ensuring explicit typing, and keeping services lean.
 

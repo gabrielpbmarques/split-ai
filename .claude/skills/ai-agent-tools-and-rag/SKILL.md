@@ -5,17 +5,17 @@ description: "Use for an agent's LangChain tools and RAG: vector_similarity_sear
 
 ## Three tools an agent can carry
 
-`ResolveAgent.loadTools(dbAgent)` (`src/modules/agent-runtime/resolve-agent/resolve-agent.service.ts`) reads three columns on `agents` and appends a tool for each:
+`LoadAgentToolsService.execute(dbAgent, connectionContext?)` (`src/modules/retrieval/load-agent-tools/load-agent-tools.service.ts`, called by `ResolveAgent`) reads columns on `agents` and appends a tool for each, then appends one tool per enabled agent connection (`AppendConnectionToolsService`):
 
-| Flag / column                     | Tool                                       | Built by                                                                                    |
-| --------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------- |
-| `parser_schema` (jsonb, presence) | dynamic parser (no-op `func`, schema-only) | `buildLangchainToolFromSchema` in `src/shared/utils/buildZodSchema.ts`                             |
-| `vector_search_tool` (bool)       | `vector_similarity_search`                 | `LoadVectorSearchToolService.execute()`                                                     |
-| `database_tool` (bool)            | `execute_sql`                              | `LoadDatabaseToolService.execute({ databaseUrl })` — gated by `database_connection` feature |
+| Flag / column                                 | Tool                                       | Built by                                                                  |
+| --------------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------- |
+| `parser_schema` (jsonb, presence)             | dynamic parser (no-op `func`, schema-only) | `buildLangchainToolFromSchema` in `src/shared/utils/build-zod-schema.ts`  |
+| `vector_search_tool` (bool)                   | `vector_similarity_search`                 | `LoadVectorSearchToolService.execute()`                                   |
+| `database_tool` (bool) **and** `database_url` | `execute_sql`                              | `MaybeLoadDatabaseToolService.execute(agent)` → `LoadDatabaseToolService` |
 
-Tools are returned as `DynamicStructuredTool<z.ZodObject<any>>[]` and threaded into `createAgent({ tools, ... })`. The same `tools` array is also rendered into the system prompt by `NormalizePromptInstructions` (`Name: ... / Description: ...`), so a model sees both the tool descriptors **and** a textual list.
+Tools are returned as `AgentTool[]` and threaded into `createAgent({ tools, ... })`. The same `tools` array is also rendered into the system prompt by `NormalizePromptInstructions` (`Name: ... / Description: ...`), so a model sees both the tool descriptors **and** a textual list.
 
-## Parser tool — src/shared/utils/buildZodSchema.ts
+## Parser tool — src/shared/utils/build-zod-schema.ts
 
 ```ts
 buildLangchainToolFromSchema(name, description, schemaDef): DynamicStructuredTool
@@ -30,10 +30,10 @@ buildLangchainToolFromSchema(name, description, schemaDef): DynamicStructuredToo
 new DynamicStructuredTool({
   name: 'vector_similarity_search',
   description: 'IMPORTANTE: SEMPRE use esta ferramenta antes de responder. ...',
-  schema: z.object({ query, agent_id, source_type }),
-  func: async ({ query, agent_id, source_type }) => {
-    const store = await loadVectorStoreService.execute({
-      agent_id,
+  schema: z.object({ query, source_type }),
+  func: async ({ query, source_type }) => {
+    const store = await this.vectorStore.loadIndex({
+      agent_id: agentId,
       source_type,
     });
     const docs = await executeSimilaritySearchService.execute(store, query);
@@ -45,37 +45,33 @@ new DynamicStructuredTool({
 - The description prompts the model to **always** call this tool first when the flag is on. Removing that line will shift agent behavior toward not retrieving — make the change deliberate.
 - The tool returns `pageContent` joined by a blank line (`\n\n`), so the model sees chunk boundaries. `metadata.relevance_score` is stamped on each surviving document by the reranker but dropped here; if you need citations, return a structured payload and update consumers (today there are none beyond the LLM).
 - **An empty string is a valid return.** Since retrieval became threshold-based, a query where nothing clears the rerank cutoff yields zero documents. That is the designed behaviour — do not "fix" it by removing the threshold.
-- `agent_id` is **filled by the model** based on the system-prompt template (which interpolates `{agentId}`). Make sure that prompt variable is set in any caller (it is for chat flows — see `[[ai-agent-runtime]]`).
+- **`agent_id` is bound by the server, not chosen by the model.** `LoadAgentToolsService` calls `execute(dbAgent.id)`, so each agent — principal or delegated child — searches only its own chunks. Keep `agent_id` out of the tool schema: letting the model fill it is how searches used to hit the wrong agent (the old `{agentId}` placeholder was never interpolated).
 
 ## Database tool — src/modules/retrieval/load-database-tool/load-database-tool.service.ts
 
-A SQL-execution tool with **heavy guardrails**, scoped to the **customer's own DB** (per-organization). The tool is feature-gated: `ResolveAgent` only injects it when:
+A SQL-execution tool with **heavy guardrails** against an external database configured **on the agent**. `MaybeLoadDatabaseToolService.execute(agent)` only builds it when:
 
-1. `agents.database_tool = true`
-2. `agents.organization_id` is set
-3. `organization_features` has `(organization_id, feature_key='database_connection', enabled=true)` (joined via `OrganizationFeatureRepository.isEnabledForOrganization`)
-4. `organizations.database_url` is populated
+1. `agents.database_tool = true`, and
+2. `agents.database_url` is set. The column is `select: false`; it is read only through `AgentRepository.findDatabaseConnection(id)`, together with the optional `database_tables` (allow-list) and `database_sample_rows`.
 
-Any check failing → the tool is silently absent from the agent's tool list.
+Either check failing → the tool is silently absent from the agent's tool list. The values are set through `databaseUrl` / `databaseTables` / `databaseSampleRows` on `POST /agent/create` and `PATCH /agent/:id` (URL prefix validated in the DTO); `database_url` is never returned by the API. (Before 2026-10-04 this lived in `organizations.database_url` + an `organization_features` flag; migration `RemoveMultiTenancy1759700000000` copied it to the agents.)
 
 ### Build (per request)
 
-`execute({ databaseUrl })` constructs the tool lazily:
+`LoadDatabaseToolService.execute({ databaseUrl, includeTables, sampleRows })` goes through the `CUSTOMER_DATABASE` port:
 
-- Detects dialect from the URL prefix: `postgres://` / `postgresql://` → Postgres; `mysql://` / `mysql2://` → MySQL. Other schemes → `BadRequestException`.
-- Creates a fresh TypeORM `DataSource` per call and `await dataSource.initialize()`.
-- `SqlDatabase.fromDataSourceParams({ appDataSource })` introspects the schema via `getTableInfo()` (all tables — no allow-list). The schema is embedded in the tool description so the LLM sees what's available.
+- `detectDialect` (`src/infrastructure/integration/customer-database/sql-guard.ts`): `postgres://` / `postgresql://` → PostgreSQL; `mysql://` / `mysql2://` → MySQL; other schemes → `BadRequestException`.
+- `withConnection` opens a short-lived TypeORM `DataSource` (host allowlist, timeouts), describes the schema with LangChain `SqlDatabase.getTableInfo()` (restricted to `includeTables` when set) and destroys the connection afterwards. The schema is embedded in the tool description so the LLM sees what exists.
 
 ### Execution (`func`)
 
-1. `sanitizeSqlQuery(query)` — see rules below.
-2. `db.run(sanitizedQuery)` (SqlDatabase) — raw SQL execution.
-3. Returns the LangChain `SqlDatabase` result string.
+1. `sanitizeSqlQuery(query, { readOnly })` — see rules below; a violation is returned to the model as `Consulta rejeitada: …` instead of throwing.
+2. A fresh `withConnection(...)` runs the sanitized SQL and returns the result string.
 
 ### Guardrails in `sanitizeSqlQuery`
 
 - **Single statement only.** More than one `;` (or a stray statement after a trailing semicolon) throws `'multiple statements are not allowed.'`.
-- **Verb allow-list.** Must start with `select`, `insert`, or `update` (case-insensitive). Everything else throws. There is **no** tenant filter check anymore — each org has its own DB.
+- **Verb allow-list.** Must start with `select`, `insert`, or `update` (case-insensitive); in `readOnly` mode only `select`. Everything else throws. There is no tenant or `company_id` filter: each agent points at its own database, so use a read-only database user when the agent must not write.
 - **Deny regex.** `\b(DELETE|ALTER|DROP|CREATE|REPLACE|TRUNCATE)\b` — caught even if the query starts with an allowed verb (defense against multi-keyword payloads).
 - **LIMIT cap.** If the query does not end with `LIMIT n[, m]` the tool appends ` LIMIT 5`. Small. If the model needs more rows, it must specify its own LIMIT.
 
@@ -85,7 +81,7 @@ The tool's `description` is dialect-aware (PostgreSQL vs MySQL label) and embeds
 
 ### Common edits
 
-- **Cache DataSources across requests.** Today each `execute({ databaseUrl })` call opens a fresh pool. For a tenant with many sessions this is wasteful. Add a process-level LRU keyed by URL with TTL.
+- **Cache connections across calls.** Each schema description and each query opens and destroys a `DataSource`. For a busy agent this is latency; a process-level cache keyed by URL with a TTL would help.
 - **Support another dialect.** Add the scheme detection in `src/infrastructure/integration/customer-database/sql-guard.ts` (`detectDialect`, with spec) and the driver options in `customer-database.gateway.ts`. Tested are `postgres` and `mysql`.
 - **Tighten verbs.** Restrict to `SELECT` only for read-only analytics use cases.
 
@@ -103,7 +99,7 @@ SupabaseVectorStore.fromExistingIndex(embeddings, {
 ```
 
 - Default table is `documents`; the matching Postgres function is `match_documents`. A second table would need its own SQL function with the same signature.
-- `filter` is a `CustomMetadata` object (`{ session_id?, user_id?, agent_id?, source_type?, source_id?, organization_id? }`) — pgvector scopes vectors by this metadata. The vector-search-tool above passes `{ agent_id }`, so chunks ingested without `agent_id` are invisible to chat.
+- `filter` is a `CustomMetadata` object (`{ session_id?, conversation_id?, user_id?, agent_id?, source_type?, source_id? }`) — pgvector scopes vectors by this metadata. The vector-search-tool above passes `{ agent_id }`, so chunks ingested without `agent_id` are invisible to chat.
 - `embeddings` is the `EMBEDDINGS` port (Voyage `voyage-3-large` live, `MockEmbeddings` in mock mode), injected into the gateway by `integration.module.ts`. `LoadVectorSearchTool` injects `VECTOR_STORE` directly; there is no `LoadVectorStoreService` any more.
 
 ### ExecuteSimilaritySearch — src/modules/retrieval/execute-similarity-search/execute-similarity-search.service.ts
@@ -140,14 +136,12 @@ return retriever.invoke(question);
 
 ## Site ingestion — src/modules/agents/load-agent-sites/load-agent-sites.service.ts
 
-Endpoint `POST /agent/load-sites` (admin-only). Body: `{ sites: string, agentId: string }`.
+Endpoint `POST /agent/load-sites` (`agent.manage`, admin only). Body: `{ sites: string, agentId: string }`.
 
-1. `spiderService.crawl(sites, { limit: 20, depth: 25, metadata: true, readability: true, return_format: 'text' })` — third-party crawler at `spider.cloud`.
+1. `SITE_CRAWLER.crawl(sites, { limit, depth })` — the Spider gateway (`spider.cloud`), mocked in tests.
 2. `vectorStore.upsertChunks(chunks, { source_type: 'site', agent_id, source_id })` — chunks and embeds into the `documents` table, tagged with `source_type: 'site'` so the vector search tool can retrieve them under that agent.
 
-Returns the chunk count. Failures send a 500 with `'Failed to load sites'` (intentionally generic — Spider errors can leak URLs).
-
-Note: the controller treats `body.sites` as a string (passed straight to Spider), but `LoadAgentSitesDto` may declare a different shape — read the DTO before changing the contract.
+Responds `200 { message: 'Sites loaded successfully' }`; errors go through the global exception filter. `LoadAgentSitesDto.sites` is a single string passed straight to the crawler.
 
 ## Adjacent: text-to-speech
 
@@ -156,7 +150,6 @@ Note: the controller treats `body.sites` as a string (passed straight to Spider)
 ## Common pitfalls
 
 - **Re-enabling vector search but forgetting to ingest.** A fresh agent with `vector_search_tool=true` and zero chunks tagged with its `agent_id` will return an empty join; the model still tries to use the tool because the description tells it to. Either ingest sources first or disable the tool until they exist. Note this looks identical to "nothing cleared the rerank threshold" — the `VoyageRerankCompressor` `logger.warn` fires only in the second case, so its absence points at ingestion/metadata.
-- **`database_tool=true` but no feature flag.** The tool will be silently absent. Check `organization_features` for the `database_connection` feature row and `organizations.database_url` before debugging why the LLM "ignored" the tool — it never saw it.
-- **Pool leak per request.** Each tool build opens a fresh TypeORM pool against the customer DB; nothing closes it explicitly today. Monitor connection counts on the customer side if the org gets heavy traffic.
+- **`database_tool=true` but no `database_url`.** The tool will be silently absent. Check `SELECT database_tool, database_url IS NOT NULL FROM agents WHERE id = …` before debugging why the LLM "ignored" the tool — it never saw it.
 - **Changing the deny regex.** It's a `\b...\b` word-boundary match; an SQL identifier coincidentally containing one of those words (e.g., a column named `dropbox_id`) is fine, but be careful with stored procedures and DO blocks if you expand the allow list.
-- **Retrieval cost is two Voyage calls per invocation** — one embed (inside `asRetriever`) plus one rerank over the candidates — on the same `VOYAGEAI_API_KEY` and the same org-wide quota. There's no caching layer. `VECTOR_SEARCH_CANDIDATE_K` drives the rerank bill directly: with ~1800-char chunks (`src/shared/utils/chunkText.ts`) 50 candidates run ~28k rerank tokens per call. High-volume agents should consider caching keyed by `(agentId, normalizedQuery)`, or a smaller `k`.
+- **Retrieval cost is two Voyage calls per invocation** — one embed (inside `asRetriever`) plus one rerank over the candidates — on the same `VOYAGEAI_API_KEY` and the same Voyage account quota. There's no caching layer. `VECTOR_SEARCH_CANDIDATE_K` drives the rerank bill directly: with ~1800-char chunks (`src/shared/utils/chunk-text.ts`) 50 candidates run ~28k rerank tokens per call. High-volume agents should consider caching keyed by `(agentId, normalizedQuery)`, or a smaller `k`.

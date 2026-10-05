@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 
-import type { AuthenticatedUser } from 'src/auth/authenticated-user';
 import type {
   GetDashboardDataDto,
   ReportSentiment,
@@ -26,19 +25,8 @@ export interface DashboardData {
 export class GetDashboardDataService {
   constructor(private readonly reportRepository: ReportRepository) {}
 
-  private parseFilters(
-    user: AuthenticatedUser,
-    query: GetDashboardDataDto,
-  ): ReportFilters {
+  private parseFilters(query: GetDashboardDataDto): ReportFilters {
     const filters: ReportFilters = {};
-
-    if (user.role !== 'admin') {
-      if (user.organization_id) {
-        filters.organization_id = user.organization_id;
-      }
-    } else if (query.organization_id) {
-      filters.organization_id = String(query.organization_id);
-    }
 
     if (query.agent_ids) {
       const arr = Array.isArray(query.agent_ids)
@@ -72,11 +60,8 @@ export class GetDashboardDataService {
     return filters;
   }
 
-  async execute(
-    user: AuthenticatedUser,
-    query: GetDashboardDataDto,
-  ): Promise<DashboardData> {
-    const filters = this.parseFilters(user, query);
+  async execute(query: GetDashboardDataDto): Promise<DashboardData> {
+    const filters = this.parseFilters(query);
 
     const totalVolume = await this.reportRepository.countAll(filters);
 

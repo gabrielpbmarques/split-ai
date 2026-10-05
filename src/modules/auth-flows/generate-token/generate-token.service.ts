@@ -26,11 +26,6 @@ export class GenerateTokenService {
       iat: Math.floor(Date.now() / 1000),
     };
 
-    if (user.role !== 'guest') {
-      payload.organization_id = user.organization_id;
-      payload.org_role = user.org_role;
-    }
-
     const token = sign(payload, env.JWT_SECRET, {
       expiresIn: `${expirationHours}h`,
     });

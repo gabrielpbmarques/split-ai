@@ -10,7 +10,6 @@ export interface InboundWhatsappMessage {
 }
 
 export interface MessagingGateway extends IntegrationGateway {
-  sendSms(phone: string, text: string): Promise<void>;
   sendWhatsapp(phone: string, text: string): Promise<void>;
   parseInboundWhatsapp(
     form: Readonly<Record<string, unknown>>,

@@ -4,7 +4,6 @@ import { SourceEntity } from 'src/infrastructure/database/schema';
 import {
   bearer,
   createAgent,
-  createOrganization,
   createSource,
   createUser,
 } from 'test/support/factories';
@@ -20,17 +19,11 @@ describe('sources (e2e)', () => {
   beforeEach(() => t.reset());
   afterAll(() => t.close());
 
-  it('lists sources of an agent (agent_id required) and reads one within the organization', async () => {
-    const organization = await createOrganization(t.dataSource);
-    const user = await createUser(t.dataSource, {
-      organization_id: organization.id,
-    });
-    const agent = await createAgent(t.dataSource, {
-      organization_id: organization.id,
-    });
+  it('lists sources of an agent (agent_id required) and reads one', async () => {
+    const user = await createUser(t.dataSource);
+    const agent = await createAgent(t.dataSource);
     const source = await createSource(t.dataSource, {
       agent_id: agent.id,
-      organization_id: organization.id,
     });
 
     const list = await t
@@ -61,27 +54,19 @@ describe('sources (e2e)', () => {
       .set('Authorization', bearer(user))
       .expect(404);
 
-    const outsider = await createUser(t.dataSource, {
-      organization_id: (await createOrganization(t.dataSource)).id,
-    });
+    const guest = await createUser(t.dataSource, { role: 'guest' });
     await t
       .http()
       .get(`/source/${source.id}`)
-      .set('Authorization', bearer(outsider))
+      .set('Authorization', bearer(guest))
       .expect(403);
   });
 
   it('deletes a source (soft) together with its vectors and answers 404 afterwards', async () => {
-    const organization = await createOrganization(t.dataSource);
-    const user = await createUser(t.dataSource, {
-      organization_id: organization.id,
-    });
-    const agent = await createAgent(t.dataSource, {
-      organization_id: organization.id,
-    });
+    const user = await createUser(t.dataSource);
+    const agent = await createAgent(t.dataSource);
     const source = await createSource(t.dataSource, {
       agent_id: agent.id,
-      organization_id: organization.id,
     });
 
     await t
@@ -102,11 +87,8 @@ describe('sources (e2e)', () => {
   });
 
   it('ingests a site through POST /agent/generate-source (admin, multipart) and records the source', async () => {
-    const organization = await createOrganization(t.dataSource);
     const admin = await createUser(t.dataSource, { role: 'admin' });
-    const agent = await createAgent(t.dataSource, {
-      organization_id: organization.id,
-    });
+    const agent = await createAgent(t.dataSource);
 
     await t
       .http()
@@ -133,9 +115,7 @@ describe('sources (e2e)', () => {
       .field('agentId', agent.id)
       .expect(400);
 
-    const user = await createUser(t.dataSource, {
-      organization_id: organization.id,
-    });
+    const user = await createUser(t.dataSource);
     await t
       .http()
       .post('/agent/generate-source')
@@ -146,11 +126,8 @@ describe('sources (e2e)', () => {
   });
 
   it('ingests an uploaded text file', async () => {
-    const organization = await createOrganization(t.dataSource);
     const admin = await createUser(t.dataSource, { role: 'admin' });
-    const agent = await createAgent(t.dataSource, {
-      organization_id: organization.id,
-    });
+    const agent = await createAgent(t.dataSource);
 
     await t
       .http()

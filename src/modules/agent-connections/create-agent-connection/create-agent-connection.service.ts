@@ -1,13 +1,10 @@
 import {
   BadRequestException,
   ConflictException,
-  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 
-import { AccessScopeService } from 'src/auth/access-scope.service';
-import type { AuthenticatedUser } from 'src/auth/authenticated-user';
 import type { CreateAgentConnectionDto } from 'src/modules/agent-connections/create-agent-connection/create-agent-connection.dto';
 import { AgentConnectionRepository } from 'src/modules/agent-connections/repositories/agent-connection.repository';
 import { AgentRepository } from 'src/modules/agents/repositories/agent.repository';
@@ -17,13 +14,9 @@ export class CreateAgentConnectionService {
   constructor(
     private readonly agentConnectionRepository: AgentConnectionRepository,
     private readonly agentRepository: AgentRepository,
-    private readonly accessScope: AccessScopeService,
   ) {}
 
-  async execute(
-    dto: CreateAgentConnectionDto,
-    user: AuthenticatedUser,
-  ): Promise<{ id: string }> {
+  async execute(dto: CreateAgentConnectionDto): Promise<{ id: string }> {
     if (dto.principalAgentId === dto.childAgentId) {
       throw new BadRequestException(
         'Um agente não pode se conectar a si mesmo.',
@@ -40,26 +33,6 @@ export class CreateAgentConnectionService {
     }
     if (!child) {
       throw new NotFoundException('Agente conectado não encontrado.');
-    }
-
-    const scopeMessage = 'Agente não pertence à sua organização.';
-    this.accessScope.ensureCan(
-      user,
-      'agent-connection.manage',
-      { organizationId: principal.organization_id },
-      scopeMessage,
-    );
-    this.accessScope.ensureCan(
-      user,
-      'agent-connection.manage',
-      { organizationId: child.organization_id },
-      scopeMessage,
-    );
-
-    if (principal.organization_id !== child.organization_id) {
-      throw new ForbiddenException(
-        'Os agentes pertencem a organizações diferentes.',
-      );
     }
 
     const duplicate = await this.agentConnectionRepository.existsByPair(
@@ -106,7 +79,6 @@ export class CreateAgentConnectionService {
     }
 
     const connection = await this.agentConnectionRepository.create({
-      organization_id: principal.organization_id ?? undefined,
       principal_agent_id: dto.principalAgentId,
       child_agent_id: dto.childAgentId,
       tool_name: dto.toolName,

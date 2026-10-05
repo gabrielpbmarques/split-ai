@@ -10,14 +10,11 @@ import {
 } from 'src/shared/contracts/pagination';
 
 export interface SessionCountFilter {
-  readonly organizationId?: string;
   readonly agentId?: string;
   readonly createdBetween?: readonly [Date, Date];
 }
 
 export interface SessionListFilter {
-  readonly organizationId?: string;
-  readonly ownUserId?: string;
   readonly agentId?: string;
   readonly userId?: string;
   readonly startDate?: string;
@@ -57,7 +54,6 @@ export class SessionRepository {
 
   async countByFilter(filter: SessionCountFilter): Promise<number> {
     const where: FindOptionsWhere<SessionEntity> = {};
-    if (filter.organizationId) where.organization_id = filter.organizationId;
     if (filter.agentId) where.agent_id = filter.agentId;
     if (filter.createdBetween) {
       where.created_at = Between(...filter.createdBetween);
@@ -116,12 +112,6 @@ export class SessionRepository {
       )
       .where('1=1');
 
-    if (filter.organizationId) {
-      query.andWhere(
-        '(s.organization_id = :orgId OR (s.organization_id IS NULL AND s.user_id = :ownUserId))',
-        { orgId: filter.organizationId, ownUserId: filter.ownUserId },
-      );
-    }
     if (filter.agentId) {
       query.andWhere('s.agent_id = :agentId', { agentId: filter.agentId });
     }

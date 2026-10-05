@@ -14,8 +14,6 @@ const USER_FIELDS = [
   'email',
   'phone',
   'role',
-  'org_role',
-  'organization_id',
   'origin',
   'status',
   'created_at',

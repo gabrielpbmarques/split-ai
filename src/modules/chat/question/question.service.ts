@@ -25,14 +25,9 @@ export class QuestionService {
     onEvent: (event: StreamEvent) => void,
   ): Promise<void> {
     const { question, agentId } = dto;
-    const organizationId = user.organization_id ?? null;
-
-    const sessionOwnerKey = user.id;
-
     const session = await this.createSessionIfNotExistsService.execute({
       agent_id: agentId,
-      user_id: sessionOwnerKey ?? undefined,
-      organization_id: organizationId ?? undefined,
+      user_id: user.id,
     });
 
     const agent = await this.resolveAgentService.execute(agentId, {
@@ -45,7 +40,7 @@ export class QuestionService {
 
     await this.recordChatMessageService.execute(
       session.id,
-      user.id ?? null,
+      user.id,
       agent.id,
       question,
       'user',
@@ -56,9 +51,8 @@ export class QuestionService {
       {
         session_id: session.id,
         conversation_id: dto.conversationId,
-        user_id: user.id ?? undefined,
+        user_id: user.id,
         agent_id: agent.id,
-        organization_id: organizationId ?? undefined,
       },
       agent,
       STREAM,
@@ -78,7 +72,7 @@ export class QuestionService {
     if (fullResponse) {
       await this.recordChatMessageService.execute(
         session.id,
-        user.id ?? null,
+        user.id,
         agent.id,
         fullResponse,
         'agent',

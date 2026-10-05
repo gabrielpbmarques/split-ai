@@ -39,7 +39,6 @@ export class AttendantService {
     const session = await this.createSessionIfNotExistsService.execute({
       agent_id: agent.id,
       user_id: user.id,
-      organization_id: agent.organization_id ?? undefined,
     });
 
     await this.recordChatMessageService.execute(

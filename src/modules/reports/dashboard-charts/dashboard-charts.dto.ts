@@ -36,5 +36,4 @@ export interface ChartData {
 export interface DashboardCharts {
   sentiment: ChartData;
   conversations: ChartData;
-  tokens: ChartData;
 }

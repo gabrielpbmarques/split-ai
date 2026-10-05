@@ -10,13 +10,9 @@ import type { FastifyRequest } from 'fastify';
 import {
   IS_PUBLIC_KEY,
   REQUIRED_PERMISSIONS_KEY,
-  REQUIRE_ACTIVE_ORGANIZATION_KEY,
 } from 'src/auth/auth.constants';
 import type { Permission } from 'src/auth/permissions';
 import { requireUser } from 'src/auth/request-user';
-
-export const INACTIVE_ORGANIZATION_MESSAGE =
-  'Sua organização está inativa. Entre em contato com o administrador para renovar o plano ou adquirir créditos.';
 
 @Injectable()
 export class AuthorizationGuard implements CanActivate {
@@ -50,16 +46,6 @@ export class AuthorizationGuard implements CanActivate {
           'Permissão insuficiente para acessar este recurso',
         );
       }
-    }
-
-    const requiresActiveOrganization =
-      this.reflector.getAllAndOverride<boolean>(
-        REQUIRE_ACTIVE_ORGANIZATION_KEY,
-        targets,
-      );
-
-    if (requiresActiveOrganization && user.organization_status === 'inactive') {
-      throw new ForbiddenException(INACTIVE_ORGANIZATION_MESSAGE);
     }
 
     return true;

@@ -39,7 +39,6 @@ async function bootstrap(): Promise<void> {
         .setTitle('split-ai')
         .setVersion('0.0.1')
         .addBearerAuth()
-        .addApiKey({ type: 'apiKey', name: 'Authorization', in: 'header' })
         .build(),
     );
     SwaggerModule.setup('docs', app, document);

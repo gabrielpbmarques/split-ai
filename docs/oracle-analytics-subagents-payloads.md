@@ -111,4 +111,4 @@ O Gerente "Oracle Analytics" **não é criado** — é o monolito `a951e928-2b86
 ## Antes de rodar
 
 1. **"Oracle" é o nome do time, não o banco.** O `LoadDatabaseTool` só detecta **Postgres** e **MySQL** (`postgres://` / `mysql://`) — **Oracle DB não é suportado**.
-2. **Gating do `database_tool`** (Passo 7 do runbook): sem a feature `database_connection` habilitada + `database_url` na org, o `execute_sql` some silenciosamente para o Analista SQL.
+2. **Gating do `database_tool`** (Passo 7 do runbook): sem `databaseTool: true` + `databaseUrl` no próprio agente, o `execute_sql` some silenciosamente para o Analista SQL.

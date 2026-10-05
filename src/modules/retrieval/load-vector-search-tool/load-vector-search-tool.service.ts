@@ -16,11 +16,10 @@ export class LoadVectorSearchToolService {
     private readonly executeSimilaritySearchService: ExecuteSimilaritySearchService,
   ) {}
 
-  async execute(): Promise<
+  async execute(agentId: string): Promise<
     DynamicStructuredTool<
       z.ZodObject<{
         query: z.ZodString;
-        agent_id: z.ZodString;
         source_type: z.ZodEnum<
           ['business_context', 'memory', 'additional_directives']
         >;
@@ -32,18 +31,17 @@ export class LoadVectorSearchToolService {
       description: `
         IMPORTANTE: SEMPRE use esta ferramenta antes de responder.
         Busca embeddings no Supabase; use se precisar de contexto factual externo.
-        O agent_id é {agentId}.
+        A busca já é restrita às fontes deste agente.
       `,
       schema: z.object({
         query: z.string().describe('Consulta semântica'),
-        agent_id: z.string().describe('ID do agente'),
         source_type: z
           .enum(['business_context', 'memory', 'additional_directives'])
           .describe('Tipo de fonte para busca de vetores'),
       }),
-      func: async ({ query, agent_id, source_type }) => {
+      func: async ({ query, source_type }) => {
         const vectorStore = await this.vectorStore.loadIndex({
-          agent_id,
+          agent_id: agentId,
           source_type,
         });
 

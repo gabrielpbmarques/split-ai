@@ -13,7 +13,7 @@ export class CreateSessionIfNotExistsService {
     dto: CreateSessionIfNotExistsDto,
     createNew: boolean = false,
   ): Promise<SessionEntity> {
-    const { agent_id, user_id, organization_id } = dto;
+    const { agent_id, user_id } = dto;
     const activeSession = user_id
       ? await this.sessionRepository.findActiveSessionByUserAndAgent(
           user_id,
@@ -30,7 +30,6 @@ export class CreateSessionIfNotExistsService {
     return this.sessionRepository.create({
       agent_id,
       user_id,
-      organization_id,
       expires_at: moment().add(1, 'day').toDate(),
     });
   }

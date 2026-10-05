@@ -29,16 +29,6 @@ export class TwilioMessagingGateway implements MessagingGateway {
     return this.client ? 'READY' : 'NOT_CONFIGURED';
   }
 
-  async sendSms(phone: string, text: string): Promise<void> {
-    const client = this.client ?? notConfigured(this.name);
-
-    await client.messages.create({
-      body: text,
-      from: env.TWILIO_PHONE_NUMBER,
-      to: toE164(phone),
-    });
-  }
-
   async sendWhatsapp(phone: string, text: string): Promise<void> {
     const client = this.client ?? notConfigured(this.name);
 

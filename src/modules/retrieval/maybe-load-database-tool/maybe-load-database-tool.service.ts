@@ -1,66 +1,36 @@
 import { Injectable } from '@nestjs/common';
 
 import type { AgentEntity } from 'src/infrastructure/database/schema';
-import { OrganizationFeatureRepository } from 'src/modules/organizations/repositories/organization-feature.repository';
-import { OrganizationRepository } from 'src/modules/organizations/repositories/organization.repository';
+import { AgentRepository } from 'src/modules/agents/repositories/agent.repository';
 import { LoadDatabaseToolService } from 'src/modules/retrieval/load-database-tool/load-database-tool.service';
-import { env } from 'src/shared/config/env';
 import type { AgentTool } from 'src/shared/contracts';
-
-const DATABASE_CONNECTION_FEATURE_KEY = 'database_connection';
 
 @Injectable()
 export class MaybeLoadDatabaseToolService {
   constructor(
     private readonly loadDatabaseToolService: LoadDatabaseToolService,
-    private readonly organizationFeatureRepository: OrganizationFeatureRepository,
-    private readonly organizationRepository: OrganizationRepository,
+    private readonly agentRepository: AgentRepository,
   ) {}
 
-  async execute(
-    organizationId: string,
-    scopeCompanyId?: string,
-    agent?: AgentEntity,
-  ): Promise<AgentTool | null> {
-    const feature = await this.organizationFeatureRepository.getEnabledFeature(
-      organizationId,
-      DATABASE_CONNECTION_FEATURE_KEY,
+  async execute(agent: AgentEntity): Promise<AgentTool | null> {
+    if (!agent.database_tool) {
+      return null;
+    }
+
+    const connection = await this.agentRepository.findDatabaseConnection(
+      agent.id,
     );
-    if (!feature) {
+
+    if (!connection?.database_url) {
       return null;
     }
-
-    const organization =
-      await this.organizationRepository.findById(organizationId);
-    if (!organization?.database_url) {
-      return null;
-    }
-
-    const featureConfig = (feature.config ?? {}) as {
-      tables?: string[];
-      sampleRows?: number;
-    };
-
-    const scopeRequired =
-      !!agent &&
-      (env.BRAVOHUB_SCOPED_AGENTS.includes(agent.id) ||
-        (!!agent.agent_identifier &&
-          env.BRAVOHUB_SCOPED_AGENTS.includes(agent.agent_identifier)));
 
     return this.loadDatabaseToolService.execute({
-      databaseUrl: organization.database_url,
-      includeTables: featureConfig.tables?.length
-        ? featureConfig.tables
+      databaseUrl: connection.database_url,
+      includeTables: connection.database_tables?.length
+        ? connection.database_tables
         : undefined,
-      sampleRows:
-        typeof featureConfig.sampleRows === 'number'
-          ? featureConfig.sampleRows
-          : undefined,
-      readOnly: !!scopeCompanyId || scopeRequired,
-      scope: scopeCompanyId
-        ? { column: 'company_id', value: scopeCompanyId }
-        : undefined,
-      scopeRequired,
+      sampleRows: connection.database_sample_rows ?? undefined,
     });
   }
 }

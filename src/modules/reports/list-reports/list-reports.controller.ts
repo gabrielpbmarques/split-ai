@@ -8,11 +8,9 @@ import {
 } from '@nestjs/swagger';
 import { FastifyReply } from 'fastify';
 
-import { AuthenticatedUser } from 'src/auth/authenticated-user';
 import { ListReportsDto } from 'src/modules/reports/list-reports/list-reports.dto';
 import { ListReportsService } from 'src/modules/reports/list-reports/list-reports.service';
 import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
-import { User as AuthUser } from 'src/shared/decorators/user.decorator';
 
 @ApiTags('reports')
 @Controller('report')
@@ -28,9 +26,8 @@ export class ListReportsController {
   async handle(
     @Res() res: FastifyReply,
     @Query() dto: ListReportsDto,
-    @AuthUser() user: AuthenticatedUser,
   ): Promise<FastifyReply> {
-    const result = await this.listReportsService.execute(user, dto);
+    const result = await this.listReportsService.execute(dto);
     return res.status(200).send(result);
   }
 }

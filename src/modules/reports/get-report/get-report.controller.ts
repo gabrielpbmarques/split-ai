@@ -8,10 +8,8 @@ import {
 } from '@nestjs/swagger';
 import { FastifyReply } from 'fastify';
 
-import { AuthenticatedUser } from 'src/auth/authenticated-user';
 import { GetReportService } from 'src/modules/reports/get-report/get-report.service';
 import { RequirePermissions } from 'src/shared/decorators/permissions.decorator';
-import { User as AuthUser } from 'src/shared/decorators/user.decorator';
 
 @ApiTags('reports')
 @Controller('report')
@@ -24,12 +22,8 @@ export class GetReportController {
   @ApiBearerAuth()
   @ApiUnauthorizedResponse({ description: 'Token ausente ou inválido' })
   @ApiForbiddenResponse({ description: 'Permissão insuficiente' })
-  async handle(
-    @Param('id') id: string,
-    @Res() res: FastifyReply,
-    @AuthUser() user: AuthenticatedUser,
-  ) {
-    const report = await this.getReportService.execute(user, id);
+  async handle(@Param('id') id: string, @Res() res: FastifyReply) {
+    const report = await this.getReportService.execute(id);
     return res.status(200).send(report);
   }
 }

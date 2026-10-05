@@ -5,5 +5,4 @@ export type CustomMetadata = {
   agent_id?: string;
   source_type?: string;
   source_id?: string;
-  organization_id?: string;
 };

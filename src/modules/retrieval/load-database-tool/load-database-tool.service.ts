@@ -2,11 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { type DynamicStructuredTool, tool } from 'langchain';
 import z from 'zod';
 
-import {
-  assertScoped,
-  sanitizeSqlQuery,
-  type SqlScope,
-} from 'src/infrastructure/integration/customer-database/sql-guard';
+import { sanitizeSqlQuery } from 'src/infrastructure/integration/customer-database/sql-guard';
 import {
   CUSTOMER_DATABASE,
   type CustomerDatabaseGateway,
@@ -19,8 +15,6 @@ export interface LoadDatabaseToolInput {
   includeTables?: string[];
   sampleRows?: number;
   readOnly?: boolean;
-  scope?: SqlScope;
-  scopeRequired?: boolean;
 }
 
 export type DatabaseTool = DynamicStructuredTool<
@@ -39,8 +33,6 @@ export class LoadDatabaseToolService {
     includeTables,
     sampleRows,
     readOnly = false,
-    scope,
-    scopeRequired = false,
   }: LoadDatabaseToolInput): Promise<DatabaseTool> {
     const options: CustomerDatabaseOptions = { includeTables, sampleRows };
 
@@ -55,15 +47,10 @@ export class LoadDatabaseToolService {
 
     return tool(
       async ({ query }) => {
-        if (scopeRequired && !scope) {
-          return 'Consulta bloqueada: escopo de empresa ausente. Nenhum dado pode ser lido sem uma empresa autenticada.';
-        }
-
         let sanitized: string;
 
         try {
           sanitized = sanitizeSqlQuery(query, { readOnly });
-          if (scope) assertScoped(sanitized, scope);
         } catch (error) {
           return `Consulta rejeitada: ${(error as Error).message}`;
         }
@@ -78,7 +65,6 @@ export class LoadDatabaseToolService {
         name: 'execute_sql',
         description: this.buildDescription(dialect, schema, {
           readOnly,
-          scope,
         }),
         schema: z.object({
           query: z
@@ -96,16 +82,12 @@ export class LoadDatabaseToolService {
   private buildDescription(
     dialect: SqlDialect,
     schema: string,
-    opts: { readOnly: boolean; scope?: SqlScope },
+    opts: { readOnly: boolean },
   ): string {
     const dialectLabel = dialect === 'postgres' ? 'PostgreSQL' : 'MySQL';
     const rule1 = opts.readOnly
       ? '1. SOMENTE SELECT (somente leitura). INSERT/UPDATE/DELETE/ALTER/DROP/CREATE/REPLACE/TRUNCATE são bloqueados.'
       : '1. Use apenas SELECT, INSERT ou UPDATE. DELETE/ALTER/DROP/CREATE/REPLACE/TRUNCATE são bloqueados.';
-    const scopeRule = opts.scope
-      ? `
-      6. ISOLAMENTO OBRIGATÓRIO DE EMPRESA: toda query DEVE filtrar ${opts.scope.column} = ${opts.scope.value}, referenciando uma tabela que possua essa coluna (ex.: app_company, app_company_user, app_company_campaign). Para tabelas-filho sem ${opts.scope.column}, faça JOIN até o pai (ex.: app_company_campaign / app_company_analytics_session) e filtre o ${opts.scope.column} = ${opts.scope.value} dele. É PROIBIDO usar outro valor, ${opts.scope.column} IN (...), faixas ou desigualdades sobre ${opts.scope.column} — a query será REJEITADA automaticamente.`
-      : '';
     return `
       --- ESQUEMA DE BANCO DE DADOS (${dialectLabel}) ---
       Não invente tabelas/colunas que não estejam listadas abaixo.
@@ -117,7 +99,7 @@ export class LoadDatabaseToolService {
       2. Uma única statement por chamada (sem múltiplos ; encadeados).
       3. Se a query não tiver LIMIT, um \`LIMIT 5\` é aplicado automaticamente.
       4. Prefira listar colunas explicitamente em vez de SELECT *.
-      5. Em caso de erro do banco, analise a mensagem, corrija e tente de novo (até 3 tentativas).${scopeRule}
+      5. Em caso de erro do banco, analise a mensagem, corrija e tente de novo (até 3 tentativas).
     `;
   }
 }
