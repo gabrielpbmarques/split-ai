@@ -32,3 +32,7 @@ O código não leva comentários (regra `02`; verificado por `bun run lint:comme
 - **Filtros de data por dia comparam no bucket `date_trunc('day')::date`** para evitar deriva de fuso (`ReportRepository`). `GET /report/dashboard-data` aceita `created_at` (um dia) ou `start`/`end`.
 - **Processamento de fonte nunca rejeita.** `GenerateAgentSourceService.runJob` grava `completed` + contagem de chunks em sucesso e `failed` + mensagem em erro, para que jobs irmãos no mesmo `Promise.all` não sejam afetados.
 - **Widget embed:** o script `/public/embed/chat.js` descobre a própria URL base pelo `src` e injeta botão flutuante + iframe.
+
+## Banco de dados
+
+- **Colunas `timestamp` (sem fuso) guardam UTC.** Toda coluna de data do schema é `timestamp without time zone`, e os defaults `now()` são gravados no fuso do Postgres (UTC). `useUtcForTimestampColumns` faz o `pg` enviar parâmetros `Date` e ler essas colunas como UTC, independentemente do fuso do processo Node; sem isso, uma máquina em UTC−3 grava e filtra com 3 h de deriva (ex.: `BETWEEN` do dashboard deixa de achar sessões recém-criadas). Em produção (Cloud Run, UTC) o efeito é nulo. É chamada pela factory do `TypeOrmModule` em `AppModule` e por `data-source.ts`. (`src/infrastructure/database/utc-timestamps.ts`)
