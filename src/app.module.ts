@@ -6,6 +6,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from 'src/auth/auth.module';
 import { MIGRATIONS } from 'src/infrastructure/database/migrations';
 import { ENTITIES } from 'src/infrastructure/database/schema';
+import { useUtcForTimestampColumns } from 'src/infrastructure/database/utc-timestamps';
 import { IntegrationModule } from 'src/infrastructure/integration/integration.module';
 import { AgentConnectionsModule } from 'src/modules/agent-connections/agent-connections.module';
 import { AgentRuntimeModule } from 'src/modules/agent-runtime/agent-runtime.module';
@@ -33,23 +34,28 @@ import { AppLoggerModule } from 'src/shared/observability/logger.module';
 @Module({
   imports: [
     AppLoggerModule,
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      url: env.DATABASE_URL,
-      entities: ENTITIES,
-      migrations: MIGRATIONS,
-      migrationsRun: false,
-      synchronize: false,
-      poolSize: env.DATABASE_POOL_MAX,
-      extra: {
-        min: env.DATABASE_POOL_MIN,
-        max: env.DATABASE_POOL_MAX,
-        idleTimeoutMillis: 30_000,
-        connectionTimeoutMillis: env.DATABASE_CONNECTION_TIMEOUT_MS,
-        statement_timeout: env.DATABASE_STATEMENT_TIMEOUT_MS,
-        query_timeout: env.DATABASE_STATEMENT_TIMEOUT_MS,
-        idle_in_transaction_session_timeout: 60_000,
-        keepAlive: true,
+    TypeOrmModule.forRootAsync({
+      useFactory: () => {
+        useUtcForTimestampColumns();
+        return {
+          type: 'postgres' as const,
+          url: env.DATABASE_URL,
+          entities: ENTITIES,
+          migrations: MIGRATIONS,
+          migrationsRun: false,
+          synchronize: false,
+          poolSize: env.DATABASE_POOL_MAX,
+          extra: {
+            min: env.DATABASE_POOL_MIN,
+            max: env.DATABASE_POOL_MAX,
+            idleTimeoutMillis: 30_000,
+            connectionTimeoutMillis: env.DATABASE_CONNECTION_TIMEOUT_MS,
+            statement_timeout: env.DATABASE_STATEMENT_TIMEOUT_MS,
+            query_timeout: env.DATABASE_STATEMENT_TIMEOUT_MS,
+            idle_in_transaction_session_timeout: 60_000,
+            keepAlive: true,
+          },
+        };
       },
     }),
     ...(env.isTest
