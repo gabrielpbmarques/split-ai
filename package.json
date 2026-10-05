@@ -133,11 +133,7 @@
       "^.+\\.(t|j)s$": [
         "ts-jest",
         {
-          "diagnostics": {
-            "ignoreCodes": [
-              151002
-            ]
-          }
+          "tsconfig": "<rootDir>/../tsconfig.spec.json"
         }
       ]
     },
