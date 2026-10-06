@@ -57,7 +57,7 @@ BEGIN
     FROM pg_index i
     JOIN pg_class t ON t.oid = i.indrelid
     LEFT JOIN pg_constraint c ON c.conindid = i.indexrelid
-    WHERE t.relname = $1
+    WHERE t.oid = quote_ident($1)::regclass
       AND i.indisunique
       AND NOT i.indisprimary
       AND i.indexrelid::regclass::text <> quote_ident($2)
