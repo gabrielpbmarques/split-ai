@@ -29,7 +29,6 @@ describe('effectivePermissions', () => {
     expect(effectivePermissions({ role: 'guest' })).toEqual([
       'account.access',
       'chat.ask',
-      'chat.attend',
     ]);
   });
 });

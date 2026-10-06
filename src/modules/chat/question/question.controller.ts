@@ -16,11 +16,11 @@ import { RequirePermissions } from 'src/shared/decorators/permissions.decorator'
 import { User as AuthUser } from 'src/shared/decorators/user.decorator';
 
 @ApiTags('chat')
-@Controller('support')
+@Controller('chat')
 export class QuestionController {
   constructor(private readonly questionService: QuestionService) {}
 
-  @Post('question')
+  @Post()
   @RequirePermissions('chat.ask')
   @ApiOkResponse()
   @ApiBearerAuth()

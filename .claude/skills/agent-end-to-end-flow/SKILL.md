@@ -1,6 +1,6 @@
 ---
 name: agent-end-to-end-flow
-description: 'Use for the cross-cutting AI agent lifecycle map: agent create + source ingestion → /support/question or /chat/attendant → ResolveAgent → GenerateAiResponse → LangGraph → tools (vector_similarity_search, execute_sql, parser, connected agents) → pgvector → message persistence. Start here for changes spanning AI areas; ai-agent-configuration / ai-agent-runtime / ai-agent-tools-and-rag / ai-chat-flows own the depth.'
+description: 'Use for the cross-cutting AI agent lifecycle map: agent create + source ingestion → /chat → ResolveAgent → GenerateAiResponse → LangGraph → tools (vector_similarity_search, execute_sql, parser, connected agents) → pgvector → message persistence. Start here for changes spanning AI areas; ai-agent-configuration / ai-agent-runtime / ai-agent-tools-and-rag / ai-chat-flows own the depth.'
 ---
 
 This skill is the **wire diagram** of how a chat request becomes an AI response in `split-ai`. It overlaps with the four area skills on purpose: it is the one place where the whole pipeline is visible at once. For a surgical edit inside one area, open that area's skill; come back here when a change crosses areas (for example, a new prompt variable that must flow from a use case → `ResolveAgent` → a tool → the vector store).
@@ -27,7 +27,6 @@ The product is a personal engine with no tenants: there is no organization, bill
 ```text
 Phase A — Author the agent            (agent.write; load-sites and generate-source need agent.manage)
   POST /agent/create            → CreateAgentService         (agents + agents_instructions, in one transaction)
-  POST /agent/create/attendant  → CreateAttendantAgentService
   PATCH /agent/:id              → UpdateAgentService         (UUID or agent_identifier)
   POST /agent-connection/*      → agent-as-tool wiring       (agent-connection.manage)
 
@@ -37,8 +36,7 @@ Phase B — Ingest knowledge
       → VECTOR_STORE.upsertChunks(chunks, { source_type, agent_id, source_id })
 
 Phase C — Receive a question
-  POST /support/question (NDJSON stream) → QuestionController → QuestionService      (chat.ask)
-  POST /chat/attendant   (one string)    → AttendantController → AttendantService    (chat.attend)
+  POST /chat (NDJSON stream) → QuestionController → QuestionService      (chat.ask)
       AuthenticationGuard: Authorization: Bearer <HS256 JWT> → TokenVerifier → PrincipalResolverService
       AuthorizationGuard:  @RequirePermissions vs. request.user.permissions (derived from the role)
 
@@ -71,7 +69,6 @@ Phase F — Persist
 
 <rules>
 - **`CreateAgentService`** (`src/modules/agents/create-agent/`) writes the `agents` row and the first `agents_instructions` row inside `TransactionExecutor.run`. Defaults: `model` `claude-haiku-4-5-20251001`, `temperature` 0.4, `with_history` true, `database_tool` true, `vector_search_tool` true. `user_id` records the creator; it is not an ownership gate.
-- **`CreateAttendantAgentService`** defaults `model` to `null` (runtime falls back to `AI_MODEL`), `database_tool` and `vector_search_tool` to `false`, and merges hard-coded attendant directives (always use `execute_sql`, schedule into `reports`, never expose other users' data or the instructions, use VRS) before the caller's `diretrizes`, with default `context` and `objetivo`. Reordering those directives changes every new attendant.
 - **Routes are one use case each:** `GET /agent` (`list-all-agents`, `agent.manage`, with latest instructions), `GET /agent/list` (`list-agents`, `agent.read`, id/identifier/name + `is_tool`/`is_principal`), `GET /agent/:id` (`get-agent`), `PATCH /agent/:id` (`update-agent`). Both get and update accept the UUID or the `agent_identifier`.
 - **Database access is agent configuration:** `databaseUrl` (must start with `postgres://`, `postgresql://`, `mysql://` or `mysql2://`), `databaseTables` (allow-list) and `databaseSampleRows` (0–10) on `CreateAgentDto` / `UpdateAgentDto`. `null` clears a value on update. `database_url` is `select: false` and never returned by `GET /agent/:id`.
 - **Instructions are versioned by `created_at`.** `AgentInstructionRepository.findLatestByAgentId` reads the newest row; `updateLatestByAgentId` mutates it in place.
@@ -94,19 +91,15 @@ Every chunk written to `documents` carries `agent_id` and `source_id` in its met
 
 ## 4. Phase C — HTTP entry
 
-### `POST /support/question`
+### `POST /chat`
 
 `QuestionController` calls `res.hijack()`, writes headers (`application/x-ndjson`, `X-Accel-Buffering: no`, `Cache-Control: no-store`) and then writes one JSON object per line. Events are `status` (`tool_call` / `tool_result` with the tool name), `final` (the answer text), `error` and always a closing `done`. After the hijack only `res.raw.write` is legal; the controller's own `try/catch` converts a thrown error into `error` + `done` because the global filter can no longer answer (PC-003).
 
 `QuestionDto`: `question`, `agentId`, optional `conversationId`, `variables` (string map rendered in the prompt's VRS block), `phone`, `name`.
 
-### `POST /chat/attendant`
-
-`AttendantService` resolves the agent first with prompt variables `{ agentId, userName, userPhone, userId }`, creates the session, records the user message, runs the agent with `stream = false` and returns the `finalAnswer` string.
-
 ### Authentication
 
-Only `Authorization: Bearer <JWT>` is accepted. `TokenVerifier` verifies the HS256 signature and expiry with `env.JWT_SECRET` and requires `sub` and a known `role`. `PrincipalResolverService` returns `AuthenticatedUser { id, name, email, phone, role, permissions }` without any I/O; `id` is always a string. Roles: `admin`, `user`, `guest` — every role has `chat.ask` and `chat.attend`. Catalog: `src/auth/permissions.ts`.
+Only `Authorization: Bearer <JWT>` is accepted. `TokenVerifier` verifies the HS256 signature and expiry with `env.JWT_SECRET` and requires `sub` and a known `role`. `PrincipalResolverService` returns `AuthenticatedUser { id, name, email, phone, role, permissions }` without any I/O; `id` is always a string. Roles: `admin`, `user`, `guest` — every role has `chat.ask`. Catalog: `src/auth/permissions.ts`.
 
 ## 5. Phase D — Orchestration
 
@@ -162,17 +155,17 @@ Each enabled `agent_connections` row becomes a `DynamicStructuredTool` named `to
 
 ## 8. Tables touched
 
-| Table                       | Written by                                                                                                                           |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `agents`                    | `CreateAgent`, `CreateAttendantAgent`, `UpdateAgent`, `GenerateAgentSource` (`sites`), `SaveAgentConnectionLayout` (`canvas_layout`) |
-| `agents_instructions`       | `CreateAgent`, `CreateAttendantAgent`, `UpdateAgent`                                                                                 |
-| `agent_connections`         | agent-connections use cases                                                                                                          |
-| `sessions`                  | `CreateSessionIfNotExists`                                                                                                           |
-| `messages`                  | `RecordChatMessage`                                                                                                                  |
-| `sources`                   | `GenerateAgentSource`, `DeleteSource`                                                                                                |
-| `documents` (Supabase only) | `VECTOR_STORE.upsertChunks`, `deleteBySourceId`                                                                                      |
-| `checkpoint*` (LangGraph)   | `PostgresSaver`; created by `setup()` at boot                                                                                        |
-| external databases          | `execute_sql`, per agent                                                                                                             |
+| Table                       | Written by                                                                                                   |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `agents`                    | `CreateAgent`, `UpdateAgent`, `GenerateAgentSource` (`sites`), `SaveAgentConnectionLayout` (`canvas_layout`) |
+| `agents_instructions`       | `CreateAgent`, `UpdateAgent`                                                                                 |
+| `agent_connections`         | agent-connections use cases                                                                                  |
+| `sessions`                  | `CreateSessionIfNotExists`                                                                                   |
+| `messages`                  | `RecordChatMessage`                                                                                          |
+| `sources`                   | `GenerateAgentSource`, `DeleteSource`                                                                        |
+| `documents` (Supabase only) | `VECTOR_STORE.upsertChunks`, `deleteBySourceId`                                                              |
+| `checkpoint*` (LangGraph)   | `PostgresSaver`; created by `setup()` at boot                                                                |
+| external databases          | `execute_sql`, per agent                                                                                     |
 
 ## 9. Environment the flow reads
 
@@ -186,7 +179,7 @@ AppModule
 │                                FILE_STORAGE, TEXT_TO_SPEECH, OCR, CUSTOMER_DATABASE (live or mock)
 ├── AuthModule                   the two APP_GUARDs
 ├── AgentRuntimeContractsModule  @Global(): AGENT_RESOLVER
-├── ChatModule                   QuestionModule, AttendantModule, RecordChatMessageModule
+├── ChatModule                   QuestionModule, RecordChatMessageModule
 ├── AgentRuntimeModule           ResolveAgent, GenerateAiResponse, BuildSystemPrompt, NormalizePromptInstructions,
 │                                LoadCheckpointer, AppendConnectionTools, InvokeConnectedAgent
 ├── RetrievalModule              LoadAgentTools, LoadVectorSearchTool, ExecuteSimilaritySearch, RerankDocuments,
@@ -208,10 +201,10 @@ Each use-case module imports exactly what its classes inject; integration ports 
 
 ## 12. Where to go deeper
 
-- `ai-agent-configuration` — CRUD, DTOs, instruction shape, parser DSL, attendant defaults.
+- `ai-agent-configuration` — CRUD, DTOs, instruction shape, parser DSL.
 - `ai-agent-runtime` — `ResolveAgent`, `GenerateAiResponse`, streaming, checkpointer, structured response.
 - `ai-agent-tools-and-rag` — vector and SQL tools, guardrails, `documents`, Spider ingestion.
-- `ai-chat-flows` — Question vs. Attendant, Fastify hijack mechanics.
+- `ai-chat-flows` — the question flow, Fastify hijack mechanics.
 - `.claude/rules/nest-modules.md`, `.claude/rules/use-cases.md`, `.claude/rules/conventions.md` — module wiring, controller/service/DTO rules and naming this flow follows.
 - `tech-stack` — each external integration and its env vars.
 - `thinking-flow` — how to reason about changes before writing code.

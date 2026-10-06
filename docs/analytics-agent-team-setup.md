@@ -222,7 +222,7 @@ Esperado: 2 conexões `enabled`, positions 1 e 2, tool_names `consultar_dados_sq
 ## Passo 9 — Teste fim-a-fim
 
 ```
-POST /support/question
+POST /chat
 ```
 
 ```json

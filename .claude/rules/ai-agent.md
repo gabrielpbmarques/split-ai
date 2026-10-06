@@ -17,6 +17,6 @@ Thin path-scoped reminder. Full detail: **`ai-agent-configuration`** (CRUD, prom
 - **Agent-as-tool depth is 1** (`MAX_AGENT_CONNECTION_DEPTH`). A child cannot delegate further, so a specialist tool must be self-contained. Connections go through the `AGENT_RESOLVER` port to avoid the `InvokeConnectedAgent` → `ResolveAgent` module cycle (PC-008).
 - **`GenerateAiResponse` swallows errors** into a Portuguese apology ("Desculpe, tive um problema…"); callers never see stack traces, so observe through LangSmith/Sentry. The structured `finalAnswer` (`AgentFinalResponseSchema`) is the load-bearing output that becomes the streamed `final` event; when adding streamed output, add a new branch instead of changing that one.
 - **Agent database access is configured on the agent** (`database_tool`, `database_url`, `database_tables`, `database_sample_rows`), through `CreateAgentDto` / `UpdateAgentDto` (`databaseUrl`, `databaseTables`, `databaseSampleRows`). `GetAgent` never returns `database_url`.
-- **Known inconsistency:** `CreateAttendantAgent` writes `context` correctly now; older rows may still carry `contexto`. Standardize on `context` if you touch them.
+- **Known inconsistency:** older `agents_instructions` rows may still carry `contexto` instead of `context`. Standardize on `context` if you touch them.
 - **Live runtime is `ChatAnthropic`** through the `CHAT_MODEL` port (see `langchain-anthropic-integration`); verify the live code rather than copying stale snippets from skill bodies.
 </rules>

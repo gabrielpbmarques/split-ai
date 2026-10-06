@@ -117,28 +117,6 @@ describe('agents (e2e)', () => {
         .send({ name: 'x', instructions })
         .expect(401);
     });
-
-    it('creates an attendant agent with the default directives merged in', async () => {
-      const user = await createUser(t.dataSource);
-
-      const { body } = await t
-        .http()
-        .post('/agent/create/attendant')
-        .set('Authorization', bearer(user))
-        .send({
-          name: 'Atendente',
-          instructions: { diretrizes: ['Fale em português.'] },
-        })
-        .expect(201);
-
-      const stored = await t.dataSource
-        .getRepository(AgentInstructionEntity)
-        .findOneByOrFail({ agent_id: body.id });
-      expect(stored.instructions.diretrizes).toEqual(
-        expect.arrayContaining(['Fale em português.']),
-      );
-      expect(stored.instructions.context).toBeTruthy();
-    });
   });
 
   describe('GET /agent/:id, GET /agent/list, GET /agent', () => {

@@ -1,22 +1,21 @@
 ---
 name: ai-chat-flows
-description: 'Use for the chat orchestration: /support/question NDJSON streaming and /chat/attendant, Fastify response hijacking for chunked streaming, and wiring chat into sessions and message persistence. Scope: src/modules/chat/.'
+description: 'Use for the chat orchestration: /chat NDJSON streaming (the only chat endpoint), Fastify response hijacking for chunked streaming, and wiring chat into sessions and message persistence. Scope: src/modules/chat/.'
 ---
 
 ## Scope
 
-`ChatModule` (`src/modules/chat/chat.module.ts`) aggregates `QuestionModule`, `AttendantModule` and the internal `RecordChatMessageModule`. The two controllers are the only chat entry points. There is no billing, credit check or tenant gate on chat.
+`ChatModule` (`src/modules/chat/chat.module.ts`) aggregates `QuestionModule` and the internal `RecordChatMessageModule`. `QuestionController` is the only chat entry point; extend it instead of adding a second one. There is no billing, credit check or tenant gate on chat.
 
-## Live endpoints
+## Live endpoint
 
-| Route                    | Use case    | Streams?             | Permission    | DTO                    |
-| ------------------------ | ----------- | -------------------- | ------------- | ---------------------- |
-| `POST /support/question` | `question`  | yes (Fastify hijack) | `chat.ask`    | `QuestionDto`          |
-| `POST /chat/attendant`   | `attendant` | no                   | `chat.attend` | `QuestionDto` (reused) |
+| Route        | Use case   | Streams?             | Permission | DTO           |
+| ------------ | ---------- | -------------------- | ---------- | ------------- |
+| `POST /chat` | `question` | yes (Fastify hijack) | `chat.ask` | `QuestionDto` |
 
-Both permissions are granted to every role (`admin`, `user`, `guest`); the caller is always a Bearer-JWT user, so `user.id` is a string.
+`chat.ask` is granted to every role (`admin`, `user`, `guest`); the caller is always a Bearer-JWT user, so `user.id` is a string.
 
-`QuestionDto` (`src/modules/chat/question/question.dto.ts`): `question` and `agentId` (required; `agentId` may be the UUID or the `agent_identifier`), optional `phone`, `name`, `conversationId` (drives thread memory) and `variables?: Record<string, string>` (per-call prompt variables rendered in the `VRS` block; the server-controlled keys `sessionId` / `conversationId` / `threadId` always override them). Attendant imports the DTO from the question folder — keep them in sync.
+`QuestionDto` (`src/modules/chat/question/question.dto.ts`): `question` and `agentId` (required; `agentId` may be the UUID or the `agent_identifier`), optional `phone`, `name`, `conversationId` (drives thread memory) and `variables?: Record<string, string>` (per-call prompt variables rendered in the `VRS` block; the server-controlled keys `sessionId` / `conversationId` / `threadId` always override them).
 
 ## Question flow — src/modules/chat/question/question.service.ts
 
@@ -46,13 +45,6 @@ const writeEvent = (event: StreamEvent) =>
 - Headers are written before the first event. An exception after that cannot become an `ErrorResponse` (PC-003): the controller's `try/catch` — the only one in a controller — writes `{ type: 'error', message }`, then `{ type: 'done' }` if the service did not already, and ends the stream in `finally`.
 - `X-Accel-Buffering: no` defeats proxy buffering (nginx, Cloud Run). Keep it.
 - Events are `status` (tool call/result), `final`, `error` and `done`; there are no token deltas.
-
-## Attendant flow — src/modules/chat/attendant/attendant.service.ts
-
-Same building blocks, with deliberate differences:
-
-- **Resolves the agent first**, passing `{ agentId, userName, userPhone, userId }` as prompt variables, then creates or reuses the session for `user.id` + `agent.id`.
-- **`stream = false`.** `generateAiResponseService.execute(...)` returns the `finalAnswer` string (or the apology string on failure); the agent message is recorded and the controller answers `res.status(200).send(result)`. Errors before generation propagate to `GlobalExceptionFilter`.
 
 ## RecordChatMessage — the internal use case
 

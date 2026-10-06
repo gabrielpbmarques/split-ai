@@ -46,41 +46,20 @@ Field names mix English (`context`) and Portuguese (`diretrizes`, `objetivo`). K
 
 ## Use cases
 
-| Route                          | Use case                 | Permission     | Notes                                                             |
-| ------------------------------ | ------------------------ | -------------- | ----------------------------------------------------------------- |
-| `POST /agent/create`           | `create-agent`           | `agent.write`  | transaction: agent + first instructions row                       |
-| `POST /agent/create/attendant` | `create-attendant-agent` | `agent.write`  | merges default attendant instructions                             |
-| `GET /agent/list`              | `list-agents`            | `agent.read`   | paginated `{ id, agent_identifier, name, is_tool, is_principal }` |
-| `GET /agent`                   | `list-all-agents`        | `agent.manage` | paginated, with latest instructions (admin)                       |
-| `GET /agent/:id`               | `get-agent`              | `agent.read`   | id or `agent_identifier`; never returns `database_url`            |
-| `PATCH /agent/:id`             | `update-agent`           | `agent.write`  | partial update, transaction with instructions                     |
-| `POST /agent/load-sites`       | `load-agent-sites`       | `agent.manage` | crawls `sites` into the vector store                              |
+| Route                    | Use case           | Permission     | Notes                                                             |
+| ------------------------ | ------------------ | -------------- | ----------------------------------------------------------------- |
+| `POST /agent/create`     | `create-agent`     | `agent.write`  | transaction: agent + first instructions row                       |
+| `GET /agent/list`        | `list-agents`      | `agent.read`   | paginated `{ id, agent_identifier, name, is_tool, is_principal }` |
+| `GET /agent`             | `list-all-agents`  | `agent.manage` | paginated, with latest instructions (admin)                       |
+| `GET /agent/:id`         | `get-agent`        | `agent.read`   | id or `agent_identifier`; never returns `database_url`            |
+| `PATCH /agent/:id`       | `update-agent`     | `agent.write`  | partial update, transaction with instructions                     |
+| `POST /agent/load-sites` | `load-agent-sites` | `agent.manage` | crawls `sites` into the vector store                              |
 
 Each route is its own use-case module (one controller, one `handle()`); there is no multi-route controller in this domain.
 
-## CreateAgent vs CreateAttendantAgent
+## CreateAgent
 
-Both insert into `agents` + `agents_instructions`.
-
-|                                        | `CreateAgentService`                                  | `CreateAttendantAgentService`                 |
-| -------------------------------------- | ----------------------------------------------------- | --------------------------------------------- |
-| Model default                          | `'claude-haiku-4-5-20251001'`                         | `null` (runtime falls back to `env.AI_MODEL`) |
-| `database_tool` / `vector_search_tool` | DTO value, default `true`                             | DTO value, default `false`                    |
-| Database connection                    | `databaseUrl`, `databaseTables`, `databaseSampleRows` | not accepted                                  |
-| Instructions                           | raw DTO `instructions`                                | merged with hard-coded defaults (below)       |
-| Transaction                            | yes (`TransactionExecutor`)                           | no                                            |
-
-`vector_search_tool` must never be stored as `null`: the tool loader treats a falsy flag as "off", so `CreateAgentService` coalesces to the column default.
-
-### Attendant default instructions — src/modules/agents/create-attendant-agent/create-attendant-agent.service.ts
-
-`CreateAttendantAgentService` builds `{ context, objetivo, diretrizes }` from three private helpers:
-
-- `getDefaultAttendantDirectives()` — `IMPORTANTE: ...` rules covering `execute_sql` usage, not exposing other users' data, prompt-injection resistance and `VRS` usage.
-- `getDefaultContext()` — "assistente virtual especializado em atendimento ao cliente" boilerplate.
-- `getDefaultObjective()` — retention/upsell-oriented goals.
-
-User-supplied `dto.instructions.diretrizes` are appended after the defaults. Re-ordering changes the behavior of every attendant created afterwards. Older attendant rows may still carry a `contexto` key (an earlier bug); standardize on `context` if you touch them.
+`CreateAgentService` inserts into `agents` + `agents_instructions` inside `TransactionExecutor.run`. Defaults: `model` `'claude-haiku-4-5-20251001'`, `database_tool` / `vector_search_tool` `true`; the database connection comes from `databaseUrl`, `databaseTables`, `databaseSampleRows`; instructions are stored as sent. `vector_search_tool` must never be stored as `null`: the tool loader treats a falsy flag as "off", so `CreateAgentService` coalesces to the column default. Older rows may still carry a `contexto` key (an earlier bug); standardize on `context` if you touch them.
 
 ## UpdateAgent
 
@@ -126,4 +105,3 @@ When an agent has `parser_schema`, `LoadAgentToolsService` builds a tool with `b
 
 - A new `AgentEntity` column does not appear in `GetAgent` output automatically: `AgentDetails` is built field by field. Never add `database_url` to it.
 - Existing `agents_instructions` rows may have inconsistent shapes (`contexto`); normalize before a strict migration.
-- `instructions.diretrizes` should be a non-empty array; the attendant service reads `dto.instructions.diretrizes` and the DTO marks `instructions` optional, so a missing object crashes there.
