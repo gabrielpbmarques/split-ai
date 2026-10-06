@@ -176,7 +176,7 @@ Each enabled `agent_connections` row becomes a `DynamicStructuredTool` named `to
 
 ## 9. Environment the flow reads
 
-Through `src/shared/config/env.ts`, except the `LANGSMITH_*` variables the tracer reads itself: `AI_MODEL`, `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `ORCHESTRATOR_MODEL`, `VOYAGEAI_API_KEY`, `EMBEDDING_MODEL`, `RERANK_MODEL`, `VECTOR_SEARCH_CANDIDATE_K` / `_MIN_SCORE` / `_MAX_RESULTS`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `DATABASE_URL` (TypeORM and `PostgresSaver`), `CUSTOMER_DATABASE_*`, `SPIDER_API_KEY`, `LANGCHAIN_PROJECT`, `JWT_SECRET`, `INTEGRATION_MODE`. Never echo their values.
+Through `src/shared/config/env.ts`, except the `LANGSMITH_*` variables the tracer reads itself: `AI_MODEL`, `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `ORCHESTRATOR_MODEL`, `VOYAGEAI_API_KEY`, `EMBEDDING_MODEL`, `RERANK_MODEL`, `VECTOR_SEARCH_CANDIDATE_K` / `_MIN_SCORE` / `_MAX_RESULTS`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `SUPABASE_JWKS_URL`, `DATABASE_URL` (TypeORM and `PostgresSaver`), `CUSTOMER_DATABASE_*`, `SPIDER_API_KEY`, `LANGCHAIN_PROJECT`, `JWT_SECRET`, `INTEGRATION_MODE`. Never echo their values.
 
 ## 10. Module graph (chat path)
 

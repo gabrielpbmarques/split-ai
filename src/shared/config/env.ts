@@ -83,8 +83,10 @@ const envSchema = z.object({
   VECTOR_SEARCH_MIN_SCORE: z.coerce.number().min(0).max(1).default(0.8),
   VECTOR_SEARCH_MAX_RESULTS: z.coerce.number().int().positive().default(10),
 
-  NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1).optional(),
+  SUPABASE_URL: z.string().url().optional(),
+  SUPABASE_PUBLISHABLE_KEY: z.string().min(1).optional(),
+  SUPABASE_SECRET_KEY: z.string().min(1).optional(),
+  SUPABASE_JWKS_URL: z.string().url().optional(),
 
   SENTRY_DSN: z.string().url().optional(),
 

@@ -55,7 +55,7 @@ Two ports, one key (`VOYAGEAI_API_KEY`), one shared rate-limit quota.
 
 ## Supabase — pgvector
 
-- `SupabaseVectorStoreGateway` needs `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY`; otherwise `NOT_CONFIGURED`.
+- `SupabaseVectorStoreGateway` needs `SUPABASE_URL` + `SUPABASE_SECRET_KEY` (server-side key, bypasses RLS); otherwise `NOT_CONFIGURED`. `SUPABASE_PUBLISHABLE_KEY` and `SUPABASE_JWKS_URL` are declared in `env.ts` but have no consumer yet.
 - The `documents` table, `match_documents` and the vector index live only in Supabase and are changed by hand in its SQL editor.
 
 ## Twilio — WhatsApp
@@ -91,7 +91,7 @@ Two ports, one key (`VOYAGEAI_API_KEY`), one shared rate-limit quota.
 | Auth            | `JWT_SECRET` (required), `JWT_EXPIRATION_HOURS`                                                                                                                    |
 | AI              | `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `AI_MODEL`, `ORCHESTRATOR_MODEL`, `LANGCHAIN_PROJECT`                                                                   |
 | Retrieval       | `VOYAGEAI_API_KEY`, `EMBEDDING_MODEL`, `RERANK_MODEL`, `VECTOR_SEARCH_CANDIDATE_K` (50), `VECTOR_SEARCH_MIN_SCORE` (0.8), `VECTOR_SEARCH_MAX_RESULTS` (10)         |
-| Supabase        | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`                                                                                                        |
+| Supabase        | `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `SUPABASE_JWKS_URL`                                                                             |
 | Observability   | `SENTRY_DSN`                                                                                                                                                       |
 | WhatsApp        | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_NUMBER`                                                                                                |
 | Crawling        | `SPIDER_API_KEY`                                                                                                                                                   |

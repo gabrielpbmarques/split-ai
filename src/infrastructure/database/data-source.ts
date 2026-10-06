@@ -12,6 +12,7 @@ export default new DataSource({
   url: env.DATABASE_URL,
   entities: ENTITIES,
   migrations: MIGRATIONS,
+  migrationsTransactionMode: 'each',
   synchronize: false,
   logging: ['migration', 'error'],
 });

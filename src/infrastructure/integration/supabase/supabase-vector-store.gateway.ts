@@ -27,11 +27,8 @@ export class SupabaseVectorStoreGateway implements VectorStoreGateway {
   private readonly client?: SupabaseClient;
 
   constructor(private readonly embeddings: Embeddings) {
-    if (env.NEXT_PUBLIC_SUPABASE_URL && env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      this.client = createClient(
-        env.NEXT_PUBLIC_SUPABASE_URL,
-        env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      );
+    if (env.SUPABASE_URL && env.SUPABASE_SECRET_KEY) {
+      this.client = createClient(env.SUPABASE_URL, env.SUPABASE_SECRET_KEY);
     }
   }
 
