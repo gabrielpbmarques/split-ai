@@ -23,13 +23,13 @@ describe('chat (e2e)', () => {
   beforeEach(() => t.reset());
   afterAll(() => t.close());
 
-  it('POST /support/question streams NDJSON events from the mocked model and persists both messages', async () => {
+  it('POST /chat streams NDJSON events from the mocked model and persists both messages', async () => {
     const user = await createUser(t.dataSource);
     const agent = await createAgent(t.dataSource);
 
     const res = await t
       .http()
-      .post('/support/question')
+      .post('/chat')
       .set('Authorization', bearer(user))
       .send({ question: 'Olá, tudo bem?', agentId: agent.id })
       .expect(200);
@@ -55,7 +55,7 @@ describe('chat (e2e)', () => {
 
     const res = await t
       .http()
-      .post('/support/question')
+      .post('/chat')
       .set('Authorization', bearer(guest))
       .send({ question: 'Qual o horário?', agentId: agent.id })
       .expect(200);
@@ -63,7 +63,7 @@ describe('chat (e2e)', () => {
 
     await t
       .http()
-      .post('/support/question')
+      .post('/chat')
       .set('Authorization', 'ApiKey sk_live_qualquer')
       .send({ question: 'x', agentId: agent.id })
       .expect(401);
@@ -74,13 +74,13 @@ describe('chat (e2e)', () => {
 
     await t
       .http()
-      .post('/support/question')
+      .post('/chat')
       .set('Authorization', bearer(user))
       .send({ question: '' })
       .expect(400);
     await t
       .http()
-      .post('/support/question')
+      .post('/chat')
       .send({ question: 'x', agentId: 'y' })
       .expect(401);
   });
@@ -90,7 +90,7 @@ describe('chat (e2e)', () => {
 
     const res = await t
       .http()
-      .post('/support/question')
+      .post('/chat')
       .set('Authorization', bearer(user))
       .send({ question: 'x', agentId: 'inexistente' })
       .expect(200);
@@ -98,19 +98,5 @@ describe('chat (e2e)', () => {
     const events = parseNdjson(res.text);
     expect(events.some((event) => event.type === 'error')).toBe(true);
     expect(events.at(-1)).toEqual({ type: 'done' });
-  });
-
-  it('POST /chat/attendant answers synchronously for an authenticated user', async () => {
-    const user = await createUser(t.dataSource);
-    const agent = await createAgent(t.dataSource);
-
-    const res = await t
-      .http()
-      .post('/chat/attendant')
-      .set('Authorization', bearer(user))
-      .send({ question: 'Quero agendar.', agentId: agent.id })
-      .expect(200);
-
-    expect(res.text.length).toBeGreaterThan(0);
   });
 });

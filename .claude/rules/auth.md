@@ -79,7 +79,7 @@ Permissions are **derived from the role** in `src/auth/permissions.ts`; there ar
 | ------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `admin` | the owner         | everything, including `agent.manage` and `user.manage`                                                                                                                                 |
 | `user`  | trusted operator  | `agent.*` (except `agent.manage`), `agent-connection.manage`, `source.*`, `session.read`, `report.read`, `analytics.read`, `voice.synthesize`, `user.read`, `account.access`, `chat.*` |
-| `guest` | chat-only account | `account.access`, `chat.ask`, `chat.attend`                                                                                                                                            |
+| `guest` | chat-only account | `account.access`, `chat.ask`                                                                                                                                                           |
 
 <rules>
 - Permission key format: `<resource>.<action>`, typed as `Permission` so a typo fails to compile.

@@ -13,7 +13,6 @@ const everyone: Grant = () => true;
 export const PERMISSION_GRANTS = {
   'account.access': everyone,
   'chat.ask': everyone,
-  'chat.attend': everyone,
   'voice.synthesize': staff,
   'analytics.read': staff,
   'agent.read': staff,
