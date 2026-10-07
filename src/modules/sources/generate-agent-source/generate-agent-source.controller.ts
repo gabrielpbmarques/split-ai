@@ -1,8 +1,8 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   Post,
-  Req,
   Res,
 } from '@nestjs/common';
 import {
@@ -14,7 +14,7 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { FastifyReply, FastifyRequest } from 'fastify';
+import { FastifyReply } from 'fastify';
 
 import { GenerateAgentSourceService } from 'src/modules/sources/generate-agent-source/generate-agent-source.service';
 import type { AgentSource } from 'src/shared/contracts/agent-source';
@@ -70,10 +70,9 @@ export class GenerateAgentSourceController {
   @ApiForbiddenResponse({ description: 'Permissão insuficiente' })
   @ApiNotFoundResponse({ description: 'Agente não encontrado' })
   async handle(
-    @Req() req: FastifyRequest,
     @Res() res: FastifyReply,
+    @Body() body: GenerateAgentSourceBody,
   ): Promise<FastifyReply> {
-    const body = (req.body ?? {}) as GenerateAgentSourceBody;
     const file =
       typeof body.file?.toBuffer === 'function' ? body.file : undefined;
     const buffer = file ? await file.toBuffer() : undefined;
