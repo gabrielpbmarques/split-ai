@@ -14,6 +14,7 @@ interface AgentListItemView {
   name: string;
   is_tool: boolean;
   is_principal: boolean;
+  has_tools: boolean;
 }
 
 const AGENT_LIST_FIELDS = ['id', 'agent_identifier', 'name'] as const;
@@ -34,15 +35,16 @@ export class ListAgentsService {
     );
     const agents = page.items;
 
-    const { principalIds, childIds } =
+    const { idsWithTools, toolIds } =
       await this.agentConnectionRepository.getAllRoleFlags();
 
     const items = agents.map((agent) => ({
       id: agent.id,
       agent_identifier: agent.agent_identifier,
       name: agent.name,
-      is_tool: childIds.has(agent.id),
-      is_principal: principalIds.has(agent.id),
+      is_tool: toolIds.has(agent.id),
+      is_principal: !toolIds.has(agent.id),
+      has_tools: idsWithTools.has(agent.id),
     }));
 
     return toPaginatedResponse({ items, total: page.total }, dto);

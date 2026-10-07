@@ -260,6 +260,130 @@ describe('agents (e2e)', () => {
   });
 
   describe('agent connections', () => {
+    it('derives the principal, tool and has-tools flags from the connections', async () => {
+      const user = await createUser(t.dataSource);
+      const principal = await createAgent(t.dataSource);
+      const child = await createAgent(t.dataSource);
+      const alone = await createAgent(t.dataSource);
+
+      await t
+        .http()
+        .post('/agent-connection/create')
+        .set('Authorization', bearer(user))
+        .send({
+          principalAgentId: principal.id,
+          childAgentId: child.id,
+          toolName: 'consultar_estoque',
+          toolDescription: 'Consulta o estoque.',
+        })
+        .expect(201);
+
+      const list = await t
+        .http()
+        .get('/agent/list')
+        .set('Authorization', bearer(user))
+        .expect(200);
+      const flagsById = new Map(
+        (
+          list.body.items as {
+            id: string;
+            is_tool: boolean;
+            is_principal: boolean;
+            has_tools: boolean;
+          }[]
+        ).map(({ id, is_tool, is_principal, has_tools }) => [
+          id,
+          { is_tool, is_principal, has_tools },
+        ]),
+      );
+      expect(flagsById.get(principal.id)).toEqual({
+        is_tool: false,
+        is_principal: true,
+        has_tools: true,
+      });
+      expect(flagsById.get(child.id)).toEqual({
+        is_tool: true,
+        is_principal: false,
+        has_tools: false,
+      });
+      expect(flagsById.get(alone.id)).toEqual({
+        is_tool: false,
+        is_principal: true,
+        has_tools: false,
+      });
+
+      const childDetail = await t
+        .http()
+        .get(`/agent/${child.id}`)
+        .set('Authorization', bearer(user))
+        .expect(200);
+      expect(childDetail.body.data).toMatchObject({
+        isTool: true,
+        isPrincipal: false,
+        hasTools: false,
+      });
+
+      const aloneDetail = await t
+        .http()
+        .get(`/agent/${alone.id}`)
+        .set('Authorization', bearer(user))
+        .expect(200);
+      expect(aloneDetail.body.data).toMatchObject({
+        isTool: false,
+        isPrincipal: true,
+        hasTools: false,
+      });
+    });
+
+    it('keeps connections one level deep: a tool gets no tools and an agent with tools is no tool (409)', async () => {
+      const user = await createUser(t.dataSource);
+      const principal = await createAgent(t.dataSource);
+      const child = await createAgent(t.dataSource);
+      const other = await createAgent(t.dataSource);
+
+      await t
+        .http()
+        .post('/agent-connection/create')
+        .set('Authorization', bearer(user))
+        .send({
+          principalAgentId: principal.id,
+          childAgentId: child.id,
+          toolName: 'consultar_estoque',
+          toolDescription: 'Consulta o estoque.',
+        })
+        .expect(201);
+
+      const toolWithTools = await t
+        .http()
+        .post('/agent-connection/create')
+        .set('Authorization', bearer(user))
+        .send({
+          principalAgentId: child.id,
+          childAgentId: other.id,
+          toolName: 'consultar_prazos',
+          toolDescription: 'Consulta prazos.',
+        })
+        .expect(409);
+      expect(toolWithTools.body.message).toBe(
+        'O agente já é ferramenta de outro agente e não pode ter ferramentas próprias.',
+      );
+
+      const agentWithToolsAsTool = await t
+        .http()
+        .post('/agent-connection/create')
+        .set('Authorization', bearer(user))
+        .send({
+          principalAgentId: other.id,
+          childAgentId: principal.id,
+          toolName: 'atendimento',
+          toolDescription: 'Encaminha ao atendimento.',
+        })
+        .expect(409);
+      expect(agentWithToolsAsTool.body.message).toBe(
+        'O agente conectado tem ferramentas próprias e não pode ser usado como ferramenta.',
+      );
+    });
+
     it('connects two agents, lists, updates, saves layout and deletes', async () => {
       const user = await createUser(t.dataSource);
       const principal = await createAgent(t.dataSource);

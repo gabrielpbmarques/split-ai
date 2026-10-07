@@ -57,14 +57,14 @@ export class CreateAgentConnectionService {
       this.agentConnectionRepository.getRoleFlags(dto.childAgentId),
       this.agentConnectionRepository.getRoleFlags(dto.principalAgentId),
     ]);
-    if (childFlags.isPrincipal) {
+    if (childFlags.hasTools) {
       throw new ConflictException(
-        'O agente conectado já é um agente principal (possui ferramentas próprias) e não pode ser usado como ferramenta.',
+        'O agente conectado tem ferramentas próprias e não pode ser usado como ferramenta.',
       );
     }
     if (principalFlags.isTool) {
       throw new ConflictException(
-        'O agente principal já está conectado como ferramenta de outro agente e não pode ter ferramentas próprias.',
+        'O agente já é ferramenta de outro agente e não pode ter ferramentas próprias.',
       );
     }
 

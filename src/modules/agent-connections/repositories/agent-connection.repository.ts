@@ -91,29 +91,29 @@ export class AgentConnectionRepository {
   }
 
   async getAllRoleFlags(): Promise<{
-    principalIds: Set<string>;
-    childIds: Set<string>;
+    idsWithTools: Set<string>;
+    toolIds: Set<string>;
   }> {
     const rows = await this.repository.find({
       select: ['principal_agent_id', 'child_agent_id'],
     });
-    const principalIds = new Set<string>();
-    const childIds = new Set<string>();
+    const idsWithTools = new Set<string>();
+    const toolIds = new Set<string>();
     for (const row of rows) {
-      principalIds.add(row.principal_agent_id);
-      childIds.add(row.child_agent_id);
+      idsWithTools.add(row.principal_agent_id);
+      toolIds.add(row.child_agent_id);
     }
-    return { principalIds, childIds };
+    return { idsWithTools, toolIds };
   }
 
   async getRoleFlags(
     agentId: string,
-  ): Promise<{ isPrincipal: boolean; isTool: boolean }> {
+  ): Promise<{ hasTools: boolean; isTool: boolean }> {
     const [asPrincipal, asChild] = await Promise.all([
       this.repository.count({ where: { principal_agent_id: agentId } }),
       this.repository.count({ where: { child_agent_id: agentId } }),
     ]);
-    return { isPrincipal: asPrincipal > 0, isTool: asChild > 0 };
+    return { hasTools: asPrincipal > 0, isTool: asChild > 0 };
   }
 
   async update(

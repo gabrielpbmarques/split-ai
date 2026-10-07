@@ -23,6 +23,7 @@ export interface AgentDetails {
   instructions: AIInstructions | null;
   isTool: boolean;
   isPrincipal: boolean;
+  hasTools: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -64,7 +65,8 @@ export class GetAgentService {
         : null,
       instructions: latest?.instructions || null,
       isTool: flags.isTool,
-      isPrincipal: flags.isPrincipal,
+      isPrincipal: !flags.isTool,
+      hasTools: flags.hasTools,
       createdAt: agent.created_at,
       updatedAt: agent.updated_at,
     };
