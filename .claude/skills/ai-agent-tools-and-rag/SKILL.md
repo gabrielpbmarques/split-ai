@@ -30,12 +30,9 @@ buildLangchainToolFromSchema(name, description, schemaDef): DynamicStructuredToo
 new DynamicStructuredTool({
   name: 'vector_similarity_search',
   description: 'IMPORTANTE: SEMPRE use esta ferramenta antes de responder. ...',
-  schema: z.object({ query, source_type }),
-  func: async ({ query, source_type }) => {
-    const store = await this.vectorStore.loadIndex({
-      agent_id: agentId,
-      source_type,
-    });
+  schema: z.object({ query }),
+  func: async ({ query }) => {
+    const store = await this.vectorStore.loadIndex({ agent_id: agentId });
     const docs = await executeSimilaritySearchService.execute(store, query);
     return docs.map((d) => d.pageContent).join('\n\n');
   },
@@ -139,7 +136,7 @@ return retriever.invoke(question);
 Endpoint `POST /agent/load-sites` (`agent.manage`, admin only). Body: `{ sites: string, agentId: string }`.
 
 1. `SITE_CRAWLER.crawl(sites, { limit, depth })` — the Spider gateway (`spider.cloud`), mocked in tests.
-2. `vectorStore.upsertChunks(chunks, { source_type: 'site', agent_id, source_id })` — chunks and embeds into the `documents` table, tagged with `source_type: 'site'` so the vector search tool can retrieve them under that agent.
+2. `vectorStore.upsertChunks(chunks, { source_type: 'site', agent_id, source_id })` — chunks and embeds into the `documents` table. The vector search tool retrieves them by `agent_id` alone; `source_type` is informational.
 
 Responds `200 { message: 'Sites loaded successfully' }`; errors go through the global exception filter. `LoadAgentSitesDto.sites` is a single string passed straight to the crawler.
 

@@ -6,9 +6,11 @@ import {
   Res,
 } from '@nestjs/common';
 import {
+  ApiAcceptedResponse,
+  ApiBadRequestResponse,
   ApiBearerAuth,
   ApiForbiddenResponse,
-  ApiOkResponse,
+  ApiNotFoundResponse,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -55,11 +57,18 @@ export class GenerateAgentSourceController {
   ) {}
 
   @Post('generate-source')
-  @RequirePermissions('agent.manage')
-  @ApiOkResponse()
+  @RequirePermissions('source.write')
+  @ApiAcceptedResponse({
+    description: 'Fonte recebida; o processamento continua em segundo plano',
+  })
   @ApiBearerAuth()
+  @ApiBadRequestResponse({
+    description:
+      'Sem arquivo nem URL, sem agentId ou tipo de arquivo não suportado',
+  })
   @ApiUnauthorizedResponse({ description: 'Token ausente ou inválido' })
   @ApiForbiddenResponse({ description: 'Permissão insuficiente' })
+  @ApiNotFoundResponse({ description: 'Agente não encontrado' })
   async handle(
     @Req() req: FastifyRequest,
     @Res() res: FastifyReply,
@@ -85,8 +94,9 @@ export class GenerateAgentSourceController {
       mimeType: file?.mimetype,
     });
 
-    return res
-      .status(200)
-      .send({ message: 'Fonte de conhecimento processada com sucesso' });
+    return res.status(202).send({
+      message:
+        'Fonte de conhecimento recebida. O processamento continua em segundo plano.',
+    });
   }
 }

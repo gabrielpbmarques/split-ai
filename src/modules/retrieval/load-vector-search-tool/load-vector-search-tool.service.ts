@@ -16,16 +16,9 @@ export class LoadVectorSearchToolService {
     private readonly executeSimilaritySearchService: ExecuteSimilaritySearchService,
   ) {}
 
-  async execute(agentId: string): Promise<
-    DynamicStructuredTool<
-      z.ZodObject<{
-        query: z.ZodString;
-        source_type: z.ZodEnum<
-          ['business_context', 'memory', 'additional_directives']
-        >;
-      }>
-    >
-  > {
+  async execute(
+    agentId: string,
+  ): Promise<DynamicStructuredTool<z.ZodObject<{ query: z.ZodString }>>> {
     return new DynamicStructuredTool({
       name: 'vector_similarity_search',
       description: `
@@ -35,14 +28,10 @@ export class LoadVectorSearchToolService {
       `,
       schema: z.object({
         query: z.string().describe('Consulta semântica'),
-        source_type: z
-          .enum(['business_context', 'memory', 'additional_directives'])
-          .describe('Tipo de fonte para busca de vetores'),
       }),
-      func: async ({ query, source_type }) => {
+      func: async ({ query }) => {
         const vectorStore = await this.vectorStore.loadIndex({
           agent_id: agentId,
-          source_type,
         });
 
         const retrievedDocuments =

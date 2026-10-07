@@ -1,28 +1,26 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 
 import { AgentRepository } from 'src/modules/agents/repositories/agent.repository';
-import { isUuid } from 'src/shared/utils/is-uuid';
 
 @Injectable()
 export class ResolveSourceAgentService {
   constructor(private readonly agentRepository: AgentRepository) {}
 
   async execute(agentId: string | undefined): Promise<{ agentId: string }> {
-    let resolvedAgentId = agentId;
-
-    if (resolvedAgentId && !isUuid(resolvedAgentId)) {
-      const agent =
-        await this.agentRepository.findByIdentifier(resolvedAgentId);
-      if (!agent) {
-        throw new Error('Agente não encontrado pelo identifier');
-      }
-      resolvedAgentId = agent.id;
+    if (!agentId) {
+      throw new BadRequestException('agentId é obrigatório');
     }
 
-    if (!resolvedAgentId) {
-      throw new Error('agentId é obrigatório');
+    const agent = await this.agentRepository.findByIdOrIdentifier(agentId);
+
+    if (!agent) {
+      throw new NotFoundException('Agente não encontrado');
     }
 
-    return { agentId: resolvedAgentId };
+    return { agentId: agent.id };
   }
 }

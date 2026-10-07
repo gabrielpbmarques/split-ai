@@ -27,7 +27,8 @@ O código não leva comentários (`.claude/rules/conventions.md`; verificado por
 ## Relatórios e fontes
 
 - **Filtros de data por dia comparam no bucket `date_trunc('day')::date`** para evitar deriva de fuso (`ReportRepository`). `GET /report/dashboard-data` aceita `created_at` (um dia) ou `start`/`end`.
-- **Processamento de fonte nunca rejeita.** `GenerateAgentSourceService.runJob` grava `completed` + contagem de chunks em sucesso e `failed` + mensagem em erro, para que jobs irmãos no mesmo `Promise.all` não sejam afetados.
+- **Processamento de fonte roda em segundo plano e nunca rejeita.** `POST /agent/generate-source` responde 202 depois de criar as fontes como `processing`; `GenerateAgentSourceService.runSourceTask` grava `completed` + contagem de chunks em sucesso e `failed` + mensagem em erro, e as tarefas correm soltas num `Promise.allSettled`, sem rejeição não tratada. Fonte removida durante a indexação tem os trechos apagados ao fim da tarefa; fontes que um reinício deixou em `processing` viram `failed` ("Processamento interrompido.") na subida.
+- **A busca vetorial filtra só por agente.** `vector_similarity_search` carrega o índice com `{ agent_id }`; o `source_type` dos metadados (`pdf`, `text`, `docx`, `site` ou o `sourceType` enviado) não participa da busca, para que arquivos enviados sem tipo e sites sejam encontrados.
 
 ## Banco de dados
 

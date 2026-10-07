@@ -120,13 +120,15 @@ describe('agents (e2e)', () => {
   });
 
   describe('GET /agent/:id, GET /agent/list, GET /agent', () => {
-    it('reads by id or identifier, including agents created by someone else', async () => {
+    it('reads by id or identifier, including agents created by someone else, with the vector search flag', async () => {
       const user = await createUser(t.dataSource);
       const agent = await createAgent(t.dataSource, {
         agent_identifier: 'suporte',
+        vector_search_tool: true,
       });
       const othersAgent = await createAgent(t.dataSource, {
         user_id: (await createUser(t.dataSource)).id,
+        vector_search_tool: null,
       });
 
       const byId = await t
@@ -137,6 +139,7 @@ describe('agents (e2e)', () => {
       expect(byId.body.data).toMatchObject({
         id: agent.id,
         agentIdentifier: 'suporte',
+        vectorSearchTool: true,
       });
 
       const byIdentifier = await t
@@ -146,11 +149,12 @@ describe('agents (e2e)', () => {
         .expect(200);
       expect(byIdentifier.body.data.id).toBe(agent.id);
 
-      await t
+      const byOthers = await t
         .http()
         .get(`/agent/${othersAgent.id}`)
         .set('Authorization', bearer(user))
         .expect(200);
+      expect(byOthers.body.data.vectorSearchTool).toBe(false);
       await t
         .http()
         .get(`/agent/${randomUUID()}`)
