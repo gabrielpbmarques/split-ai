@@ -11,6 +11,7 @@ import { ProcessDocxSourceModule } from 'src/modules/sources/process-docx-source
 import { ProcessPdfModule } from 'src/modules/sources/process-pdf/process-pdf.module';
 import { ProcessPdfSourceModule } from 'src/modules/sources/process-pdf-source/process-pdf-source.module';
 import { ProcessTextSourceModule } from 'src/modules/sources/process-text-source/process-text-source.module';
+import { RecordInterruptedSourcesModule } from 'src/modules/sources/record-interrupted-sources/record-interrupted-sources.module';
 import { ResolveSourceAgentModule } from 'src/modules/sources/resolve-source-agent/resolve-source-agent.module';
 
 @Module({
@@ -26,6 +27,7 @@ import { ResolveSourceAgentModule } from 'src/modules/sources/resolve-source-age
     ProcessPdfModule,
     ProcessPdfSourceModule,
     ProcessTextSourceModule,
+    RecordInterruptedSourcesModule,
     ResolveSourceAgentModule,
   ],
   exports: [
@@ -40,6 +42,7 @@ import { ResolveSourceAgentModule } from 'src/modules/sources/resolve-source-age
     ProcessPdfModule,
     ProcessPdfSourceModule,
     ProcessTextSourceModule,
+    RecordInterruptedSourcesModule,
     ResolveSourceAgentModule,
   ],
 })

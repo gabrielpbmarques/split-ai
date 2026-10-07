@@ -1,9 +1,18 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 
 import type {
   SourceEntity,
   SourceType,
 } from 'src/infrastructure/database/schema/source.entity';
+import {
+  VECTOR_STORE,
+  type VectorStoreGateway,
+} from 'src/infrastructure/integration/vector-store.port';
 import { LoadAgentSitesService } from 'src/modules/agents/load-agent-sites/load-agent-sites.service';
 import { AgentRepository } from 'src/modules/agents/repositories/agent.repository';
 import type { GenerateAgentSourceDto } from 'src/modules/sources/generate-agent-source/generate-agent-source.dto';
@@ -38,12 +47,16 @@ export class GenerateAgentSourceService {
     private readonly loadAgentSitesService: LoadAgentSitesService,
     private readonly agentRepository: AgentRepository,
     private readonly sourceRepository: SourceRepository,
+    @Inject(VECTOR_STORE) private readonly vectorStore: VectorStoreGateway,
   ) {}
 
   async execute(
     params: GenerateAgentSourceDto & { buffer?: Buffer },
   ): Promise<SourceEntity[]> {
     const { url, sourceType, fileName, mimeType } = params;
+    const fileKind = params.buffer
+      ? this.supportedFileKind(mimeType, fileName)
+      : undefined;
 
     const { agentId } = await this.resolveSourceAgentService.execute(
       params.agentId,
@@ -52,18 +65,11 @@ export class GenerateAgentSourceService {
     const createdSources: SourceEntity[] = [];
     const tasks: Promise<void>[] = [];
 
-    if (params.buffer) {
-      const kind = detectFileKind(mimeType, fileName);
-      if (kind === 'unknown') {
-        throw new Error(
-          `Tipo de arquivo não suportado (${mimeType ?? 'desconhecido'}). Envie PDF, Word (.docx) ou texto/markdown.`,
-        );
-      }
-
+    if (params.buffer && fileKind) {
       const buffer = params.buffer;
       const source = await this.sourceRepository.create({
         agent_id: agentId,
-        name: fileName || DEFAULT_FILE_NAME[kind],
+        name: fileName || DEFAULT_FILE_NAME[fileKind],
         source_type: 'pdf' as SourceType,
         file_name: fileName,
         status: 'processing',
@@ -71,8 +77,8 @@ export class GenerateAgentSourceService {
       createdSources.push(source);
 
       tasks.push(
-        this.runSourceTask(source.id, `arquivo ${kind}`, () =>
-          this.indexBuffer(kind, {
+        this.runSourceTask(source.id, `arquivo ${fileKind}`, () =>
+          this.indexBuffer(fileKind, {
             buffer,
             sourceType,
             agentId,
@@ -110,11 +116,24 @@ export class GenerateAgentSourceService {
       }
     }
 
-    if (tasks.length) {
-      await Promise.all(tasks);
-    }
+    void Promise.allSettled(tasks);
 
     return createdSources;
+  }
+
+  private supportedFileKind(
+    mimeType: string | undefined,
+    fileName: string | undefined,
+  ): FileSourceKind {
+    const kind = detectFileKind(mimeType, fileName);
+
+    if (kind === 'unknown') {
+      throw new BadRequestException(
+        `Tipo de arquivo não suportado (${mimeType ?? 'desconhecido'}). Envie PDF, Word (.docx) ou texto/markdown.`,
+      );
+    }
+
+    return kind;
   }
 
   private indexBuffer(
@@ -143,13 +162,56 @@ export class GenerateAgentSourceService {
   ): Promise<void> {
     try {
       const chunkCount = await work();
-      await this.sourceRepository.updateChunkCount(sourceId, chunkCount);
-      await this.sourceRepository.updateStatus(sourceId, 'completed');
-      this.logger.log(`Source processed (${label}): ${chunkCount} chunks`);
+      await this.completeSource(sourceId, label, chunkCount);
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : String(error);
-      this.logger.error(`Failed to process source (${label}): ${message}`);
-      await this.sourceRepository.updateStatus(sourceId, 'failed', message);
+      await this.failSource(sourceId, label, error);
     }
+  }
+
+  private async completeSource(
+    sourceId: string,
+    label: string,
+    chunkCount: number,
+  ): Promise<void> {
+    if (await this.discardIfRemoved(sourceId)) {
+      return;
+    }
+
+    await this.sourceRepository.updateChunkCount(sourceId, chunkCount);
+    await this.sourceRepository.updateStatus(sourceId, 'completed');
+    this.logger.log({ sourceId, label, chunkCount }, 'source.processed');
+  }
+
+  private async failSource(
+    sourceId: string,
+    label: string,
+    error: unknown,
+  ): Promise<void> {
+    const message = error instanceof Error ? error.message : String(error);
+    this.logger.error({ sourceId, label, err: error }, 'source.failed');
+
+    try {
+      if (await this.discardIfRemoved(sourceId)) {
+        return;
+      }
+
+      await this.sourceRepository.updateStatus(sourceId, 'failed', message);
+    } catch (recordError: unknown) {
+      this.logger.error(
+        { sourceId, err: recordError },
+        'source.failure_not_recorded',
+      );
+    }
+  }
+
+  private async discardIfRemoved(sourceId: string): Promise<boolean> {
+    if (await this.sourceRepository.findById(sourceId)) {
+      return false;
+    }
+
+    await this.vectorStore.deleteBySourceId(sourceId);
+    this.logger.warn({ sourceId }, 'source.removed_during_processing');
+
+    return true;
   }
 }

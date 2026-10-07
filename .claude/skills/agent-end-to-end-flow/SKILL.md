@@ -25,13 +25,13 @@ The product is a personal engine with no tenants: there is no organization, bill
 ## 1. End-to-end sequence
 
 ```text
-Phase A — Author the agent            (agent.write; load-sites and generate-source need agent.manage)
+Phase A — Author the agent            (agent.write; load-sites needs agent.manage)
   POST /agent/create            → CreateAgentService         (agents + agents_instructions, in one transaction)
   PATCH /agent/:id              → UpdateAgentService         (UUID or agent_identifier)
   POST /agent-connection/*      → agent-as-tool wiring       (agent-connection.manage)
 
 Phase B — Ingest knowledge
-  POST /agent/generate-source   → GenerateAgentSourceService (multipart: file and/or comma-separated url)
+  POST /agent/generate-source   → GenerateAgentSourceService (source.write; multipart: file and/or comma-separated url; 202, indexes in the background)
   POST /agent/load-sites        → LoadAgentSitesService
       → VECTOR_STORE.upsertChunks(chunks, { source_type, agent_id, source_id })
 
@@ -55,7 +55,7 @@ Phase D — Orchestrate
       handleStreamResponse → status / final / error / done events
 
 Phase E — Tools called from inside the runnable
-  vector_similarity_search → VECTOR_STORE.loadIndex({ agent_id, source_type })
+  vector_similarity_search → VECTOR_STORE.loadIndex({ agent_id })
       → ContextualCompressionRetriever(asRetriever(k=50), VoyageRerankCompressor ≥ 0.8, max 10)
   execute_sql              → sanitizeSqlQuery → CUSTOMER_DATABASE.withConnection(agent.database_url)
   <parser tool>            → inert; exists only to advertise a schema
@@ -137,7 +137,7 @@ Only `Authorization: Bearer <JWT>` is accepted. `TokenVerifier` verifies the HS2
 
 ### `vector_similarity_search`
 
-`LoadVectorSearchToolService.execute(agentId)` defines `{ query, source_type ∈ business_context | memory | additional_directives }` and a Portuguese description that tells the model to always search first. `agent_id` is bound in the closure to the resolved agent's UUID (`LoadAgentToolsService` passes `dbAgent.id`), so principals and delegated children each search only their own chunks, with no prompt variable or instruction involved.
+`LoadVectorSearchToolService.execute(agentId)` defines `{ query }` (the search is scoped by `agent_id` only) and a Portuguese description that tells the model to always search first. `agent_id` is bound in the closure to the resolved agent's UUID (`LoadAgentToolsService` passes `dbAgent.id`), so principals and delegated children each search only their own chunks, with no prompt variable or instruction involved.
 
 Retrieval is threshold-based: `asRetriever({ k: VECTOR_SEARCH_CANDIDATE_K })` (50) generates candidates, `VoyageRerankCompressor` keeps `relevance_score >= VECTOR_SEARCH_MIN_SCORE` (0.8) up to `VECTOR_SEARCH_MAX_RESULTS` (10), and the tool returns the page contents joined by blank lines. An empty result is a designed outcome; the compressor's warning logs the best score seen. Do not pass `filter` to `asRetriever` (the store already fixes it), import `ContextualCompressionRetriever` from `@langchain/classic` (PC-005), and keep the `as unknown as BaseRetrieverInterface` cast (PC-012). One search costs two Voyage calls (embed + rerank) on the same key (PC-007).
 

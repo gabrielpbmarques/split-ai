@@ -14,6 +14,7 @@ export interface AgentDetails {
   model: string | null;
   temperature: number | null;
   withHistory: boolean;
+  vectorSearchTool: boolean;
   sites: string[] | null;
   parser: {
     name: string | null;
@@ -55,6 +56,7 @@ export class GetAgentService {
       model: agent.model,
       temperature: agent.temperature,
       withHistory: agent.with_history,
+      vectorSearchTool: agent.vector_search_tool === true,
       sites: agent.sites ?? null,
       parser: agent.parser_schema
         ? {

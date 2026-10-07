@@ -54,6 +54,15 @@ export class SourceRepository {
     await this.repository.update(id, { chunk_count: chunkCount });
   }
 
+  async failAllProcessing(errorMessage: string): Promise<number> {
+    const result = await this.repository.update(
+      { status: 'processing' },
+      { status: 'failed', error_message: errorMessage },
+    );
+
+    return result.affected ?? 0;
+  }
+
   async delete(id: string): Promise<void> {
     await this.repository.softDelete(id);
   }
