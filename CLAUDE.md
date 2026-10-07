@@ -8,7 +8,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 The AI pipeline is built on LangChain / LangGraph with Anthropic Claude models for chat and Voyage AI for retrieval — `voyage-3-large` (1024 dims) for embeddings and `rerank-2.5` as a cross-encoder reranker; vector storage in Supabase/pgvector, and PostgreSQL (also on Supabase) as the primary store via TypeORM.
 
-It lives inside `bravohub-analytics-workspace/`, but it is independent of the BravoHub products: no shared database, no shared auth contract. The workspace `CLAUDE.md` one level up does not apply here.
+It lives in `~/Documents/Projects/split-ai`, next to its web client `split-client` (`../split-client`; both open together through `../_workspaces/split-ai.code-workspace`). It is independent of the BravoHub products: no shared database, no shared auth contract.
+
+`split-client` (Next.js on Vercel, https://split-client.vercel.app) calls this API only from its own server (Server Components, Server Actions and route handlers), so browser CORS never applies to it. It mirrors the response and request shapes in `../split-client/shared/contracts/`: a contract change here (field, status code, permission) needs the matching change there.
 
 ## The specification: `.claude/rules/` and `.claude/skills/`
 
@@ -144,9 +146,11 @@ test/                        e2e per domain + support/ (test-app, factories, dat
 ## AI pipeline essentials
 
 - **Flow:** `POST /chat` (NDJSON, the only chat endpoint) → `CreateSessionIfNotExists` → `ResolveAgent` (`CHAT_MODEL`, tools, `PostgresSaver` checkpointer when `with_history`) → `GenerateAiResponse` (`createAgent`, `responseFormat: AgentFinalResponseSchema`, `handleStreamResponse`) → `RecordChatMessage` (embeds via `EMBEDDINGS`). `thread_id` is `conversationId ?? session.id`; changing the format detaches every stored thread (the old organization prefix was stripped by migration `RemoveMultiTenancy1759700000000`).
+- **Retrieval is scoped by agent only.** `vector_similarity_search` takes just `query` and filters chunks by `{ agent_id }`; the `source_type` written on each chunk no longer narrows the search, so untyped files and crawled sites are found.
 - **Retrieval is threshold-based, not top-K.** `vector_similarity_search` fetches `VECTOR_SEARCH_CANDIDATE_K` (50) candidates and `VoyageRerankCompressor` keeps those scoring `>= VECTOR_SEARCH_MIN_SCORE` (0.8), capped at `VECTOR_SEARCH_MAX_RESULTS` (10). Empty results are by design; the `warn` with the best score is the tuning signal. Never move the cutoff onto the cosine score.
 - **A search costs two Voyage calls** (embed + rerank) on the same `VOYAGEAI_API_KEY`; without a default payment method the quota is 3 RPM / 10K TPM (PC-007).
 - **Ingestion** (`sources/process-*-source`, `load-agent-sites`) must tag every chunk with `agent_id` + `source_id` before `VECTOR_STORE.upsertChunks`; the `documents` table, `match_documents` and the pgvector index live only in Supabase and are applied by hand in its SQL editor.
+- **Ingestion is asynchronous.** `POST /agent/generate-source` (`source.write`) validates first (unsupported file type → 400, unknown agent → 404), creates the `sources` rows as `processing`, answers **202** and indexes in the background; clients follow the status through `GET /source`. A source removed mid-indexing has its chunks deleted when its task ends, and on boot `RecordInterruptedSourcesService` marks leftover `processing` sources as `failed`. Details in `.claude/rules/rag-ingestion.md`.
 - **Agents** store instructions under the `AIInstructions` keys (`context`, `objetivo`, `diretrizes`); `ResolveAgent` answers 404 for an agent without instructions.
 
 ## Agent database connection (`execute_sql`)
@@ -170,6 +174,6 @@ Opt-in per agent: `agents.database_tool = true` **and** `agents.database_url` (`
 
 - Conventional Commits enforced by commitlint (`build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test`). Subject in lowercase, no trailing period, blank line before body.
 - Husky `pre-commit` runs `lint-staged` → ESLint + Prettier on staged files.
-- **Production API runs on Railway**, which builds and deploys outside this repo's CI; its environment variables (including `ALLOWED_ORIGINS`) are set in the Railway dashboard. Railway binds `$PORT`, which is why `env.PORT` has no hard-coded production value.
+- **Production API runs on Railway** at https://split-ai-production-4200.up.railway.app (`/health/live` answers without auth). Railway builds and redeploys from `main` outside this repo's CI (about a minute after a merge), so merging to `main` ships to production; its environment variables (including `ALLOWED_ORIGINS`) are set in the Railway dashboard. Railway binds `$PORT`, which is why `env.PORT` has no hard-coded production value.
 - `.github/workflows/ci-cd.yml`: PRs run `format:check`, `lint`, `typecheck`, `test`, `test:e2e` (Postgres service container) and `build`. Pushes to `main` run CI and then the `migrate` job (`db:migrate` against `secrets.DATABASE_URL`, concurrency 1). There is no deploy job.
 - **`secrets.DATABASE_URL` must be the Supabase session pooler URL** (`aws-0-<region>.pooler.supabase.com:5432`, user `postgres.<project-ref>`). The direct host `db.<project-ref>.supabase.co` is IPv6-only and GitHub runners fail with `ENETUNREACH`; the transaction pooler (port `6543`) breaks `CREATE INDEX CONCURRENTLY`. Set it from a real terminal (`gh secret set DATABASE_URL`) or the GitHub UI — run without a TTY, `gh` stores an empty value.
