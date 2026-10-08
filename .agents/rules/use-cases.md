@@ -1,9 +1,5 @@
 ---
-paths:
-  - 'src/modules/**/*.controller.ts'
-  - 'src/modules/**/*.service.ts'
-  - 'src/modules/**/*.dto.ts'
-  - 'src/shared/contracts/models/**'
+trigger: always_on
 ---
 
 # Use cases: controller, service, DTO

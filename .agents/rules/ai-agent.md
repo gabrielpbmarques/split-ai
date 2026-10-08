@@ -1,8 +1,5 @@
 ---
-paths:
-  - 'src/modules/agents/**/*.ts'
-  - 'src/modules/agent-runtime/**/*.ts'
-  - 'src/shared/contracts/models/ai-instructions.model.ts'
+trigger: always_on
 ---
 
 # AI agents: configuration and runtime

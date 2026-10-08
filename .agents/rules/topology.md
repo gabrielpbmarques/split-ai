@@ -1,13 +1,5 @@
 ---
-paths:
-  - 'src/main.ts'
-  - 'src/app.module.ts'
-  - 'src/shared/config/**'
-  - '.env.example'
-  - 'package.json'
-  - 'tsconfig*.json'
-  - 'nest-cli.json'
-  - 'eslint.config.mjs'
+trigger: always_on
 ---
 
 # Project topology, bootstrap and tooling

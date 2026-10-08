@@ -1,0 +1,131 @@
+---
+description: Use for an agent's LangChain tools and RAG
+---
+
+## Three tools an agent can carry
+
+`LoadAgentToolsService.execute(dbAgent, connectionContext?)` (`src/modules/retrieval/load-agent-tools/load-agent-tools.service.ts`, called by `ResolveAgent`) reads columns on `agents` and appends a tool for each, then appends one tool per enabled agent connection (`AppendConnectionToolsService`):
+
+| Flag / column                                 | Tool                                       | Built by                                                                  |
+| --------------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------- |
+| `parser_schema` (jsonb, presence)             | dynamic parser (no-op `func`, schema-only) | `buildLangchainToolFromSchema` in `src/shared/utils/build-zod-schema.ts`  |
+| `vector_search_tool` (bool)                   | `vector_similarity_search`                 | `LoadVectorSearchToolService.execute()`                                   |
+| `database_tool` (bool) **and** `database_url` | `execute_sql`                              | `MaybeLoadDatabaseToolService.execute(agent)` → `LoadDatabaseToolService` |
+
+Tools are returned as `AgentTool[]` and threaded into `createAgent({ tools, ... })`. The same `tools` array is also rendered into the system prompt by `NormalizePromptInstructions` (`Name: ... / Description: ...`), so a model sees both the tool descriptors **and** a textual list.
+
+## Parser tool — src/shared/utils/build-zod-schema.ts
+
+```ts
+buildLangchainToolFromSchema(name, description, schemaDef): DynamicStructuredTool
+```
+
+- `schemaDef` is a custom JSON DSL (`type`, `optional`, `enum`, `default`, `description`, nested `properties`, array `items`) — compiled into a Zod schema by `buildZodSchema`.
+- The tool's `func` is `async () => {}` — invocation returns `undefined`. This is by design: the parser tool exists only so the model can emit a structured argument matching the schema. Use it when you want the agent to produce JSON in a specific shape during reasoning. **Do not** add side-effects here without first changing the contract — many call sites assume parser tools are inert.
+
+## Vector search tool — src/modules/retrieval/load-vector-search-tool/load-vector-search-tool.service.ts
+
+```ts
+new DynamicStructuredTool({
+  name: 'vector_similarity_search',
+  description: 'IMPORTANTE: SEMPRE use esta ferramenta antes de responder. ...',
+  schema: z.object({ query }),
+  func: async ({ query }) => {
+    const store = await this.vectorStore.loadIndex({ agent_id: agentId });
+    const docs = await executeSimilaritySearchService.execute(store, query);
+    return docs.map((d) => d.pageContent).join('\n\n');
+  },
+});
+```
+
+- The description prompts the model to **always** call this tool first when the flag is on. Removing that line will shift agent behavior toward not retrieving — make the change deliberate.
+- The tool returns `pageContent` joined by a blank line (`\n\n`), so the model sees chunk boundaries. `metadata.relevance_score` is stamped on each surviving document by the reranker but dropped here; if you need citations, return a structured payload and update consumers (today there are none beyond the LLM).
+- **An empty string is a valid return.** Since retrieval became threshold-based, a query where nothing clears the rerank cutoff yields zero documents. That is the designed behaviour — do not "fix" it by removing the threshold.
+- **`agent_id` is bound by the server, not chosen by the model.** `LoadAgentToolsService` calls `execute(dbAgent.id)`, so each agent — principal or delegated child — searches only its own chunks. Keep `agent_id` out of the tool schema: letting the model fill it is how searches used to hit the wrong agent (the old `{agentId}` placeholder was never interpolated).
+
+## Database tool — src/modules/retrieval/load-database-tool/load-database-tool.service.ts
+
+A SQL-execution tool with **heavy guardrails** against an external database configured **on the agent**. `MaybeLoadDatabaseToolService.execute(agent)` only builds it when:
+
+1. `agents.database_tool = true`, and
+2. `agents.database_url` is set. The column is `select: false`; it is read only through `AgentRepository.findDatabaseConnection(id)`, together with the optional `database_tables` (allow-list) and `database_sample_rows`.
+
+Either check failing → the tool is silently absent from the agent's tool list. The values are set through `databaseUrl` / `databaseTables` / `databaseSampleRows` on `POST /agent/create` and `PATCH /agent/:id` (URL prefix validated in the DTO); `database_url` is never returned by the API. (Before 2026-10-04 this lived in `organizations.database_url` + an `organization_features` flag; migration `RemoveMultiTenancy1759700000000` copied it to the agents.)
+
+### Build (per request)
+
+`LoadDatabaseToolService.execute({ databaseUrl, includeTables, sampleRows })` goes through the `CUSTOMER_DATABASE` port:
+
+- `detectDialect` (`src/infrastructure/integration/customer-database/sql-guard.ts`): `postgres://` / `postgresql://` → PostgreSQL; `mysql://` / `mysql2://` → MySQL; other schemes → `BadRequestException`.
+- `withConnection` opens a short-lived TypeORM `DataSource` (host allowlist, timeouts), describes the schema with LangChain `SqlDatabase.getTableInfo()` (restricted to `includeTables` when set) and destroys the connection afterwards. The schema is embedded in the tool description so the LLM sees what exists.
+
+### Execution (`func`)
+
+1. `sanitizeSqlQuery(query, { readOnly })` — see rules below; a violation is returned to the model as `Consulta rejeitada: …` instead of throwing.
+2. A fresh `withConnection(...)` runs the sanitized SQL and returns the result string.
+
+### Guardrails in `sanitizeSqlQuery`
+
+- **Single statement only.** More than one `;` (or a stray statement after a trailing semicolon) throws `'multiple statements are not allowed.'`.
+- **Verb allow-list.** Must start with `select`, `insert`, or `update` (case-insensitive); in `readOnly` mode only `select`. Everything else throws. There is no tenant or `company_id` filter: each agent points at its own database, so use a read-only database user when the agent must not write.
+- **Deny regex.** `\b(DELETE|ALTER|DROP|CREATE|REPLACE|TRUNCATE)\b` — caught even if the query starts with an allowed verb (defense against multi-keyword payloads).
+- **LIMIT cap.** If the query does not end with `LIMIT n[, m]` the tool appends ` LIMIT 5`. Small. If the model needs more rows, it must specify its own LIMIT.
+
+### Description prompt
+
+The tool's `description` is dialect-aware (PostgreSQL vs MySQL label) and embeds the introspected schema. The "REGRAS DE OURO" tell the LLM about the verb allow-list, single-statement rule, default LIMIT 5, and to prefer explicit column lists over `SELECT *`. Change the description and you change the model's SQL style.
+
+### Common edits
+
+- **Cache connections across calls.** Each schema description and each query opens and destroys a `DataSource`. For a busy agent this is latency; a process-level cache keyed by URL with a TTL would help.
+- **Support another dialect.** Add the scheme detection in `src/infrastructure/integration/customer-database/sql-guard.ts` (`detectDialect`, with spec) and the driver options in `customer-database.gateway.ts`. Tested are `postgres` and `mysql`.
+- **Tighten verbs.** Restrict to `SELECT` only for read-only analytics use cases.
+
+## Vector store layer
+
+### `VECTOR_STORE.loadIndex(filter)` — src/infrastructure/integration/supabase/supabase-vector-store.gateway.ts
+
+```ts
+SupabaseVectorStore.fromExistingIndex(embeddings, {
+  client: supabaseClient,
+  tableName: 'documents', // default
+  queryName: `match_${tableName}`, // e.g. match_documents
+  filter, // CustomMetadata
+});
+```
+
+- Default table is `documents`; the matching Postgres function is `match_documents`. A second table would need its own SQL function with the same signature.
+- `filter` is a `CustomMetadata` object (`{ session_id?, conversation_id?, user_id?, agent_id?, source_type?, source_id? }`) — pgvector scopes vectors by this metadata. The vector-search-tool above passes `{ agent_id }`, so chunks ingested without `agent_id` are invisible to chat.
+- `embeddings` is the `EMBEDDINGS` port (Voyage `voyage-3-large` live, `MockEmbeddings` in mock mode), injected into the gateway by `integration.module.ts`. `LoadVectorSearchTool` injects `VECTOR_STORE` directly; there is no `LoadVectorStoreService` any more.
+
+### ExecuteSimilaritySearch — src/modules/retrieval/execute-similarity-search/execute-similarity-search.service.ts
+
+```ts
+const retriever = new ContextualCompressionRetriever({
+  baseRetriever: vectorStore.asRetriever({ k: env.VECTOR_SEARCH_CANDIDATE_K }),
+  baseCompressor: this.rerankDocumentsService.execute(),
+});
+
+return retriever.invoke(question);
+```
+
+- **The dense search only generates candidates.** `vectorSearchCandidateK` (default 50, env `VECTOR_SEARCH_CANDIDATE_K`) is a recall ceiling, not a relevance criterion — relevance is decided by the reranker below. The old hard-coded `topK = 10` is gone.
+- **Never pass `filter` to `asRetriever`.** `loadIndex` fixes `this.filter` at construction, and a second filter makes `_searchSupabase` throw `"cannot provide both filter and this.filter"`.
+- `asRetriever` embeds the query internally, so this is still **one** embedding call per search. The service receives a LangChain `VectorStoreInterface` and injects no embeddings.
+- `ContextualCompressionRetriever` comes from **`@langchain/classic`**, not `langchain` — the classic retrievers moved packages and `langchain@1.2.x` no longer exports them.
+- The `as unknown as BaseRetrieverInterface` cast on the base retriever is packaging friction, not a real mismatch: under `NodeNext`, `@langchain/community` resolves its CJS typings back to the ESM ones, so both packages see the same declaration under two identities. Removing the cast breaks `bun run build`.
+
+### RerankDocuments — src/modules/retrieval/rerank-documents/rerank-documents.service.ts
+
+`execute()` returns a `VoyageRerankCompressor extends BaseDocumentCompressor` (from `@langchain/classic/retrievers/document_compressors`) wrapping the `RERANKER` port (`VoyageRerankerGateway` over `ResilientClient`, Zod-validated response).
+
+`compressDocuments(documents, query)`:
+
+1. Empty input → `[]`, without calling the API.
+2. `rerank(query, documents.map((d) => d.pageContent))` → Voyage `POST /v1/rerank`; results arrive sorted by descending relevance, so filter-then-slice preserves the ranking.
+3. Keep `relevanceScore >= env.VECTOR_SEARCH_MIN_SCORE` (default **0.8**), cap at `env.VECTOR_SEARCH_MAX_RESULTS` (default 10), stamp `metadata.relevance_score`.
+4. Nothing clears the bar → `logger.warn` with the best score seen, return `[]`.
+
+- **Why the threshold lives on the rerank score and not on the cosine score.** `match_documents` already returns rows ordered by `embedding <=> query_embedding`, so filtering on that same similarity adds no signal the ordering did not already carry — and a bi-encoder's scale is not comparable across queries. The cross-encoder scores query and document _together_, so a fixed cutoff is meaningful. Measured against pt-BR content: direct answers 0.87–0.96, partial matches ~0.76, related-but-wrong ~0.49, off-topic 0.20–0.34.
+- Tuning is **env-only** (`VECTOR_SEARCH_MIN_SCORE`, `VECTOR_SEARCH_MAX_RESULTS`, `VECTOR_SEARCH_CANDIDATE_K`) and deliberately **not** a column on `agents` — a per-agent knob would need a migration and a UI; tune the env first.
+- The reranker consumes the same Voyage quota as the embeddings, so a search now costs **two** Voyage calls instead of one.

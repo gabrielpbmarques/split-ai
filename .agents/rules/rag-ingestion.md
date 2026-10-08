@@ -1,10 +1,5 @@
 ---
-paths:
-  - 'src/modules/sources/**/*.ts'
-  - 'src/modules/agents/load-agent-sites/**/*.ts'
-  - 'src/infrastructure/integration/supabase/**/*.ts'
-  - 'src/infrastructure/integration/mock/mock-vector-store.gateway.ts'
-  - 'src/shared/utils/build-source-metadata.ts'
+trigger: always_on
 ---
 
 # RAG ingestion and the vector store

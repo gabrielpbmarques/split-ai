@@ -1,9 +1,5 @@
 ---
-paths:
-  - 'src/auth/**'
-  - 'src/shared/decorators/**'
-  - 'src/modules/auth-flows/**'
-  - 'src/types/**'
+trigger: always_on
 ---
 
 # Authentication and authorization

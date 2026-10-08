@@ -1,6 +1,5 @@
 ---
-paths:
-  - 'src/modules/chat/**/*.ts'
+trigger: always_on
 ---
 
 # Chat streaming — `src/modules/chat/`

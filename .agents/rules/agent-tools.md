@@ -1,8 +1,5 @@
 ---
-paths:
-  - 'src/modules/retrieval/**/*.ts'
-  - 'src/shared/utils/build-zod-schema.ts'
-  - 'src/infrastructure/integration/customer-database/**'
+trigger: always_on
 ---
 
 # Agent tools and SQL guardrails — `src/modules/retrieval/`

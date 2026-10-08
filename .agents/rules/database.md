@@ -1,8 +1,5 @@
 ---
-paths:
-  - 'src/infrastructure/database/**'
-  - 'src/modules/**/repositories/**'
-  - 'scripts/test/prepare-database.ts'
+trigger: always_on
 ---
 
 # Database: entities, repositories, transactions, migrations

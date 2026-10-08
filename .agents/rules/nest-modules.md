@@ -1,8 +1,5 @@
 ---
-paths:
-  - 'src/**/*.module.ts'
-  - 'src/**/*.port.ts'
-  - 'src/modules/*/contracts/**'
+trigger: always_on
 ---
 
 # Nest modules and dependency injection

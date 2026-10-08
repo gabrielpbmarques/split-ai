@@ -1,7 +1,5 @@
 ---
-paths:
-  - 'test/**/*.ts'
-  - 'src/**/*.spec.ts'
+trigger: always_on
 ---
 
 # Tests

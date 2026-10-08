@@ -1,10 +1,5 @@
 ---
-paths:
-  - 'src/shared/http/**'
-  - 'src/shared/decorators/**'
-  - 'src/shared/observability/**'
-  - 'src/shared/contracts/error-response.ts'
-  - 'src/auth/auth.constants.ts'
+trigger: always_on
 ---
 
 # Cross-cutting concerns: errors, decorators, correlation, logging, health

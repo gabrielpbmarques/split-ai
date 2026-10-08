@@ -1,6 +1,5 @@
 ---
-paths:
-  - 'src/**/*.ts'
+trigger: always_on
 ---
 
 # Fundamental conventions

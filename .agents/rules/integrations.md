@@ -1,6 +1,5 @@
 ---
-paths:
-  - 'src/infrastructure/integration/**'
+trigger: always_on
 ---
 
 # External integrations
