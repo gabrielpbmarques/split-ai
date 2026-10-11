@@ -23,7 +23,7 @@ export class CreateAgentService {
         {
           name: dto.name,
           agent_identifier: dto.agentIdentifier ?? null,
-          model: dto.model ?? 'claude-haiku-4-5-20251001',
+          model: dto.model ?? 'deepseek-chat-v3.2',
           temperature: dto.temperature ?? 0.4,
           with_history: dto.withHistory ?? true,
           database_tool: dto.databaseTool ?? true,
