@@ -30,7 +30,7 @@ export class CreateSessionIfNotExistsService {
     return this.sessionRepository.create({
       agent_id,
       user_id,
-      expires_at: moment().add(1, 'day').toDate(),
+      expires_at: moment().add(8, 'hours').toDate(),
     });
   }
 }
