@@ -3,6 +3,7 @@ import {
   IsObject,
   IsOptional,
   IsString,
+  IsUUID,
   MaxLength,
 } from 'class-validator';
 
@@ -13,24 +14,9 @@ export class QuestionDto {
   question!: string;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  phone?: string;
+  @IsUUID()
+  threadId?: string;
 
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  name?: string;
-
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(255)
-  agentId!: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  conversationId?: string;
   @IsOptional()
   @IsObject()
   variables?: Record<string, string>;

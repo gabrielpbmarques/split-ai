@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Res } from '@nestjs/common';
+import { Body, Controller, Param, Post, Res } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiForbiddenResponse,
@@ -29,6 +29,7 @@ export class QuestionController {
   async handle(
     @Res() res: FastifyReply,
     @Body() dto: QuestionDto,
+    @Param() param: { agentId: string },
     @AuthUser() user: AuthenticatedUser,
   ): Promise<void> {
     res.hijack();
@@ -56,7 +57,7 @@ export class QuestionController {
     let serviceTerminated = false;
 
     try {
-      await this.questionService.execute(dto, user, (event) => {
+      await this.questionService.execute(dto, param, user, (event) => {
         if (event.type === 'done') {
           serviceTerminated = true;
         }

@@ -21,21 +21,20 @@ export class QuestionService {
 
   async execute(
     dto: QuestionDto,
+    param: { agentId: string },
     user: AuthenticatedUser,
     onEvent: (event: StreamEvent) => void,
   ): Promise<void> {
-    const { question, agentId } = dto;
+    const { question } = dto;
     const session = await this.createSessionIfNotExistsService.execute({
-      agent_id: agentId,
+      agent_id: param.agentId,
       user_id: user.id,
     });
 
-    const agent = await this.resolveAgentService.execute(agentId, {
+    const agent = await this.resolveAgentService.execute(param.agentId, {
       ...(dto.variables || {}),
-      ...{},
       sessionId: session.id,
-      conversationId: dto.conversationId,
-      threadId: dto.conversationId ?? session.id,
+      threadId: dto.threadId ?? session.id,
     });
 
     await this.recordChatMessageService.execute(
@@ -50,7 +49,7 @@ export class QuestionService {
       question,
       {
         session_id: session.id,
-        conversation_id: dto.conversationId,
+        conversation_id: dto.threadId,
         user_id: user.id,
         agent_id: agent.id,
       },
