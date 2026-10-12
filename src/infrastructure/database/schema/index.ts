@@ -1,5 +1,4 @@
 import { AgentConnectionEntity } from './agent-connection.entity';
-import { AgentInstructionEntity } from './agent-instruction.entity';
 import { AgentEntity } from './agent.entity';
 import { MessageEntity } from './message.entity';
 import { NotificationEntity } from './notification.entity';
@@ -10,7 +9,6 @@ import { UserTokenEntity } from './user-token.entity';
 import { UserEntity } from './user.entity';
 
 export * from './agent-connection.entity';
-export * from './agent-instruction.entity';
 export * from './agent.entity';
 export * from './message.entity';
 export * from './notification.entity';
@@ -24,7 +22,6 @@ export const ENTITIES = [
   SessionEntity,
   MessageEntity,
   AgentEntity,
-  AgentInstructionEntity,
   AgentConnectionEntity,
   UserEntity,
   UserTokenEntity,

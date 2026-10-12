@@ -12,11 +12,6 @@ import {
 } from 'src/shared/contracts/pagination';
 import { isUuid } from 'src/shared/utils/is-uuid';
 
-export type AgentDatabaseConnection = Pick<
-  AgentEntity,
-  'database_url' | 'database_tables' | 'database_sample_rows'
->;
-
 export interface AgentWithLatestInstructions {
   id: string;
   name: string;
@@ -28,7 +23,7 @@ export interface AgentWithLatestInstructions {
   parser_name: string | null;
   parser_description: string | null;
   parser_schema: unknown;
-  instructions: unknown;
+  system_prompt: string;
   created_at: Date;
   updated_at: Date;
 }
@@ -76,15 +71,6 @@ export class AgentRepository {
     });
   }
 
-  async findDatabaseConnection(
-    id: string,
-  ): Promise<AgentDatabaseConnection | null> {
-    return this.repository.findOne({
-      where: { id },
-      select: ['id', 'database_url', 'database_tables', 'database_sample_rows'],
-    });
-  }
-
   async count(): Promise<number> {
     return this.repository.count();
   }
@@ -119,19 +105,10 @@ export class AgentRepository {
         'a.parser_name AS parser_name',
         'a.parser_description AS parser_description',
         'a.parser_schema AS parser_schema',
+        'a.system_prompt AS system_prompt',
         'a.created_at AS created_at',
         'a.updated_at AS updated_at',
       ])
-      .addSelect(
-        (sub) =>
-          sub
-            .select('i.instructions')
-            .from('agents_instructions', 'i')
-            .where('i.agent_id = a.id')
-            .orderBy('i.created_at', 'DESC')
-            .limit(1),
-        'instructions',
-      )
       .orderBy('a.created_at', 'DESC')
       .offset(skipOf(page))
       .limit(page.limit);

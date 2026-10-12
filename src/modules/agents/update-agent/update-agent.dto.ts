@@ -2,18 +2,12 @@ import {
   ArrayMaxSize,
   IsArray,
   IsBoolean,
-  IsInt,
   IsNumber,
   IsObject,
   IsOptional,
   IsString,
-  Matches,
-  Max,
   MaxLength,
-  Min,
 } from 'class-validator';
-
-import { AIInstructions } from 'src/shared/contracts';
 
 export class UpdateAgentDto {
   @IsOptional()
@@ -41,37 +35,12 @@ export class UpdateAgentDto {
 
   @IsOptional()
   @IsBoolean()
-  databaseTool?: boolean;
-
-  @IsOptional()
-  @IsBoolean()
   vectorSearchTool?: boolean;
 
   @IsOptional()
   @IsString()
-  @MaxLength(2048)
-  @Matches(/^(postgres|postgresql|mysql|mysql2):\/\//, {
-    message:
-      'databaseUrl deve começar com postgres://, postgresql://, mysql:// ou mysql2://',
-  })
-  databaseUrl?: string | null;
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  @MaxLength(255, { each: true })
-  @ArrayMaxSize(200)
-  databaseTables?: string[] | null;
-
-  @IsOptional()
-  @IsInt()
-  @Min(0)
-  @Max(10)
-  databaseSampleRows?: number | null;
-
-  @IsOptional()
-  @IsObject()
-  instructions?: AIInstructions;
+  @MaxLength(65535)
+  systemPrompt?: string;
 
   @IsOptional()
   @IsArray()

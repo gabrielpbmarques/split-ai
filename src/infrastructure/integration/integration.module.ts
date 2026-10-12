@@ -5,11 +5,6 @@ import {
   CHAT_MODEL,
   type ChatModelFactory,
 } from 'src/infrastructure/integration/chat-model.port';
-import { TypeOrmCustomerDatabaseGateway } from 'src/infrastructure/integration/customer-database/customer-database.gateway';
-import {
-  CUSTOMER_DATABASE,
-  type CustomerDatabaseGateway,
-} from 'src/infrastructure/integration/customer-database.port';
 import { ElevenLabsTextToSpeechGateway } from 'src/infrastructure/integration/eleven-labs/eleven-labs-text-to-speech.gateway';
 import {
   EMBEDDINGS,
@@ -28,7 +23,6 @@ import {
   type MessagingGateway,
 } from 'src/infrastructure/integration/messaging.port';
 import { MockChatModelFactory } from 'src/infrastructure/integration/mock/mock-chat-model.factory';
-import { MockCustomerDatabaseGateway } from 'src/infrastructure/integration/mock/mock-customer-database.gateway';
 import { MockEmbeddings } from 'src/infrastructure/integration/mock/mock-embeddings';
 import { MockFileStorageGateway } from 'src/infrastructure/integration/mock/mock-file-storage.gateway';
 import { MockMessagingGateway } from 'src/infrastructure/integration/mock/mock-messaging.gateway';
@@ -137,13 +131,6 @@ const providers: Provider[] = [
       () => new MockOcrGateway(),
     ),
   },
-  {
-    provide: CUSTOMER_DATABASE,
-    useFactory: select<CustomerDatabaseGateway>(
-      () => new TypeOrmCustomerDatabaseGateway(),
-      () => new MockCustomerDatabaseGateway(),
-    ),
-  },
   IntegrationHealthIndicator,
 ];
 
@@ -160,7 +147,6 @@ const providers: Provider[] = [
     FILE_STORAGE,
     TEXT_TO_SPEECH,
     OCR,
-    CUSTOMER_DATABASE,
     IntegrationHealthIndicator,
   ],
 })

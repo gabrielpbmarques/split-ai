@@ -102,19 +102,6 @@ const envSchema = z.object({
   ELEVENLABS_VOICE_ID: z.string().min(1).default('21m00Tcm4TlvDq8ikWAM'),
   ELEVENLABS_MODEL_ID: z.string().min(1).default('eleven_multilingual_v2'),
   ELEVENLABS_OUTPUT_FORMAT: z.string().min(1).default('mp3_44100_128'),
-
-  CUSTOMER_DATABASE_ALLOWED_HOSTS: csvList,
-  CUSTOMER_DATABASE_ALLOW_INTERNAL_NETWORK: booleanFlag,
-  CUSTOMER_DATABASE_STATEMENT_TIMEOUT_MS: z.coerce
-    .number()
-    .int()
-    .positive()
-    .default(15_000),
-  CUSTOMER_DATABASE_CONNECTION_TIMEOUT_MS: z.coerce
-    .number()
-    .int()
-    .positive()
-    .default(5_000),
 });
 
 type EnvSchema = z.infer<typeof envSchema>;

@@ -1,29 +1,21 @@
 import { Injectable } from '@nestjs/common';
 
-import { NormalizePromptInstructionsService } from 'src/modules/agent-runtime/normalize-prompt-instructions/normalize-prompt-instructions.service';
-import type { AgentTool, AIInstructions } from 'src/shared/contracts';
-
 @Injectable()
 export class BuildSystemPromptService {
-  constructor(
-    private normalizePromptInstructionsService: NormalizePromptInstructionsService,
-  ) {}
-
   async execute(
-    instructions: AIInstructions,
-    tools: AgentTool[],
+    systemPrompt: string,
     promptVariables?: Record<string, unknown>,
   ): Promise<string> {
-    const textPrompt = this.normalizePromptInstructionsService.execute(
-      instructions,
-      tools,
-      promptVariables,
-    );
+    const formattedVariables = Object.entries(promptVariables || {})
+      .map(([key, value]) => `${key}: ${value}`)
+      .join('\n');
 
-    const final = `
-      ${textPrompt}\n
-      TODAY_DATE: ${new Date().toLocaleDateString()}\n
-    `;
-    return final;
+    const sections = [systemPrompt.trim()];
+    if (formattedVariables) {
+      sections.push(`## Variáveis\n${formattedVariables}`);
+    }
+    sections.push(`TODAY_DATE: ${new Date().toLocaleDateString()}`);
+
+    return sections.join('\n\n');
   }
 }

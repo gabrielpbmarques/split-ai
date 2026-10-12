@@ -7,7 +7,6 @@ import type { DataSource } from 'typeorm';
 import {
   AgentConnectionEntity,
   AgentEntity,
-  AgentInstructionEntity,
   MessageEntity,
   ReportEntity,
   SessionEntity,
@@ -46,11 +45,6 @@ export async function createUser(
 export async function createAgent(
   dataSource: DataSource,
   overrides: Partial<AgentEntity> = {},
-  instructions: Record<string, unknown> = {
-    context: 'Você é um assistente de testes.',
-    objetivo: 'Responder perguntas de teste.',
-    diretrizes: ['Seja breve.'],
-  },
 ): Promise<AgentEntity> {
   const n = next();
   const agent = await dataSource.getRepository(AgentEntity).save({
@@ -60,13 +54,8 @@ export async function createAgent(
     temperature: 0.2,
     with_history: false,
     vector_search_tool: false,
-    database_tool: false,
+    system_prompt: '# Agente de Testes\nVocê é um assistente de testes.',
     ...overrides,
-  });
-
-  await dataSource.getRepository(AgentInstructionEntity).save({
-    agent_id: agent.id,
-    instructions,
   });
 
   return agent;

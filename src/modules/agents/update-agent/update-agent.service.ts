@@ -1,18 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
 import type { AgentEntity } from 'src/infrastructure/database/schema';
-import { TransactionExecutor } from 'src/infrastructure/database/transaction-executor/transaction-executor.service';
-import { AgentInstructionRepository } from 'src/modules/agents/repositories/agent-instruction.repository';
 import { AgentRepository } from 'src/modules/agents/repositories/agent.repository';
 import type { UpdateAgentDto } from 'src/modules/agents/update-agent/update-agent.dto';
 import { isUuid } from 'src/shared/utils/is-uuid';
+
 @Injectable()
 export class UpdateAgentService {
-  constructor(
-    private readonly agentRepository: AgentRepository,
-    private readonly agentInstructionRepository: AgentInstructionRepository,
-    private readonly transactionExecutor: TransactionExecutor,
-  ) {}
+  constructor(private readonly agentRepository: AgentRepository) {}
 
   async execute(
     idOrIdentifier: string,
@@ -29,21 +24,12 @@ export class UpdateAgentService {
     if (dto.temperature !== undefined) updateData.temperature = dto.temperature;
     if (dto.withHistory !== undefined)
       updateData.with_history = dto.withHistory;
-    if (dto.databaseTool !== undefined)
-      updateData.database_tool = dto.databaseTool;
     if (dto.vectorSearchTool !== undefined)
       updateData.vector_search_tool = dto.vectorSearchTool;
     if (dto.sites !== undefined)
       updateData.sites = dto.sites && dto.sites.length ? dto.sites : null;
-
-    if (dto.databaseUrl !== undefined)
-      updateData.database_url = dto.databaseUrl;
-    if (dto.databaseTables !== undefined)
-      updateData.database_tables = dto.databaseTables?.length
-        ? dto.databaseTables
-        : null;
-    if (dto.databaseSampleRows !== undefined)
-      updateData.database_sample_rows = dto.databaseSampleRows;
+    if (dto.systemPrompt !== undefined)
+      updateData.system_prompt = dto.systemPrompt;
 
     if (dto.parser !== undefined) {
       if (dto.parser === null) {
@@ -57,19 +43,9 @@ export class UpdateAgentService {
       }
     }
 
-    await this.transactionExecutor.run(async (tx) => {
-      if (Object.keys(updateData).length > 0) {
-        await this.agentRepository.update(agent.id, updateData, tx);
-      }
-
-      if (dto.instructions !== undefined) {
-        await this.agentInstructionRepository.updateLatestByAgentId(
-          agent.id,
-          dto.instructions,
-          tx,
-        );
-      }
-    });
+    if (Object.keys(updateData).length > 0) {
+      await this.agentRepository.update(agent.id, updateData);
+    }
 
     return { id: agent.id };
   }

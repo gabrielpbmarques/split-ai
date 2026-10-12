@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 
 import { CHAT_MODEL } from 'src/infrastructure/integration/chat-model.port';
-import { CUSTOMER_DATABASE } from 'src/infrastructure/integration/customer-database.port';
 import { FILE_STORAGE } from 'src/infrastructure/integration/file-storage.port';
 import { IntegrationGateway } from 'src/infrastructure/integration/integration.state';
 import type { IntegrationState } from 'src/infrastructure/integration/integration.state';
@@ -29,7 +28,6 @@ export class IntegrationHealthIndicator {
     @Inject(FILE_STORAGE) fileStorage: IntegrationGateway,
     @Inject(TEXT_TO_SPEECH) textToSpeech: IntegrationGateway,
     @Inject(OCR) ocr: IntegrationGateway,
-    @Inject(CUSTOMER_DATABASE) customerDatabase: IntegrationGateway,
   ) {
     this.gateways = [
       messaging,
@@ -40,7 +38,6 @@ export class IntegrationHealthIndicator {
       fileStorage,
       textToSpeech,
       ocr,
-      customerDatabase,
     ];
   }
 

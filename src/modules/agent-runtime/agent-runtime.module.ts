@@ -5,7 +5,6 @@ import { BuildSystemPromptModule } from 'src/modules/agent-runtime/build-system-
 import { GenerateAiResponseModule } from 'src/modules/agent-runtime/generate-ai-response/generate-ai-response.module';
 import { InvokeConnectedAgentModule } from 'src/modules/agent-runtime/invoke-connection-agent/invoke-connected-agent.module';
 import { LoadCheckpointerModule } from 'src/modules/agent-runtime/load-checkpointer/load-checkpointer.module';
-import { NormalizePromptInstructionsModule } from 'src/modules/agent-runtime/normalize-prompt-instructions/normalize-prompt-instructions.module';
 import { ResolveAgentModule } from 'src/modules/agent-runtime/resolve-agent/resolve-agent.module';
 
 @Module({
@@ -15,7 +14,6 @@ import { ResolveAgentModule } from 'src/modules/agent-runtime/resolve-agent/reso
     GenerateAiResponseModule,
     InvokeConnectedAgentModule,
     LoadCheckpointerModule,
-    NormalizePromptInstructionsModule,
     ResolveAgentModule,
   ],
   exports: [
@@ -24,7 +22,6 @@ import { ResolveAgentModule } from 'src/modules/agent-runtime/resolve-agent/reso
     GenerateAiResponseModule,
     InvokeConnectedAgentModule,
     LoadCheckpointerModule,
-    NormalizePromptInstructionsModule,
     ResolveAgentModule,
   ],
 })

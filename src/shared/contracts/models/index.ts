@@ -6,7 +6,6 @@ export * from 'src/shared/contracts/models/route-checkpoint.model';
 export * from 'src/shared/contracts/models/certificate.model';
 export * from 'src/shared/contracts/models/verification-token.model';
 export * from 'src/shared/contracts/models/user-device.model';
-export * from 'src/shared/contracts/models/ai-instructions.model';
 export * from 'src/shared/contracts/models/ai-source-type.model';
 export * from 'src/shared/contracts/models/chunks.model';
 export * from 'src/shared/contracts/models/custom-document.model';

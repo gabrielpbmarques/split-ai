@@ -11,7 +11,6 @@ import {
 } from 'src/infrastructure/integration/chat-model.port';
 import { BuildSystemPromptService } from 'src/modules/agent-runtime/build-system-prompt/build-system-prompt.service';
 import { LoadCheckpointerService } from 'src/modules/agent-runtime/load-checkpointer/load-checkpointer.service';
-import { AgentInstructionRepository } from 'src/modules/agents/repositories/agent-instruction.repository';
 import { AgentRepository } from 'src/modules/agents/repositories/agent.repository';
 import { LoadAgentToolsService } from 'src/modules/retrieval/load-agent-tools/load-agent-tools.service';
 import {
@@ -34,7 +33,6 @@ export class ResolveAgentService {
   constructor(
     @Inject(CHAT_MODEL) private readonly chatModelFactory: ChatModelFactory,
     private readonly agentRepository: AgentRepository,
-    private readonly agentInstructionRepository: AgentInstructionRepository,
     private readonly buildSystemPromptService: BuildSystemPromptService,
     private readonly loadCheckpointerService: LoadCheckpointerService,
     private readonly loadAgentToolsService: LoadAgentToolsService,
@@ -52,10 +50,7 @@ export class ResolveAgentService {
       throw new NotFoundException('Agente não encontrado');
     }
 
-    const latestInstructions =
-      await this.agentInstructionRepository.findLatestByAgentId(agent.id);
-
-    if (!latestInstructions) {
+    if (!agent.system_prompt) {
       throw new NotFoundException('Agente sem instruções configuradas');
     }
 
@@ -68,8 +63,7 @@ export class ResolveAgentService {
     );
 
     const systemPrompt = await this.buildSystemPromptService.execute(
-      latestInstructions.instructions,
-      tools,
+      agent.system_prompt,
       promptVariables,
     );
 
@@ -85,7 +79,9 @@ export class ResolveAgentService {
       model: chat,
       tools,
       systemPrompt,
-      checkpointer,
+      checkpointer: checkpointer as unknown as Parameters<
+        typeof createAgent
+      >[0]['checkpointer'],
       middleware: [sanitizeHistoryMiddleware],
       responseFormat: AgentFinalResponseSchema,
     });

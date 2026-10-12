@@ -3,16 +3,13 @@ import { Injectable } from '@nestjs/common';
 import type { AgentEntity } from 'src/infrastructure/database/schema';
 import { AppendConnectionToolsService } from 'src/modules/agent-runtime/append-connection-tools/append-connection-tools.service';
 import { LoadVectorSearchToolService } from 'src/modules/retrieval/load-vector-search-tool/load-vector-search-tool.service';
-import { MaybeLoadDatabaseToolService } from 'src/modules/retrieval/maybe-load-database-tool/maybe-load-database-tool.service';
 import type { AgentTool } from 'src/shared/contracts';
 import { buildLangchainToolFromSchema } from 'src/shared/utils/build-zod-schema';
-
 @Injectable()
 export class LoadAgentToolsService {
   constructor(
     private readonly appendConnectionToolsService: AppendConnectionToolsService,
     private readonly loadVectorSearchToolService: LoadVectorSearchToolService,
-    private readonly maybeLoadDatabaseToolService: MaybeLoadDatabaseToolService,
   ) {}
 
   async execute(
@@ -33,12 +30,6 @@ export class LoadAgentToolsService {
 
     if (dbAgent.vector_search_tool) {
       tools.push(await this.loadVectorSearchToolService.execute(dbAgent.id));
-    }
-
-    const databaseTool =
-      await this.maybeLoadDatabaseToolService.execute(dbAgent);
-    if (databaseTool) {
-      tools.push(databaseTool);
     }
 
     await this.appendConnectionToolsService.execute(

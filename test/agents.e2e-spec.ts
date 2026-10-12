@@ -1,17 +1,10 @@
 import { randomUUID } from 'crypto';
 
-import {
-  AgentEntity,
-  AgentInstructionEntity,
-} from 'src/infrastructure/database/schema';
+import { AgentEntity } from 'src/infrastructure/database/schema';
 import { bearer, createAgent, createUser } from 'test/support/factories';
 import { createTestApp, type TestApp } from 'test/support/test-app';
 
-const instructions = {
-  context: 'Atende clientes de uma loja.',
-  objetivo: 'Responder dúvidas.',
-  diretrizes: ['Seja cordial.'],
-};
+const systemPrompt = '# Assistente de Testes\nAtende clientes de uma loja.';
 
 describe('agents (e2e)', () => {
   let t: TestApp;
@@ -24,14 +17,14 @@ describe('agents (e2e)', () => {
   afterAll(() => t.close());
 
   describe('POST /agent/create', () => {
-    it('creates the agent with its instructions and owner', async () => {
+    it('creates the agent with its system prompt and owner', async () => {
       const user = await createUser(t.dataSource);
 
       const { body } = await t
         .http()
         .post('/agent/create')
         .set('Authorization', bearer(user))
-        .send({ name: 'Vendas', agentIdentifier: 'vendas', instructions })
+        .send({ name: 'Vendas', agentIdentifier: 'vendas', systemPrompt })
         .expect(201);
 
       const agent = await t.dataSource
@@ -41,57 +34,9 @@ describe('agents (e2e)', () => {
         name: 'Vendas',
         agent_identifier: 'vendas',
         user_id: user.id,
+        system_prompt: systemPrompt,
         vector_search_tool: true,
       });
-
-      const stored = await t.dataSource
-        .getRepository(AgentInstructionEntity)
-        .findOneByOrFail({ agent_id: body.id });
-      expect(stored.instructions).toEqual(instructions);
-    });
-
-    it('stores the external database connection without exposing the url', async () => {
-      const user = await createUser(t.dataSource);
-
-      const { body } = await t
-        .http()
-        .post('/agent/create')
-        .set('Authorization', bearer(user))
-        .send({
-          name: 'Analista',
-          instructions,
-          databaseTool: true,
-          databaseUrl: 'postgres://reader:secret@db.example.test:5432/loja',
-          databaseTables: ['pedidos', 'clientes'],
-          databaseSampleRows: 0,
-        })
-        .expect(201);
-
-      const stored = await t.dataSource
-        .getRepository(AgentEntity)
-        .createQueryBuilder('a')
-        .addSelect('a.database_url')
-        .where('a.id = :id', { id: body.id })
-        .getOneOrFail();
-      expect(stored).toMatchObject({
-        database_url: 'postgres://reader:secret@db.example.test:5432/loja',
-        database_tables: ['pedidos', 'clientes'],
-        database_sample_rows: 0,
-      });
-
-      const read = await t
-        .http()
-        .get(`/agent/${body.id}`)
-        .set('Authorization', bearer(user))
-        .expect(200);
-      expect(JSON.stringify(read.body)).not.toContain('secret');
-
-      await t
-        .http()
-        .post('/agent/create')
-        .set('Authorization', bearer(user))
-        .send({ name: 'x', instructions, databaseUrl: 'sqlite://local.db' })
-        .expect(400);
     });
 
     it('validates the body (400), blocks guests (403) and anonymous callers (401)', async () => {
@@ -101,7 +46,7 @@ describe('agents (e2e)', () => {
         .http()
         .post('/agent/create')
         .set('Authorization', bearer(user))
-        .send({ instructions })
+        .send({ systemPrompt })
         .expect(400);
 
       const guest = await createUser(t.dataSource, { role: 'guest' });
@@ -109,12 +54,12 @@ describe('agents (e2e)', () => {
         .http()
         .post('/agent/create')
         .set('Authorization', bearer(guest))
-        .send({ name: 'x', instructions })
+        .send({ name: 'x', systemPrompt })
         .expect(403);
       await t
         .http()
         .post('/agent/create')
-        .send({ name: 'x', instructions })
+        .send({ name: 'x', systemPrompt })
         .expect(401);
     });
   });
@@ -206,8 +151,7 @@ describe('agents (e2e)', () => {
           name: 'Renomeado',
           temperature: 0.7,
           sites: ['https://example.test'],
-          instructions: { ...instructions, objetivo: 'Novo objetivo' },
-          databaseTables: ['pedidos'],
+          systemPrompt: 'Novo prompt atualizado.',
         })
         .expect(200);
 
@@ -218,7 +162,7 @@ describe('agents (e2e)', () => {
         name: 'Renomeado',
         temperature: 0.7,
         sites: ['https://example.test'],
-        database_tables: ['pedidos'],
+        system_prompt: 'Novo prompt atualizado.',
       });
 
       await t

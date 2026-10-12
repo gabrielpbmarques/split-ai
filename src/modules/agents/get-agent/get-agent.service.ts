@@ -2,9 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 
 import type { AgentEntity } from 'src/infrastructure/database/schema';
 import { AgentConnectionRepository } from 'src/modules/agent-connections/repositories/agent-connection.repository';
-import { AgentInstructionRepository } from 'src/modules/agents/repositories/agent-instruction.repository';
 import { AgentRepository } from 'src/modules/agents/repositories/agent.repository';
-import type { AIInstructions } from 'src/shared/contracts';
 import { isUuid } from 'src/shared/utils/is-uuid';
 
 export interface AgentDetails {
@@ -21,7 +19,7 @@ export interface AgentDetails {
     description: string | null;
     schema: unknown;
   } | null;
-  instructions: AIInstructions | null;
+  systemPrompt: string;
   isTool: boolean;
   isPrincipal: boolean;
   hasTools: boolean;
@@ -33,7 +31,6 @@ export interface AgentDetails {
 export class GetAgentService {
   constructor(
     private readonly agentRepository: AgentRepository,
-    private readonly agentInstructionRepository: AgentInstructionRepository,
     private readonly agentConnectionRepository: AgentConnectionRepository,
   ) {}
 
@@ -44,10 +41,7 @@ export class GetAgentService {
       throw new NotFoundException('Agente não encontrado.');
     }
 
-    const [latest, flags] = await Promise.all([
-      this.agentInstructionRepository.findLatestByAgentId(agent.id),
-      this.agentConnectionRepository.getRoleFlags(agent.id),
-    ]);
+    const flags = await this.agentConnectionRepository.getRoleFlags(agent.id);
 
     return {
       id: agent.id,
@@ -65,7 +59,7 @@ export class GetAgentService {
             schema: agent.parser_schema,
           }
         : null,
-      instructions: latest?.instructions || null,
+      systemPrompt: agent.system_prompt,
       isTool: flags.isTool,
       isPrincipal: !flags.isTool,
       hasTools: flags.hasTools,
