@@ -1,13 +1,16 @@
+import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   IsArray,
   IsBoolean,
   IsNumber,
-  IsObject,
   IsOptional,
   IsString,
   MaxLength,
+  ValidateNested,
 } from 'class-validator';
+
+import { ResponseFormatDto } from 'src/modules/agents/create-agent/create-agent.dto';
 
 export class UpdateAgentDto {
   @IsOptional()
@@ -50,10 +53,7 @@ export class UpdateAgentDto {
   sites?: string[] | null;
 
   @IsOptional()
-  @IsObject()
-  parser?: {
-    name: string;
-    description: string;
-    schema: Record<string, unknown>;
-  };
+  @ValidateNested()
+  @Type(() => ResponseFormatDto)
+  responseFormat?: ResponseFormatDto | null;
 }

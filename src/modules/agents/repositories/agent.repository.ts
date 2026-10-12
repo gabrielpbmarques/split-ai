@@ -5,6 +5,7 @@ import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialE
 
 import type { Executor } from 'src/infrastructure/database/database.types';
 import { AgentEntity } from 'src/infrastructure/database/schema/agent.entity';
+import type { ResponseFormat } from 'src/shared/contracts';
 import {
   type PageRequest,
   type PageResult,
@@ -20,9 +21,7 @@ export interface AgentWithLatestInstructions {
   temperature: number | null;
   with_history: boolean;
   sites: string[] | null;
-  parser_name: string | null;
-  parser_description: string | null;
-  parser_schema: unknown;
+  response_format: ResponseFormat | null;
   system_prompt: string;
   created_at: Date;
   updated_at: Date;
@@ -102,9 +101,7 @@ export class AgentRepository {
         'a.temperature AS temperature',
         'a.with_history AS with_history',
         'a.sites AS sites',
-        'a.parser_name AS parser_name',
-        'a.parser_description AS parser_description',
-        'a.parser_schema AS parser_schema',
+        'a.response_format AS response_format',
         'a.system_prompt AS system_prompt',
         'a.created_at AS created_at',
         'a.updated_at AS updated_at',

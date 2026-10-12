@@ -1,3 +1,4 @@
+import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   IsArray,
@@ -8,7 +9,28 @@ import {
   IsOptional,
   IsString,
   MaxLength,
+  ValidateNested,
 } from 'class-validator';
+
+export class ResponseFormatDto {
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(255)
+  title!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(2048)
+  description!: string;
+
+  @IsObject()
+  properties!: Record<string, { type: string; description: string }>;
+
+  @IsArray()
+  @IsString({ each: true })
+  @MaxLength(255, { each: true })
+  required!: string[];
+}
 
 export class CreateAgentDto {
   @IsString()
@@ -44,12 +66,9 @@ export class CreateAgentDto {
   systemPrompt!: string;
 
   @IsOptional()
-  @IsObject()
-  parser?: {
-    name: string;
-    description: string;
-    schema: Record<string, unknown>;
-  } | null;
+  @ValidateNested()
+  @Type(() => ResponseFormatDto)
+  responseFormat?: ResponseFormatDto | null;
 
   @IsOptional()
   @IsArray()

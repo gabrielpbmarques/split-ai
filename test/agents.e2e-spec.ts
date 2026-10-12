@@ -37,6 +37,36 @@ describe('agents (e2e)', () => {
         system_prompt: systemPrompt,
         vector_search_tool: true,
       });
+
+      const { body: withParser } = await t
+        .http()
+        .post('/agent/create')
+        .set('Authorization', bearer(user))
+        .send({
+          name: 'Com Parser',
+          systemPrompt,
+          responseFormat: {
+            title: 'extrair_dados',
+            description: 'Extrai dados',
+            properties: {
+              campo: { type: 'string', description: 'Campo' },
+            },
+            required: ['campo'],
+          },
+        })
+        .expect(201);
+
+      const agentWithParser = await t.dataSource
+        .getRepository(AgentEntity)
+        .findOneByOrFail({ id: withParser.id });
+      expect(agentWithParser.response_format).toEqual({
+        title: 'extrair_dados',
+        description: 'Extrai dados',
+        properties: {
+          campo: { type: 'string', description: 'Campo' },
+        },
+        required: ['campo'],
+      });
     });
 
     it('validates the body (400), blocks guests (403) and anonymous callers (401)', async () => {
@@ -164,6 +194,46 @@ describe('agents (e2e)', () => {
         sites: ['https://example.test'],
         system_prompt: 'Novo prompt atualizado.',
       });
+
+      await t
+        .http()
+        .patch(`/agent/${agent.id}`)
+        .set('Authorization', bearer(user))
+        .send({
+          responseFormat: {
+            title: 'atualizar_dados',
+            description: 'Atualiza dados',
+            properties: {
+              valor: { type: 'number', description: 'Valor numérico' },
+            },
+            required: ['valor'],
+          },
+        })
+        .expect(200);
+
+      const withUpdatedFormat = await t.dataSource
+        .getRepository(AgentEntity)
+        .findOneByOrFail({ id: agent.id });
+      expect(withUpdatedFormat.response_format).toEqual({
+        title: 'atualizar_dados',
+        description: 'Atualiza dados',
+        properties: {
+          valor: { type: 'number', description: 'Valor numérico' },
+        },
+        required: ['valor'],
+      });
+
+      await t
+        .http()
+        .patch(`/agent/${agent.id}`)
+        .set('Authorization', bearer(user))
+        .send({ responseFormat: null })
+        .expect(200);
+
+      const withRemovedFormat = await t.dataSource
+        .getRepository(AgentEntity)
+        .findOneByOrFail({ id: agent.id });
+      expect(withRemovedFormat.response_format).toBeNull();
 
       await t
         .http()

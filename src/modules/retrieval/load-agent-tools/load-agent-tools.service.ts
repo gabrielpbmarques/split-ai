@@ -18,14 +18,8 @@ export class LoadAgentToolsService {
   ): Promise<AgentTool[]> {
     const tools: AgentTool[] = [];
 
-    if (dbAgent.parser_schema) {
-      tools.push(
-        buildLangchainToolFromSchema(
-          dbAgent.parser_name || 'dynamic_parser',
-          dbAgent.parser_description || 'Ferramenta de parsing dinâmica',
-          dbAgent.parser_schema,
-        ),
-      );
+    if (dbAgent.response_format) {
+      tools.push(buildLangchainToolFromSchema(dbAgent.response_format));
     }
 
     if (dbAgent.vector_search_tool) {

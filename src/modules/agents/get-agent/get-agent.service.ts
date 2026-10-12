@@ -3,6 +3,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import type { AgentEntity } from 'src/infrastructure/database/schema';
 import { AgentConnectionRepository } from 'src/modules/agent-connections/repositories/agent-connection.repository';
 import { AgentRepository } from 'src/modules/agents/repositories/agent.repository';
+import type { ResponseFormat } from 'src/shared/contracts';
 import { isUuid } from 'src/shared/utils/is-uuid';
 
 export interface AgentDetails {
@@ -14,11 +15,7 @@ export interface AgentDetails {
   withHistory: boolean;
   vectorSearchTool: boolean;
   sites: string[] | null;
-  parser: {
-    name: string | null;
-    description: string | null;
-    schema: unknown;
-  } | null;
+  responseFormat: ResponseFormat | null;
   systemPrompt: string;
   isTool: boolean;
   isPrincipal: boolean;
@@ -52,13 +49,7 @@ export class GetAgentService {
       withHistory: agent.with_history,
       vectorSearchTool: agent.vector_search_tool === true,
       sites: agent.sites ?? null,
-      parser: agent.parser_schema
-        ? {
-            name: agent.parser_name,
-            description: agent.parser_description,
-            schema: agent.parser_schema,
-          }
-        : null,
+      responseFormat: agent.response_format ?? null,
       systemPrompt: agent.system_prompt,
       isTool: flags.isTool,
       isPrincipal: !flags.isTool,

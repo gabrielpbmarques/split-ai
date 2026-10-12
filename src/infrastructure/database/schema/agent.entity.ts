@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 
 import { UserEntity } from 'src/infrastructure/database/schema/user.entity';
+import type { ResponseFormat } from 'src/shared/contracts';
 
 @Entity('agents')
 export class AgentEntity {
@@ -32,13 +33,7 @@ export class AgentEntity {
   with_history!: boolean;
 
   @Column({ type: 'jsonb', nullable: true })
-  parser_schema!: Record<string, unknown> | null;
-
-  @Column({ type: 'text', nullable: true })
-  parser_name!: string | null;
-
-  @Column({ type: 'text', nullable: true })
-  parser_description!: string | null;
+  response_format!: ResponseFormat | null;
 
   @Column({ type: 'text', nullable: false, default: '' })
   system_prompt!: string;

@@ -31,16 +31,8 @@ export class UpdateAgentService {
     if (dto.systemPrompt !== undefined)
       updateData.system_prompt = dto.systemPrompt;
 
-    if (dto.parser !== undefined) {
-      if (dto.parser === null) {
-        updateData.parser_name = null;
-        updateData.parser_description = null;
-        updateData.parser_schema = null;
-      } else {
-        updateData.parser_name = dto.parser.name;
-        updateData.parser_description = dto.parser.description;
-        updateData.parser_schema = dto.parser.schema;
-      }
+    if (dto.responseFormat !== undefined) {
+      updateData.response_format = dto.responseFormat;
     }
 
     if (Object.keys(updateData).length > 0) {

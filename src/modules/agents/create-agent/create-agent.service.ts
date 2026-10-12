@@ -20,9 +20,7 @@ export class CreateAgentService {
       with_history: dto.withHistory ?? true,
       vector_search_tool: dto.vectorSearchTool ?? true,
       system_prompt: dto.systemPrompt,
-      parser_schema: dto.parser?.schema ?? null,
-      parser_name: dto.parser?.name ?? null,
-      parser_description: dto.parser?.description ?? null,
+      response_format: dto.responseFormat ?? null,
       user_id: user.id,
     });
 
