@@ -4,6 +4,7 @@ import { CreateAgentModule } from 'src/modules/agents/create-agent/create-agent.
 import { GetAgentModule } from 'src/modules/agents/get-agent/get-agent.module';
 import { ListAgentsModule } from 'src/modules/agents/list-agents/list-agents.module';
 import { ListAllAgentsModule } from 'src/modules/agents/list-all-agents/list-all-agents.module';
+import { ListAvailableToolsModule } from 'src/modules/agents/list-available-tools/list-available-tools.module';
 import { LoadAgentSitesModule } from 'src/modules/agents/load-agent-sites/load-agent-sites.module';
 import { UpdateAgentModule } from 'src/modules/agents/update-agent/update-agent.module';
 
@@ -13,6 +14,7 @@ import { UpdateAgentModule } from 'src/modules/agents/update-agent/update-agent.
     GetAgentModule,
     ListAgentsModule,
     ListAllAgentsModule,
+    ListAvailableToolsModule,
     LoadAgentSitesModule,
     UpdateAgentModule,
   ],
@@ -21,6 +23,7 @@ import { UpdateAgentModule } from 'src/modules/agents/update-agent/update-agent.
     GetAgentModule,
     ListAgentsModule,
     ListAllAgentsModule,
+    ListAvailableToolsModule,
     LoadAgentSitesModule,
     UpdateAgentModule,
   ],

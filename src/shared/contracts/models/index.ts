@@ -19,3 +19,4 @@ export * from 'src/shared/contracts/models/resolved-agent.model';
 export * from 'src/shared/contracts/models/document-data.model';
 export * from 'src/shared/contracts/models/stream-event.model';
 export * from 'src/shared/contracts/models/response-format.model';
+export * from 'src/shared/contracts/models/available-tool.model';

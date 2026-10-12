@@ -20,6 +20,7 @@ export interface AgentWithLatestInstructions {
   model: string | null;
   temperature: number | null;
   with_history: boolean;
+  tools: string[];
   sites: string[] | null;
   response_format: ResponseFormat | null;
   system_prompt: string;
@@ -100,6 +101,7 @@ export class AgentRepository {
         'a.model AS model',
         'a.temperature AS temperature',
         'a.with_history AS with_history',
+        'a.tools AS tools',
         'a.sites AS sites',
         'a.response_format AS response_format',
         'a.system_prompt AS system_prompt',

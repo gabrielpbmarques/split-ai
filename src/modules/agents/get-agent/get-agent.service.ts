@@ -13,7 +13,7 @@ export interface AgentDetails {
   model: string | null;
   temperature: number | null;
   withHistory: boolean;
-  vectorSearchTool: boolean;
+  tools: string[];
   sites: string[] | null;
   responseFormat: ResponseFormat | null;
   systemPrompt: string;
@@ -47,7 +47,7 @@ export class GetAgentService {
       model: agent.model,
       temperature: agent.temperature,
       withHistory: agent.with_history,
-      vectorSearchTool: agent.vector_search_tool === true,
+      tools: agent.tools ?? [],
       sites: agent.sites ?? null,
       responseFormat: agent.response_format ?? null,
       systemPrompt: agent.system_prompt,

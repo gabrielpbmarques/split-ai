@@ -53,7 +53,7 @@ export async function createAgent(
     model: 'mock-model',
     temperature: 0.2,
     with_history: false,
-    vector_search_tool: false,
+    tools: [],
     system_prompt: '# Agente de Testes\nVocê é um assistente de testes.',
     ...overrides,
   });

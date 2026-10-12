@@ -38,8 +38,8 @@ export class AgentEntity {
   @Column({ type: 'text', nullable: false, default: '' })
   system_prompt!: string;
 
-  @Column({ type: 'boolean', nullable: true, default: true })
-  vector_search_tool!: boolean | null;
+  @Column('text', { array: true, default: '{}' })
+  tools!: string[];
 
   @Column('text', { array: true, nullable: true })
   sites!: string[] | null;

@@ -4,6 +4,7 @@ import { PartialUniqueIndexes1759600002000 } from 'src/infrastructure/database/m
 import { RemoveMultiTenancy1759700000000 } from 'src/infrastructure/database/migrations/1759700000000-remove-multi-tenancy';
 import { UnifyAgentSystemPromptRemoveDatabase1759800000000 } from 'src/infrastructure/database/migrations/1759800000000-unify-agent-system-prompt-remove-database';
 import { UnifyAgentResponseFormat1759900000000 } from 'src/infrastructure/database/migrations/1759900000000-unify-agent-response-format';
+import { UnifyAgentTools1760000000000 } from 'src/infrastructure/database/migrations/1760000000000-unify-agent-tools';
 
 export const MIGRATIONS = [
   AddLifecycleColumns1759600000000,
@@ -12,4 +13,5 @@ export const MIGRATIONS = [
   RemoveMultiTenancy1759700000000,
   UnifyAgentSystemPromptRemoveDatabase1759800000000,
   UnifyAgentResponseFormat1759900000000,
+  UnifyAgentTools1760000000000,
 ];

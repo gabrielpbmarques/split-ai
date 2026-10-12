@@ -57,8 +57,11 @@ export class CreateAgentDto {
   withHistory?: boolean;
 
   @IsOptional()
-  @IsBoolean()
-  vectorSearchTool?: boolean;
+  @IsArray()
+  @IsString({ each: true })
+  @MaxLength(64, { each: true })
+  @ArrayMaxSize(50)
+  tools?: string[];
 
   @IsString()
   @IsNotEmpty()

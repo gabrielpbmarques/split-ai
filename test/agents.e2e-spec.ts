@@ -35,7 +35,7 @@ describe('agents (e2e)', () => {
         agent_identifier: 'vendas',
         user_id: user.id,
         system_prompt: systemPrompt,
-        vector_search_tool: true,
+        tools: ['vector_search'],
       });
 
       const { body: withParser } = await t
@@ -95,15 +95,15 @@ describe('agents (e2e)', () => {
   });
 
   describe('GET /agent/:id, GET /agent/list, GET /agent', () => {
-    it('reads by id or identifier, including agents created by someone else, with the vector search flag', async () => {
+    it('reads by id or identifier, including agents created by someone else, with the tools list', async () => {
       const user = await createUser(t.dataSource);
       const agent = await createAgent(t.dataSource, {
         agent_identifier: 'suporte',
-        vector_search_tool: true,
+        tools: ['vector_search'],
       });
       const othersAgent = await createAgent(t.dataSource, {
         user_id: (await createUser(t.dataSource)).id,
-        vector_search_tool: null,
+        tools: [],
       });
 
       const byId = await t
@@ -114,7 +114,7 @@ describe('agents (e2e)', () => {
       expect(byId.body.data).toMatchObject({
         id: agent.id,
         agentIdentifier: 'suporte',
-        vectorSearchTool: true,
+        tools: ['vector_search'],
       });
 
       const byIdentifier = await t
@@ -129,7 +129,7 @@ describe('agents (e2e)', () => {
         .get(`/agent/${othersAgent.id}`)
         .set('Authorization', bearer(user))
         .expect(200);
-      expect(byOthers.body.data.vectorSearchTool).toBe(false);
+      expect(byOthers.body.data.tools).toEqual([]);
       await t
         .http()
         .get(`/agent/${randomUUID()}`)
@@ -239,6 +239,25 @@ describe('agents (e2e)', () => {
         .http()
         .patch(`/agent/${agent.id}`)
         .set('Authorization', bearer(user))
+        .send({ tools: ['vector_search'] })
+        .expect(200);
+
+      const withUpdatedTools = await t.dataSource
+        .getRepository(AgentEntity)
+        .findOneByOrFail({ id: agent.id });
+      expect(withUpdatedTools.tools).toEqual(['vector_search']);
+
+      await t
+        .http()
+        .patch(`/agent/${agent.id}`)
+        .set('Authorization', bearer(user))
+        .send({ tools: ['ferramenta_invalida'] })
+        .expect(400);
+
+      await t
+        .http()
+        .patch(`/agent/${agent.id}`)
+        .set('Authorization', bearer(user))
         .send({ temperature: 'quente' })
         .expect(400);
       await t
@@ -253,6 +272,31 @@ describe('agents (e2e)', () => {
         .set('Authorization', bearer(user))
         .send({ name: 'x' })
         .expect(404);
+    });
+  });
+
+  describe('GET /agent/tools', () => {
+    it('returns the list of available tools', async () => {
+      const user = await createUser(t.dataSource);
+      const res = await t
+        .http()
+        .get('/agent/tools')
+        .set('Authorization', bearer(user))
+        .expect(200);
+
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body).toEqual([
+        {
+          id: 'vector_search',
+          name: 'Busca Vetorial',
+          description:
+            'Busca trechos relevantes na base de documentos do agente.',
+        },
+      ]);
+    });
+
+    it('rejects unauthenticated requests with 401', async () => {
+      await t.http().get('/agent/tools').expect(401);
     });
   });
 

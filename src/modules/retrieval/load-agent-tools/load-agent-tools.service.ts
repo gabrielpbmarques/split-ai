@@ -22,8 +22,10 @@ export class LoadAgentToolsService {
       tools.push(buildLangchainToolFromSchema(dbAgent.response_format));
     }
 
-    if (dbAgent.vector_search_tool) {
-      tools.push(await this.loadVectorSearchToolService.execute(dbAgent.id));
+    for (const toolId of dbAgent.tools ?? []) {
+      if (toolId === 'vector_search') {
+        tools.push(await this.loadVectorSearchToolService.execute(dbAgent.id));
+      }
     }
 
     await this.appendConnectionToolsService.execute(
