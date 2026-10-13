@@ -40,7 +40,7 @@ export class ResolveAgentService {
 
     const agent = createDeepAgent({
       model: chat,
-      systemPrompt: agentPayload.system_prompt,
+      // systemPrompt: agentPayload.system_prompt,
       tools,
       memory: ['/memories/sherlock/AGENTS.md', '/scratchpad/notes.md'],
       skills: ['/skills/'],
