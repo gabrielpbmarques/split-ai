@@ -42,7 +42,11 @@ export class ResolveAgentService {
       model: chat,
       // systemPrompt: agentPayload.system_prompt,
       tools,
-      memory: ['/memories/sherlock/AGENTS.md', '/scratchpad/notes.md'],
+      memory: [
+        '/memories/sherlock/AGENTS.md',
+        '/scratchpad/notes.md',
+        '/memories/',
+      ],
       skills: ['/skills/'],
       store,
       backend: new CompositeBackend(new StateBackend(), {
