@@ -2,9 +2,9 @@ import { randomUUID } from 'crypto';
 
 import { SourceEntity } from 'src/infrastructure/database/schema';
 import {
-  VECTOR_STORE,
-  type VectorStoreGateway,
-} from 'src/infrastructure/integration/vector-store.port';
+  type IVectorStoreService,
+  VECTOR_STORE_SERVICE,
+} from 'src/infrastructure/providers/supabase.provider';
 import { VectorSearchToolService } from 'src/modules/tools/vector-search-tool/vector-search-tool.service';
 import {
   bearer,
@@ -243,7 +243,7 @@ describe('sources (e2e)', () => {
   it('discards the chunks of a source removed while it was still being indexed', async () => {
     const user = await createUser(t.dataSource);
     const agent = await createAgent(t.dataSource);
-    const vectorStore = t.app.get<VectorStoreGateway>(VECTOR_STORE);
+    const vectorStore = t.app.get<IVectorStoreService>(VECTOR_STORE_SERVICE);
     const upsertChunks = vectorStore.upsertChunks.bind(vectorStore);
     let releaseIndexing: () => void = () => undefined;
     const indexingGate = new Promise<void>((resolve) => {

@@ -10,7 +10,7 @@ Owns: where code lives, the boot sequence, environment configuration, import pat
 
 <rules>
 - `src/shared/` is application-wide and never touches an external resource (database, queue, third-party API). If it needs one, it belongs in `src/infrastructure/`.
-- `src/infrastructure/` has one subfolder per external dependency (`database/`, `integration/`), never per file kind (`services/`, `helpers/`).
+- `src/infrastructure/` organizes external dependencies under `database/`, `providers/`, and `http-client/`.
 - `src/modules/<domain>/` holds business domains. A domain never imports another domain's internal file; see `conventions.md` for the allowed crossings.
 - `src/auth/` holds the global guards, `TokenVerifier`, `PrincipalResolverService` and the permission catalog.
 - Unit specs (`*.spec.ts`) sit next to the file they test; e2e specs live in `test/`.
@@ -55,7 +55,7 @@ A route registered directly on the Fastify instance (Swagger UI, static files, a
 - The Zod schema is the source of truth. An invalid environment aborts the boot listing every problem at once.
 - Derived values (`isProduction`, `isTest`, `INTEGRATION_MODE` default) are computed once in `loadConfig()`.
 - A new variable goes into the schema **and** `.env.example` in the same change, before the code that reads it.
-- Missing integration credentials never abort the boot; the gateway reports `NOT_CONFIGURED` instead (see `integrations.md`). Only `DATABASE_URL` and `JWT_SECRET` are boot-critical.
+- Missing integration credentials never abort the boot; the provider reports `NOT_CONFIGURED` in health checks instead (see `integrations.md`). Only `DATABASE_URL` and `JWT_SECRET` are boot-critical.
 - Never paste secret values into code, commits or messages.
 </rules>
 

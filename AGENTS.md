@@ -25,7 +25,7 @@ The architecture of this repository is the backend rule set originally written i
 | `.claude/rules/database.md`                                                              | entities, soft delete, repositories, projection/listing, transactions, migrations                  | `infrastructure/database/**`, `repositories/**`                     |
 | `.claude/rules/cross-cutting.md`                                                         | exception filter, `ErrorResponse`, exception table, decorators, correlation, logging, health       | `shared/http/**`, `shared/decorators/**`, `shared/observability/**` |
 | `.claude/rules/auth.md`                                                                  | guards, `TokenVerifier`, permission catalog, why there is no resource scope                        | `auth/**`, `auth-flows/**`                                          |
-| `.claude/rules/integrations.md`                                                          | gateway → Zod contract → mapper, mock mode, `ResilientClient`, `CUSTOMER_DATABASE`                 | `infrastructure/integration/**`                                     |
+| `.claude/rules/integrations.md`                                                          | external providers, tokens, services, mock mode, `ResilientClient`                                 | `infrastructure/providers/**`                                       |
 | `.claude/rules/tests.md`                                                                 | unit vs. e2e layers, harness, what a good test is                                                  | `test/**`, `*.spec.ts`                                              |
 | `.claude/rules/ai-agent.md`, `agent-tools.md`, `aichat-streaming.md`, `rag-ingestion.md` | AI pipeline invariants                                                                             | their module paths                                                  |
 | skill `new-feature-flow`                                                                 | **how to implement a feature**: 18 questions, plan format, implementation order, closing checklist | on demand                                                           |
@@ -88,22 +88,19 @@ The dev server defaults to **port 4000** (`PORT` default in `src/shared/config/e
 ```
 src/
   main.ts                    Fastify bootstrap (createFastifyAdapter, global pipe, pino, Swagger)
-  app.module.ts              Root — AppLoggerModule, TypeOrmModule.forRoot(ENTITIES, MIGRATIONS), IntegrationModule,
+  app.module.ts              Root — AppLoggerModule, TypeOrmModule.forRoot(ENTITIES, MIGRATIONS), InfrastructureModule,
                              AuthModule, HealthModule, one aggregator module per domain
   auth/                      Global guards, TokenVerifier, PrincipalResolverService, permissions, request-user.ts
   infrastructure/
     database/schema/         TypeORM entities + barrel exporting ENTITIES (the only place tables are declared)
     database/migrations/     MIGRATIONS (run by the CI `migrate` job, never at boot); data-source.ts for the CLI
     database/transaction-executor/   TransactionExecutor.run(async (tx) => …)
-    integration/             The ONLY place that talks to an external service:
-      integration.module.ts  @Global() — publishes every port below (mock or live per INTEGRATION_MODE)
-      <name>.port.ts         Symbol token + interface: MESSAGING, EMBEDDINGS, VECTOR_STORE, RERANKER, CHAT_MODEL,
-                             SITE_CRAWLER, FILE_STORAGE, TEXT_TO_SPEECH, OCR
-      http-client/           ResilientClient (timeout, retry+backoff, circuit breaker, SSRF guard, correlation)
-      <source>/              twilio, supabase, voyage, anthropic, spider, google, eleven-labs:
-                             <source>.contracts.ts, <source>.mappers.ts (+ spec), <source>-<port>.gateway.ts
-      mock/                  In-memory implementation of every port (INTEGRATION_MODE=mock, default in tests)
-      integration.health.ts  Per-upstream state (READY | NOT_CONFIGURED | MOCK) reported by /health/ready
+    infrastructure.module.ts @Global() — aggregates and publishes every external provider and client below
+    infrastructure.health.ts Per-upstream state (READY | NOT_CONFIGURED | MOCK) reported by /health/ready
+    http-client/             ResilientClient (timeout, retry+backoff, circuit breaker, SSRF guard, correlation)
+    providers/               External service providers (<name>.provider.ts):
+                             anthropic, voyage, supabase, twilio, spider, google-vision, gcp-storage, text-to-speech.
+                             Exporting tokens, interfaces, client/service factories and mock fallbacks (INTEGRATION_MODE=mock)
   modules/<domain>/          agents, agent-connections, agent-runtime, retrieval, chat, sessions, sources, store,
                              tools, users, auth-flows, voice, whatsapp
     <domain>.module.ts       Aggregator: imports + exports the use-case modules, nothing else
@@ -136,15 +133,25 @@ test/                        e2e per domain + support/ (test-app, factories, dat
 
 ## External integrations
 
-- **Ports.** `MESSAGING` (Twilio WhatsApp: `sendWhatsapp`, `parseInboundWhatsapp`), `EMBEDDINGS` (LangChain `Embeddings`, Voyage), `VECTOR_STORE` (`upsertChunks` / `loadIndex` / `deleteBySourceId` over Supabase pgvector), `RERANKER` (Voyage `rerank-2.5` via `ResilientClient`), `CHAT_MODEL` (`ChatAnthropic` factory — the only `new ChatAnthropic` in the repo), `SITE_CRAWLER` (Spider), `FILE_STORAGE` (GCS), `TEXT_TO_SPEECH` (Google, or ElevenLabs via `TTS_PROVIDER`), `OCR` (Google Vision). Inject by token, type by interface; every interface extends `IntegrationGateway` (`name`, `state()`).
-- **External field names stay in `<source>.contracts.ts` / `<source>.mappers.ts`.** A payload outside the contract is rejected (`BadRequestException` on webhooks, `BadGatewayException` on responses), never defaulted. `grep -rE "axios|fetch\(" src/modules` stays empty.
-- **Missing credentials never break the boot.** A live gateway without its key reports `NOT_CONFIGURED` and throws `ServiceUnavailableException` only when called. Google clients rely on ADC and are built lazily (`READY`).
+- **Providers.** External dependencies live in `src/infrastructure/providers/<name>.provider.ts` and are registered in `@Global()` `InfrastructureModule`:
+  - `CHAT_MODEL_SERVICE` (`IChatModelService`): builds `ChatAnthropic` configured for Anthropic or DeepSeek.
+  - `EMBEDDINGS_SERVICE` (`IEmbeddingsService`): Voyage `voyage-3-large` embeddings (1024 dims).
+  - `RERANKER_SERVICE` (`IRerankerService`): Voyage `rerank-2.5` cross-encoder via `ResilientClient`.
+  - `SUPABASE_CLIENT` / `VECTOR_STORE_SERVICE` (`IVectorStoreService`): Supabase pgvector store.
+  - `TWILIO_CLIENT` / `TWILIO_SERVICE` (`ITwilioService`): Twilio WhatsApp messaging and inbound parsing.
+  - `GCP_STORAGE_SERVICE` (`IGcpStorageService`): Google Cloud Storage upload and file management.
+  - `TEXT_TO_SPEECH_SERVICE` (`ITextToSpeechService`): Google TTS or ElevenLabs via `TTS_PROVIDER`.
+  - `GOOGLE_VISION_SERVICE` (`IGoogleVisionService`): Google Cloud Vision OCR.
+  - `SPIDER_SERVICE` (`ISpiderService`): Spider web crawling loader.
+- Inject by token (`@Inject(TOKEN)`), type by interface (`IService`); no domain module imports `InfrastructureModule` directly because it is `@Global()`.
+- **Mock mode in tests.** Each provider provides a mock implementation when `env.INTEGRATION_MODE === 'mock'`.
+- **Missing credentials never break the boot.** A live provider without its key reports `NOT_CONFIGURED` in `infrastructure.health.ts` and throws `ServiceUnavailableException` only when called. Google clients rely on ADC and are built lazily (`READY`).
 - **`ResilientClient`**: `AbortController` timeout, retry with backoff + jitter on `GET`/`HEAD`/`OPTIONS` and 408/425/429/5xx only, circuit breaker per dependency, `redirect: 'error'`, `x-request-id` propagation, SSRF guard (allowlist `HTTP_ALLOWED_HOSTS`, default `api.voyageai.com`). A new host goes into the allowlist.
 - **Env:** `INTEGRATION_MODE`, `HTTP_*`, `ANTHROPIC_BASE_URL` (defaults to the DeepSeek Anthropic-compatible endpoint; set it explicitly to reach Anthropic), `TTS_PROVIDER`, `GCS_AUDIO_BUCKET`.
 
 ## AI pipeline essentials
 
-- **Flow:** `POST /chat/:agentId` (NDJSON stream) → `CreateSessionIfNotExists` (sessions expire in 8 hours) → `ResolveAgent` (`CHAT_MODEL`, `ToolLoaderService`, `LoadStoreService`, `createDeepAgent`) → `GenerateAiResponse` (`createDeepAgent` with `CompositeBackend` [`StateBackend` + `StoreBackend`], `responseFormat: AgentFinalResponseSchema`, `handleStreamResponse`) → `RecordChatMessage` (embeds via `EMBEDDINGS`). `thread_id` is `conversationId ?? session.id`.
+- **Flow:** `POST /chat/:agentId` (NDJSON stream) → `CreateSessionIfNotExists` (sessions expire in 8 hours) → `ResolveAgent` (`CHAT_MODEL_SERVICE`, `ToolLoaderService`, `LoadStoreService`, `createDeepAgent`) → `GenerateAiResponse` (`createDeepAgent` with `CompositeBackend` [`StateBackend` + `StoreBackend`], `responseFormat: AgentFinalResponseSchema`, `handleStreamResponse`) → `RecordChatMessage` (embeds via `EMBEDDINGS_SERVICE`). `thread_id` is `conversationId ?? session.id`.
 - **Agents and instructions:** Instructions are stored directly in `system_prompt` (TEXT) on `AgentEntity`. The previous `agents_instructions` table and `AIInstructions` model (`context`, `objetivo`, `diretrizes`) were removed. Default model is `deepseek-chat-v3.2`.
 - **Tools:** `tools` is a string array column on `AgentEntity` (`default: ['vector_search']`), loaded dynamically by `ToolLoaderService` (`src/modules/tools/tool-loader/`). Vector search tool lives in `src/modules/tools/vector-search-tool/`. The external database tool (`execute_sql`, `CUSTOMER_DATABASE`) was removed.
 - **Structured output:** `response_format` JSON schema column on `AgentEntity`.
@@ -152,7 +159,7 @@ test/                        e2e per domain + support/ (test-app, factories, dat
 - **Retrieval is scoped by agent only.** `vector_similarity_search` takes just `query` and filters chunks by `{ agent_id }`; the `source_type` written on each chunk no longer narrows the search, so untyped files and crawled sites are found.
 - **Retrieval is threshold-based, not top-K.** `vector_similarity_search` fetches `VECTOR_SEARCH_CANDIDATE_K` (50) candidates and `VoyageRerankCompressor` keeps those scoring `>= VECTOR_SEARCH_MIN_SCORE` (0.8), capped at `VECTOR_SEARCH_MAX_RESULTS` (10). Empty results are by design; the `warn` with the best score is the tuning signal. Never move the cutoff onto the cosine score.
 - **A search costs two Voyage calls** (embed + rerank) on the same `VOYAGEAI_API_KEY`; without a default payment method the quota is 3 RPM / 10K TPM (PC-007).
-- **Ingestion** (`sources/process-*-source`) must tag every chunk with `agent_id` + `source_id` before `VECTOR_STORE.upsertChunks`; the `documents` table, `match_documents` and the pgvector index live only in Supabase and are applied by hand in its SQL editor.
+- **Ingestion** (`sources/process-*-source`) must tag every chunk with `agent_id` + `source_id` before `VECTOR_STORE_SERVICE.upsertChunks`; the `documents` table, `match_documents` and the pgvector index live only in Supabase and are applied by hand in its SQL editor.
 - **Ingestion is asynchronous.** `POST /agent/generate-source` (`source.write`) validates first (unsupported file type → 400, unknown agent → 404), creates the `sources` rows as `processing`, answers **202** and indexes in the background; clients follow the status through `GET /source`. A source removed mid-indexing has its chunks deleted when its task ends, and on boot `RecordInterruptedSourcesService` marks leftover `processing` sources as `failed`. Details in `.claude/rules/rag-ingestion.md`.
 
 ## Tests

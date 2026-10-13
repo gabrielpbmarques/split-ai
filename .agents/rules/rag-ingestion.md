@@ -4,13 +4,13 @@ trigger: always_on
 
 # RAG ingestion and the vector store
 
-Thin path-scoped reminder. Full detail: the **`ai-agent-tools-and-rag`** skill. Covers every path that writes chunks into the Supabase `documents` table (`generate-agent-source`, the `process-*-source` services, OCR, `load-agent-sites`) and the `VECTOR_STORE` port (`SupabaseVectorStoreGateway` live, `MockVectorStoreGateway` in mock mode).
+Thin path-scoped reminder. Full detail: the **`ai-agent-tools-and-rag`** skill. Covers every path that writes chunks into the Supabase `documents` table (`generate-agent-source`, the `process-*-source` services, OCR, `load-agent-sites`) and the `VECTOR_STORE_SERVICE` provider (`SupabaseProvider`).
 
 <critical_rule>
-Every ingested chunk's `metadata` carries both `agent_id` and `source_id` (built by `buildSourceMetadata`). `VECTOR_STORE.upsertChunks(chunks, metadata)` merges that metadata into each row, and both keys are load-bearing:
+Every ingested chunk's `metadata` carries both `agent_id` and `source_id` (built by `buildSourceMetadata`). `VECTOR_STORE_SERVICE.upsertChunks(chunks, metadata)` merges that metadata into each row, and both keys are load-bearing:
 
 - Missing `agent_id` → the chunk is invisible to `vector_similarity_search`, which filters by `{ agent_id }`. The model keeps calling the tool and gets nothing — a silent retrieval failure.
-- Missing `source_id` → `DeleteSource` calls `VECTOR_STORE.deleteBySourceId(id)`, which filters `metadata->>source_id`, so those rows become permanent orphans.
+- Missing `source_id` → `DeleteSource` calls `VECTOR_STORE_SERVICE.deleteBySourceId(id)`, which filters `metadata->>source_id`, so those rows become permanent orphans.
   </critical_rule>
 
 <rules>

@@ -3,16 +3,16 @@ import { Document, type DocumentInterface } from '@langchain/core/documents';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 
 import {
-  RERANKER,
-  type RerankerGateway,
-} from 'src/infrastructure/integration/reranker.port';
+  type IRerankerService,
+  RERANKER_SERVICE,
+} from 'src/infrastructure/providers/voyage.provider';
 import { env } from 'src/shared/config/env';
 
 export class VoyageRerankCompressor extends BaseDocumentCompressor {
   private readonly logger = new Logger(VoyageRerankCompressor.name);
 
   constructor(
-    private readonly rerankService: RerankerGateway,
+    private readonly rerankService: IRerankerService,
     private readonly minScore: number,
     private readonly maxResults: number,
   ) {
@@ -60,7 +60,8 @@ export class VoyageRerankCompressor extends BaseDocumentCompressor {
 @Injectable()
 export class RerankDocumentsService {
   constructor(
-    @Inject(RERANKER) private readonly rerankService: RerankerGateway,
+    @Inject(RERANKER_SERVICE)
+    private readonly rerankService: IRerankerService,
   ) {}
 
   execute(): BaseDocumentCompressor {

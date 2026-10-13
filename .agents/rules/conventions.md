@@ -43,8 +43,8 @@ Never import a domain aggregator (`AgentsModule`) to reach one service inside it
 
 <rules>
 - Imports are absolute from `src/` (`src/modules/<domain>/...`); `./` and `../` are lint errors outside `src/infrastructure/database/schema/`.
-- Repositories are imported from their own file; entities from `src/infrastructure/database/schema`; shared types from `src/shared/contracts`; ports from `src/infrastructure/integration/<name>.port`; `env` from `src/shared/config/env`.
-- No SDK, `fetch` or axios under `src/modules/`. Network calls live only in `src/infrastructure/integration/<source>/` behind a port (`integrations.md`).
+- Repositories are imported from their own file; entities from `src/infrastructure/database/schema`; shared types from `src/shared/contracts`; providers from `src/infrastructure/providers/<name>.provider`; `env` from `src/shared/config/env`.
+- No SDK, `fetch` or axios under `src/modules/`. Network calls and external SDKs live only in `src/infrastructure/providers/` (`integrations.md`).
 </rules>
 
 ## Joins across domains
@@ -78,26 +78,26 @@ This repository deliberately deviates from the rule set's "domain language ident
 
 ## Naming
 
-| Role                       | File                                                                         | Class / symbol                        |
-| -------------------------- | ---------------------------------------------------------------------------- | ------------------------------------- |
-| Use-case module            | `create-agent.module.ts`                                                     | `CreateAgentModule`                   |
-| Domain aggregator          | `agents.module.ts`                                                           | `AgentsModule`                        |
-| Controller                 | `create-agent.controller.ts`                                                 | `CreateAgentController`               |
-| Service                    | `create-agent.service.ts`                                                    | `CreateAgentService`                  |
-| DTO                        | `create-agent.dto.ts`                                                        | `CreateAgentDto`                      |
-| Repository                 | `repositories/agent.repository.ts`                                           | `AgentRepository`                     |
-| Repository module          | `repositories/agent.repository.module.ts`                                    | `AgentRepositoryModule`               |
-| Entity                     | `infrastructure/database/schema/agent.entity.ts`                             | `AgentEntity`                         |
-| Shared type                | `shared/contracts/models/<name>.model.ts`                                    | types/interfaces                      |
-| Port                       | `<name>.port.ts`                                                             | `VECTOR_STORE` + `VectorStoreGateway` |
-| Integration adapter        | `<source>-<port>.gateway.ts`, `<source>.contracts.ts`, `<source>.mappers.ts` | `SupabaseVectorStoreGateway`          |
-| Health indicator           | `database.health.ts`                                                         | —                                     |
-| Guard / filter / decorator | `*.guard.ts` / `*.filter.ts` / `*.decorator.ts`                              | —                                     |
-| Migration                  | `<timestamp>-<kebab-name>.ts`                                                | `<PascalName><timestamp>`             |
-| Unit / e2e spec            | `*.spec.ts` next to the file / `test/<domain>.e2e-spec.ts`                   | —                                     |
+| Role                       | File                                                       | Class / symbol                                |
+| -------------------------- | ---------------------------------------------------------- | --------------------------------------------- |
+| Use-case module            | `create-agent.module.ts`                                   | `CreateAgentModule`                           |
+| Domain aggregator          | `agents.module.ts`                                         | `AgentsModule`                                |
+| Controller                 | `create-agent.controller.ts`                               | `CreateAgentController`                       |
+| Service                    | `create-agent.service.ts`                                  | `CreateAgentService`                          |
+| DTO                        | `create-agent.dto.ts`                                      | `CreateAgentDto`                              |
+| Repository                 | `repositories/agent.repository.ts`                         | `AgentRepository`                             |
+| Repository module          | `repositories/agent.repository.module.ts`                  | `AgentRepositoryModule`                       |
+| Entity                     | `infrastructure/database/schema/agent.entity.ts`           | `AgentEntity`                                 |
+| Shared type                | `shared/contracts/models/<name>.model.ts`                  | types/interfaces                              |
+| Infrastructure provider    | `infrastructure/providers/<name>.provider.ts`              | `VECTOR_STORE_SERVICE`, `IVectorStoreService` |
+| Domain port                | `contracts/<name>.port.ts`                                 | `PORT_TOKEN` + `PortGateway`                  |
+| Health indicator           | `database.health.ts`                                       | —                                             |
+| Guard / filter / decorator | `*.guard.ts` / `*.filter.ts` / `*.decorator.ts`            | —                                             |
+| Migration                  | `<timestamp>-<kebab-name>.ts`                              | `<PascalName><timestamp>`                     |
+| Unit / e2e spec            | `*.spec.ts` next to the file / `test/<domain>.e2e-spec.ts` | —                                             |
 
 <rules>
-- Files and folders: kebab-case. Columns and DTO fields that map a column: snake_case. Variables and methods: camelCase. Port tokens: UPPER_SNAKE_CASE `Symbol`.
+- Files and folders: kebab-case. Columns and DTO fields that map a column: snake_case. Variables and methods: camelCase. Provider and port tokens: UPPER_SNAKE_CASE string or `Symbol`.
 - Use-case verbs: create, list, get, update, delete, generate, process, resolve, load, record, convert.
 - Repository methods are named by intent: `findByIdOrIdentifier`, `listByAgentPaginated`, `softDelete`.
 - Permission keys: `<resource>.<action>` (`agent.write`), typed from `src/auth/permissions.ts`.

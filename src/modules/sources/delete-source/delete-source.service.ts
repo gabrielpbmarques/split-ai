@@ -1,9 +1,9 @@
 import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 
 import {
-  VECTOR_STORE,
-  type VectorStoreGateway,
-} from 'src/infrastructure/integration/vector-store.port';
+  type IVectorStoreService,
+  VECTOR_STORE_SERVICE,
+} from 'src/infrastructure/providers/supabase.provider';
 import { SourceRepository } from 'src/modules/sources/repositories/source.repository';
 
 @Injectable()
@@ -12,7 +12,8 @@ export class DeleteSourceService {
 
   constructor(
     private readonly sourceRepository: SourceRepository,
-    @Inject(VECTOR_STORE) private readonly vectorStore: VectorStoreGateway,
+    @Inject(VECTOR_STORE_SERVICE)
+    private readonly vectorStore: IVectorStoreService,
   ) {}
 
   async execute(id: string): Promise<void> {

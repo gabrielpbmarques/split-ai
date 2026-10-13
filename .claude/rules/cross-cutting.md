@@ -106,5 +106,5 @@ this.logger.warn({ agentId, bestScore }, 'rerank.below_threshold');
 - Three public routes with `@Public()`: `/health/startup`, `/health/live`, `/health/ready`.
 - `startup`: 503 while migrations are pending.
 - `live`: process only; never queries the database.
-- `ready`: database, memory and per-integration state (`READY | NOT_CONFIGURED | MOCK`) from `integration.health.ts`. A `NOT_CONFIGURED` upstream does not fail readiness.
+- `ready`: database, memory and per-integration state (`READY | NOT_CONFIGURED | MOCK`) from `infrastructure.health.ts`. A `NOT_CONFIGURED` upstream does not fail readiness.
 </rules>

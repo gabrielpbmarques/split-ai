@@ -56,7 +56,8 @@ src/
   auth/                      guards globais (autenticação JWT + autorização por permissão derivada do papel), TokenVerifier
   modules/<dominio>/         domínios de negócio: <dominio>.module.ts (agregador), <caso-de-uso>/, repositories/, contracts/
   infrastructure/database/schema/  entidades TypeORM + ENTITIES
-  infrastructure/integration/  portas + adaptadores externos (twilio, supabase, spider, anthropic, voyage, google, eleven-labs, customer-database) e mocks
+  infrastructure/providers/    providers de serviços externos (anthropic, voyage, supabase, twilio, spider, google-vision, gcp-storage, text-to-speech) e mocks
+  infrastructure/infrastructure.module.ts  módulo global que agrega e exporta os providers
 ```
 
 Guia completo para quem trabalha no código: `CLAUDE.md`, com as regras de arquitetura em `.claude/rules/` e o fluxo de nova funcionalidade na skill `new-feature-flow`.

@@ -1,6 +1,9 @@
 import { BadGatewayException, Inject, Injectable } from '@nestjs/common';
 
-import { OCR, type OcrReader } from 'src/infrastructure/integration/ocr.port';
+import {
+  GOOGLE_VISION_SERVICE,
+  type IGoogleVisionService,
+} from 'src/infrastructure/providers/google-vision.provider';
 import { GenerateAiResponseService } from 'src/modules/agent-runtime/generate-ai-response/generate-ai-response.service';
 import { ResolveAgentService } from 'src/modules/agent-runtime/resolve-agent/resolve-agent.service';
 import type { DocumentData } from 'src/shared/contracts';
@@ -13,7 +16,8 @@ export interface ExtractOcrTextResponse extends Pick<
 @Injectable()
 export class ExtractOcrTextService {
   constructor(
-    @Inject(OCR) private readonly ocr: OcrReader,
+    @Inject(GOOGLE_VISION_SERVICE)
+    private readonly ocr: IGoogleVisionService,
     private readonly generateAiResponseService: GenerateAiResponseService,
     private readonly resolveAgentService: ResolveAgentService,
   ) {}

@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
 
-import { IntegrationHealthIndicator } from 'src/infrastructure/integration/integration.health';
+import { InfrastructureHealthIndicator } from 'src/infrastructure/infrastructure.health';
 import { Public } from 'src/shared/decorators/public.decorator';
 import { DatabaseHealthIndicator } from 'src/shared/http/health/database.health';
 import { MemoryHealthIndicator } from 'src/shared/http/health/memory.health';
@@ -16,7 +16,7 @@ export class HealthReadyController {
   constructor(
     private readonly database: DatabaseHealthIndicator,
     private readonly memory: MemoryHealthIndicator,
-    private readonly integrations: IntegrationHealthIndicator,
+    private readonly integrations: InfrastructureHealthIndicator,
   ) {}
 
   @Get('ready')

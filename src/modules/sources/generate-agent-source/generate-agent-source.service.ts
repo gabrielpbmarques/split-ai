@@ -10,9 +10,9 @@ import type {
   SourceType,
 } from 'src/infrastructure/database/schema/source.entity';
 import {
-  VECTOR_STORE,
-  type VectorStoreGateway,
-} from 'src/infrastructure/integration/vector-store.port';
+  type IVectorStoreService,
+  VECTOR_STORE_SERVICE,
+} from 'src/infrastructure/providers/supabase.provider';
 import { AgentRepository } from 'src/modules/agents/repositories/agent.repository';
 import type { GenerateAgentSourceDto } from 'src/modules/sources/generate-agent-source/generate-agent-source.dto';
 import { ProcessDocxSourceService } from 'src/modules/sources/process-docx-source/process-docx-source.service';
@@ -45,7 +45,8 @@ export class GenerateAgentSourceService {
     private readonly processDocxSourceService: ProcessDocxSourceService,
     private readonly agentRepository: AgentRepository,
     private readonly sourceRepository: SourceRepository,
-    @Inject(VECTOR_STORE) private readonly vectorStore: VectorStoreGateway,
+    @Inject(VECTOR_STORE_SERVICE)
+    private readonly vectorStore: IVectorStoreService,
   ) {}
 
   async execute(

@@ -10,9 +10,9 @@ import {
 
 import type { AgentEntity } from 'src/infrastructure/database/schema';
 import {
-  CHAT_MODEL,
-  type ChatModelFactory,
-} from 'src/infrastructure/integration/chat-model.port';
+  CHAT_MODEL_SERVICE,
+  type IChatModelService,
+} from 'src/infrastructure/providers/anthropic.provider';
 import { AgentRepository } from 'src/modules/agents/repositories/agent.repository';
 import { LoadStoreService } from 'src/modules/store/load-store/load-store.service';
 import { ToolLoaderService } from 'src/modules/tools/tool-loader/tool-loader.service';
@@ -20,7 +20,8 @@ import { ToolLoaderService } from 'src/modules/tools/tool-loader/tool-loader.ser
 @Injectable()
 export class ResolveAgentService {
   constructor(
-    @Inject(CHAT_MODEL) private readonly chatModelFactory: ChatModelFactory,
+    @Inject(CHAT_MODEL_SERVICE)
+    private readonly chatModelFactory: IChatModelService,
     private readonly agentRepository: AgentRepository,
     private readonly toolLoaderService: ToolLoaderService,
     private readonly loadStoreService: LoadStoreService,
@@ -40,7 +41,6 @@ export class ResolveAgentService {
 
     const agent = createDeepAgent({
       model: chat,
-      // systemPrompt: agentPayload.system_prompt,
       tools,
       memory: [
         '/memories/sherlock/AGENTS.md',

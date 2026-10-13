@@ -3,9 +3,9 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { UserEntity } from 'src/infrastructure/database/schema';
 import {
   type InboundWhatsappMessage,
-  MESSAGING,
-  type MessagingGateway,
-} from 'src/infrastructure/integration/messaging.port';
+  type ITwilioService,
+  TWILIO_SERVICE,
+} from 'src/infrastructure/providers/twilio.provider';
 import { UserRepository } from 'src/modules/users/repositories/user.repository';
 
 const GREETING = 'Webhook funcionando!';
@@ -15,7 +15,7 @@ export class WebhookService {
   private readonly logger = new Logger(WebhookService.name);
 
   constructor(
-    @Inject(MESSAGING) private readonly messaging: MessagingGateway,
+    @Inject(TWILIO_SERVICE) private readonly messaging: ITwilioService,
     private readonly userRepository: UserRepository,
   ) {}
 

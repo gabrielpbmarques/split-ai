@@ -2,9 +2,9 @@ import { Inject, Injectable } from '@nestjs/common';
 import * as mammoth from 'mammoth';
 
 import {
-  VECTOR_STORE,
-  type VectorStoreGateway,
-} from 'src/infrastructure/integration/vector-store.port';
+  type IVectorStoreService,
+  VECTOR_STORE_SERVICE,
+} from 'src/infrastructure/providers/supabase.provider';
 import type { ProcessSourceInput } from 'src/shared/contracts';
 import { buildSourceMetadata } from 'src/shared/utils/build-source-metadata';
 import { chunkText } from 'src/shared/utils/chunk-text';
@@ -12,7 +12,8 @@ import { chunkText } from 'src/shared/utils/chunk-text';
 @Injectable()
 export class ProcessDocxSourceService {
   constructor(
-    @Inject(VECTOR_STORE) private readonly vectorStore: VectorStoreGateway,
+    @Inject(VECTOR_STORE_SERVICE)
+    private readonly vectorStore: IVectorStoreService,
   ) {}
 
   async execute(params: ProcessSourceInput): Promise<number> {

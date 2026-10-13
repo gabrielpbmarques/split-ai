@@ -5,13 +5,13 @@ import { Injectable, Inject } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 
 import {
-  FILE_STORAGE,
-  type FileStorage,
-} from 'src/infrastructure/integration/file-storage.port';
+  GCP_STORAGE_SERVICE,
+  type IGcpStorageService,
+} from 'src/infrastructure/providers/gcp-storage.provider';
 import {
-  TEXT_TO_SPEECH,
-  type TextToSpeech,
-} from 'src/infrastructure/integration/text-to-speech.port';
+  type ITextToSpeechService,
+  TEXT_TO_SPEECH_SERVICE,
+} from 'src/infrastructure/providers/text-to-speech.provider';
 
 export interface ConvertTextToSpeechResult {
   audioPath: string;
@@ -22,8 +22,10 @@ export interface ConvertTextToSpeechResult {
 @Injectable()
 export class ConvertTextToSpeechService {
   constructor(
-    @Inject(TEXT_TO_SPEECH) private readonly textToSpeech: TextToSpeech,
-    @Inject(FILE_STORAGE) private readonly fileStorage: FileStorage,
+    @Inject(TEXT_TO_SPEECH_SERVICE)
+    private readonly textToSpeech: ITextToSpeechService,
+    @Inject(GCP_STORAGE_SERVICE)
+    private readonly fileStorage: IGcpStorageService,
   ) {}
 
   async execute(text: string): Promise<ConvertTextToSpeechResult> {

@@ -7,7 +7,7 @@ import { AuthModule } from 'src/auth/auth.module';
 import { MIGRATIONS } from 'src/infrastructure/database/migrations';
 import { ENTITIES } from 'src/infrastructure/database/schema';
 import { useUtcForTimestampColumns } from 'src/infrastructure/database/utc-timestamps';
-import { IntegrationModule } from 'src/infrastructure/integration/integration.module';
+import { InfrastructureModule } from 'src/infrastructure/infrastructure.module';
 import { AgentConnectionsModule } from 'src/modules/agent-connections/agent-connections.module';
 import { AgentRuntimeModule } from 'src/modules/agent-runtime/agent-runtime.module';
 import { AgentsModule } from 'src/modules/agents/agents.module';
@@ -54,7 +54,7 @@ import { AppLoggerModule } from 'src/shared/observability/logger.module';
     ...(env.isTest
       ? []
       : [DevtoolsModule.register({ http: !env.isProduction })]),
-    IntegrationModule,
+    InfrastructureModule,
     AuthModule,
     HealthModule,
     AgentConnectionsModule,

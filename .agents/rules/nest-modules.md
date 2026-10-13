@@ -41,7 +41,7 @@ export class CreateAgentModule {}
 - Wiring only. `imports` is derived mechanically: one entry per thing the module's own classes inject, nothing more.
 - Import only the repository modules the service uses. There is no repositories aggregator module.
 - Import `TransactionExecutorModule` only if the service opens a transaction.
-- Integration ports (`VECTOR_STORE`, `CHAT_MODEL`, `EMAIL`, …) need no import: the `@Global()` `IntegrationModule` publishes them.
+- Infrastructure providers (`VECTOR_STORE_SERVICE`, `CHAT_MODEL_SERVICE`, …) need no import: the `@Global()` `InfrastructureModule` publishes them.
 - Always export the service.
 - To use another use case's service, import that use case's module — never the aggregator that contains it.
 </rules>
@@ -82,23 +82,23 @@ export class AgentRepositoryModule {}
 <rules>
 - One repository module per aggregate: `TypeOrmModule.forFeature([XEntity])`, provides and exports a single repository class. `forFeature` is module-local — importing a module that registered an entity does not hand you its `Repository<T>`.
 - A module that owns a resource with a lifecycle (pool, client) implements `OnApplicationShutdown` and releases it.
-- Modules that publish ports to everyone are `@Global()`: `IntegrationModule` is the only one. `AuthModule` registers the global guards.
+- Modules that publish providers globally are `@Global()`: `InfrastructureModule` is the only one. `AuthModule` registers the global guards.
 </rules>
 
 ## Choosing an injection mechanism
 
-| Mechanism                                           | When                                                                                           | Examples                                        |
-| --------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| Concrete class                                      | single implementation; default for services, repositories, `TransactionExecutor`               | `AgentRepository`, `CreateAgentService`         |
-| `Symbol` + `useFactory`                             | infrastructure resource that needs construction (config, connection)                           | integration ports built by `select(live, mock)` |
-| `Symbol` + interface + factory/`useExisting` (port) | implementation swaps by environment (mock vs. live), or another domain consumes the capability | `VECTOR_STORE`, `CHAT_MODEL`                    |
+| Mechanism                              | When                                                                             | Examples                                     |
+| -------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------- |
+| Concrete class                         | single implementation; default for services, repositories, `TransactionExecutor` | `AgentRepository`, `CreateAgentService`      |
+| Token string + `useFactory` (Provider) | external service/client, mock fallback in test                                   | `VECTOR_STORE_SERVICE`, `CHAT_MODEL_SERVICE` |
+| Domain port (`Symbol` + interface)     | capability consumed across domains with multiple implementations                 | domain ports in `contracts/`                 |
 
 <checklist>
 Decide in order:
 
 1. Database repository → concrete class.
-2. Infrastructure resource with non-trivial construction → `Symbol` + `useFactory`.
-3. Implementation swaps by environment, or another domain consumes the capability → port.
+2. External integration / third-party service → Provider in `src/infrastructure/providers/` registered in `InfrastructureModule`.
+3. Cross-domain port consumed by another domain → domain port token in `src/modules/<domain>/contracts/`.
 4. Anything else → concrete class.
    </checklist>
 
@@ -112,14 +112,15 @@ Decide in order:
 - No module cycles and no `forwardRef`.
 </rules>
 
-## Ports
+## Providers and Ports
 
 <example>
 ```ts
-// src/infrastructure/integration/vector-store.port.ts
-export const VECTOR_STORE = Symbol('VECTOR_STORE');
+// src/infrastructure/providers/supabase.provider.ts
+export const VECTOR_STORE_SERVICE = 'VECTOR_STORE_SERVICE';
 
-export interface VectorStoreGateway extends IntegrationGateway {
+export interface IVectorStoreService {
+loadIndex(filter: { agent_id: string }): Promise<VectorStore>;
 upsertChunks(chunks: readonly Document[], metadata: Record<string, unknown>): Promise<void>;
 deleteBySourceId(sourceId: string): Promise<void>;
 }
@@ -128,18 +129,16 @@ deleteBySourceId(sourceId: string): Promise<void>;
 
 ```ts
 // consumer
-constructor(@Inject(VECTOR_STORE) private readonly vectorStore: VectorStoreGateway) {}
+constructor(@Inject(VECTOR_STORE_SERVICE) private readonly vectorStore: IVectorStoreService) {}
 ````
 
 </example>
 
 <rules>
-- Token and interface live in the same `*.port.ts` file; tokens are always `Symbol`, never strings.
-- Infrastructure port: `src/infrastructure/integration/<name>.port.ts`. Domain port consumed by another domain: `src/modules/<domain>/contracts/<name>.port.ts`.
-- The module exports the token, not the concrete class.
-- The interface contains only the methods consumers use.
-- Consumers inject by token and type by interface.
-- Do not create a port without a consumer or without a second real implementation.
+- External dependencies define their token string, interface, and `Provider[]` in `src/infrastructure/providers/<name>.provider.ts`.
+- Domain port consumed by another domain: `src/modules/<domain>/contracts/<name>.port.ts`.
+- Consumers inject by token (`@Inject(TOKEN)`) and type by interface (`IService`).
+- Do not create a port or provider without a consumer or without a reason for abstraction.
 </rules>
 
 ## After changing wiring

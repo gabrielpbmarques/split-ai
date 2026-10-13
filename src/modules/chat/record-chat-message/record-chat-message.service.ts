@@ -1,9 +1,9 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 
 import {
-  EMBEDDINGS,
-  type EmbeddingsGateway,
-} from 'src/infrastructure/integration/embeddings.port';
+  EMBEDDINGS_SERVICE,
+  type IEmbeddingsService,
+} from 'src/infrastructure/providers/voyage.provider';
 import { MessageRepository } from 'src/modules/sessions/repositories/message.repository';
 
 @Injectable()
@@ -12,7 +12,8 @@ export class RecordChatMessageService {
 
   constructor(
     private readonly messageRepository: MessageRepository,
-    @Inject(EMBEDDINGS) private readonly embeddings: EmbeddingsGateway,
+    @Inject(EMBEDDINGS_SERVICE)
+    private readonly embeddings: IEmbeddingsService,
   ) {}
 
   async execute(

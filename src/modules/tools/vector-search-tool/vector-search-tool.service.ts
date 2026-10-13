@@ -3,16 +3,17 @@ import { Inject, Injectable } from '@nestjs/common';
 import { z } from 'zod';
 
 import {
-  VECTOR_STORE,
-  type VectorStoreGateway,
-} from 'src/infrastructure/integration/vector-store.port';
+  type IVectorStoreService,
+  VECTOR_STORE_SERVICE,
+} from 'src/infrastructure/providers/supabase.provider';
 import { ExecuteSimilaritySearchService } from 'src/modules/retrieval/execute-similarity-search/execute-similarity-search.service';
 import type { CustomDocument } from 'src/shared/contracts';
 
 @Injectable()
 export class VectorSearchToolService {
   constructor(
-    @Inject(VECTOR_STORE) private readonly vectorStore: VectorStoreGateway,
+    @Inject(VECTOR_STORE_SERVICE)
+    private readonly vectorStore: IVectorStoreService,
     private readonly executeSimilaritySearchService: ExecuteSimilaritySearchService,
   ) {}
 
