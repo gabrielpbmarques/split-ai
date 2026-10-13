@@ -13,7 +13,7 @@ Owns: domain vs. use case, boundaries between domains, when to abstract, languag
 - A use case (`<domain>/<use-case>/`) is one action in that domain, named `<verb>-<noun>`: `create-agent`, `list-sources`.
 - One use case = one endpoint = one Nest module, with one controller, one service and its DTOs.
 - A controller has a single handler (`handle()`); a service has a single public method (`execute()`).
-- An internal auxiliary use case (no endpoint, consumed by other services) has only `<name>.service.ts` and `<name>.module.ts`: `resolve-agent`, `record-chat-message`, `load-agent-tools`.
+- An internal auxiliary use case (no endpoint, consumed by other services) has only `<name>.service.ts` and `<name>.module.ts`: `resolve-agent`, `record-chat-message`.
 - The only sanctioned multi-handler exception is the streaming `QuestionController`; do not replicate it.
 </rules>
 
@@ -23,7 +23,6 @@ src/modules/agents/
   agents.module.ts          aggregator: imports = exports = use-case modules
   create-agent/             create-agent.{module,controller,service,dto}.ts
   list-agents/
-  load-agent-sites/         auxiliary: service + module only
   repositories/             agent.repository.ts + agent.repository.module.ts
 ```
 </structure>
@@ -33,7 +32,7 @@ src/modules/agents/
 <critical_rule>
 A domain never imports another domain's internal file (a service it does not export, an internal type, a helper). The allowed crossings are:
 
-- a port published in `src/modules/<domain>/contracts/` (`Symbol` token + interface), e.g. `AGENT_RESOLVER`;
+- a port published in `src/modules/<domain>/contracts/` (`Symbol` token + interface);
 - an exported repository module (`AgentRepositoryModule`);
 - an exported use-case module — import that module and inject the service it exports.
 

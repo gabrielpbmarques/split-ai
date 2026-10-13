@@ -98,18 +98,18 @@ src/
     integration/             The ONLY place that talks to an external service:
       integration.module.ts  @Global() — publishes every port below (mock or live per INTEGRATION_MODE)
       <name>.port.ts         Symbol token + interface: MESSAGING, EMBEDDINGS, VECTOR_STORE, RERANKER, CHAT_MODEL,
-                             SITE_CRAWLER, FILE_STORAGE, TEXT_TO_SPEECH, OCR, CUSTOMER_DATABASE
+                             SITE_CRAWLER, FILE_STORAGE, TEXT_TO_SPEECH, OCR
       http-client/           ResilientClient (timeout, retry+backoff, circuit breaker, SSRF guard, correlation)
-      <source>/              twilio, supabase, voyage, anthropic, spider, google, eleven-labs, customer-database:
+      <source>/              twilio, supabase, voyage, anthropic, spider, google, eleven-labs:
                              <source>.contracts.ts, <source>.mappers.ts (+ spec), <source>-<port>.gateway.ts
       mock/                  In-memory implementation of every port (INTEGRATION_MODE=mock, default in tests)
       integration.health.ts  Per-upstream state (READY | NOT_CONFIGURED | MOCK) reported by /health/ready
-  modules/<domain>/          agents, agent-connections, agent-runtime, retrieval, chat, sessions, sources, reports,
-                             users, auth-flows, voice, whatsapp
+  modules/<domain>/          agents, agent-connections, agent-runtime, retrieval, chat, sessions, sources, store,
+                             tools, users, auth-flows, voice, whatsapp
     <domain>.module.ts       Aggregator: imports + exports the use-case modules, nothing else
     <use-case>/              One use case = one module = one controller = one endpoint (kebab-case files)
     repositories/            <name>.repository.ts + <name>.repository.module.ts (forFeature + provides/exports)
-    contracts/               Ports published to other domains, when needed (AGENT_RESOLVER)
+    contracts/               Ports published to other domains, when needed
   shared/
     config/env.ts            Zod-validated, frozen `env` object — the ONLY place that reads process.env
     contracts/               Shared TS types + barrel, ErrorResponse, pagination (PageRequest/PageResult/toPaginatedResponse)
@@ -123,7 +123,7 @@ test/                        e2e per domain + support/ (test-app, factories, dat
 
 ## Product-specific invariants (what the rules do not say)
 
-- **`AuthenticatedUser`** is `{ id, name, email, phone, role, permissions }`; `id` is always a real user id. Roles are `admin` (owner: everything, including `agent.manage` and `user.manage`), `user` (trusted operator: agents, connections, sources, sessions, reports, analytics, voice, user read) and `guest` (`account.access` + chat). Catalog: `src/auth/permissions.ts`.
+- **`AuthenticatedUser`** is `{ id, name, email, phone, role, permissions }`; `id` is always a real user id. Roles are `admin` (owner: everything, including `agent.manage` and `user.manage`), `user` (trusted operator: agents, connections, sources, sessions, analytics, voice, user read) and `guest` (`account.access` + chat). Catalog: `src/auth/permissions.ts`.
 - **`TokenVerifier`** (`src/auth/token.verifier.ts`) accepts only `Authorization: Bearer <HS256 JWT>` signed with `env.JWT_SECRET` (issued by `GenerateTokenService` at `POST /auth/login`). Users are created by an admin through `POST /user`; there is no public sign-up. WhatsApp senders are auto-created as users by the webhook.
 - **Pagination**: list query DTOs extend `PaginationDto`; repositories return `PageResult`; services return `toPaginatedResponse()` → `{ items, total, totalPages, page, limit }`. Listing methods take `fields?: readonly K[]` before `tx?` and return `Pick<Entity, K>[]`.
 - **Transactions** live in services (`TransactionExecutor.run`), `tx` is the last argument of every repository write; used by `CreateAgent` and `UpdateAgent`. External effects run after the commit.
@@ -136,26 +136,24 @@ test/                        e2e per domain + support/ (test-app, factories, dat
 
 ## External integrations
 
-- **Ports.** `MESSAGING` (Twilio WhatsApp: `sendWhatsapp`, `parseInboundWhatsapp`), `EMBEDDINGS` (LangChain `Embeddings`, Voyage), `VECTOR_STORE` (`upsertChunks` / `loadIndex` / `deleteBySourceId` over Supabase pgvector), `RERANKER` (Voyage `rerank-2.5` via `ResilientClient`), `CHAT_MODEL` (`ChatAnthropic` factory — the only `new ChatAnthropic` in the repo), `SITE_CRAWLER` (Spider), `FILE_STORAGE` (GCS), `TEXT_TO_SPEECH` (Google, or ElevenLabs via `TTS_PROVIDER`), `OCR` (Google Vision), `CUSTOMER_DATABASE` (per-request TypeORM `DataSource` to an agent's external database). Inject by token, type by interface; every interface extends `IntegrationGateway` (`name`, `state()`).
+- **Ports.** `MESSAGING` (Twilio WhatsApp: `sendWhatsapp`, `parseInboundWhatsapp`), `EMBEDDINGS` (LangChain `Embeddings`, Voyage), `VECTOR_STORE` (`upsertChunks` / `loadIndex` / `deleteBySourceId` over Supabase pgvector), `RERANKER` (Voyage `rerank-2.5` via `ResilientClient`), `CHAT_MODEL` (`ChatAnthropic` factory — the only `new ChatAnthropic` in the repo), `SITE_CRAWLER` (Spider), `FILE_STORAGE` (GCS), `TEXT_TO_SPEECH` (Google, or ElevenLabs via `TTS_PROVIDER`), `OCR` (Google Vision). Inject by token, type by interface; every interface extends `IntegrationGateway` (`name`, `state()`).
 - **External field names stay in `<source>.contracts.ts` / `<source>.mappers.ts`.** A payload outside the contract is rejected (`BadRequestException` on webhooks, `BadGatewayException` on responses), never defaulted. `grep -rE "axios|fetch\(" src/modules` stays empty.
 - **Missing credentials never break the boot.** A live gateway without its key reports `NOT_CONFIGURED` and throws `ServiceUnavailableException` only when called. Google clients rely on ADC and are built lazily (`READY`).
 - **`ResilientClient`**: `AbortController` timeout, retry with backoff + jitter on `GET`/`HEAD`/`OPTIONS` and 408/425/429/5xx only, circuit breaker per dependency, `redirect: 'error'`, `x-request-id` propagation, SSRF guard (allowlist `HTTP_ALLOWED_HOSTS`, default `api.voyageai.com`). A new host goes into the allowlist.
-- **`CUSTOMER_DATABASE`** validates the host against `CUSTOMER_DATABASE_ALLOWED_HOSTS` (internal networks only with `CUSTOMER_DATABASE_ALLOW_INTERNAL_NETWORK=true`), applies `CUSTOMER_DATABASE_*_TIMEOUT_MS`; the SQL guard (`detectDialect`, `sanitizeSqlQuery`) is the pure module `integration/customer-database/sql-guard.ts`.
 - **Env:** `INTEGRATION_MODE`, `HTTP_*`, `ANTHROPIC_BASE_URL` (defaults to the DeepSeek Anthropic-compatible endpoint; set it explicitly to reach Anthropic), `TTS_PROVIDER`, `GCS_AUDIO_BUCKET`.
 
 ## AI pipeline essentials
 
-- **Flow:** `POST /chat` (NDJSON, the only chat endpoint) → `CreateSessionIfNotExists` → `ResolveAgent` (`CHAT_MODEL`, tools, `PostgresSaver` checkpointer when `with_history`) → `GenerateAiResponse` (`createAgent`, `responseFormat: AgentFinalResponseSchema`, `handleStreamResponse`) → `RecordChatMessage` (embeds via `EMBEDDINGS`). `thread_id` is `conversationId ?? session.id`; changing the format detaches every stored thread (the old organization prefix was stripped by migration `RemoveMultiTenancy1759700000000`).
+- **Flow:** `POST /chat/:agentId` (NDJSON stream) → `CreateSessionIfNotExists` (sessions expire in 8 hours) → `ResolveAgent` (`CHAT_MODEL`, `ToolLoaderService`, `LoadStoreService`, `createDeepAgent`) → `GenerateAiResponse` (`createDeepAgent` with `CompositeBackend` [`StateBackend` + `StoreBackend`], `responseFormat: AgentFinalResponseSchema`, `handleStreamResponse`) → `RecordChatMessage` (embeds via `EMBEDDINGS`). `thread_id` is `conversationId ?? session.id`.
+- **Agents and instructions:** Instructions are stored directly in `system_prompt` (TEXT) on `AgentEntity`. The previous `agents_instructions` table and `AIInstructions` model (`context`, `objetivo`, `diretrizes`) were removed. Default model is `deepseek-chat-v3.2`.
+- **Tools:** `tools` is a string array column on `AgentEntity` (`default: ['vector_search']`), loaded dynamically by `ToolLoaderService` (`src/modules/tools/tool-loader/`). Vector search tool lives in `src/modules/tools/vector-search-tool/`. The external database tool (`execute_sql`, `CUSTOMER_DATABASE`) was removed.
+- **Structured output:** `response_format` JSON schema column on `AgentEntity`.
+- **Store & VFS:** Memory and skills use Deep Agents (`deepagents`) backed by `CompositeBackend` (`StateBackend` efêmero na raiz, `StoreBackend` para `/memories/` e `/skills/` persistidos no Supabase via `PostgresStore`).
 - **Retrieval is scoped by agent only.** `vector_similarity_search` takes just `query` and filters chunks by `{ agent_id }`; the `source_type` written on each chunk no longer narrows the search, so untyped files and crawled sites are found.
 - **Retrieval is threshold-based, not top-K.** `vector_similarity_search` fetches `VECTOR_SEARCH_CANDIDATE_K` (50) candidates and `VoyageRerankCompressor` keeps those scoring `>= VECTOR_SEARCH_MIN_SCORE` (0.8), capped at `VECTOR_SEARCH_MAX_RESULTS` (10). Empty results are by design; the `warn` with the best score is the tuning signal. Never move the cutoff onto the cosine score.
 - **A search costs two Voyage calls** (embed + rerank) on the same `VOYAGEAI_API_KEY`; without a default payment method the quota is 3 RPM / 10K TPM (PC-007).
-- **Ingestion** (`sources/process-*-source`, `load-agent-sites`) must tag every chunk with `agent_id` + `source_id` before `VECTOR_STORE.upsertChunks`; the `documents` table, `match_documents` and the pgvector index live only in Supabase and are applied by hand in its SQL editor.
+- **Ingestion** (`sources/process-*-source`) must tag every chunk with `agent_id` + `source_id` before `VECTOR_STORE.upsertChunks`; the `documents` table, `match_documents` and the pgvector index live only in Supabase and are applied by hand in its SQL editor.
 - **Ingestion is asynchronous.** `POST /agent/generate-source` (`source.write`) validates first (unsupported file type → 400, unknown agent → 404), creates the `sources` rows as `processing`, answers **202** and indexes in the background; clients follow the status through `GET /source`. A source removed mid-indexing has its chunks deleted when its task ends, and on boot `RecordInterruptedSourcesService` marks leftover `processing` sources as `failed`. Details in `.claude/rules/rag-ingestion.md`.
-- **Agents** store instructions under the `AIInstructions` keys (`context`, `objetivo`, `diretrizes`); `ResolveAgent` answers 404 for an agent without instructions.
-
-## Agent database connection (`execute_sql`)
-
-Opt-in per agent: `agents.database_tool = true` **and** `agents.database_url` (`postgres://`, `postgresql://`, `mysql://` or `mysql2://`) set through `databaseUrl` on `POST /agent/create` / `PATCH /agent/:id`. Optional `databaseTables` (allow-list passed to the schema description) and `databaseSampleRows`. `database_url` is `select: false`, read only by `AgentRepository.findDatabaseConnection`, and never returned by the API. `LoadDatabaseTool` keeps the guardrails: single statement, first-verb allow-list (`SELECT`/`INSERT`/`UPDATE`), deny regex `DELETE|ALTER|DROP|CREATE|REPLACE|TRUNCATE`, forced `LIMIT 5`.
 
 ## Tests
 

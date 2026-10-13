@@ -22,14 +22,12 @@ Every `*.module.ts` plays exactly one role.
 ```ts
 import { Module } from '@nestjs/common';
 
-import { TransactionExecutorModule } from 'src/infrastructure/database/transaction-executor/transaction-executor.module';
 import { CreateAgentController } from 'src/modules/agents/create-agent/create-agent.controller';
 import { CreateAgentService } from 'src/modules/agents/create-agent/create-agent.service';
-import { AgentInstructionRepositoryModule } from 'src/modules/agents/repositories/agent-instruction.repository.module';
 import { AgentRepositoryModule } from 'src/modules/agents/repositories/agent.repository.module';
 
 @Module({
-imports: [AgentRepositoryModule, AgentInstructionRepositoryModule, TransactionExecutorModule],
+imports: [AgentRepositoryModule],
 controllers: [CreateAgentController],
 providers: [CreateAgentService],
 exports: [CreateAgentService],
@@ -84,7 +82,7 @@ export class AgentRepositoryModule {}
 <rules>
 - One repository module per aggregate: `TypeOrmModule.forFeature([XEntity])`, provides and exports a single repository class. `forFeature` is module-local — importing a module that registered an entity does not hand you its `Repository<T>`.
 - A module that owns a resource with a lifecycle (pool, client) implements `OnApplicationShutdown` and releases it.
-- Modules that publish ports to everyone are `@Global()`: `IntegrationModule` and `AgentRuntimeContractsModule` are the only ones. `AuthModule` registers the global guards.
+- Modules that publish ports to everyone are `@Global()`: `IntegrationModule` is the only one. `AuthModule` registers the global guards.
 </rules>
 
 ## Choosing an injection mechanism
@@ -93,7 +91,7 @@ export class AgentRepositoryModule {}
 | --------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ----------------------------------------------- |
 | Concrete class                                      | single implementation; default for services, repositories, `TransactionExecutor`               | `AgentRepository`, `CreateAgentService`         |
 | `Symbol` + `useFactory`                             | infrastructure resource that needs construction (config, connection)                           | integration ports built by `select(live, mock)` |
-| `Symbol` + interface + factory/`useExisting` (port) | implementation swaps by environment (mock vs. live), or another domain consumes the capability | `VECTOR_STORE`, `CHAT_MODEL`, `AGENT_RESOLVER`  |
+| `Symbol` + interface + factory/`useExisting` (port) | implementation swaps by environment (mock vs. live), or another domain consumes the capability | `VECTOR_STORE`, `CHAT_MODEL`                    |
 
 <checklist>
 Decide in order:
@@ -142,7 +140,6 @@ constructor(@Inject(VECTOR_STORE) private readonly vectorStore: VectorStoreGatew
 - The interface contains only the methods consumers use.
 - Consumers inject by token and type by interface.
 - Do not create a port without a consumer or without a second real implementation.
-- `useExisting` does not break a Nest instantiation cycle. `AGENT_RESOLVER` therefore uses a lazy `ModuleRef.get(..., { strict: false })` factory (PC-008); copy that pattern for the next cycle.
 </rules>
 
 ## After changing wiring

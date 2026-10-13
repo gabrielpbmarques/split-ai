@@ -5,7 +5,7 @@ import {
   VECTOR_STORE,
   type VectorStoreGateway,
 } from 'src/infrastructure/integration/vector-store.port';
-import { LoadVectorSearchToolService } from 'src/modules/tools/load-vector-search-tool/load-vector-search-tool.service';
+import { VectorSearchToolService } from 'src/modules/tools/vector-search-tool/vector-search-tool.service';
 import {
   bearer,
   createAgent,
@@ -59,7 +59,7 @@ describe('sources (e2e)', () => {
   }
 
   async function searchAs(agentId: string, query: string): Promise<string> {
-    const tool = await t.app.get(LoadVectorSearchToolService).execute(agentId);
+    const tool = await t.app.get(VectorSearchToolService).execute(agentId);
     return tool.invoke({ query });
   }
 

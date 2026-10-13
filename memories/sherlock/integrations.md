@@ -38,7 +38,7 @@ src/infrastructure/integration/
 ```
 </structure>
 
-Ports today: `MESSAGING` (Twilio WhatsApp), `EMBEDDINGS` (Voyage), `VECTOR_STORE` (Supabase pgvector), `RERANKER` (Voyage `rerank-2.5`), `CHAT_MODEL` (`ChatAnthropic` factory — the only `new ChatAnthropic` in the repo), `SITE_CRAWLER` (Spider), `FILE_STORAGE` (GCS), `TEXT_TO_SPEECH` (Google, or ElevenLabs via `TTS_PROVIDER`), `OCR` (Google Vision), `CUSTOMER_DATABASE` (per-request TypeORM `DataSource` to an agent's external database).
+Ports today: `MESSAGING` (Twilio WhatsApp), `EMBEDDINGS` (Voyage), `VECTOR_STORE` (Supabase pgvector), `RERANKER` (Voyage `rerank-2.5`), `CHAT_MODEL` (`ChatAnthropic` factory — the only `new ChatAnthropic` in the repo), `SITE_CRAWLER` (Spider), `FILE_STORAGE` (GCS), `TEXT_TO_SPEECH` (Google, or ElevenLabs via `TTS_PROVIDER`), `OCR` (Google Vision).
 
 ## Contracts and mappers
 
@@ -102,15 +102,6 @@ if (!env.SPIDER_API_KEY) notConfigured(this.name);
 - `redirect: 'error'`.
 - Propagates the current `x-request-id`.
 - Parameters come from `env.HTTP_*` (`HTTP_TIMEOUT_MS`, `HTTP_RETRIES`, `HTTP_BACKOFF_BASE_MS`, `HTTP_CIRCUIT_FAILURE_THRESHOLD`, `HTTP_CIRCUIT_OPEN_MS`).
-</rules>
-
-## `CUSTOMER_DATABASE`
-
-<rules>
-- Opens a short-lived TypeORM `DataSource` per request to the database URL configured **on the agent** (`agents.database_url`).
-- Validates the host against `CUSTOMER_DATABASE_ALLOWED_HOSTS`; internal networks only with `CUSTOMER_DATABASE_ALLOW_INTERNAL_NETWORK=true`; applies `CUSTOMER_DATABASE_*_TIMEOUT_MS`.
-- The SQL guard (`detectDialect`, `sanitizeSqlQuery`, `assertScoped`) is the pure module `customer-database/sql-guard.ts` with its spec; see `agent-tools.md` for the guardrails the `execute_sql` tool must keep.
-- `database_url` is a secret: never log it or return it in an API response.
 </rules>
 
 ## Checklist for a new integration

@@ -33,7 +33,7 @@ src/infrastructure/database/
 - Index names: `<table>_<purpose>_idx`; unique: `<table>_<purpose>_uq`; check: `<table>_<rule>`.
 - A data invariant (date ordering, conditionally required column) is also a `@Check` in the database.
 - The `documents` table, `match_documents` and the pgvector index live only in Supabase and are changed by hand in its SQL editor; TypeORM never touches them.
-- The LangGraph `PostgresSaver` tables (`checkpoints`, `checkpoint_blobs`, `checkpoint_writes`, `checkpoint_migrations`) live in the same database and are owned by the library; do not declare entities for them.
+- The Deep Agents / LangGraph store tables (`store`, `checkpoints*`) live in the same database and are owned by the library; do not declare entities for them.
 </rules>
 
 ## Lifecycle columns and soft delete
@@ -124,10 +124,10 @@ The shape of a listing payload is decided in the `select`, never by iterating th
 
 <example>
 ```ts
-const agent = await this.transactionExecutor.run(async (tx) => {
-  const created = await this.agentRepository.create(data, tx);
-  await this.agentInstructionRepository.create({ agent_id: created.id, instructions }, tx);
-  return created;
+const result = await this.transactionExecutor.run(async (tx) => {
+  const item = await this.itemRepository.create(data, tx);
+  await this.otherRepository.create({ item_id: item.id }, tx);
+  return item;
 });
 ````
 
@@ -138,7 +138,7 @@ const agent = await this.transactionExecutor.run(async (tx) => {
 - Every repository call inside the callback receives `tx`.
 - To abort, throw inside the callback.
 - Inside the callback: database operations only. No HTTP, no vector-store writes, no e-mail.
-- Used today by `CreateAgent` and `UpdateAgent`.
+- Use whenever writing to more than one table or when atomicity is required.
 </rules>
 
 ## Concurrency
