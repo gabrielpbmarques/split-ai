@@ -44,6 +44,9 @@ export class ResolveAgentService {
       tools,
       memory: [
         '/memories/sherlock/AGENTS.md',
+        '/memories/sherlock/MIND-PALACE.md',
+        '/memories/sherlock/EVOLUTION.md',
+        '/memories/sherlock/mind-palace/criador.md',
         '/scratchpad/notes.md',
         '/memories/',
       ],
@@ -55,6 +58,15 @@ export class ResolveAgentService {
         }),
         '/skills/': new StoreBackend({
           namespace: ['agents', agentPayload.id, 'skills'],
+        }),
+        '/scratchpad/': new StoreBackend({
+          namespace: ['agents', agentPayload.id, 'scratchpad'],
+        }),
+        '/mind-palace/': new StoreBackend({
+          namespace: ['agents', agentPayload.id, 'mind-palace'],
+        }),
+        '/mind-palace/criador.md': new StoreBackend({
+          namespace: ['agents', agentPayload.id, 'mind-palace', 'criador.md'],
         }),
       }),
     });
