@@ -1,100 +1,76 @@
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
-import type { MemorySaver } from '@langchain/langgraph';
-import type { PostgresSaver } from '@langchain/langgraph-checkpoint-postgres';
+import { PostgresStore } from '@langchain/langgraph-checkpoint-postgres/store';
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { createAgent, createMiddleware } from 'langchain';
+import {
+  CompositeBackend,
+  createDeepAgent,
+  type DeepAgent,
+  StateBackend,
+  StoreBackend,
+} from 'deepagents';
 
 import type { AgentEntity } from 'src/infrastructure/database/schema';
 import {
   CHAT_MODEL,
   type ChatModelFactory,
 } from 'src/infrastructure/integration/chat-model.port';
-import { BuildSystemPromptService } from 'src/modules/agent-runtime/build-system-prompt/build-system-prompt.service';
-import { LoadCheckpointerService } from 'src/modules/agent-runtime/load-checkpointer/load-checkpointer.service';
 import { AgentRepository } from 'src/modules/agents/repositories/agent.repository';
 import { LoadAgentToolsService } from 'src/modules/retrieval/load-agent-tools/load-agent-tools.service';
-import {
-  AgentFinalResponseSchema,
-  type ResolvedAgent,
-} from 'src/shared/contracts';
-import { sanitizeToolCallMessages } from 'src/shared/utils/sanitize-tool-call-messages';
-
-const sanitizeHistoryMiddleware = createMiddleware({
-  name: 'sanitize-tool-call-history',
-  wrapModelCall: (request, handler) =>
-    handler({
-      ...request,
-      messages: sanitizeToolCallMessages(request.messages),
-    }),
-});
+import { env } from 'src/shared/config/env';
 
 @Injectable()
 export class ResolveAgentService {
+  private static store?: PostgresStore;
+
   constructor(
     @Inject(CHAT_MODEL) private readonly chatModelFactory: ChatModelFactory,
     private readonly agentRepository: AgentRepository,
-    private readonly buildSystemPromptService: BuildSystemPromptService,
-    private readonly loadCheckpointerService: LoadCheckpointerService,
     private readonly loadAgentToolsService: LoadAgentToolsService,
   ) {}
 
-  async execute(
-    agentId: string,
-    promptVariables?: Record<string, unknown>,
-    memorySaver?: MemorySaver,
-    connectionContext?: { depth: number; visited: string[] },
-  ): Promise<ResolvedAgent> {
-    const agent = await this.agentRepository.findByIdOrIdentifier(agentId);
+  private async getStore(): Promise<PostgresStore> {
+    if (!ResolveAgentService.store) {
+      const store = PostgresStore.fromConnString(env.DATABASE_URL);
+      await store.setup();
+      ResolveAgentService.store = store;
+    }
+    return ResolveAgentService.store;
+  }
 
-    if (!agent) {
+  async execute(agentId: string): Promise<DeepAgent & { id: string }> {
+    const agentPayload =
+      await this.agentRepository.findByIdOrIdentifier(agentId);
+
+    if (!agentPayload) {
       throw new NotFoundException('Agente não encontrado');
     }
 
-    if (!agent.system_prompt) {
+    if (!agentPayload.system_prompt) {
       throw new NotFoundException('Agente sem instruções configuradas');
     }
 
-    const runnableOpts = { withHistory: !!agent.with_history };
+    const store = await this.getStore();
+    const chat = this.loadChat(agentPayload);
+    const tools = await this.loadAgentToolsService.execute(agentPayload);
 
-    const chat = this.loadChat(agent);
-    const tools = await this.loadAgentToolsService.execute(
-      agent,
-      connectionContext,
-    );
-
-    const systemPrompt = await this.buildSystemPromptService.execute(
-      agent.system_prompt,
-      promptVariables,
-    );
-
-    const isDelegatedChild = (connectionContext?.depth ?? 0) > 0;
-
-    let checkpointer: MemorySaver | PostgresSaver | undefined;
-
-    if (runnableOpts.withHistory && !isDelegatedChild) {
-      checkpointer = memorySaver ?? this.loadCheckpointerService.execute();
-    }
-
-    const runnable = createAgent({
+    const agent = createDeepAgent({
       model: chat,
+      systemPrompt: agentPayload.system_prompt,
       tools,
-      systemPrompt,
-      checkpointer: checkpointer as unknown as Parameters<
-        typeof createAgent
-      >[0]['checkpointer'],
-      middleware: [sanitizeHistoryMiddleware],
-      responseFormat: AgentFinalResponseSchema,
+      memory: ['/memories/sherlock/AGENTS.md', '/scratchpad/notes.md'],
+      skills: ['/skills/'],
+      store,
+      backend: new CompositeBackend(new StateBackend(), {
+        '/memories/': new StoreBackend({
+          namespace: ['agents', agentPayload.id, 'memories'],
+        }),
+        '/skills/': new StoreBackend({
+          namespace: ['agents', agentPayload.id, 'skills'],
+        }),
+      }),
     });
 
-    return {
-      id: agent.id,
-      systemPrompt,
-      chat,
-      tools,
-      runnableOpts,
-      sites: agent.sites ?? undefined,
-      runnable,
-    };
+    return Object.assign(agent, { id: agentPayload.id });
   }
 
   private loadChat(agent: AgentEntity): BaseChatModel {

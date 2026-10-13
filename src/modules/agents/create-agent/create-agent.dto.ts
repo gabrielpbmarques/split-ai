@@ -72,11 +72,4 @@ export class CreateAgentDto {
   @ValidateNested()
   @Type(() => ResponseFormatDto)
   responseFormat?: ResponseFormatDto | null;
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  @MaxLength(2048, { each: true })
-  @ArrayMaxSize(50)
-  sites?: string[];
 }

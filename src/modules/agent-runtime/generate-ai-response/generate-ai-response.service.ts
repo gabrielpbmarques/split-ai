@@ -2,13 +2,13 @@ import { HumanMessage } from '@langchain/core/messages';
 import type { RunnableConfig } from '@langchain/core/runnables';
 import { LangChainTracer } from '@langchain/core/tracers/tracer_langchain';
 import { Injectable } from '@nestjs/common';
+import type { DeepAgent } from 'deepagents';
 import type { AIMessage } from 'langchain';
 
 import { env } from 'src/shared/config/env';
 import {
   AgentFinalResponseSchema,
   type CustomMetadata,
-  type ResolvedAgent,
   type StreamEvent,
 } from 'src/shared/contracts';
 import { errorStream } from 'src/shared/utils/error-stream';
@@ -29,12 +29,10 @@ export class GenerateAiResponseService {
   async execute(
     question: string,
     metadata: CustomMetadata,
-    agent: ResolvedAgent,
+    agent: DeepAgent,
     stream: boolean = false,
   ): Promise<string | AsyncGenerator<StreamEvent>> {
     try {
-      const runnable = agent.runnable;
-
       const invokeParams = { messages: [new HumanMessage(question)] };
 
       const threadKey = metadata.conversation_id ?? metadata.session_id;
@@ -44,7 +42,6 @@ export class GenerateAiResponseService {
           thread_id: threadKey,
         },
         callbacks: this.tracers,
-        tags: [env.NODE_ENV, agent.id],
         metadata: {
           userId: metadata.user_id,
           sessionId: metadata.session_id,
@@ -53,14 +50,14 @@ export class GenerateAiResponseService {
       };
 
       if (stream) {
-        const streamIterator = await runnable.stream(invokeParams, {
+        const streamIterator = await agent.stream(invokeParams, {
           ...configurable,
           streamMode: 'updates',
         });
         return handleStreamResponse(streamIterator);
       }
 
-      const result = await runnable.invoke(invokeParams, configurable);
+      const result = await agent.invoke(invokeParams, configurable);
 
       const structured = AgentFinalResponseSchema.safeParse(
         result.structuredResponse,

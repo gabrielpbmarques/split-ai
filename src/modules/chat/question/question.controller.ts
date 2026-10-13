@@ -20,7 +20,7 @@ import { User as AuthUser } from 'src/shared/decorators/user.decorator';
 export class QuestionController {
   constructor(private readonly questionService: QuestionService) {}
 
-  @Post()
+  @Post(':agentId')
   @RequirePermissions('chat.ask')
   @ApiOkResponse()
   @ApiBearerAuth()

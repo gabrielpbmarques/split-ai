@@ -10,7 +10,6 @@ import { useUtcForTimestampColumns } from 'src/infrastructure/database/utc-times
 import { IntegrationModule } from 'src/infrastructure/integration/integration.module';
 import { AgentConnectionsModule } from 'src/modules/agent-connections/agent-connections.module';
 import { AgentRuntimeModule } from 'src/modules/agent-runtime/agent-runtime.module';
-import { AgentRuntimeContractsModule } from 'src/modules/agent-runtime/contracts/agent-runtime-contracts.module';
 import { AgentsModule } from 'src/modules/agents/agents.module';
 import { AuthFlowsModule } from 'src/modules/auth-flows/auth-flows.module';
 import { ChatModule } from 'src/modules/chat/chat.module';
@@ -61,7 +60,6 @@ import { AppLoggerModule } from 'src/shared/observability/logger.module';
     HealthModule,
     AgentConnectionsModule,
     AgentRuntimeModule,
-    AgentRuntimeContractsModule,
     AgentsModule,
     AuthFlowsModule,
     ChatModule,

@@ -31,11 +31,7 @@ export class QuestionService {
       user_id: user.id,
     });
 
-    const agent = await this.resolveAgentService.execute(param.agentId, {
-      ...(dto.variables || {}),
-      sessionId: session.id,
-      threadId: dto.threadId ?? session.id,
-    });
+    const agent = await this.resolveAgentService.execute(param.agentId);
 
     await this.recordChatMessageService.execute(
       session.id,
