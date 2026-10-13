@@ -5,7 +5,7 @@ import {
   VECTOR_STORE,
   type VectorStoreGateway,
 } from 'src/infrastructure/integration/vector-store.port';
-import { LoadVectorSearchToolService } from 'src/modules/retrieval/load-vector-search-tool/load-vector-search-tool.service';
+import { LoadVectorSearchToolService } from 'src/modules/tools/load-vector-search-tool/load-vector-search-tool.service';
 import {
   bearer,
   createAgent,

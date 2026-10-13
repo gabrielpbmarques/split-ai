@@ -13,7 +13,6 @@ import {
   VECTOR_STORE,
   type VectorStoreGateway,
 } from 'src/infrastructure/integration/vector-store.port';
-import { LoadAgentSitesService } from 'src/modules/agents/load-agent-sites/load-agent-sites.service';
 import { AgentRepository } from 'src/modules/agents/repositories/agent.repository';
 import type { GenerateAgentSourceDto } from 'src/modules/sources/generate-agent-source/generate-agent-source.dto';
 import { ProcessDocxSourceService } from 'src/modules/sources/process-docx-source/process-docx-source.service';
@@ -44,7 +43,6 @@ export class GenerateAgentSourceService {
     private readonly processPdfSourceService: ProcessPdfSourceService,
     private readonly processTextSourceService: ProcessTextSourceService,
     private readonly processDocxSourceService: ProcessDocxSourceService,
-    private readonly loadAgentSitesService: LoadAgentSitesService,
     private readonly agentRepository: AgentRepository,
     private readonly sourceRepository: SourceRepository,
     @Inject(VECTOR_STORE) private readonly vectorStore: VectorStoreGateway,
@@ -103,12 +101,6 @@ export class GenerateAgentSourceService {
           status: 'processing',
         });
         createdSources.push(source);
-
-        tasks.push(
-          this.runSourceTask(source.id, `site ${siteUrl}`, () =>
-            this.loadAgentSitesService.execute(siteUrl, agentId, source.id),
-          ),
-        );
       }
 
       if (sitesArray.length) {

@@ -10,7 +10,7 @@ import { ExecuteSimilaritySearchService } from 'src/modules/retrieval/execute-si
 import type { CustomDocument } from 'src/shared/contracts';
 
 @Injectable()
-export class LoadVectorSearchToolService {
+export class VectorSearchToolService {
   constructor(
     @Inject(VECTOR_STORE) private readonly vectorStore: VectorStoreGateway,
     private readonly executeSimilaritySearchService: ExecuteSimilaritySearchService,
@@ -20,7 +20,7 @@ export class LoadVectorSearchToolService {
     agentId: string,
   ): Promise<DynamicStructuredTool<z.ZodObject<{ query: z.ZodString }>>> {
     return new DynamicStructuredTool({
-      name: 'vector_similarity_search',
+      name: 'vector_search',
       description: `
         IMPORTANTE: SEMPRE use esta ferramenta antes de responder.
         Busca embeddings no Supabase; use se precisar de contexto factual externo.

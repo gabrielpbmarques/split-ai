@@ -13,7 +13,6 @@ import { AgentRuntimeModule } from 'src/modules/agent-runtime/agent-runtime.modu
 import { AgentsModule } from 'src/modules/agents/agents.module';
 import { AuthFlowsModule } from 'src/modules/auth-flows/auth-flows.module';
 import { ChatModule } from 'src/modules/chat/chat.module';
-import { ReportsModule } from 'src/modules/reports/reports.module';
 import { RetrievalModule } from 'src/modules/retrieval/retrieval.module';
 import { SessionsModule } from 'src/modules/sessions/sessions.module';
 import { SourcesModule } from 'src/modules/sources/sources.module';
@@ -63,7 +62,6 @@ import { AppLoggerModule } from 'src/shared/observability/logger.module';
     AgentsModule,
     AuthFlowsModule,
     ChatModule,
-    ReportsModule,
     RetrievalModule,
     SessionsModule,
     SourcesModule,

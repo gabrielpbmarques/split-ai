@@ -1,5 +1,4 @@
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
-import { PostgresStore } from '@langchain/langgraph-checkpoint-postgres/store';
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import {
   CompositeBackend,
@@ -15,27 +14,17 @@ import {
   type ChatModelFactory,
 } from 'src/infrastructure/integration/chat-model.port';
 import { AgentRepository } from 'src/modules/agents/repositories/agent.repository';
-import { LoadAgentToolsService } from 'src/modules/retrieval/load-agent-tools/load-agent-tools.service';
-import { env } from 'src/shared/config/env';
+import { LoadStoreService } from 'src/modules/store/load-store/load-store.service';
+import { ToolLoaderService } from 'src/modules/tools/tool-loader/tool-loader.service';
 
 @Injectable()
 export class ResolveAgentService {
-  private static store?: PostgresStore;
-
   constructor(
     @Inject(CHAT_MODEL) private readonly chatModelFactory: ChatModelFactory,
     private readonly agentRepository: AgentRepository,
-    private readonly loadAgentToolsService: LoadAgentToolsService,
+    private readonly toolLoaderService: ToolLoaderService,
+    private readonly loadStoreService: LoadStoreService,
   ) {}
-
-  private async getStore(): Promise<PostgresStore> {
-    if (!ResolveAgentService.store) {
-      const store = PostgresStore.fromConnString(env.DATABASE_URL);
-      await store.setup();
-      ResolveAgentService.store = store;
-    }
-    return ResolveAgentService.store;
-  }
 
   async execute(agentId: string): Promise<DeepAgent & { id: string }> {
     const agentPayload =
@@ -45,13 +34,9 @@ export class ResolveAgentService {
       throw new NotFoundException('Agente não encontrado');
     }
 
-    if (!agentPayload.system_prompt) {
-      throw new NotFoundException('Agente sem instruções configuradas');
-    }
-
-    const store = await this.getStore();
+    const store = await this.loadStoreService.execute();
     const chat = this.loadChat(agentPayload);
-    const tools = await this.loadAgentToolsService.execute(agentPayload);
+    const tools = await this.toolLoaderService.execute(agentPayload);
 
     const agent = createDeepAgent({
       model: chat,

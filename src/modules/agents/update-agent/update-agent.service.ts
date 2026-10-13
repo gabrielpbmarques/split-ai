@@ -1,13 +1,8 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 
 import type { AgentEntity } from 'src/infrastructure/database/schema';
 import { AgentRepository } from 'src/modules/agents/repositories/agent.repository';
 import type { UpdateAgentDto } from 'src/modules/agents/update-agent/update-agent.dto';
-import { AVAILABLE_TOOL_IDS } from 'src/modules/retrieval/tools-catalog';
 import { isUuid } from 'src/shared/utils/is-uuid';
 
 @Injectable()
@@ -29,14 +24,6 @@ export class UpdateAgentService {
     if (dto.temperature !== undefined) updateData.temperature = dto.temperature;
     if (dto.withHistory !== undefined)
       updateData.with_history = dto.withHistory;
-    if (dto.tools !== undefined) {
-      for (const toolId of dto.tools) {
-        if (!AVAILABLE_TOOL_IDS.includes(toolId)) {
-          throw new BadRequestException(`Ferramenta desconhecida: ${toolId}`);
-        }
-      }
-      updateData.tools = dto.tools;
-    }
     if (dto.sites !== undefined)
       updateData.sites = dto.sites && dto.sites.length ? dto.sites : null;
     if (dto.systemPrompt !== undefined)

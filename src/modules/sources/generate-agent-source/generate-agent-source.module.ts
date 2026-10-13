@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 
-import { LoadAgentSitesService } from 'src/modules/agents/load-agent-sites/load-agent-sites.service';
 import { AgentRepositoryModule } from 'src/modules/agents/repositories/agent.repository.module';
 import { GenerateAgentSourceController } from 'src/modules/sources/generate-agent-source/generate-agent-source.controller';
 import { GenerateAgentSourceService } from 'src/modules/sources/generate-agent-source/generate-agent-source.service';
@@ -19,7 +18,7 @@ import { ResolveSourceAgentModule } from 'src/modules/sources/resolve-source-age
     ResolveSourceAgentModule,
     SourceRepositoryModule,
   ],
-  providers: [GenerateAgentSourceService, LoadAgentSitesService],
+  providers: [GenerateAgentSourceService],
   controllers: [GenerateAgentSourceController],
 })
 export class GenerateAgentSourceModule {}
