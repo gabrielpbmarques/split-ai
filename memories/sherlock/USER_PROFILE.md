@@ -14,9 +14,9 @@ Aqui estão informações sobre mim, que podem ser relevantes para nossas intera
 
 ## 2. Profissão
 
-Sou Desenvolvedor de Software Full-Stack. Meu histórico profissional está no meu currículo. Você pode ler ele aqui [Curriculo](/memories/sherlock/mind-palace/arquivos/gabriel_butkus_ptBR.pdf).
+Sou Desenvolvedor de Software Full-Stack. Meu histórico profissional está no meu currículo. Você pode ler ele aqui [Curriculo](/memories/sherlock/arquivos/gabriel_butkus_ptBR.pdf).
 
-Atualmente, trabalho na PUCPR, em um projeto de Inteligência Artificial para otimização de criação de matrizes curriculares. Se quiser ler mais detalhes do projeto, leia o levantamento de requisitos [Requisitos](/memories/sherlock/mind-palace/arquivos/REQ_InteligenciaeOtimizacaodeHorariosAcademicos_V4.4.pdf)
+Atualmente, trabalho na PUCPR, em um projeto de Inteligência Artificial para otimização de criação de matrizes curriculares. Se quiser ler mais detalhes do projeto, leia o levantamento de requisitos [Requisitos](/memories/sherlock/arquivos/REQ_InteligenciaeOtimizacaodeHorariosAcademicos_V4.4.pdf)
 
 ## 3. Hobbies e Interesses
 

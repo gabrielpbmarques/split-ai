@@ -13,6 +13,9 @@ import {
   CHAT_MODEL_SERVICE,
   type IChatModelService,
 } from 'src/infrastructure/providers/anthropic.provider';
+import { ResolveMemorySourcesService } from 'src/modules/agent-runtime/resolve-memory-sources/resolve-memory-sources.service';
+import { ResolveSkillSourcesService } from 'src/modules/agent-runtime/resolve-skill-sources/resolve-skill-sources.service';
+import { ResolveSystemPromptService } from 'src/modules/agent-runtime/resolve-system-prompt/resolve-system-prompt.service';
 import { AgentRepository } from 'src/modules/agents/repositories/agent.repository';
 import { LoadStoreService } from 'src/modules/store/load-store/load-store.service';
 import { ToolLoaderService } from 'src/modules/tools/tool-loader/tool-loader.service';
@@ -25,6 +28,9 @@ export class ResolveAgentService {
     private readonly agentRepository: AgentRepository,
     private readonly toolLoaderService: ToolLoaderService,
     private readonly loadStoreService: LoadStoreService,
+    private readonly resolveSystemPromptService: ResolveSystemPromptService,
+    private readonly resolveMemorySourcesService: ResolveMemorySourcesService,
+    private readonly resolveSkillSourcesService: ResolveSkillSourcesService,
   ) {}
 
   async execute(agentId: string): Promise<DeepAgent & { id: string }> {
@@ -35,38 +41,31 @@ export class ResolveAgentService {
       throw new NotFoundException('Agente não encontrado');
     }
 
+    const identifier = agentPayload.agent_identifier;
     const store = await this.loadStoreService.execute();
     const chat = this.loadChat(agentPayload);
     const tools = await this.toolLoaderService.execute(agentPayload);
+    const systemPrompt =
+      await this.resolveSystemPromptService.execute(agentPayload);
+    const memory = await this.resolveMemorySourcesService.execute(identifier);
+    const skills = await this.resolveSkillSourcesService.execute(identifier);
 
     const agent = createDeepAgent({
       model: chat,
       tools,
-      memory: [
-        '/memories/sherlock/AGENTS.md',
-        '/memories/sherlock/MIND-PALACE.md',
-        '/memories/sherlock/EVOLUTION.md',
-        '/memories/sherlock/mind-palace/criador.md',
-        '/scratchpad/notes.md',
-        '/memories/',
-      ],
-      skills: ['/skills/'],
+      systemPrompt,
+      memory: [...memory],
+      skills: [...skills],
       store,
       backend: new CompositeBackend(new StateBackend(), {
         '/memories/': new StoreBackend({
-          namespace: ['agents', agentPayload.id, 'memories'],
+          namespace: ['memories', agentPayload.id, 'filesystem'],
         }),
         '/skills/': new StoreBackend({
-          namespace: ['agents', agentPayload.id, 'skills'],
+          namespace: ['skills', agentPayload.id, 'filesystem'],
         }),
         '/scratchpad/': new StoreBackend({
-          namespace: ['agents', agentPayload.id, 'scratchpad'],
-        }),
-        '/mind-palace/': new StoreBackend({
-          namespace: ['agents', agentPayload.id, 'mind-palace'],
-        }),
-        '/mind-palace/criador.md': new StoreBackend({
-          namespace: ['agents', agentPayload.id, 'mind-palace', 'criador.md'],
+          namespace: ['scratchpad', agentPayload.id, 'filesystem'],
         }),
       }),
     });
