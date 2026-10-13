@@ -9,18 +9,18 @@ The product is a personal engine with no tenants: there is no organization, bill
 
 ## 0. Stack at a glance
 
-| Layer            | Technology                                                                                                                         |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| HTTP             | NestJS 11 + Fastify 5; default port 4000                                                                                           |
-| LLM              | `ChatAnthropic`, built only by the `CHAT_MODEL` port (`AnthropicChatModelFactory`). `agent.model` defaults to `deepseek-chat-v3.2` |
-| Orchestration    | `deepagents` (`createDeepAgent`), `streamMode: 'updates'`, `CompositeBackend` (`StateBackend` + `StoreBackend`)                    |
-| Embeddings       | `EMBEDDINGS` port — Voyage `voyage-3-large`, 1024 dims                                                                             |
-| Vector store     | `VECTOR_STORE` port — Supabase pgvector (`documents`, `match_documents`)                                                           |
-| Reranker         | `RERANKER` port — Voyage `rerank-2.5` through `ResilientClient`                                                                    |
-| Relational store | PostgreSQL on Supabase via TypeORM (migrations, `synchronize: false`)                                                              |
-| Agent Memory     | `PostgresStore` via `LoadStoreService`, mounted at `/memories/` and `/skills/` namespaces                                          |
-| Ingestion        | PDF / DOCX / text processors; `OCR` (Google Vision)                                                                                |
-| Tracing          | LangSmith `LangChainTracer` (disabled in mock mode)                                                                                |
+| Layer            | Technology                                                                                                           |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------- |
+| HTTP             | NestJS 11 + Fastify 5; default port 4000                                                                             |
+| LLM              | `ChatAnthropic`, built by `CHAT_MODEL_SERVICE` (`IChatModelService`). `agent.model` defaults to `deepseek-chat-v3.2` |
+| Orchestration    | `deepagents` (`createDeepAgent`), `streamMode: 'updates'`, `CompositeBackend` (`StateBackend` + `StoreBackend`)      |
+| Embeddings       | `EMBEDDINGS_SERVICE` provider — Voyage `voyage-3-large`, 1024 dims                                                   |
+| Vector store     | `VECTOR_STORE_SERVICE` provider — Supabase pgvector (`documents`, `match_documents`)                                 |
+| Reranker         | `RERANKER_SERVICE` provider — Voyage `rerank-2.5` through `ResilientClient`                                          |
+| Relational store | PostgreSQL on Supabase via TypeORM (migrations, `synchronize: false`)                                                |
+| Agent Memory     | `PostgresStore` via `LoadStoreService`, mounted at `/memories/` and `/skills/` namespaces                            |
+| Ingestion        | PDF / DOCX / text processors; `GOOGLE_VISION_SERVICE` (Google Vision)                                                |
+| Tracing          | LangSmith `LangChainTracer` (disabled in mock mode)                                                                  |
 
 ## 1. End-to-end sequence
 
@@ -31,7 +31,7 @@ Phase A — Author the agent            (agent.write)
 
 Phase B — Ingest knowledge
   POST /agent/generate-source   → GenerateAgentSourceService (source.write; 202, indexes in the background)
-      → VECTOR_STORE.upsertChunks(chunks, { agent_id, source_id })
+      → VECTOR_STORE_SERVICE.upsertChunks(chunks, { agent_id, source_id })
 
 Phase C — Receive a question
   POST /chat/:agentId (NDJSON)  → QuestionController → QuestionService (chat.ask)
@@ -43,7 +43,7 @@ Phase D — Orchestrate
   ResolveAgentService.execute(agentId)
       AgentRepository.findByIdOrIdentifier → agent entity
       LoadStoreService → PostgresStore
-      CHAT_MODEL.create({ model, temperature })
+      CHAT_MODEL_SERVICE.create({ model, temperature })
       ToolLoaderService → maps agent.tools ('vector_search')
       createDeepAgent({ model, tools, memory, skills, store, backend })
   RecordChatMessageService('user')                              ← before the model runs
@@ -52,7 +52,7 @@ Phase D — Orchestrate
       handleStreamResponse → status / final / error / done events
 
 Phase E — Tools called from inside the runnable
-  vector_search → VECTOR_STORE.loadIndex({ agent_id })
+  vector_search → VECTOR_STORE_SERVICE.loadIndex({ agent_id })
       → ContextualCompressionRetriever(asRetriever(k=50), VoyageRerankCompressor ≥ 0.8, max 10)
 
 Phase F — Persist

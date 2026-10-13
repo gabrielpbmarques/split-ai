@@ -19,35 +19,35 @@ Reference for every external service this backend talks to, the port that expose
 | Logging    | `nestjs-pino`                                   | Structured logs with `x-request-id`                |
 | Env        | Zod (`src/shared/config/env.ts`)                | Validated, frozen configuration                    |
 
-## Ports and adapters
+## External providers
 
-All tokens live in `src/infrastructure/integration/<name>.port.ts` and are published by the `@Global()` `IntegrationModule` (live or mock per `INTEGRATION_MODE`) — inject by token, no module import.
+All tokens live in `src/infrastructure/providers/<name>.provider.ts` and are published by the `@Global()` `InfrastructureModule` (live or mock per `INTEGRATION_MODE`) — inject by token, no module import.
 
-| Need           | Token            | Interface            | Live adapter                                                                  | Used by                                    |
-| -------------- | ---------------- | -------------------- | ----------------------------------------------------------------------------- | ------------------------------------------ |
-| Chat model     | `CHAT_MODEL`     | `ChatModelFactory`   | `anthropic/anthropic-chat-model.factory.ts` (`ChatAnthropic`)                 | `ResolveAgent`                             |
-| Embeddings     | `EMBEDDINGS`     | `EmbeddingsGateway`  | `voyage/voyage-embeddings.factory.ts`                                         | vector store, `RecordChatMessage`          |
-| Vector store   | `VECTOR_STORE`   | `VectorStoreGateway` | `supabase/supabase-vector-store.gateway.ts`                                   | ingestion, `vector_search`, `DeleteSource` |
-| Reranking      | `RERANKER`       | `RerankerGateway`    | `voyage/voyage-reranker.gateway.ts` (via `ResilientClient`)                   | `RerankDocuments`                          |
-| Site crawling  | `SITE_CRAWLER`   | `SiteCrawler`        | `spider/spider-site-crawler.gateway.ts`                                       | Source ingestion                           |
-| WhatsApp       | `MESSAGING`      | `MessagingGateway`   | `twilio/twilio-messaging.gateway.ts`                                          | `whatsapp/webhook`                         |
-| Text-to-speech | `TEXT_TO_SPEECH` | `TextToSpeech`       | `google/google-text-to-speech.gateway.ts` or `eleven-labs/…` (`TTS_PROVIDER`) | `ConvertTextToSpeech`                      |
-| File storage   | `FILE_STORAGE`   | `FileStorage`        | `google/gcs-file-storage.gateway.ts`                                          | `ConvertTextToSpeech`                      |
-| OCR            | `OCR`            | `OcrReader`          | `google/google-vision-ocr.gateway.ts`                                         | `ExtractOcrText` (sources)                 |
+| Need           | Token                    | Interface              | Provider file                                           | Used by                                    |
+| -------------- | ------------------------ | ---------------------- | ------------------------------------------------------- | ------------------------------------------ |
+| Chat model     | `CHAT_MODEL_SERVICE`     | `IChatModelService`    | `providers/anthropic.provider.ts` (`ChatAnthropic`)     | `ResolveAgent`                             |
+| Embeddings     | `EMBEDDINGS_SERVICE`     | `IEmbeddingsService`   | `providers/voyage.provider.ts`                          | `RecordChatMessage`                        |
+| Vector store   | `VECTOR_STORE_SERVICE`   | `IVectorStoreService`  | `providers/supabase.provider.ts`                        | ingestion, `vector_search`, `DeleteSource` |
+| Reranking      | `RERANKER_SERVICE`       | `IRerankerService`     | `providers/voyage.provider.ts` (via `ResilientClient`)  | `RerankDocuments`                          |
+| Site crawling  | `SPIDER_SERVICE`         | `ISpiderService`       | `providers/spider.provider.ts`                          | Source ingestion                           |
+| WhatsApp       | `TWILIO_SERVICE`         | `ITwilioService`       | `providers/twilio.provider.ts`                          | `whatsapp/webhook`                         |
+| Text-to-speech | `TEXT_TO_SPEECH_SERVICE` | `ITextToSpeechService` | `providers/text-to-speech.provider.ts` (`TTS_PROVIDER`) | `ConvertTextToSpeech`                      |
+| File storage   | `GCP_STORAGE_SERVICE`    | `IGcpStorageService`   | `providers/gcp-storage.provider.ts`                     | `ConvertTextToSpeech`                      |
+| OCR            | `GOOGLE_VISION_SERVICE`  | `IGoogleVisionService` | `providers/google-vision.provider.ts`                   | `ExtractOcrText` (sources)                 |
 
 ## Anthropic — chat model
 
-- `AnthropicChatModelFactory.create({ model, temperature })` builds the only `ChatAnthropic` in the repo; `agents.model` falls back to `AI_MODEL`.
+- `ChatModelService.create({ model, temperature })` builds `ChatAnthropic`; `agents.model` falls back to `AI_MODEL`.
 - `ANTHROPIC_BASE_URL` defaults to DeepSeek Anthropic-compatible endpoint; set it explicitly to reach Anthropic.
 
 ## Voyage AI — embeddings and reranking
 
-- `EMBEDDINGS`: Voyage `voyage-3-large`, 1024 dims.
-- `RERANKER`: Cross-encoder `rerank-2.5` over `ResilientClient`.
+- `EMBEDDINGS_SERVICE`: Voyage `voyage-3-large`, 1024 dims.
+- `RERANKER_SERVICE`: Cross-encoder `rerank-2.5` over `ResilientClient`.
 
 ## Supabase — pgvector
 
-- `SupabaseVectorStoreGateway` needs `SUPABASE_URL` + `SUPABASE_SECRET_KEY`.
+- `SupabaseVectorStoreService` needs `SUPABASE_URL` + `SUPABASE_SECRET_KEY`.
 - `documents` table, `match_documents` and the vector index live only in Supabase.
 
 ## Database — PostgreSQL (TypeORM)

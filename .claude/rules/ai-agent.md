@@ -13,5 +13,5 @@ Thin path-scoped reminder. Full detail: **`ai-agent-configuration`** (CRUD, syst
 - **Deep Agents runtime with PostgresStore.** `ResolveAgentService` instantiates agents via `createDeepAgent` (`deepagents`) with `CompositeBackend`: `StateBackend` (root efêmero) e `StoreBackend` para `/memories/` e `/skills/` persistidos no Supabase através do `PostgresStore` (`@langchain/langgraph-checkpoint-postgres/store`).
 - **Tools via array.** Tools are configured via `tools: string[]` on `AgentEntity` and loaded by `ToolLoaderService`. The external database connection (`execute_sql`, `CUSTOMER_DATABASE`) was removed.
 - **`GenerateAiResponse` swallows errors** into a Portuguese apology ("Desculpe, tive um problema…"); callers never see stack traces, so observe through LangSmith/Sentry. The structured `finalAnswer` (`AgentFinalResponseSchema`) is the load-bearing output that becomes the streamed `final` event.
-- **Live runtime is `ChatAnthropic`** through the `CHAT_MODEL` port (default model `deepseek-chat-v3.2` via Anthropic-compatible endpoint).
+- **Live runtime is `ChatAnthropic`** through the `CHAT_MODEL_SERVICE` provider (`IChatModelService`, default model `deepseek-chat-v3.2` via Anthropic-compatible endpoint).
 </rules>

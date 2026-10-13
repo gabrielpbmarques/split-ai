@@ -1,6 +1,6 @@
 ---
 name: ai-agent-tools-and-rag
-description: "Use for an agent's tools and RAG: ToolLoaderService, VectorSearchToolService ('vector_search'), pgvector/Supabase similarity search, Spider source ingestion, the documents table, Voyage embeddings, and the rerank-2.5 cross-encoder + relevance threshold. Scope: src/modules/tools/ + src/modules/retrieval/ + src/infrastructure/integration/{voyage,supabase}."
+description: "Use for an agent's tools and RAG: ToolLoaderService, VectorSearchToolService ('vector_search'), pgvector/Supabase similarity search, Spider source ingestion, the documents table, Voyage embeddings, and the rerank-2.5 cross-encoder + relevance threshold. Scope: src/modules/tools/ + src/modules/retrieval/ + src/infrastructure/providers/{voyage,supabase}.provider."
 ---
 
 ## Tools architecture (`src/modules/tools/`)
@@ -44,7 +44,7 @@ new DynamicStructuredTool({
 
 ## Vector store layer
 
-### `VECTOR_STORE.loadIndex(filter)` — src/infrastructure/integration/supabase/supabase-vector-store.gateway.ts
+### `VECTOR_STORE_SERVICE.loadIndex(filter)` — src/infrastructure/providers/supabase.provider.ts
 
 ```ts
 SupabaseVectorStore.fromExistingIndex(embeddings, {
@@ -84,7 +84,7 @@ return retriever.invoke(question);
 
 - Files and text sources are processed via `POST /agent/generate-source`.
 - Every chunk written to `documents` carries `agent_id` and `source_id` in its metadata (`buildSourceMetadata`).
-- `DELETE /source/:id` calls `VECTOR_STORE.deleteBySourceId(id)` and soft-deletes the source.
+- `DELETE /source/:id` calls `VECTOR_STORE_SERVICE.deleteBySourceId(id)` and soft-deletes the source.
 
 ## Common pitfalls
 

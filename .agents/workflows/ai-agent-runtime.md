@@ -13,7 +13,7 @@ In the `deepagents` runtime, `ResolveAgentService` returns a `DeepAgent & { id: 
 
 1. **Lookup.** `agentRepository.findByIdOrIdentifier(agentId)` accepts the UUID or the `agent_identifier`. `NotFoundException('Agente não encontrado')` when neither matches.
 2. **Store.** `loadStoreService.execute()` loads the `PostgresStore` instance.
-3. **Chat model.** `chatModelFactory.create({ model: agent.model, temperature: agent.temperature })` through the `CHAT_MODEL` port (`AnthropicChatModelFactory` → `ChatAnthropic` with `env.AI_MODEL` fallback and `ANTHROPIC_BASE_URL`; a fake model in mock mode).
+3. **Chat model.** `chatModelService.create({ model: agent.model, temperature: agent.temperature })` through the `CHAT_MODEL_SERVICE` provider (`IChatModelService` → `ChatAnthropic` with `env.AI_MODEL` fallback and `ANTHROPIC_BASE_URL`; a fake model in mock mode).
 4. **Tools.** `toolLoaderService.execute(agent)` resolves enabled tools from `agent.tools` (`'vector_search'`, etc.).
 5. **Agent assembly.** `createDeepAgent` from `deepagents` with:
    - `model`: chat model instance
@@ -85,6 +85,6 @@ Only `finalAnswer` is load-bearing.
 
 ## Common pitfalls
 
-- **No model configured.** `agent.model = null` and no `AI_MODEL` → the `CHAT_MODEL` port is `NOT_CONFIGURED` and `create()` throws 503.
+- **No model configured.** `agent.model = null` and no `AI_MODEL` → `CHAT_MODEL_SERVICE` is `NOT_CONFIGURED` and `create()` throws 503.
 - **`agent.stream` resolves to an `AsyncIterable`.** Await the call, then iterate the items.
 - **Memory continuity depends on a stable thread_id.** A client-sent `conversationId` / `threadId` overrides the session default.

@@ -84,7 +84,7 @@ return retriever.invoke(question);
 
 - Files and text sources are processed via `POST /agent/generate-source`.
 - Every chunk written to `documents` carries `agent_id` and `source_id` in its metadata (`buildSourceMetadata`).
-- `DELETE /source/:id` calls `VECTOR_STORE.deleteBySourceId(id)` and soft-deletes the source.
+- `DELETE /source/:id` calls `VECTOR_STORE_SERVICE.deleteBySourceId(id)` and soft-deletes the source.
 
 ## Common pitfalls
 

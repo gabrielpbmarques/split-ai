@@ -6,7 +6,7 @@ description: Use for an agent's LangChain tools and RAG
 
 Endpoint `POST /agent/load-sites` (`agent.manage`, admin only). Body: `{ sites: string, agentId: string }`.
 
-1. `SITE_CRAWLER.crawl(sites, { limit, depth })` — the Spider gateway (`spider.cloud`), mocked in tests.
+1. `SPIDER_SERVICE.crawl(sites, { limit, depth })` — the Spider provider (`spider.cloud`), mocked in tests.
 2. `vectorStore.upsertChunks(chunks, { source_type: 'site', agent_id, source_id })` — chunks and embeds into the `documents` table. The vector search tool retrieves them by `agent_id` alone; `source_type` is informational.
 
 Responds `200 { message: 'Sites loaded successfully' }`; errors go through the global exception filter. `LoadAgentSitesDto.sites` is a single string passed straight to the crawler.

@@ -47,7 +47,7 @@ const writeEvent = (event: StreamEvent) => {
 
 ## RecordChatMessage
 
-- `src/modules/chat/record-chat-message/record-chat-message.service.ts` writes to `messages` and embeds text via `EMBEDDINGS`. Errors are swallowed and logged, preventing chat aborts.
+- `src/modules/chat/record-chat-message/record-chat-message.service.ts` writes to `messages` and embeds text via `EMBEDDINGS_SERVICE`. Errors are swallowed and logged, preventing chat aborts.
 
 ## Common pitfalls
 
