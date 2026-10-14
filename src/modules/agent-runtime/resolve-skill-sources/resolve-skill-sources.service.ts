@@ -1,6 +1,3 @@
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
-
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
@@ -9,17 +6,10 @@ export class ResolveSkillSourcesService {
     const sources: string[] = [];
 
     if (identifier) {
-      const agentSkillsDir = join(process.cwd(), 'skills', identifier);
-      if (existsSync(agentSkillsDir)) {
-        sources.push(`/skills/${identifier}/`);
-      }
+      sources.push(`/skills/${identifier}/`);
     }
 
-    const sharedSkillsDir = join(process.cwd(), 'skills', 'shared');
-    if (existsSync(sharedSkillsDir)) {
-      sources.push('/skills/shared/');
-    }
-
+    sources.push('/skills/shared/');
     sources.push('/skills/');
 
     return sources;

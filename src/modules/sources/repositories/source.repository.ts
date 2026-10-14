@@ -25,6 +25,13 @@ export class SourceRepository {
     return await this.repository.findOne({ where: { id } });
   }
 
+  async listByAgent(agentId: string): Promise<SourceEntity[]> {
+    return await this.repository.find({
+      where: { agent_id: agentId },
+      order: { created_at: 'DESC' },
+    });
+  }
+
   async listByAgentPaginated(
     agentId: string,
     page: PageRequest,

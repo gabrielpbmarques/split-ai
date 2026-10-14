@@ -5,12 +5,14 @@ import { ResolveMemorySourcesModule } from 'src/modules/agent-runtime/resolve-me
 import { ResolveSkillSourcesModule } from 'src/modules/agent-runtime/resolve-skill-sources/resolve-skill-sources.module';
 import { ResolveSystemPromptModule } from 'src/modules/agent-runtime/resolve-system-prompt/resolve-system-prompt.module';
 import { AgentRepositoryModule } from 'src/modules/agents/repositories/agent.repository.module';
+import { LoadCheckpointerModule } from 'src/modules/store/load-checkpointer/load-checkpointer.module';
 import { LoadStoreModule } from 'src/modules/store/load-store/load-store.module';
 import { ToolLoaderModule } from 'src/modules/tools/tool-loader/tool-loader.module';
 
 @Module({
   imports: [
     AgentRepositoryModule,
+    LoadCheckpointerModule,
     LoadStoreModule,
     ResolveMemorySourcesModule,
     ResolveSkillSourcesModule,

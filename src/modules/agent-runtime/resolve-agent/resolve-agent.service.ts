@@ -3,6 +3,7 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import {
   CompositeBackend,
   createDeepAgent,
+  type CreateDeepAgentParams,
   type DeepAgent,
   StateBackend,
   StoreBackend,
@@ -17,6 +18,7 @@ import { ResolveMemorySourcesService } from 'src/modules/agent-runtime/resolve-m
 import { ResolveSkillSourcesService } from 'src/modules/agent-runtime/resolve-skill-sources/resolve-skill-sources.service';
 import { ResolveSystemPromptService } from 'src/modules/agent-runtime/resolve-system-prompt/resolve-system-prompt.service';
 import { AgentRepository } from 'src/modules/agents/repositories/agent.repository';
+import { LoadCheckpointerService } from 'src/modules/store/load-checkpointer/load-checkpointer.service';
 import { LoadStoreService } from 'src/modules/store/load-store/load-store.service';
 import { ToolLoaderService } from 'src/modules/tools/tool-loader/tool-loader.service';
 
@@ -28,6 +30,7 @@ export class ResolveAgentService {
     private readonly agentRepository: AgentRepository,
     private readonly toolLoaderService: ToolLoaderService,
     private readonly loadStoreService: LoadStoreService,
+    private readonly loadCheckpointerService: LoadCheckpointerService,
     private readonly resolveSystemPromptService: ResolveSystemPromptService,
     private readonly resolveMemorySourcesService: ResolveMemorySourcesService,
     private readonly resolveSkillSourcesService: ResolveSkillSourcesService,
@@ -43,11 +46,15 @@ export class ResolveAgentService {
 
     const identifier = agentPayload.agent_identifier;
     const store = await this.loadStoreService.execute();
+    const checkpointer = await this.loadCheckpointerService.execute();
     const chat = this.loadChat(agentPayload);
     const tools = await this.toolLoaderService.execute(agentPayload);
     const systemPrompt =
       await this.resolveSystemPromptService.execute(agentPayload);
-    const memory = await this.resolveMemorySourcesService.execute(identifier);
+    const memory = await this.resolveMemorySourcesService.execute(
+      agentPayload.id,
+      identifier,
+    );
     const skills = await this.resolveSkillSourcesService.execute(identifier);
 
     const agent = createDeepAgent({
@@ -56,6 +63,8 @@ export class ResolveAgentService {
       systemPrompt,
       memory: [...memory],
       skills: [...skills],
+      checkpointer:
+        checkpointer as unknown as CreateDeepAgentParams['checkpointer'],
       store,
       backend: new CompositeBackend(new StateBackend(), {
         '/memories/': new StoreBackend({
