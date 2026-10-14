@@ -15,11 +15,11 @@ export class CreateAgentService {
     const created = await this.agentRepository.create({
       name: dto.name,
       agent_identifier: dto.agentIdentifier ?? null,
-      model: dto.model ?? 'deepseek-chat-v3.2',
+      model: dto.model ?? 'deepseek-flash',
       temperature: dto.temperature ?? 0.4,
       with_history: dto.withHistory ?? true,
       system_prompt: dto.systemPrompt,
-      tools: dto.tools ?? ['vector_search'],
+      tools: dto.tools,
       response_format: dto.responseFormat ?? null,
       user_id: user.id,
     });
