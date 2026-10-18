@@ -141,7 +141,8 @@ Small fixes (a bug in one service, a copy change) do not need the full plan; one
 3. Modules repository + repository module; <domain>.module.ts (new domain) + registration in AppModule
 4. Use cases for each one: dto → service → controller → module → registration in the domain aggregator
 5. Tests e2e per use case in test/<domain>.e2e-spec.ts; unit spec for pure functions
-6. Verification format:check, lint, typecheck, test, test:e2e, build, di:verify, di:boot-check
+6. Documentation update CLAUDE.md, AGENTS.md, .claude/rules/, .agents/rules/, and skills with any relevant changes (non-negotiable)
+7. Verification format:check, lint, typecheck, test, test:e2e, build, di:verify, di:boot-check
 
 ```
 </structure>
@@ -166,6 +167,7 @@ This is also the checklist in `.github/pull_request_template.md`.
 - [ ] No new abstraction or dependency without a current need.
 - [ ] Changed entities have a generated, reviewed and committed migration (`bun run db:check`).
 - [ ] No comment, `console.*`, `any` outside specs, or `process.env` outside `env.ts`.
+- [ ] Agent-driven development documentation (`CLAUDE.md`, `AGENTS.md`, `.claude/rules/`, `.agents/rules/`, `.claude/skills/`, `.agents/skills/`) is updated and synchronized with all relevant changes.
 - [ ] Verification commands ran without errors.
 - [ ] Every issue investigated during the task is registered in `docs/problemas-conhecidos.md`, solved or not.
 </checklist>

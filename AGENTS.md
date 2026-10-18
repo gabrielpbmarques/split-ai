@@ -31,9 +31,11 @@ A arquitetura deste repositório é o conjunto de regras de backend escrito orig
 | skill `new-feature-flow`                                                                 | **Como implementar uma funcionalidade**: 18 perguntas, formato de plano, ordem de implementação, checklist de encerramento | Sob demanda                                                              |
 | skill `known-problems`                                                                   | Protocolo e template para o registro `PC-NNN` em `docs/problemas-conhecidos.md`                                            | Sob demanda                                                              |
 
-**Nova funcionalidade = `new-feature-flow` primeiro.** Responda às suas perguntas, escreva o plano no seu formato, mostre-o ao solicitante e, em seguida, implemente na sua ordem (schema → tipos → módulos → casos de uso → testes → verificação). O arquivo `.github/pull_request_template.md` contém o seu checklist de encerramento.
+**Nova funcionalidade = `new-feature-flow` primeiro.** Responda às suas perguntas, escreva o plano no seu formato, mostre-o ao solicitante e, em seguida, implemente na sua ordem (schema → tipos → módulos → casos de uso → testes → documentação → verificação). O arquivo `.github/pull_request_template.md` contém o seu checklist de encerramento.
 
 **Encontrou um erro ou peculiaridade de biblioteca = `known-problems` primeiro.** Faça `grep` no registro antes de investigar; registre o desfecho depois.
+
+**Regra inegociável: manter a documentação de _agent-driven development_ atualizada.** Sempre que uma tarefa criar, alterar ou remover endpoint, caso de uso, entidade, integração, contrato, convenção ou comportamento arquitetural relevante, atualize no mesmo trabalho toda a documentação de agentes afetada (`CLAUDE.md`, `AGENTS.md`, `.claude/rules/`, `.agents/rules/`, `.claude/skills/` e `.agents/skills/`), mantendo `.claude/` e `.agents/` sincronizados. Tarefa com documentação de agentes desatualizada está incompleta.
 
 ## Desvios conscientes do conjunto original de regras
 

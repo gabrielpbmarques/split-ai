@@ -92,4 +92,5 @@ bun run di:verify && bun run di:boot-check   # when module wiring changed
 ```
 
 If an entity changed: generate the migration (`database.md`), review it and commit it with the entity.
+**Non-negotiable:** Always update all relevant agent-driven development documentation (`CLAUDE.md`, `AGENTS.md`, `.claude/rules/`, `.agents/rules/`, `.claude/skills/`, `.agents/skills/`) whenever any relevant behavior, route, schema, contract, or convention changes, keeping `.claude/` and `.agents/` synchronized.
 </checklist>

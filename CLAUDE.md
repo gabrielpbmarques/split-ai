@@ -31,9 +31,11 @@ The architecture of this repository is the backend rule set originally written i
 | skill `new-feature-flow`                                                                 | **how to implement a feature**: 18 questions, plan format, implementation order, closing checklist | on demand                                                           |
 | skill `known-problems`                                                                   | protocol and template for the `PC-NNN` register in `docs/problemas-conhecidos.md`                  | on demand                                                           |
 
-**New feature = `new-feature-flow` first.** Answer its questions, write the plan in its format, show it to the requester, then implement in its order (schema → types → modules → use cases → tests → verification). `.github/pull_request_template.md` carries its closing checklist.
+**New feature = `new-feature-flow` first.** Answer its questions, write the plan in its format, show it to the requester, then implement in its order (schema → types → modules → use cases → tests → documentation → verification). `.github/pull_request_template.md` carries its closing checklist.
 
 **Hit an error or library quirk = `known-problems` first.** `grep` the register before investigating; register the outcome afterwards.
+
+**Non-negotiable rule: keep agent-driven development documentation updated.** Whenever a task creates, modifies, or removes any endpoint, use case, entity, integration, contract, rule, or architectural behavior, you MUST update all relevant agent-driven development documentation (`CLAUDE.md`, `AGENTS.md`, `.claude/rules/`, `.agents/rules/`, `.claude/skills/`, and `.agents/skills/`) in the same task, keeping `.claude/` and `.agents/` in sync. A task with outdated agent documentation is incomplete.
 
 ## Conscious deviations from the original rule set
 
