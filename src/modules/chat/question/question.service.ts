@@ -29,6 +29,7 @@ export class QuestionService {
     const session = await this.createSessionIfNotExistsService.execute({
       agent_id: param.agentId,
       user_id: user.id,
+      session_id: dto.threadId,
     });
 
     const agent = await this.resolveAgentService.execute(param.agentId);

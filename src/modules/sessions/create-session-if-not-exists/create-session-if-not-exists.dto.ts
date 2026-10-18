@@ -18,6 +18,10 @@ export class CreateSessionIfNotExistsDto {
   user_id?: string;
 
   @IsOptional()
+  @IsString()
+  session_id?: string;
+
+  @IsOptional()
   @IsDateString()
   expires_at?: string;
 }

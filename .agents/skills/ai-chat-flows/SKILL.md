@@ -19,7 +19,7 @@ description: 'Use for chat orchestration: POST /chat/:agentId NDJSON streaming (
 
 ## Question flow — src/modules/chat/question/question.service.ts
 
-1. **Session.** `createSessionIfNotExistsService.execute({ agent_id: param.agentId, user_id: user.id })` — reuses or creates the user's active session for that agent (valid for 8 hours).
+1. **Session.** `createSessionIfNotExistsService.execute({ agent_id: param.agentId, user_id: user.id, session_id: dto.threadId })` — reuses an explicitly requested session (`dto.threadId`), or reuses/creates the user's active session for that agent (valid for 8 hours).
 2. **Resolve agent.** `resolveAgentService.execute(param.agentId)` (`[[ai-agent-runtime]]`). Instantiates `DeepAgent` with `PostgresStore` and tools.
 3. **Persist the user message.** `recordChatMessageService.execute(session.id, user.id, agent.id, question, 'user')` before the AI call.
 4. **Generate.** `generateAiResponseService.execute(question, { session_id: session.id, conversation_id: dto.threadId, user_id: user.id, agent_id: agent.id }, agent, true)` returns an `AsyncIterable<StreamEvent>`.
