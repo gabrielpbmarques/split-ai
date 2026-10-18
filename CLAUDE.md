@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## About this project
 
-`split-ai` is a **personal AI engine**: a NestJS 11 + Fastify 5 backend for chat agents, OCR, source ingestion, voice and WhatsApp. It used to be a commercial multi-tenant product; organizations, members, API keys, billing (Stripe, plans, credits), the embeddable widget, self-service sign-up/SMS login and the BravoHub integration were removed on purpose. There is **one deployment, a handful of users and no tenants** — do not reintroduce tenant scoping, quotas or billing without an explicit request.
+**Sherlock AI** is a **personal AI engine**: a NestJS 11 + Fastify 5 backend for chat agents, OCR, source ingestion, voice and WhatsApp. It used to be a commercial multi-tenant product; organizations, members, API keys, billing (Stripe, plans, credits), the embeddable widget, self-service sign-up/SMS login and the BravoHub integration were removed on purpose. There is **one deployment, a handful of users and no tenants** — do not reintroduce tenant scoping, quotas or billing without an explicit request.
 
 The AI pipeline is built on LangChain / LangGraph with Anthropic Claude models for chat and Voyage AI for retrieval — `voyage-3-large` (1024 dims) for embeddings and `rerank-2.5` as a cross-encoder reranker; vector storage in Supabase/pgvector, and PostgreSQL (also on Supabase) as the primary store via TypeORM.
 

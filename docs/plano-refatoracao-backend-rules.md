@@ -1,4 +1,4 @@
-# Plano de refatoração: `split-ai` alinhado a `ai-agents-engineering/docs/backend`
+# Plano de refatoração: Sherlock AI (anteriormente `split-ai`) alinhado a `ai-agents-engineering/docs/backend`
 
 > **Documento histórico.** As regras foram consolidadas, traduzidas e adaptadas em `.claude/rules/` e nas skills `new-feature-flow` e `known-problems`; elas são a especificação atual. Em 2026-10-04 o produto deixou de ser multi-tenant (organizações, membros, API keys, billing, widget, cadastro/SMS e BravoHub removidos — migration `RemoveMultiTenancy1759700000000`), então as menções a esses conceitos abaixo descrevem o estado da época.
 

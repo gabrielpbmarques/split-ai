@@ -1,7 +1,7 @@
-name: CI/CD for Split AI
+name: CI/CD for Sherlock AI
 
 concurrency:
-  group: ci-cd-split-ai-${{ github.ref }}
+  group: ci-cd-sherlock-ai-${{ github.ref }}
   cancel-in-progress: true
 
 on:
@@ -84,7 +84,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: ci
     concurrency:
-      group: db-migrations-split-ai
+      group: db-migrations-sherlock-ai
       cancel-in-progress: false
     steps:
       - name: Checkout

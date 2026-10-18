@@ -1,6 +1,6 @@
 # Problemas conhecidos
 
-Registro de travas, contornos e desvios conscientes do `split-ai` em relação às regras de backend em `.claude/rules/`. Protocolo e modelo de entrada: skill `known-problems` (`.claude/skills/known-problems/SKILL.md`). Toda trava investigada entra aqui, resolvida ou não.
+Registro de travas, contornos e desvios conscientes do Sherlock AI em relação às regras de backend em `.claude/rules/`. Protocolo e modelo de entrada: skill `known-problems` (`.claude/skills/known-problems/SKILL.md`). Toda trava investigada entra aqui, resolvida ou não.
 
 ## Registro
 

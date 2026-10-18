@@ -3,7 +3,7 @@ name: agent-end-to-end-flow
 description: 'Use for the cross-cutting AI agent lifecycle map: agent create + source ingestion → /chat/:agentId → ResolveAgent → GenerateAiResponse → deepagents runtime → tools (vector_search) → pgvector → message persistence. Start here for changes spanning AI areas; ai-agent-configuration / ai-agent-runtime / ai-agent-tools-and-rag / ai-chat-flows own the depth.'
 ---
 
-This skill is the **wire diagram** of how a chat request becomes an AI response in `split-ai`. It overlaps with the four area skills on purpose: it is the one place where the whole pipeline is visible at once.
+This skill is the **wire diagram** of how a chat request becomes an AI response in Sherlock AI. It overlaps with the four area skills on purpose: it is the one place where the whole pipeline is visible at once.
 
 The product is a personal engine with no tenants: there is no organization, billing, API key or third-party token anywhere in this flow. Paths are relative to `split-ai/`.
 

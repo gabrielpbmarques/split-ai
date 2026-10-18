@@ -4,7 +4,7 @@ Este arquivo fornece orientações para agentes de IA que trabalham com o códig
 
 ## Sobre este projeto
 
-O `split-ai` é um **motor pessoal de IA**: um backend em NestJS 11 + Fastify 5 para agentes de chat, OCR, ingestão de fontes, voz e WhatsApp. Ele costumava ser um produto comercial multi-tenant; organizações, membros, chaves de API, cobrança (Stripe, planos, créditos), o widget incorporável, cadastro self-service/login por SMS e a integração com o BravoHub foram removidos intencionalmente. Há **um único deploy, um punhado de usuários e nenhum tenant** — não reintroduza escopo de tenant, cotas ou cobrança sem uma solicitação explícita.
+O **Sherlock AI** é um **motor pessoal de IA**: um backend em NestJS 11 + Fastify 5 para agentes de chat, OCR, ingestão de fontes, voz e WhatsApp. Ele costumava ser um produto comercial multi-tenant; organizações, membros, chaves de API, cobrança (Stripe, planos, créditos), o widget incorporável, cadastro self-service/login por SMS e a integração com o BravoHub foram removidos intencionalmente. Há **um único deploy, um punhado de usuários e nenhum tenant** — não reintroduza escopo de tenant, cotas ou cobrança sem uma solicitação explícita.
 
 O pipeline de IA é construído sobre LangChain / LangGraph com modelos Anthropic Claude para chat e Voyage AI para recuperação (retrieval) — `voyage-3-large` (1024 dimensões) para embeddings e `rerank-2.5` como reranker cross-encoder; armazenamento vetorial no Supabase/pgvector e PostgreSQL (também no Supabase) como banco de dados principal via TypeORM.
 

@@ -1,5 +1,5 @@
 ---
-description: Use before implementing any new feature, endpoint, use case, table or integration in split-ai, and whenever a requester asks for a plan. Holds
+description: Use before implementing any new feature, endpoint, use case, table or integration in Sherlock AI, and whenever a requester asks for a plan. Holds
 ---
 
 # Implementing a new feature

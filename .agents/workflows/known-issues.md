@@ -1,5 +1,5 @@
 ---
-description: Use when hitting an error, unexpected behavior or library limitation in split-ai (TypeORM, Nest, Fastify, Jest, LangChain/LangGraph, Voyage, bun), before investigating it, and after finishing any non-trivial investigation to register the outcome.
+description: Use when hitting an error, unexpected behavior or library limitation in Sherlock AI (TypeORM, Nest, Fastify, Jest, LangChain/LangGraph, Voyage, bun), before investigating it, and after finishing any non-trivial investigation to register the outcome.
 ---
 
 # Known problems and library workarounds

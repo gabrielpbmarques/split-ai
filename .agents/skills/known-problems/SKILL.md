@@ -1,6 +1,6 @@
 ---
 name: known-problems
-description: 'Use when hitting an error, unexpected behavior or library limitation in split-ai (TypeORM, Nest, Fastify, Jest, LangChain/LangGraph, Voyage, bun), before investigating it, and after finishing any non-trivial investigation to register the outcome. Holds the protocol and the entry template for the PC register in docs/problemas-conhecidos.md (rule 12 of the backend rules, adapted).'
+description: 'Use when hitting an error, unexpected behavior or library limitation in Sherlock AI (TypeORM, Nest, Fastify, Jest, LangChain/LangGraph, Voyage, bun), before investigating it, and after finishing any non-trivial investigation to register the outcome. Holds the protocol and the entry template for the PC register in docs/problemas-conhecidos.md (rule 12 of the backend rules, adapted).'
 ---
 
 # Known problems and library workarounds

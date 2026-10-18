@@ -36,7 +36,7 @@ async function bootstrap(): Promise<void> {
     const document = SwaggerModule.createDocument(
       app,
       new DocumentBuilder()
-        .setTitle('split-ai')
+        .setTitle('Sherlock AI')
         .setVersion('0.0.1')
         .addBearerAuth()
         .build(),

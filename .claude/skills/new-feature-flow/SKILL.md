@@ -1,6 +1,6 @@
 ---
 name: new-feature-flow
-description: 'Use before implementing any new feature, endpoint, use case, table or integration in split-ai, and whenever a requester asks for a plan. Holds the 18 analysis questions, the mandatory plan format, the implementation order and the closing checklist (rule 11 of the backend rules, adapted to this repo).'
+description: 'Use before implementing any new feature, endpoint, use case, table or integration in Sherlock AI, and whenever a requester asks for a plan. Holds the 18 analysis questions, the mandatory plan format, the implementation order and the closing checklist (rule 11 of the backend rules, adapted to this repo).'
 ---
 
 # Implementing a new feature

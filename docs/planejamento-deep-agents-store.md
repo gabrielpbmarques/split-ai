@@ -1,12 +1,12 @@
 # Planejamento: Migração para Deep Agents e Store no Supabase
 
-Este documento registra o planejamento estratégico e técnico para a modernização do engine de agentes do **split-ai** e seu cliente web **split-client**.
+Este documento registra o planejamento estratégico e técnico para a modernização do engine de agentes do **Sherlock AI** e seu cliente web **split-client**.
 
 ---
 
 ## 1. Visão Geral e Motivação
 
-O `split-ai` utiliza atualmente uma abordagem baseada em `createAgent` legado da LangChain, com instruções decompostas em JSON (`context`, `objetivo`, `diretrizes`), subagentes emulados como ferramentas (`DynamicStructuredTool`), persistência em tabelas relacionais customizadas no PostgreSQL/Supabase e suporte obsoleto a conexão externa com bancos SQL de clientes (`CUSTOMER_DATABASE`).
+O **Sherlock AI** utiliza uma abordagem baseada em `createDeepAgent` (`deepagents`) com `CompositeBackend`, `PostgresStore` no Supabase e suporte a ferramentas nativas.
 
 ### Objetivos Principais
 

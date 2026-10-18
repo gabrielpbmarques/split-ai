@@ -1,4 +1,4 @@
-# split-ai
+# Sherlock AI
 
 Motor de IA pessoal em NestJS 11 + Fastify 5: chat com agentes (LangChain / LangGraph + Anthropic Claude), agentes como ferramentas de outros agentes, ingestão de fontes (sites, PDF, DOCX, OCR), busca semântica (Voyage AI + Supabase pgvector), consulta a banco externo por agente, voz e WhatsApp. Uma instalação, poucos usuários, sem organizações nem cobrança.
 
