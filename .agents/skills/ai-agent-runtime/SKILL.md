@@ -5,11 +5,11 @@ description: 'Use for running an agent at request time: ResolveAgent, GenerateAi
 
 ## What a "resolved agent" is
 
-In the `deepagents` runtime, `ResolveAgentService` returns a `DeepAgent & { id: string }`.
+In the `deepagents` runtime, `ResolveAgentService` returns a `DeepAgent`.
 
 ## ResolveAgent — src/modules/agent-runtime/resolve-agent/resolve-agent.service.ts
 
-`execute(agentId: string): Promise<DeepAgent & { id: string }>`:
+`execute(agentId: string): Promise<DeepAgent>`:
 
 1. **Lookup.** `agentRepository.findByIdOrIdentifier(agentId)` accepts the UUID or the `agent_identifier`. `NotFoundException('Agente não encontrado')` when neither matches.
 2. **Store.** `loadStoreService.execute()` loads the `PostgresStore` instance.

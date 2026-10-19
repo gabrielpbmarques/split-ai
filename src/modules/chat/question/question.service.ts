@@ -26,6 +26,7 @@ export class QuestionService {
     onEvent: (event: StreamEvent) => void,
   ): Promise<void> {
     const { question } = dto;
+
     const session = await this.createSessionIfNotExistsService.execute({
       agent_id: param.agentId,
       user_id: user.id,
@@ -46,9 +47,7 @@ export class QuestionService {
       question,
       {
         session_id: session.id,
-        conversation_id: dto.threadId,
         user_id: user.id,
-        agent_id: agent.id,
       },
       agent,
       STREAM,

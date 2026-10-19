@@ -36,7 +36,7 @@ export class ResolveAgentService {
     private readonly resolveSkillSourcesService: ResolveSkillSourcesService,
   ) {}
 
-  async execute(agentId: string): Promise<DeepAgent & { id: string }> {
+  async execute(agentId: string): Promise<DeepAgent> {
     const agentPayload =
       await this.agentRepository.findByIdOrIdentifier(agentId);
 
@@ -45,12 +45,18 @@ export class ResolveAgentService {
     }
 
     const identifier = agentPayload.agent_identifier;
+
     const store = await this.loadStoreService.execute();
+
     const checkpointer = await this.loadCheckpointerService.execute();
+
     const chat = this.loadChat(agentPayload);
+
     const tools = await this.toolLoaderService.execute(agentPayload);
+
     const systemPrompt =
       await this.resolveSystemPromptService.execute(agentPayload);
+
     const memory = await this.resolveMemorySourcesService.execute(
       agentPayload.id,
       identifier,

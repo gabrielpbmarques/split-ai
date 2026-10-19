@@ -1,11 +1,10 @@
 ---
-name: ai-agent-runtime
 description: 'Use for running an agent at request time: ResolveAgent, GenerateAiResponse, deepagents runtime, CompositeBackend, StoreBackend, PostgresStore, streaming, structured responses (AgentFinalResponseSchema), thread memory via thread_id, LangSmith tracing. Scope: src/modules/agents/ + src/modules/agent-runtime/ + src/modules/tools/ + src/modules/store/.'
 ---
 
 ## What a "resolved agent" is
 
-In the `deepagents` runtime, `ResolveAgentService` returns a `DeepAgent & { id: string }`.
+In the `deepagents` runtime, `ResolveAgentService` returns a `DeepAgent`.
 
 ## ResolveAgent — src/modules/agent-runtime/resolve-agent/resolve-agent.service.ts
 

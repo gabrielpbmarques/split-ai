@@ -21,15 +21,13 @@ export class ToolLoaderService {
   async execute(agent: AgentEntity): Promise<AgentTool[]> {
     const { tools } = agent;
 
-    const result: AgentTool[] = [];
+    const result = await Promise.all(
+      tools.map(async (tool) => {
+        const toolFunction = this.availableTools[tool];
+        return toolFunction(agent.id);
+      }),
+    );
 
-    for (const tool of tools) {
-      const toolFunction = this.availableTools[tool];
-      if (toolFunction) {
-        result.push(await toolFunction(agent.id));
-      }
-    }
-
-    return result;
+    return result.filter(Boolean);
   }
 }
