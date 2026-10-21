@@ -6,6 +6,8 @@ import { Injectable } from '@nestjs/common';
 import { DynamicStructuredTool } from 'langchain';
 import { z } from 'zod';
 
+import { env } from 'src/shared/config/env';
+
 @Injectable()
 export class TavilySearchService {
   constructor() {}
@@ -19,7 +21,10 @@ export class TavilySearchService {
         params: z.toZod<TavilySearchAPIRetrieverFields>(),
       }),
       func: async ({ query, params }) => {
-        const searchTool = new TavilySearch(params);
+        const searchTool = new TavilySearch({
+          ...params,
+          tavilyApiKey: env.TAVILY_API_KEY,
+        });
         const result = await searchTool._call({ query });
         return result;
       },
