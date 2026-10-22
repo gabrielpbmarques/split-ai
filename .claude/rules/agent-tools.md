@@ -4,7 +4,7 @@ trigger: always_on
 
 # Agent tools — `src/modules/tools/` and `src/modules/retrieval/`
 
-Thin path-scoped reminder. Full detail: the **`ai-agent-tools-and-rag`** skill. Tool loading lives in `src/modules/tools/` (`tool-loader`, `vector-search-tool`) and the retrieval pipeline in `src/modules/retrieval/` (`execute-similarity-search`, `rerank-documents`).
+Thin path-scoped reminder. Full detail: the **`ai-agent-tools-and-rag`** skill. Tool loading lives in `src/modules/tools/` (`tool-loader`, `vector-search-tool`, `tavily-search`) and the retrieval pipeline in `src/modules/retrieval/` (`execute-similarity-search`, `rerank-documents`).
 
 <rules>
 - **Tools are configured via string array on the agent.** `AgentEntity.tools` stores an array of active tool identifiers (e.g. `['vector_search']`), defaulting to `['vector_search']`. `ToolLoaderService` (`src/modules/tools/tool-loader/`) resolves and instantiates tools for the agent.

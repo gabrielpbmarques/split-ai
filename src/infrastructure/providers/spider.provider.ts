@@ -30,7 +30,7 @@ export interface ISpiderService {
 
 export const spiderDocumentSchema = z.object({
   pageContent: z.string(),
-  metadata: z.record(z.unknown()).default({}),
+  metadata: z.record(z.any(), z.any()).default({}),
 });
 
 export type SpiderDocument = z.infer<typeof spiderDocumentSchema>;

@@ -1,33 +1,14 @@
-import {
-  type TavilySearchAPIRetrieverFields,
-  TavilySearch,
-} from '@langchain/tavily';
+import { TavilySearch } from '@langchain/tavily';
 import { Injectable } from '@nestjs/common';
-import { DynamicStructuredTool } from 'langchain';
-import { z } from 'zod';
 
 import { env } from 'src/shared/config/env';
+import type { AgentTool } from 'src/shared/contracts';
 
 @Injectable()
 export class TavilySearchService {
-  constructor() {}
-
-  async execute(): Promise<DynamicStructuredTool> {
-    return new DynamicStructuredTool({
-      name: 'tavily_search',
-      description: 'Busca informações na internet',
-      schema: z.object({
-        query: z.string(),
-        params: z.toZod<TavilySearchAPIRetrieverFields>(),
-      }),
-      func: async ({ query, params }) => {
-        const searchTool = new TavilySearch({
-          ...params,
-          tavilyApiKey: env.TAVILY_API_KEY,
-        });
-        const result = await searchTool._call({ query });
-        return result;
-      },
+  async execute(): Promise<AgentTool> {
+    return new TavilySearch({
+      tavilyApiKey: env.TAVILY_API_KEY,
     });
   }
 }

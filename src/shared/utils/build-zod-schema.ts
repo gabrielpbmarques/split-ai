@@ -5,8 +5,8 @@ import type { AgentTool, ResponseFormat } from 'src/shared/contracts';
 
 export function buildResponseFormatZodSchema(
   format: ResponseFormat,
-): z.ZodObject<z.ZodRawShape> {
-  const shape: z.ZodRawShape = {};
+): z.ZodObject<Record<string, ZodTypeAny>> {
+  const shape: Record<string, ZodTypeAny> = {};
   const requiredSet = new Set(format.required ?? []);
 
   for (const [key, prop] of Object.entries(format.properties ?? {})) {
@@ -26,7 +26,7 @@ export function buildResponseFormatZodSchema(
         fieldSchema = z.array(z.string());
         break;
       case 'object':
-        fieldSchema = z.record(z.unknown());
+        fieldSchema = z.record(z.any(), z.any());
         break;
       case 'string':
       default:

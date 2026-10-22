@@ -27,13 +27,13 @@ export class ToolLoaderService {
     const result = await Promise.all(
       tools.map(async (tool) => {
         const toolFunction = this.availableTools[tool];
-        if (Object.keys(toolFunction.prototype.arguments).length > 0) {
-          return toolFunction(agent.id);
+        if (!toolFunction) {
+          return null;
         }
-        return toolFunction();
+        return toolFunction(agent.id);
       }),
     );
 
-    return result.filter(Boolean);
+    return result.filter((tool): tool is AgentTool => Boolean(tool));
   }
 }
