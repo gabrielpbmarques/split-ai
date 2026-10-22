@@ -12,13 +12,7 @@ import {
 import { currentCorrelationId } from 'src/shared/observability/correlation';
 
 export type HttpMethod =
-  | 'GET'
-  | 'HEAD'
-  | 'OPTIONS'
-  | 'POST'
-  | 'PUT'
-  | 'PATCH'
-  | 'DELETE';
+  'GET' | 'HEAD' | 'OPTIONS' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 export interface ResilientClientOptions {
   readonly name: string;

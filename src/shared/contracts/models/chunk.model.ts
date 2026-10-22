@@ -4,6 +4,4 @@ import type { CustomDocument } from 'src/shared/contracts/models/custom-document
 import type { SupabaseDocument } from 'src/shared/contracts/models/supabase-document.model';
 
 export type Chunk =
-  | Document<Record<string, unknown>>
-  | SupabaseDocument
-  | CustomDocument;
+  Document<Record<string, unknown>> | SupabaseDocument | CustomDocument;

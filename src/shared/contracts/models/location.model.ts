@@ -1,8 +1,5 @@
 export type LocationType =
-  | 'igreja'
-  | 'hotel'
-  | 'restaurante'
-  | 'posto_policial';
+  'igreja' | 'hotel' | 'restaurante' | 'posto_policial';
 
 export interface Location {
   id: string;
