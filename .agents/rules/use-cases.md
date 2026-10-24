@@ -109,9 +109,9 @@ export class GetSourceService {
 - Pagination: the DTO extends `PaginationDto`; the repository returns `PageResult`; the service returns `toPaginatedResponse(result, dto)` → `{ items, total, totalPages, page, limit }`.
 - Open a transaction with `TransactionExecutor.run(async (tx) => …)` when writing to more than one table or when atomicity is required; pass `tx` to every repository call inside it.
 - Pre-check reads and the final re-read stay outside the transaction. External side effects (vector store, e-mail, HTTP) run after the commit, outside the callback.
-- `Promise.all` for independent reads that must all succeed; `Promise.allSettled` only for fire-and-forget side effects.
+- `Promise.all` for independent reads/resolutions that must all succeed; `Promise.allSettled` only for fire-and-forget side effects. Never chain sequential `await`s for independent calls, and never resolve the same dependency twice in the same method.
 - Receive the authenticated user as an `execute()` parameter when the actor matters.
-- Skip checks the guards already guarantee (a route with `@RequirePermissions('agent.write')` does not re-check the role).
+- Skip checks the guards, pipes or callers already guarantee (a route with `@RequirePermissions('agent.write')` does not re-check the role), and reuse existing repository methods (`findByIdOrIdentifier`, etc.) rather than writing private lookup wrappers in services.
 </rules>
 
 ## DTO

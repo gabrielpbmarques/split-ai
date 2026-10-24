@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { Injectable } from '@nestjs/common';
@@ -12,17 +12,13 @@ export class ResolveSystemPromptService {
       return agent.system_prompt;
     }
 
-    const promptPath = join(
-      process.cwd(),
-      'memories',
-      agent.agent_identifier,
-      'AGENT.md',
-    );
-
-    if (existsSync(promptPath)) {
-      return readFileSync(promptPath, 'utf-8');
+    try {
+      return readFileSync(
+        join(process.cwd(), 'memories', agent.agent_identifier, 'AGENT.md'),
+        'utf-8',
+      );
+    } catch {
+      return agent.system_prompt;
     }
-
-    return agent.system_prompt;
   }
 }

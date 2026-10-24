@@ -1,10 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
-import type { AgentEntity } from 'src/infrastructure/database/schema';
 import { AgentConnectionRepository } from 'src/modules/agent-connections/repositories/agent-connection.repository';
 import { AgentRepository } from 'src/modules/agents/repositories/agent.repository';
 import type { ResponseFormat } from 'src/shared/contracts';
-import { isUuid } from 'src/shared/utils/is-uuid';
 
 export interface AgentDetails {
   id: string;
@@ -32,7 +30,8 @@ export class GetAgentService {
   ) {}
 
   async execute(idOrIdentifier: string): Promise<AgentDetails> {
-    const agent = await this.resolveAgent(idOrIdentifier);
+    const agent =
+      await this.agentRepository.findByIdOrIdentifier(idOrIdentifier);
 
     if (!agent) {
       throw new NotFoundException('Agente não encontrado.');
@@ -57,15 +56,5 @@ export class GetAgentService {
       createdAt: agent.created_at,
       updatedAt: agent.updated_at,
     };
-  }
-
-  private async resolveAgent(
-    idOrIdentifier: string,
-  ): Promise<AgentEntity | null> {
-    if (isUuid(idOrIdentifier)) {
-      const byId = await this.agentRepository.findById(idOrIdentifier);
-      if (byId) return byId;
-    }
-    return this.agentRepository.findByIdentifier(idOrIdentifier);
   }
 }

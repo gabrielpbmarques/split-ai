@@ -119,11 +119,7 @@ async function run(): Promise<void> {
           modified_at: mtime.toISOString(),
         };
 
-        const scopedKey = `/${identifier}/${relPath}`;
-        await store.put(memoriesNamespace, scopedKey, fileData);
-
-        const rootKey = `/${relPath}`;
-        await store.put(memoriesNamespace, rootKey, fileData);
+        await store.put(memoriesNamespace, `/${relPath}`, fileData);
       }
 
       const skillsDir = join(process.cwd(), 'skills', identifier);
@@ -138,11 +134,7 @@ async function run(): Promise<void> {
           modified_at: mtime.toISOString(),
         };
 
-        const scopedKey = `/${identifier}/${relPath}`;
-        await store.put(skillsNamespace, scopedKey, fileData);
-
-        const rootKey = `/${relPath}`;
-        await store.put(skillsNamespace, rootKey, fileData);
+        await store.put(skillsNamespace, `/${identifier}/${relPath}`, fileData);
       }
 
       const sharedSkillsDir = join(process.cwd(), 'skills', 'shared');
@@ -157,11 +149,7 @@ async function run(): Promise<void> {
           modified_at: mtime.toISOString(),
         };
 
-        const sharedKey = `/shared/${relPath}`;
-        await store.put(skillsNamespace, sharedKey, fileData);
-
-        const rootKey = `/${relPath}`;
-        await store.put(skillsNamespace, rootKey, fileData);
+        await store.put(skillsNamespace, `/shared/${relPath}`, fileData);
       }
 
       const globalSkillsDir = join(process.cwd(), 'skills');

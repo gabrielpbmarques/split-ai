@@ -3,7 +3,6 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import type { AgentEntity } from 'src/infrastructure/database/schema';
 import { AgentRepository } from 'src/modules/agents/repositories/agent.repository';
 import type { UpdateAgentDto } from 'src/modules/agents/update-agent/update-agent.dto';
-import { isUuid } from 'src/shared/utils/is-uuid';
 
 @Injectable()
 export class UpdateAgentService {
@@ -13,7 +12,8 @@ export class UpdateAgentService {
     idOrIdentifier: string,
     dto: UpdateAgentDto,
   ): Promise<{ id: string }> {
-    const agent = await this.resolveAgent(idOrIdentifier);
+    const agent =
+      await this.agentRepository.findByIdOrIdentifier(idOrIdentifier);
     if (!agent) throw new NotFoundException('Agente não encontrado.');
 
     const updateData: Partial<AgentEntity> = {};
@@ -38,15 +38,5 @@ export class UpdateAgentService {
     }
 
     return { id: agent.id };
-  }
-
-  private async resolveAgent(
-    idOrIdentifier: string,
-  ): Promise<AgentEntity | null> {
-    if (isUuid(idOrIdentifier)) {
-      const byId = await this.agentRepository.findById(idOrIdentifier);
-      if (byId) return byId;
-    }
-    return this.agentRepository.findByIdentifier(idOrIdentifier);
   }
 }

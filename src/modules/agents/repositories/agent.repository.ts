@@ -64,11 +64,11 @@ export class AgentRepository {
   async findByIdOrIdentifier(
     idOrIdentifier: string,
   ): Promise<AgentEntity | null> {
-    return this.repository.findOne({
-      where: isUuid(idOrIdentifier)
-        ? { id: idOrIdentifier }
-        : { agent_identifier: idOrIdentifier },
-    });
+    if (isUuid(idOrIdentifier)) {
+      const byId = await this.findById(idOrIdentifier);
+      if (byId) return byId;
+    }
+    return this.findByIdentifier(idOrIdentifier);
   }
 
   async count(): Promise<number> {

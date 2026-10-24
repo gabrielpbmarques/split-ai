@@ -56,12 +56,14 @@ Never import a domain aggregator (`AgentsModule`) to reach one service inside it
 - Join only when the endpoint really needs both sides.
 </rules>
 
-## Abstraction
+## Abstraction and low complexity
 
 <rules>
+- **Clean, intelligent, low-complexity code.** Before writing any logic, inspect what is already implemented in the repositories, providers, backends and callers. Never add defensive fallbacks, deduplication loops, intermediate maps or helper methods that compensate for problems created elsewhere or that duplicate existing methods (e.g. always use `AgentRepository.findByIdOrIdentifier` instead of writing a private `resolveAgent`).
+- **No dead or contradictory fallbacks.** Understand the runtime data source before adding a fallback (e.g. if a path is mounted on `StoreBackend`, falling back to local `fs` paths is dead code). If a check, parameter or branch is already guaranteed or rendered useless by the caller or backend, do not write it.
 - An interface, factory, port or extra layer exists only when there is more than one real implementation, or the implementation swaps by environment (mock vs. live).
 - Otherwise inject the concrete class directly. Repositories never get an interface or token.
-- Do not create a decorator, guard or mechanism without an endpoint that uses it.
+- Do not create a decorator, guard or mechanism without an endpoint that uses it. Remove dead use cases and unused services instead of leaving them wired.
 - Calculation, validity or format-translation rules are pure functions with a unit spec (`src/shared/utils/<name>.ts`, one exported function per file, no classes, no I/O). A helper that needs `env` or a repository is a service, not a util.
 - Implement the smallest change that satisfies the requirement. Do not refactor unrelated code.
 </rules>

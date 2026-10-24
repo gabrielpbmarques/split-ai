@@ -147,15 +147,21 @@ After adding a new type, ensure it's exported through the barrel:
 - `src/shared/contracts/models/index.ts` re-exports the file
 - `src/shared/contracts/index.ts` re-exports `models/`
 
-## Principle 4: Avoid Redundant Safety Checks
+## Principle 4: Avoid Redundant Checks, Dead Fallbacks, and Reimplemented Helpers
 
-Before adding a null/undefined check, ask: **"Is this value already guaranteed by the call chain?"**
+Before adding a check, fallback, or private helper, ask:
+
+1. **"Is this value already guaranteed by the call chain?"**
+2. **"Does the repository or runtime already do this?"**
+3. **"Does this fallback actually work with the configured backend?"**
 
 ### Context awareness checklist
 
 1. **Is the user authenticated?** On any route without `@Public()`, the global guards guarantee `request.user`; `@AuthUser()` never returns undefined.
 2. **Is the input validated?** If `@Body(new ValidationPipe())` is used with a DTO, required fields are guaranteed to exist.
 3. **Is the entity guaranteed to exist?** If a previous step in the same `execute()` already threw `NotFoundException`, subsequent code can trust the entity exists.
+4. **Does the repository already have the lookup?** Never write a `private resolveAgent(idOrIdentifier)` in a service when `AgentRepository.findByIdOrIdentifier(idOrIdentifier)` already exists.
+5. **Is a fallback or deduplication loop masking a root cause?** If a backend reads exclusively from `PostgresStore` (`StoreBackend`), a fallback that walks local disk via `readdirSync` is dead code. If a namespace is already isolated by `agentId`, do not insert or deduplicate redundant `<identifier>` prefixes.
 
 ### Bad
 

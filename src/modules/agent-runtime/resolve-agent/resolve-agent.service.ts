@@ -44,27 +44,18 @@ export class ResolveAgentService {
       throw new NotFoundException('Agente não encontrado');
     }
 
-    const identifier = agentPayload.agent_identifier;
-
-    const store = await this.loadStoreService.execute();
-
-    const checkpointer = await this.loadCheckpointerService.execute();
-
-    const chat = this.loadChat(agentPayload);
-
-    const tools = await this.toolLoaderService.execute(agentPayload);
-
-    const systemPrompt =
-      await this.resolveSystemPromptService.execute(agentPayload);
-
-    const memory = await this.resolveMemorySourcesService.execute(
-      agentPayload.id,
-      identifier,
-    );
-    const skills = await this.resolveSkillSourcesService.execute(identifier);
+    const [store, checkpointer, tools, systemPrompt, memory, skills] =
+      await Promise.all([
+        this.loadStoreService.execute(),
+        this.loadCheckpointerService.execute(),
+        this.toolLoaderService.execute(agentPayload),
+        this.resolveSystemPromptService.execute(agentPayload),
+        this.resolveMemorySourcesService.execute(agentPayload.id),
+        this.resolveSkillSourcesService.execute(agentPayload.agent_identifier),
+      ]);
 
     const agent = createDeepAgent({
-      model: chat,
+      model: this.loadChat(agentPayload),
       tools,
       systemPrompt,
       memory: [...memory],
