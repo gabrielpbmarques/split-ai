@@ -102,7 +102,7 @@ const envSchema = z.object({
   ELEVENLABS_VOICE_ID: z.string().min(1).default('21m00Tcm4TlvDq8ikWAM'),
   ELEVENLABS_MODEL_ID: z.string().min(1).default('eleven_multilingual_v2'),
   ELEVENLABS_OUTPUT_FORMAT: z.string().min(1).default('mp3_44100_128'),
-  TAVILY_API_KEY: z.string().min(1),
+  TAVILY_API_KEY: z.string().min(1).optional(),
 });
 
 type EnvSchema = z.infer<typeof envSchema>;

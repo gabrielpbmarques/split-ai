@@ -23,6 +23,10 @@ import {
   VECTOR_STORE_SERVICE,
 } from 'src/infrastructure/providers/supabase.provider';
 import {
+  TAVILY_SEARCH_SERVICE,
+  TavilyProvider,
+} from 'src/infrastructure/providers/tavily.provider';
+import {
   TEXT_TO_SPEECH_SERVICE,
   TextToSpeechProvider,
 } from 'src/infrastructure/providers/text-to-speech.provider';
@@ -48,6 +52,7 @@ import {
     ...GoogleVisionProvider,
     ...TextToSpeechProvider,
     ...SpiderProvider,
+    ...TavilyProvider,
     InfrastructureHealthIndicator,
   ],
   exports: [
@@ -62,6 +67,7 @@ import {
     GOOGLE_VISION_SERVICE,
     TEXT_TO_SPEECH_SERVICE,
     SPIDER_SERVICE,
+    TAVILY_SEARCH_SERVICE,
     InfrastructureHealthIndicator,
   ],
 })

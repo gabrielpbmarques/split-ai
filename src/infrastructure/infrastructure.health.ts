@@ -40,6 +40,7 @@ export class InfrastructureHealthIndicator {
             : 'NOT_CONFIGURED'
           : 'READY',
       spider: isMock ? 'MOCK' : env.SPIDER_API_KEY ? 'READY' : 'NOT_CONFIGURED',
+      tavily: isMock ? 'MOCK' : env.TAVILY_API_KEY ? 'READY' : 'NOT_CONFIGURED',
     };
   }
 }

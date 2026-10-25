@@ -41,6 +41,7 @@ Providers today:
 - `text-to-speech.provider.ts`: `TEXT_TO_SPEECH_SERVICE`, `ITextToSpeechService`
 - `google-vision.provider.ts`: `GOOGLE_VISION_SERVICE`, `IGoogleVisionService`
 - `spider.provider.ts`: `SPIDER_SERVICE`, `ISpiderService`
+- `tavily.provider.ts`: `TAVILY_SEARCH_SERVICE`, `ITavilySearchService`
 
 ## Provider Anatomy and Mock Mode
 

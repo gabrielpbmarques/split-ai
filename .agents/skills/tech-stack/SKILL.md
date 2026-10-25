@@ -30,6 +30,7 @@ All tokens live in `src/infrastructure/providers/<name>.provider.ts` and are pub
 | Vector store   | `VECTOR_STORE_SERVICE`   | `IVectorStoreService`  | `providers/supabase.provider.ts`                        | ingestion, `vector_search`, `DeleteSource` |
 | Reranking      | `RERANKER_SERVICE`       | `IRerankerService`     | `providers/voyage.provider.ts` (via `ResilientClient`)  | `RerankDocuments`                          |
 | Site crawling  | `SPIDER_SERVICE`         | `ISpiderService`       | `providers/spider.provider.ts`                          | Source ingestion                           |
+| Web search     | `TAVILY_SEARCH_SERVICE`  | `ITavilySearchService` | `providers/tavily.provider.ts`                          | `TavilySearchService` (`tavily_search`)    |
 | WhatsApp       | `TWILIO_SERVICE`         | `ITwilioService`       | `providers/twilio.provider.ts`                          | `whatsapp/webhook`                         |
 | Text-to-speech | `TEXT_TO_SPEECH_SERVICE` | `ITextToSpeechService` | `providers/text-to-speech.provider.ts` (`TTS_PROVIDER`) | `ConvertTextToSpeech`                      |
 | File storage   | `GCP_STORAGE_SERVICE`    | `IGcpStorageService`   | `providers/gcp-storage.provider.ts`                     | `ConvertTextToSpeech`                      |
@@ -70,4 +71,5 @@ All tokens live in `src/infrastructure/providers/<name>.provider.ts` and are pub
 | Observability | `SENTRY_DSN`                                                                                                                                               |
 | WhatsApp      | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_NUMBER`                                                                                        |
 | Crawling      | `SPIDER_API_KEY`                                                                                                                                           |
+| Web search    | `TAVILY_API_KEY`                                                                                                                                           |
 | Voice         | `TTS_PROVIDER`, `GCS_AUDIO_BUCKET`, `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, `ELEVENLABS_MODEL_ID`, `ELEVENLABS_OUTPUT_FORMAT`                         |

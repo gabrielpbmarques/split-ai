@@ -145,6 +145,7 @@ test/                        e2e por domínio + support/ (test-app, factories, d
   - `TEXT_TO_SPEECH_SERVICE` (`ITextToSpeechService`): Google TTS ou ElevenLabs via `TTS_PROVIDER`.
   - `GOOGLE_VISION_SERVICE` (`IGoogleVisionService`): OCR com Google Cloud Vision.
   - `SPIDER_SERVICE` (`ISpiderService`): carregador para web crawling do Spider.
+  - `TAVILY_SEARCH_SERVICE` (`ITavilySearchService`): busca web em tempo real via Tavily (`@langchain/tavily`).
 - Injete por token (`@Inject(TOKEN)`), tipe por interface (`IService`); nenhum módulo de domínio importa `InfrastructureModule` diretamente porque ele é `@Global()`.
 - **Modo mock nos testes.** Cada provedor fornece uma implementação mock quando `env.INTEGRATION_MODE === 'mock'`.
 - **Credenciais ausentes nunca quebram o boot.** Um provedor real sem sua chave reporta `NOT_CONFIGURED` em `infrastructure.health.ts` e lança `ServiceUnavailableException` somente quando invocado. Clientes Google dependem de ADC e são construídos sob demanda (`READY`).

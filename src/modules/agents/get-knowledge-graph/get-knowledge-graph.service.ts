@@ -80,7 +80,12 @@ export class GetKnowledgeGraphService {
       nodes.push({
         id: toolNodeId,
         type: 'tool',
-        label: tool === 'vector_search' ? 'Busca vetorial' : tool,
+        label:
+          tool === 'vector_search'
+            ? 'Busca vetorial'
+            : tool === 'tavily_search'
+              ? 'Busca web (Tavily)'
+              : tool,
         category: 'tool',
         data: { tool },
       });

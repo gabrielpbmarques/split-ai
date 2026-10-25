@@ -1,14 +1,19 @@
-import { TavilySearch } from '@langchain/tavily';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
-import { env } from 'src/shared/config/env';
+import {
+  type ITavilySearchService,
+  TAVILY_SEARCH_SERVICE,
+} from 'src/infrastructure/providers/tavily.provider';
 import type { AgentTool } from 'src/shared/contracts';
 
 @Injectable()
 export class TavilySearchService {
+  constructor(
+    @Inject(TAVILY_SEARCH_SERVICE)
+    private readonly tavilySearch: ITavilySearchService,
+  ) {}
+
   async execute(): Promise<AgentTool> {
-    return new TavilySearch({
-      tavilyApiKey: env.TAVILY_API_KEY,
-    });
+    return this.tavilySearch.createTool();
   }
 }

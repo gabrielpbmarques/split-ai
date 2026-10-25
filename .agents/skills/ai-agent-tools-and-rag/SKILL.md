@@ -10,6 +10,7 @@ description: "Use for an agent's tools and RAG: ToolLoaderService, VectorSearchT
 | Tool name       | Provider                  | Notes                                                          |
 | --------------- | ------------------------- | -------------------------------------------------------------- |
 | `vector_search` | `VectorSearchToolService` | Dense search over agent's sources with cross-encoder reranking |
+| `tavily_search` | `TavilySearchService`     | Real-time web search via `TAVILY_SEARCH_SERVICE` provider      |
 
 Tools are returned as `AgentTool[]` (`DynamicStructuredTool[]`) and passed to `createDeepAgent({ tools, ... })`.
 
