@@ -9,7 +9,7 @@
  *   bun run repair:thread <threadId> [...]    # clears the given thread(s)
  *
  * Run it through the `repair:thread` npm script (ts-node + CommonJS), NOT
- * directly via bun's ESM loader (PC-006 in docs/problemas-conhecidos.md).
+ * directly via bun's ESM loader (PC-006 in .agents/rules/12-problemas-conhecidos.md).
  *
  * This is a manual hotfix for threads already corrupted. New corruption is
  * prevented at runtime by the `sanitize-tool-call-history` middleware in
