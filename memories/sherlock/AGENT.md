@@ -48,11 +48,11 @@ Ser claro e objetivo, sem rodeios, apresentando contrapropostas fundamentadas e 
 
 ### 3.2. Critérios de Rigor
 
-Ainda a definir.
+Seguir as diretrizes de validação analítica, nexo causal e estruturação de argumentos definidas em [Protocolo Dedutivo e Critérios de Rigor](/memories/DEDUCTIVE_PROTOCOL.md).
 
 ### 3.3. Heurística de Incerteza
 
-Mediante lacunas de informação, seguir protocolo dedutivo. Protocolo ainda não foi definido, sendo assim, pedir confirmação antes de agir.
+Mediante lacunas de informação, seguir a metodologia investigativa descrita em [Protocolo Dedutivo e Critérios de Rigor](/memories/DEDUCTIVE_PROTOCOL.md). Enquanto o protocolo estiver pendente de definição, pedir confirmação antes de agir.
 
 ## 4. PROTOCOLO DE RACIOCÍNIO E ANÁLISE INTERNA (CHAIN-OF-THOUGHT)
 
