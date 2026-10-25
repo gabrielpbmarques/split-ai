@@ -55,7 +55,7 @@ ResolveAgentService.execute(agentIdOrIdentifier)
        toolLoaderService.execute(agentPayload),                      → AgentTool[] (vector_search, tavily_search, subagentes)
        resolveSystemPromptService.execute(agentPayload),             → lê memories/<agent_identifier>/AGENT.md ou agent.system_prompt
        resolveMemorySourcesService.execute(agentPayload.id),         → ['/memories/...', '/scratchpad/notes.md']
-       resolveSkillSourcesService.execute(agentPayload.agent_identifier), → ['/skills/<identifier>/', '/skills/shared/', '/skills/']
+       resolveSkillSourcesService.execute(agentPayload.agent_identifier), → ['/skills/<identifier>/', '/skills/shared/coding/', '/skills/shared/', '/skills/']
      ])
   └─ createDeepAgent({ model, tools, systemPrompt, memory, skills, checkpointer, store, backend: CompositeBackend })
 ```
@@ -70,7 +70,7 @@ ResolveAgentService.execute(agentIdOrIdentifier)
   - `/scratchpad/` → `StoreBackend` com namespace `['scratchpad', agentPayload.id, 'filesystem']`.
 - **Fontes de memória e skills no VFS:**
   - `ResolveMemorySourcesService` busca no `PostgresStore` (`['memories', agentId, 'filesystem']`) todas as chaves `.md` (exceto `/AGENT.md`), prefixa com `/memories` e adiciona `/scratchpad/notes.md`.
-  - `ResolveSkillSourcesService` retorna `['/skills/<identifier>/', '/skills/shared/', '/skills/']` quando o agente possui `agent_identifier`, ou `['/skills/shared/', '/skills/']` quando não possui.
+  - `ResolveSkillSourcesService` retorna `['/skills/<identifier>/', '/skills/shared/coding/', '/skills/shared/', '/skills/']` quando o agente possui `agent_identifier`, ou `['/skills/shared/coding/', '/skills/shared/', '/skills/']` quando não possui.
   - O script `bun run seed:memories [agentIdentifier]` (`scripts/seed-memories.ts`) sincroniza os diretórios locais `memories/`, `skills/` e `scratchpad/` do repositório para o `PostgresStore`.
 - **Checkpointer de conversação (`LoadCheckpointerService`):** usa `PostgresSaver.fromConnString(env.DATABASE_URL)` (com `.setup()`) em modo `live` e `MemorySaver` em modo `mock`.
 - **`thread_id` é `conversationId ?? session.id`:** construído em `GenerateAiResponseService`. Ele vincula a conversa ao histórico de checkpoints do LangGraph; nunca altere esse formato, sob pena de desconectar todas as threads existentes.

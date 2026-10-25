@@ -64,7 +64,7 @@ LoadCheckpointerService.execute(), → PostgresSaver
 ToolLoaderService.execute(agentPayload), → vector_search, tavily_search, subagentes conectados
 ResolveSystemPromptService.execute(agentPayload), → memories/<identifier>/AGENT.md ou agent.system_prompt
 ResolveMemorySourcesService.execute(agentPayload.id), → ['/memories/...', '/scratchpad/notes.md']
-ResolveSkillSourcesService.execute(agentPayload.agent_identifier), → ['/skills/<identifier>/', '/skills/shared/', '/skills/']
+ResolveSkillSourcesService.execute(agentPayload.agent_identifier), → ['/skills/<identifier>/', '/skills/shared/coding/', '/skills/shared/', '/skills/']
 ])
 └─ createDeepAgent({ model, tools, systemPrompt, memory, skills, checkpointer, store, backend: CompositeBackend })
 

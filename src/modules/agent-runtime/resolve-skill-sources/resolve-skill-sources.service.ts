@@ -4,7 +4,12 @@ import { Injectable } from '@nestjs/common';
 export class ResolveSkillSourcesService {
   async execute(identifier: string | null): Promise<readonly string[]> {
     return identifier
-      ? [`/skills/${identifier}/`, '/skills/shared/', '/skills/']
-      : ['/skills/shared/', '/skills/'];
+      ? [
+          `/skills/${identifier}/`,
+          '/skills/shared/coding/',
+          '/skills/shared/',
+          '/skills/',
+        ]
+      : ['/skills/shared/coding/', '/skills/shared/', '/skills/'];
   }
 }

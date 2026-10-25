@@ -1,1 +1,0 @@
-# Skills compartilhadas entre agentes
