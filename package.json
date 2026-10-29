@@ -76,6 +76,7 @@
     "moment-timezone": "^0.5.48",
     "mysql2": "^3.22.5",
     "nestjs-pino": "^4.6.1",
+    "openevals": "^0.2.3",
     "pg": "^8.18.0",
     "pino": "^9",
     "pino-http": "^10",

@@ -20,6 +20,7 @@ import { ResolveSystemPromptService } from 'src/modules/agent-runtime/resolve-sy
 import { AgentRepository } from 'src/modules/agents/repositories/agent.repository';
 import { LoadCheckpointerService } from 'src/modules/store/load-checkpointer/load-checkpointer.service';
 import { LoadStoreService } from 'src/modules/store/load-store/load-store.service';
+import { LoadSubagentsService } from 'src/modules/subagents/load-subagents/load-subagents.service';
 import { ToolLoaderService } from 'src/modules/tools/tool-loader/tool-loader.service';
 
 @Injectable()
@@ -34,6 +35,7 @@ export class ResolveAgentService {
     private readonly resolveSystemPromptService: ResolveSystemPromptService,
     private readonly resolveMemorySourcesService: ResolveMemorySourcesService,
     private readonly resolveSkillSourcesService: ResolveSkillSourcesService,
+    private readonly loadSubagentsService: LoadSubagentsService,
   ) {}
 
   async execute(agentId: string): Promise<DeepAgent> {
@@ -44,20 +46,29 @@ export class ResolveAgentService {
       throw new NotFoundException('Agente não encontrado');
     }
 
-    const [store, checkpointer, tools, systemPrompt, memory, skills] =
-      await Promise.all([
-        this.loadStoreService.execute(),
-        this.loadCheckpointerService.execute(),
-        this.toolLoaderService.execute(agentPayload),
-        this.resolveSystemPromptService.execute(agentPayload),
-        this.resolveMemorySourcesService.execute(agentPayload.id),
-        this.resolveSkillSourcesService.execute(agentPayload.agent_identifier),
-      ]);
+    const [
+      store,
+      checkpointer,
+      subagents,
+      tools,
+      systemPrompt,
+      memory,
+      skills,
+    ] = await Promise.all([
+      this.loadStoreService.execute(),
+      this.loadCheckpointerService.execute(),
+      this.loadSubagentsService.execute(),
+      this.toolLoaderService.execute(agentPayload.agent_identifier),
+      this.resolveSystemPromptService.execute(agentPayload.agent_identifier),
+      this.resolveMemorySourcesService.execute(agentPayload.agent_identifier),
+      this.resolveSkillSourcesService.execute(agentPayload.agent_identifier),
+    ]);
 
     const agent = createDeepAgent({
       model: this.loadChat(agentPayload),
       tools,
       systemPrompt,
+      subagents,
       memory: [...memory],
       skills: [...skills],
       checkpointer:
@@ -65,18 +76,22 @@ export class ResolveAgentService {
       store,
       backend: new CompositeBackend(new StateBackend(), {
         '/memories/': new StoreBackend({
-          namespace: ['memories', agentPayload.id, 'filesystem'],
+          namespace: ['memories', agentPayload.agent_identifier, 'filesystem'],
         }),
         '/skills/': new StoreBackend({
-          namespace: ['skills', agentPayload.id, 'filesystem'],
+          namespace: ['skills', agentPayload.agent_identifier, 'filesystem'],
         }),
         '/scratchpad/': new StoreBackend({
-          namespace: ['scratchpad', agentPayload.id, 'filesystem'],
+          namespace: [
+            'scratchpad',
+            agentPayload.agent_identifier,
+            'filesystem',
+          ],
         }),
       }),
     });
 
-    return Object.assign(agent, { id: agentPayload.id });
+    return agent;
   }
 
   private loadChat(agent: AgentEntity): BaseChatModel {

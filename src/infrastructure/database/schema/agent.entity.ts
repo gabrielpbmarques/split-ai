@@ -20,8 +20,8 @@ export class AgentEntity {
   @Column({ type: 'text', nullable: false })
   name!: string;
 
-  @Column({ type: 'text', nullable: true, unique: false })
-  agent_identifier!: string | null;
+  @Column({ type: 'text', nullable: false, unique: true })
+  agent_identifier!: string;
 
   @Column({ type: 'text', nullable: true })
   model!: string | null;

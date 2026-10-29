@@ -1,4 +1,4 @@
-import { DynamicStructuredTool } from '@langchain/core/tools';
+import { tool } from '@langchain/core/tools';
 import { Inject, Injectable } from '@nestjs/common';
 import { z } from 'zod';
 
@@ -7,7 +7,7 @@ import {
   VECTOR_STORE_SERVICE,
 } from 'src/infrastructure/providers/supabase.provider';
 import { ExecuteSimilaritySearchService } from 'src/modules/retrieval/execute-similarity-search/execute-similarity-search.service';
-import type { CustomDocument } from 'src/shared/contracts';
+import type { AgentTool, CustomDocument } from 'src/shared/contracts';
 
 @Injectable()
 export class VectorSearchToolService {
@@ -17,20 +17,9 @@ export class VectorSearchToolService {
     private readonly executeSimilaritySearchService: ExecuteSimilaritySearchService,
   ) {}
 
-  async execute(
-    agentId: string,
-  ): Promise<DynamicStructuredTool<z.ZodObject<{ query: z.ZodString }>>> {
-    return new DynamicStructuredTool({
-      name: 'vector_search',
-      description: `
-        IMPORTANTE: SEMPRE use esta ferramenta antes de responder.
-        Busca embeddings no Supabase; use se precisar de contexto factual externo.
-        A busca já é restrita às fontes deste agente.
-      `,
-      schema: z.object({
-        query: z.string().describe('Consulta semântica'),
-      }),
-      func: async ({ query }) => {
+  async execute(agentId: string): Promise<AgentTool> {
+    return tool(
+      async ({ query }) => {
         const vectorStore = await this.vectorStore.loadIndex({
           agent_id: agentId,
         });
@@ -44,6 +33,17 @@ export class VectorSearchToolService {
 
         return source;
       },
-    });
+      {
+        name: 'vector_search',
+        description: `
+          IMPORTANTE: SEMPRE use esta ferramenta antes de responder.
+          Busca embeddings no Supabase; use se precisar de contexto factual externo.
+          A busca já é restrita às fontes deste agente.
+        `,
+        schema: z.object({
+          query: z.string().describe('Consulta semântica'),
+        }),
+      },
+    );
   }
 }

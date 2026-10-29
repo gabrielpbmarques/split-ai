@@ -6,12 +6,16 @@ import { LoadStoreService } from 'src/modules/store/load-store/load-store.servic
 export class ResolveMemorySourcesService {
   constructor(private readonly loadStoreService: LoadStoreService) {}
 
-  async execute(agentId: string): Promise<readonly string[]> {
+  async execute(agentIdentifier: string): Promise<readonly string[]> {
     const sources = new Set<string>();
 
     try {
       const store = await this.loadStoreService.execute();
-      const items = await store.search(['memories', agentId, 'filesystem']);
+      const items = await store.search([
+        'memories',
+        agentIdentifier,
+        'filesystem',
+      ]);
 
       for (const item of items) {
         const key = item.key.startsWith('/') ? item.key : `/${item.key}`;

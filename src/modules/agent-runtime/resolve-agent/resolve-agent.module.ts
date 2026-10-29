@@ -7,6 +7,7 @@ import { ResolveSystemPromptModule } from 'src/modules/agent-runtime/resolve-sys
 import { AgentRepositoryModule } from 'src/modules/agents/repositories/agent.repository.module';
 import { LoadCheckpointerModule } from 'src/modules/store/load-checkpointer/load-checkpointer.module';
 import { LoadStoreModule } from 'src/modules/store/load-store/load-store.module';
+import { LoadSubagentsModule } from 'src/modules/subagents/load-subagents/load-subagents.module';
 import { ToolLoaderModule } from 'src/modules/tools/tool-loader/tool-loader.module';
 
 @Module({
@@ -18,6 +19,7 @@ import { ToolLoaderModule } from 'src/modules/tools/tool-loader/tool-loader.modu
     ResolveSkillSourcesModule,
     ResolveSystemPromptModule,
     ToolLoaderModule,
+    LoadSubagentsModule,
   ],
   providers: [ResolveAgentService],
   exports: [ResolveAgentService],

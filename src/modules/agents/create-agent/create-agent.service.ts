@@ -14,7 +14,7 @@ export class CreateAgentService {
   ): Promise<{ id: string }> {
     const created = await this.agentRepository.create({
       name: dto.name,
-      agent_identifier: dto.agentIdentifier ?? null,
+      agent_identifier: dto.agentIdentifier!,
       model: dto.model ?? 'deepseek-flash',
       temperature: dto.temperature ?? 0.4,
       with_history: dto.withHistory ?? true,

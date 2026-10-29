@@ -1,3 +1,3 @@
-import type { StructuredToolInterface } from '@langchain/core/tools';
+import type { StructuredTool } from '@langchain/core/tools';
 
-export type AgentTool = StructuredToolInterface;
+export type AgentTool = StructuredTool;
