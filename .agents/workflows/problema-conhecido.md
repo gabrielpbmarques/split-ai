@@ -4,7 +4,7 @@ description: 'Consulta e registra travas de bibliotecas e do runtime (TypeORM, N
 
 # Problemas conhecidos e contornos de bibliotecas
 
-O catálogo vive em `.agents/rules/12-problemas-conhecidos.md` (entradas `PC-001` a `PC-019`…). Esta skill define o protocolo para consultá-lo e atualizá-lo. Regras de arquitetura não moram apenas lá: elas moram no arquivo de regra dono em `.agents/rules/NN-*.md`, e a entrada `PC-NNN` registra o problema técnico e aponta para a regra dona.
+O catálogo vive em `.agents/rules/12-problemas-conhecidos.md` (entradas `PC-001` a `PC-020`…). Esta skill define o protocolo para consultá-lo e atualizá-lo. Regras de arquitetura não moram apenas lá: elas moram no arquivo de regra dono em `.agents/rules/NN-*.md`, e a entrada `PC-NNN` registra o problema técnico e aponta para a regra dona.
 
 ## Protocolo
 

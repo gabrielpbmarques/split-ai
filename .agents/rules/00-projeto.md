@@ -138,7 +138,7 @@ As regras ficam em `.agents/rules/`. As três primeiras (`00`, `01` e `12`) est�
 | `09-ferramentas-e-rag.md`          | `ToolLoaderService`, `vector_search`, `tavily_search`, busca por limiar com `VoyageRerankCompressor`, ingestão assíncrona (`202`) e metadados `agent_id` + `source_id`                                                     |
 | `10-chat-e-streaming.md`           | `POST /chat/:agentId`, hijack do socket Fastify para NDJSON, sessões de 8h, persistência de mensagens e sanitização de `tool_use`                                                                                          |
 | `11-testes.md`                     | Camadas unitária e e2e, harness `createTestApp()`, banco de teste e critérios de qualidade de testes                                                                                                                       |
-| `12-problemas-conhecidos.md`       | Ordem de contorno e catálogo `PC-001` a `PC-019` de travas de bibliotecas e decisões técnicas                                                                                                                              |
+| `12-problemas-conhecidos.md`       | Ordem de contorno e catálogo `PC-001` a `PC-020` de travas de bibliotecas e decisões técnicas                                                                                                                              |
 
 </tabela>
 

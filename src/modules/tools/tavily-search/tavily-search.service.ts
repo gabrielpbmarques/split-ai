@@ -33,15 +33,29 @@ export class TavilySearchService {
       },
       {
         name: 'internet_search',
-        description: 'Run a web search',
+        description:
+          'Executa uma pesquisa na web para buscar informações atualizadas e relevantes em tempo real.',
         schema: z.object({
-          query: z.string().describe('The search query'),
-          maxResults: z.number().optional().default(5),
+          query: z
+            .string()
+            .describe('Termo ou pergunta a ser pesquisada na web'),
+          maxResults: z
+            .number()
+            .optional()
+            .default(5)
+            .describe('Número máximo de resultados a retornar'),
           topic: z
             .enum(['general', 'news', 'finance'])
             .optional()
-            .default('general'),
-          includeRawContent: z.boolean().optional().default(false),
+            .default('general')
+            .describe(
+              'Categoria do tópico da busca: general (geral), news (notícias) ou finance (finanças)',
+            ),
+          includeRawContent: z
+            .boolean()
+            .optional()
+            .default(false)
+            .describe('Se deve incluir o conteúdo bruto da página'),
         }),
       },
     );

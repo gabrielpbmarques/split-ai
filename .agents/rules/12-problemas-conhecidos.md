@@ -1,6 +1,6 @@
 ---
 trigger: always_on
-description: 'Catálogo de problemas conhecidos (PC-001 a PC-019), ordem de contorno e desvios técnicos de bibliotecas do split-ai.'
+description: 'Catálogo de problemas conhecidos (PC-001 a PC-020), ordem de contorno e desvios técnicos de bibliotecas do split-ai.'
 ---
 
 # Problemas conhecidos e contornos de bibliotecas
@@ -311,3 +311,18 @@ description: 'Catálogo de problemas conhecidos (PC-001 a PC-019), ordem de cont
 | Tentativas descartadas | —                                                                                                                                                                                                                          |
 | Remover quando         | —                                                                                                                                                                                                                          |
 | Registrado em          | 2026-10-13                                                                                                                                                                                                                 |
+
+### PC-020 — `SyntaxError: Unexpected token 'export'` com dependência aninhada de `cookie` no Jest
+
+| Campo                  | Valor                                                                                                                                                                                      |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Status                 | contornado                                                                                                                                                                                 |
+| Biblioteca             | `cookie@2.0.1` (transitiva via `light-my-request` / Fastify), `ts-jest@29.4.6`                                                                                                             |
+| Sintoma                | Execuções do Jest (`auth-layer.spec.ts`, `http-layer.spec.ts`) falham com `SyntaxError: Unexpected token 'export'` em `cookie/dist/index.js` ao chamar `app.inject()`.                     |
+| Causa                  | A versão 2 de `cookie` é pacote ESM puro (`"type": "module"`). O Jest ignora `node_modules` na transformação padrão do `ts-jest`, enquanto a versão raiz instalada é CJS (`cookie@1.1.1`). |
+| Solução                | Mapear `^cookie$` no `moduleNameMapper` do `package.json` e `test/jest-e2e.json` apontando para a compilação CommonJS raiz (`<rootDir>/../node_modules/cookie/dist/index.js`).             |
+| Onde                   | `package.json`, `test/jest-e2e.json`                                                                                                                                                       |
+| Regra dona             | `.agents/rules/11-testes.md`                                                                                                                                                               |
+| Tentativas descartadas | —                                                                                                                                                                                          |
+| Remover quando         | Jest for configurado para transformar ESM nativo ou dependências transitivas padronizarem resolução CJS.                                                                                   |
+| Registrado em          | 2026-10-28                                                                                                                                                                                 |

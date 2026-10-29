@@ -143,6 +143,7 @@
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
     "moduleNameMapper": {
+      "^cookie$": "<rootDir>/../node_modules/cookie/dist/index.js",
       "^src/(.*)$": "<rootDir>/$1"
     },
     "setupFiles": [

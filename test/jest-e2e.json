@@ -9,6 +9,7 @@
     "^.+\\.(t|j)s$": ["ts-jest", { "tsconfig": "<rootDir>/tsconfig.spec.json" }]
   },
   "moduleNameMapper": {
+    "^cookie$": "<rootDir>/node_modules/cookie/dist/index.js",
     "^src/(.*)$": "<rootDir>/src/$1",
     "^test/(.*)$": "<rootDir>/test/$1"
   },

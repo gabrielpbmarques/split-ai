@@ -4,6 +4,9 @@ import type { SubAgent } from 'deepagents';
 import { ToolLoaderService } from 'src/modules/tools/tool-loader/tool-loader.service';
 import { env } from 'src/shared/config/env';
 
+const INTERNET_RESEARCH_PROMPT =
+  'Você é um pesquisador especialista na internet. Realize buscas aprofundadas na web para encontrar informações precisas, relevantes e atualizadas, analisando criticamente as fontes e retornando os resultados consolidados.';
+
 @Injectable()
 export class InternetResearchService {
   constructor(private readonly toolLoaderService: ToolLoaderService) {}
@@ -14,9 +17,9 @@ export class InternetResearchService {
 
     const agent: SubAgent = {
       name: 'internet-research-agent',
-      description: 'Used to search the internet for information',
-      systemPrompt:
-        'You are an expert internet researcher. Search the internet for information and return the results.',
+      description:
+        'Utilizado para pesquisar informações atualizadas na internet e sintetizar dados da web',
+      systemPrompt: INTERNET_RESEARCH_PROMPT,
       model: env.AI_MODEL,
       tools: agentTools,
     };
