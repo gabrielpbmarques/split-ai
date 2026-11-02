@@ -1,8 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { SubAgent } from 'deepagents';
 
-import { env } from 'src/shared/config/env';
-
 const ANTI_PERSONAL_LEAK_PROMPT = `Você é um avaliador especialista em privacidade, conformidade e proteção contra vazamento de informações pessoais identificáveis (PII).
 
 Sua missão é analisar minuciosamente textos, rascunhos e respostas geradas para garantir que nenhuma informação pessoal, confidencial ou sensível do usuário/Criador (Senhor Gabriel) seja compartilhada indevidamente com terceiros ou exposta em contextos externos.
@@ -29,7 +27,7 @@ export class AntiPersonalLeakService {
       description:
         'Utilizado para analisar saídas e prevenir o vazamento de informações pessoais (PII), dados sensíveis e credenciais do usuário para terceiros',
       systemPrompt: ANTI_PERSONAL_LEAK_PROMPT,
-      model: env.AI_MODEL,
+      tools: [],
     };
 
     return agent;

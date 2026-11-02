@@ -1,4 +1,5 @@
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
+import { createCodeInterpreterMiddleware } from '@langchain/quickjs';
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import {
   CompositeBackend,
@@ -71,6 +72,7 @@ export class ResolveAgentService {
       subagents,
       memory: [...memory],
       skills: [...skills],
+      middleware: [createCodeInterpreterMiddleware()],
       checkpointer:
         checkpointer as unknown as CreateDeepAgentParams['checkpointer'],
       store,

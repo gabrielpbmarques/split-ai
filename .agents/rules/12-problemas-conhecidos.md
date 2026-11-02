@@ -1,6 +1,6 @@
 ---
 trigger: always_on
-description: 'Catálogo de problemas conhecidos (PC-001 a PC-020), ordem de contorno e desvios técnicos de bibliotecas do split-ai.'
+description: 'Catálogo de problemas conhecidos (PC-001 a PC-021), ordem de contorno e desvios técnicos de bibliotecas do split-ai.'
 ---
 
 # Problemas conhecidos e contornos de bibliotecas
@@ -327,17 +327,17 @@ description: 'Catálogo de problemas conhecidos (PC-001 a PC-020), ordem de cont
 | Remover quando         | Jest for configurado para transformar ESM nativo ou dependências transitivas padronizarem resolução CJS.                                                                                   |
 | Registrado em          | 2026-10-28                                                                                                                                                                                 |
 
-### PC-020 — `SyntaxError: Unexpected token 'export'` com dependência aninhada de `cookie` no Jest
+### PC-021 — `ERR_PACKAGE_PATH_NOT_EXPORTED` no `estree-walker` via `@langchain/quickjs` em CommonJS
 
-| Campo                  | Valor                                                                                                                                                                                      |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Status                 | contornado                                                                                                                                                                                 |
-| Biblioteca             | `cookie@2.0.1` (transitiva via `light-my-request` / Fastify), `ts-jest@29.4.6`                                                                                                             |
-| Sintoma                | Execuções do Jest (`auth-layer.spec.ts`, `http-layer.spec.ts`) falham com `SyntaxError: Unexpected token 'export'` em `cookie/dist/index.js` ao chamar `app.inject()`.                     |
-| Causa                  | A versão 2 de `cookie` é pacote ESM puro (`"type": "module"`). O Jest ignora `node_modules` na transformação padrão do `ts-jest`, enquanto a versão raiz instalada é CJS (`cookie@1.1.1`). |
-| Solução                | Mapear `^cookie$` no `moduleNameMapper` do `package.json` e `test/jest-e2e.json` apontando para a compilação CommonJS raiz (`<rootDir>/../node_modules/cookie/dist/index.js`).             |
-| Onde                   | `package.json`, `test/jest-e2e.json`                                                                                                                                                       |
-| Regra dona             | `.agents/rules/11-testes.md`                                                                                                                                                               |
-| Tentativas descartadas | —                                                                                                                                                                                          |
-| Remover quando         | Jest for configurado para transformar ESM nativo ou dependências transitivas padronizarem resolução CJS.                                                                                   |
-| Registrado em          | 2026-10-28                                                                                                                                                                                 |
+| Campo                  | Valor                                                                                                                                                                                                                                                                     |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Status                 | contornado                                                                                                                                                                                                                                                                |
+| Biblioteca             | `estree-walker@3.0.3` (dependência de `@langchain/quickjs@0.6.5`), Node.js CommonJS                                                                                                                                                                                       |
+| Sintoma                | `Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: No "exports" main defined in .../node_modules/estree-walker/package.json` no boot da aplicação ou carregamento do módulo.                                                                                                         |
+| Causa                  | O `@langchain/quickjs` emite bundle CJS (`dist/index.cjs`) que executa `require("estree-walker")`, mas o `estree-walker@3.0.3` é ESM puro e define apenas `"import"` no campo `"exports"`, sem condição `"require"` ou `"default"`, impedindo resolução no Node CommonJS. |
+| Solução                | Fixar `estree-walker` em `2.0.2` nas `dependencies`, `overrides` e `resolutions` do `package.json`. A versão 2.0.2 possui compilação UMD/CommonJS compatível com a mesma API de `walk` utilizada pelo QuickJS.                                                            |
+| Onde                   | `package.json`, `bun.lock`                                                                                                                                                                                                                                                |
+| Regra dona             | `.agents/rules/08-agentes-de-ia.md`                                                                                                                                                                                                                                       |
+| Tentativas descartadas | `estree-walker@3.0.3` no top-level (falha na resolução de exports no CJS sem `"default"`).                                                                                                                                                                                |
+| Remover quando         | `@langchain/quickjs` embutir o parser internamente ou `estree-walker` v3 adicionar export compatível.                                                                                                                                                                     |
+| Registrado em          | 2026-11-01                                                                                                                                                                                                                                                                |
