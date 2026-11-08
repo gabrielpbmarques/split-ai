@@ -28,7 +28,7 @@ Cobre: o endpoint único de chat (`POST /chat/:agentId`), o sequestro do socket 
 ## Fluxo do `QuestionService` — `src/modules/chat/question/question.service.ts`
 
 1. **Sessão (`CreateSessionIfNotExistsService`):** reutiliza a sessão informada (`conversationId` / `threadId`) ou busca/cria uma sessão ativa do usuário para aquele agente (válida por **8 horas**, renovada a cada interação).
-2. **Resolução do agente (`ResolveAgentService`):** instancia o `DeepAgent` com `PostgresStore`, `PostgresSaver`, system prompt, memórias, skills e ferramentas (ver skill `execucao-de-agentes`).
+2. **Resolução do agente (`ResolveAgentService`):** `QuestionController` extrai `@Headers('authorization')` e `QuestionService` repassa `authorization` em `promptVariables` (junto de `dto.variables`, `sessionId` e `threadId`) para `ResolveAgentService.execute(param.agentId, promptVariables)`. A segunda verificação do JWT é delegada ao middleware do agente (`CreateAuthMiddlewareService` — ver skill `execucao-de-agentes`).
 3. **Gravação da mensagem do usuário (`RecordChatMessageService`):** executada **antes** da chamada ao modelo de IA (`sender: 'user'`). Se a IA falhar, a pergunta do usuário permanece registrada para histórico e retentativa.
 4. **Geração em streaming (`GenerateAiResponseService`):** invocada com `stream = true` e `thread_id = conversationId ?? session.id`, retornando um `AsyncGenerator<StreamEvent>`.
 5. **Loop de eventos:** cada `StreamEvent` é repassado para o callback `onEvent` do controller; o texto do evento `final` é capturado.

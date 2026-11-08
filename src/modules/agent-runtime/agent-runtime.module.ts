@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { CreateAuthMiddlewareModule } from 'src/modules/agent-runtime/create-auth-middleware/create-auth-middleware.module';
 import { GenerateAiResponseModule } from 'src/modules/agent-runtime/generate-ai-response/generate-ai-response.module';
 import { ResolveAgentModule } from 'src/modules/agent-runtime/resolve-agent/resolve-agent.module';
 import { ResolveMemorySourcesModule } from 'src/modules/agent-runtime/resolve-memory-sources/resolve-memory-sources.module';
@@ -8,6 +9,7 @@ import { ResolveSystemPromptModule } from 'src/modules/agent-runtime/resolve-sys
 
 @Module({
   imports: [
+    CreateAuthMiddlewareModule,
     GenerateAiResponseModule,
     ResolveAgentModule,
     ResolveMemorySourcesModule,
@@ -15,6 +17,7 @@ import { ResolveSystemPromptModule } from 'src/modules/agent-runtime/resolve-sys
     ResolveSystemPromptModule,
   ],
   exports: [
+    CreateAuthMiddlewareModule,
     GenerateAiResponseModule,
     ResolveAgentModule,
     ResolveMemorySourcesModule,

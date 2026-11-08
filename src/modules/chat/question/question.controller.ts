@@ -1,4 +1,4 @@
-import { Body, Controller, Param, Post, Res } from '@nestjs/common';
+import { Body, Controller, Headers, Param, Post, Res } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiForbiddenResponse,
@@ -31,6 +31,7 @@ export class QuestionController {
     @Body() dto: QuestionDto,
     @Param() param: { agentId: string },
     @AuthUser() user: AuthenticatedUser,
+    @Headers('authorization') authorization: string | undefined,
   ): Promise<void> {
     res.hijack();
     res.raw.writeHead(200, {
@@ -57,12 +58,18 @@ export class QuestionController {
     let serviceTerminated = false;
 
     try {
-      await this.questionService.execute(dto, param, user, (event) => {
-        if (event.type === 'done') {
-          serviceTerminated = true;
-        }
-        writeEvent(event);
-      });
+      await this.questionService.execute(
+        dto,
+        param,
+        user,
+        authorization,
+        (event) => {
+          if (event.type === 'done') {
+            serviceTerminated = true;
+          }
+          writeEvent(event);
+        },
+      );
     } catch (error) {
       writeEvent({
         type: 'error',

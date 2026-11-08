@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { CreateAuthMiddlewareModule } from 'src/modules/agent-runtime/create-auth-middleware/create-auth-middleware.module';
 import { ResolveAgentService } from 'src/modules/agent-runtime/resolve-agent/resolve-agent.service';
 import { ResolveMemorySourcesModule } from 'src/modules/agent-runtime/resolve-memory-sources/resolve-memory-sources.module';
 import { ResolveSkillSourcesModule } from 'src/modules/agent-runtime/resolve-skill-sources/resolve-skill-sources.module';
@@ -13,6 +14,7 @@ import { ToolLoaderModule } from 'src/modules/tools/tool-loader/tool-loader.modu
 @Module({
   imports: [
     AgentRepositoryModule,
+    CreateAuthMiddlewareModule,
     LoadCheckpointerModule,
     LoadStoreModule,
     ResolveMemorySourcesModule,

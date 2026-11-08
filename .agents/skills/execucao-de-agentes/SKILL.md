@@ -9,14 +9,16 @@ Cobre: como um agente é montado e executado em `src/modules/agent-runtime/` e `
 
 ## `ResolveAgentService` — `src/modules/agent-runtime/resolve-agent/resolve-agent.service.ts`
 
-`execute(agentId: string): Promise<ResolvedAgent>`:
+`execute(agentId: string, promptVariables?: Record<string, unknown>): Promise<DeepAgent>`:
 
 1. **Busca do agente:** `this.agentRepository.findByIdOrIdentifier(agentId)` aceita tanto o UUID quanto o `agent_identifier`. Lança `NotFoundException('Agente não encontrado')` quando nenhum corresponder.
 2. **Resolução paralela de dependências (`Promise.all`):**
    - `loadStoreService.execute()`: retorna a instância compartilhada do `PostgresStore` (ou `InMemoryStore` em `INTEGRATION_MODE === 'mock'`);
    - `loadCheckpointerService.execute()`: retorna a instância compartilhada do `PostgresSaver` (ou `MemorySaver` em `INTEGRATION_MODE === 'mock'`);
-   - `toolLoaderService.execute(agentPayload)`: instancia as ferramentas de `agent.tools` (`vector_search`, `tavily_search`) e anexa os subagentes conectados (`AppendConnectionToolsService`);
-   - `resolveSystemPromptService.execute(agentPayload)`: se `agent_identifier` existir, tenta ler `memories/<agent_identifier>/AGENT.md` do disco (`process.cwd()`); caso contrário, usa `agentPayload.system_prompt`;
+   - `loadSubagentsService.execute()`: retorna a lista de subagentes (`anti-prompt-injection-agent`, `anti-personal-leak-agent`, `internet-research-agent`);
+   - `toolLoaderService.execute(agentPayload.agent_identifier)`: instancia as ferramentas do agente;
+   - `resolveSystemPromptService.execute(agentPayload.agent_identifier, promptVariables)`: lê `memories/<agent_identifier>/AGENT.md` do disco (`process.cwd()`) quando disponível e anexa a seção `## Variáveis` com os valores não nulos de `promptVariables` (omitindo `authorization` bruto);
+   - `createAuthMiddlewareService.execute(promptVariables)`: cria o middleware `JwtAuthenticationMiddleware` (`createMiddleware` de `langchain`), que verifica o JWT em `wrapModelCall` via `TokenVerifier` + `PrincipalResolverService` (anexando `## Verificação de Autenticação JWT (Middleware)` ao `systemMessage`) e expõe a ferramenta `verify_jwt` para o próprio agente validar o token;
    - `resolveMemorySourcesService.execute(agentPayload.id)`: lista os arquivos `.md` (exceto `/AGENT.md`) no namespace `['memories', agentId, 'filesystem']` do `PostgresStore`, prefixa com `/memories` e adiciona `/scratchpad/notes.md`;
    - `resolveSkillSourcesService.execute(agentPayload.agent_identifier)`: retorna `['/skills/<identifier>/', '/skills/shared/', '/skills/']` (ou `['/skills/shared/', '/skills/']` sem identificador).
 3. **Modelo de chat:** `this.chatModelService.createModel({ model: agentPayload.model ?? 'deepseek-chat-v3.2', temperature: agentPayload.temperature ?? 0.3 })` via `CHAT_MODEL_SERVICE` (`ChatAnthropic`).

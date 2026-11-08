@@ -23,6 +23,7 @@ export class QuestionService {
     dto: QuestionDto,
     param: { agentId: string },
     user: AuthenticatedUser,
+    authorization: string | undefined,
     onEvent: (event: StreamEvent) => void,
   ): Promise<void> {
     const { question } = dto;
@@ -33,7 +34,12 @@ export class QuestionService {
       session_id: dto.threadId,
     });
 
-    const agent = await this.resolveAgentService.execute(param.agentId);
+    const agent = await this.resolveAgentService.execute(param.agentId, {
+      ...(dto.variables ?? {}),
+      sessionId: session.id,
+      threadId: dto.threadId ?? session.id,
+      authorization,
+    });
 
     await this.recordChatMessageService.execute(
       session.id,

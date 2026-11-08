@@ -13,5 +13,6 @@ import { TokenVerifier } from 'src/auth/token.verifier';
     { provide: APP_GUARD, useClass: AuthenticationGuard },
     { provide: APP_GUARD, useClass: AuthorizationGuard },
   ],
+  exports: [TokenVerifier, PrincipalResolverService],
 })
 export class AuthModule {}

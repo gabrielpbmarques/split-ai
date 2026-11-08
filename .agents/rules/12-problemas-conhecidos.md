@@ -1,6 +1,6 @@
 ---
 trigger: always_on
-description: 'Catálogo de problemas conhecidos (PC-001 a PC-021), ordem de contorno e desvios técnicos de bibliotecas do split-ai.'
+description: 'Catálogo de problemas conhecidos (PC-001 a PC-022), ordem de contorno e desvios técnicos de bibliotecas do split-ai.'
 ---
 
 # Problemas conhecidos e contornos de bibliotecas
@@ -341,3 +341,18 @@ description: 'Catálogo de problemas conhecidos (PC-001 a PC-021), ordem de cont
 | Tentativas descartadas | `estree-walker@3.0.3` no top-level (falha na resolução de exports no CJS sem `"default"`).                                                                                                                                                                                |
 | Remover quando         | `@langchain/quickjs` embutir o parser internamente ou `estree-walker` v3 adicionar export compatível.                                                                                                                                                                     |
 | Registrado em          | 2026-11-01                                                                                                                                                                                                                                                                |
+
+### PC-022 — `SyntaxError: Cannot use import statement outside a module` em `@sveltejs/acorn-typescript` via `@langchain/quickjs` no Jest
+
+| Campo                  | Valor                                                                                                                                                                                                            |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Status                 | contornado                                                                                                                                                                                                       |
+| Biblioteca             | `@sveltejs/acorn-typescript` (dependência de `@langchain/quickjs@0.6.5`), `jest@29.7.0`                                                                                                                          |
+| Sintoma                | `SyntaxError: Cannot use import statement outside a module` em `node_modules/@sveltejs/acorn-typescript/index.js` quando uma spec unitária importa `ResolveAgentService` (diretamente ou via `QuestionService`). |
+| Causa                  | `@langchain/quickjs/dist/index.cjs` executa `require("@sveltejs/acorn-typescript")`, cujo `index.js` usa `import` ESM nativo; o Jest ignora `node_modules` na transformação padrão do `ts-jest`.                 |
+| Solução                | Fazer `jest.mock('@langchain/quickjs', () => ({ createCodeInterpreterMiddleware: jest.fn() }))` nas specs unitárias que importam `ResolveAgentService` no grafo de metadados de decoradores.                     |
+| Onde                   | `src/modules/chat/question/question.service.spec.ts`                                                                                                                                                             |
+| Regra dona             | `.agents/rules/11-testes.md`                                                                                                                                                                                     |
+| Tentativas descartadas | —                                                                                                                                                                                                                |
+| Remover quando         | `@langchain/quickjs` empacotar `@sveltejs/acorn-typescript` no bundle CJS ou o Jest transformar ESM nativamente.                                                                                                 |
+| Registrado em          | 2026-11-07                                                                                                                                                                                                       |

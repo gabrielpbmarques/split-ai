@@ -23,15 +23,15 @@ describe('chat (e2e)', () => {
   beforeEach(() => t.reset());
   afterAll(() => t.close());
 
-  it('POST /chat streams NDJSON events from the mocked model and persists both messages', async () => {
+  it('POST /chat/:agentId streams NDJSON events from the mocked model and persists both messages', async () => {
     const user = await createUser(t.dataSource);
     const agent = await createAgent(t.dataSource);
 
     const res = await t
       .http()
-      .post('/chat')
+      .post(`/chat/${agent.id}`)
       .set('Authorization', bearer(user))
-      .send({ question: 'Olá, tudo bem?', agentId: agent.id })
+      .send({ question: 'Olá, tudo bem?' })
       .expect(200);
 
     expect(res.headers['content-type']).toContain('application/x-ndjson');
@@ -55,33 +55,34 @@ describe('chat (e2e)', () => {
 
     const res = await t
       .http()
-      .post('/chat')
+      .post(`/chat/${agent.id}`)
       .set('Authorization', bearer(guest))
-      .send({ question: 'Qual o horário?', agentId: agent.id })
+      .send({ question: 'Qual o horário?' })
       .expect(200);
     expect(parseNdjson(res.text).at(-1)).toEqual({ type: 'done' });
 
     await t
       .http()
-      .post('/chat')
+      .post(`/chat/${agent.id}`)
       .set('Authorization', 'ApiKey sk_live_qualquer')
-      .send({ question: 'x', agentId: agent.id })
+      .send({ question: 'x' })
       .expect(401);
   });
 
   it('validates the body (400) and requires a token (401)', async () => {
     const user = await createUser(t.dataSource);
+    const agent = await createAgent(t.dataSource);
 
     await t
       .http()
-      .post('/chat')
+      .post(`/chat/${agent.id}`)
       .set('Authorization', bearer(user))
       .send({ question: '' })
       .expect(400);
     await t
       .http()
-      .post('/chat')
-      .send({ question: 'x', agentId: 'y' })
+      .post(`/chat/${agent.id}`)
+      .send({ question: 'x' })
       .expect(401);
   });
 
@@ -90,9 +91,9 @@ describe('chat (e2e)', () => {
 
     const res = await t
       .http()
-      .post('/chat')
+      .post('/chat/inexistente')
       .set('Authorization', bearer(user))
-      .send({ question: 'x', agentId: 'inexistente' })
+      .send({ question: 'x' })
       .expect(200);
 
     const events = parseNdjson(res.text);
