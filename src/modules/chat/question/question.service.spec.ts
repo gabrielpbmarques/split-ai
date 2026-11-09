@@ -83,4 +83,81 @@ describe('QuestionService', () => {
       { type: 'done' },
     ]);
   });
+
+  it('grava resposta completa gerada a partir de deltas de streaming de grande porte quando não houver evento final', async () => {
+    const createSessionIfNotExistsService = {
+      execute: jest.fn().mockResolvedValue({ id: 'session-2' }),
+    } as unknown as CreateSessionIfNotExistsService;
+
+    const resolveAgentService = {
+      execute: jest.fn().mockResolvedValue({ id: 'agent-2' }),
+    } as unknown as ResolveAgentService;
+
+    const recordChatMessageService = {
+      execute: jest.fn().mockResolvedValue(undefined),
+    } as unknown as RecordChatMessageService;
+
+    const largeChunk1 = 'A'.repeat(50000);
+    const largeChunk2 = 'B'.repeat(50000);
+
+    const generateAiResponseService = {
+      execute: jest
+        .fn()
+        .mockResolvedValue(
+          mockStream([
+            { type: 'content', delta: largeChunk1 },
+            { type: 'content', delta: largeChunk2 },
+            { type: 'done' },
+          ]),
+        ),
+    } as unknown as GenerateAiResponseService;
+
+    const service = new QuestionService(
+      generateAiResponseService,
+      createSessionIfNotExistsService,
+      resolveAgentService,
+      recordChatMessageService,
+    );
+
+    const user: AuthenticatedUser = {
+      id: 'user-456',
+      name: 'Gabriel',
+      email: 'gabriel@example.com',
+      phone: null,
+      role: 'user',
+      permissions: ['chat.ask'],
+    };
+
+    const recordedEvents: StreamEvent[] = [];
+
+    await service.execute(
+      {
+        question: 'Gere um texto gigante',
+      },
+      { agentId: 'sherlock' },
+      user,
+      undefined,
+      async (event) => {
+        recordedEvents.push(event);
+      },
+    );
+
+    expect(recordChatMessageService.execute).toHaveBeenNthCalledWith(
+      1,
+      'session-2',
+      'user-456',
+      'agent-2',
+      'Gere um texto gigante',
+      'user',
+    );
+    expect(recordChatMessageService.execute).toHaveBeenNthCalledWith(
+      2,
+      'session-2',
+      'user-456',
+      'agent-2',
+      `${largeChunk1}${largeChunk2}`,
+      'agent',
+    );
+    expect(recordedEvents).toHaveLength(3);
+  });
 });

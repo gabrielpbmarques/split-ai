@@ -189,6 +189,7 @@ export const VoyageProvider: Provider[] = [
         apiKey: env.VOYAGEAI_API_KEY,
         modelName: env.EMBEDDING_MODEL,
         outputDimension: OUTPUT_DIMENSION,
+        truncation: true,
       }) as unknown as Embeddings;
     },
   },

@@ -34,6 +34,7 @@ export class QuestionController {
     @Headers('authorization') authorization: string | undefined,
   ): Promise<void> {
     res.hijack();
+    res.raw.setTimeout(0);
     res.raw.writeHead(200, {
       'Content-Type': 'application/x-ndjson; charset=utf-8',
       'Transfer-Encoding': 'chunked',
@@ -42,14 +43,21 @@ export class QuestionController {
         'Content-Type, Authorization, X-Requested-With, Accept, Origin',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
       'Access-Control-Expose-Headers': 'Content-Type',
-      'Cache-Control': 'no-store',
+      'Cache-Control': 'no-store, no-transform',
       Connection: 'keep-alive',
       'X-Accel-Buffering': 'no',
     });
 
-    const writeEvent = (event: StreamEvent) => {
+    const writeEvent = async (event: StreamEvent): Promise<void> => {
       try {
-        res.raw.write(`${JSON.stringify(event)}\n`);
+        if (!res.raw.writableEnded && !res.raw.destroyed) {
+          const ok = res.raw.write(`${JSON.stringify(event)}\n`);
+          if (!ok) {
+            await new Promise<void>((resolve) => {
+              res.raw.once('drain', resolve);
+            });
+          }
+        }
       } catch {
         res.raw.end();
       }
@@ -63,25 +71,25 @@ export class QuestionController {
         param,
         user,
         authorization,
-        (event) => {
+        async (event) => {
           if (event.type === 'done') {
             serviceTerminated = true;
           }
-          writeEvent(event);
+          await writeEvent(event);
         },
       );
     } catch (error) {
-      writeEvent({
+      await writeEvent({
         type: 'error',
         message: error instanceof Error ? error.message : 'Erro inesperado',
       });
       if (!serviceTerminated) {
-        writeEvent({ type: 'done' });
+        await writeEvent({ type: 'done' });
         serviceTerminated = true;
       }
     } finally {
       if (!serviceTerminated) {
-        writeEvent({ type: 'done' });
+        await writeEvent({ type: 'done' });
       }
       res.raw.end();
     }

@@ -23,8 +23,20 @@ export class RecordChatMessageService {
     message: string,
     from: 'user' | 'agent',
   ): Promise<void> {
+    let embedding: number[] | null = null;
+
     try {
-      const embedding = await this.embeddings.embedQuery(message);
+      const textToEmbed =
+        message.length > 32000 ? message.slice(0, 32000) : message;
+      embedding = await this.embeddings.embedQuery(textToEmbed);
+    } catch (error) {
+      this.logger.warn(
+        { error: error instanceof Error ? error.message : error },
+        'Failed to generate embedding for chat message, recording without embedding',
+      );
+    }
+
+    try {
       await this.messageRepository.create({
         session_id: sessionId,
         user_id: userId,

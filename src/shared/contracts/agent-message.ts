@@ -5,4 +5,5 @@ export type AgentMessage = {
   content?: unknown;
   usage_metadata?: UsageMetadata;
   tool_calls?: Array<{ name?: string; args?: { finalAnswer?: unknown } }>;
+  invalid_tool_calls?: Array<{ name?: string; args?: unknown }>;
 };

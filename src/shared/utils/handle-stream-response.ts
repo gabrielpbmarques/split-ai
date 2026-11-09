@@ -2,6 +2,17 @@ import type { StreamChunk, StreamEvent } from 'src/shared/contracts';
 import { isStructuredOutputTool } from 'src/shared/utils/is-structured-output-tool';
 import { textOf } from 'src/shared/utils/text-of';
 
+function extractPartialFinalAnswer(raw: unknown): string | null {
+  if (typeof raw !== 'string') return null;
+  const match = raw.match(/"finalAnswer"\s*:\s*"((?:\\.|[^"\\])*)/);
+  if (!match) return null;
+  try {
+    return JSON.parse(`"${match[1]}"`);
+  } catch {
+    return match[1];
+  }
+}
+
 export async function* handleStreamResponse(
   stream: AsyncIterable<unknown>,
 ): AsyncGenerator<StreamEvent> {
@@ -23,11 +34,26 @@ export async function* handleStreamResponse(
           for (const call of message.tool_calls ?? []) {
             if (isStructuredOutputTool(call?.name)) {
               const raw = call?.args?.finalAnswer;
-              if (typeof raw === 'string' && raw.trim()) pendingFinal = raw;
+              if (typeof raw === 'string' && raw.trim()) {
+                pendingFinal = raw;
+              } else if (typeof call?.args === 'string') {
+                const extracted = extractPartialFinalAnswer(call.args);
+                if (extracted && extracted.trim()) pendingFinal = extracted;
+              }
               continue;
             }
             if (call?.name) {
               yield { type: 'status', phase: 'tool_call', tool: call.name };
+            }
+          }
+
+          for (const call of message.invalid_tool_calls ?? []) {
+            if (
+              isStructuredOutputTool(call?.name) &&
+              typeof call?.args === 'string'
+            ) {
+              const extracted = extractPartialFinalAnswer(call.args);
+              if (extracted && extracted.trim()) pendingFinal = extracted;
             }
           }
         }

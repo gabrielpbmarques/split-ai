@@ -11,6 +11,7 @@ export const CHAT_MODEL_SERVICE = 'CHAT_MODEL_SERVICE';
 export interface ChatModelOptions {
   readonly model?: string | null;
   readonly temperature?: number | null;
+  readonly maxTokens?: number | null;
 }
 
 export interface IChatModelService {
@@ -35,6 +36,7 @@ class AnthropicChatModelService implements IChatModelService {
       apiKey: env.ANTHROPIC_API_KEY,
       temperature: options.temperature ?? DEFAULT_TEMPERATURE,
       clientOptions: { baseURL: env.ANTHROPIC_BASE_URL },
+      maxTokens: options.maxTokens ?? env.AI_MAX_TOKENS,
     });
   }
 }

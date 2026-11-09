@@ -73,6 +73,7 @@ const envSchema = z.object({
     .url()
     .default('https://api.deepseek.com/anthropic'),
   AI_MODEL: z.string().min(1).optional(),
+  AI_MAX_TOKENS: z.coerce.number().int().positive().default(8192),
   ORCHESTRATOR_MODEL: z.string().min(1).default('claude-sonnet-4-6'),
   LANGCHAIN_PROJECT: z.string().min(1).optional(),
 

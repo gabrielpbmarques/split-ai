@@ -47,6 +47,7 @@ export class GenerateAiResponseService {
           sessionId: metadata.session_id,
           environment: env.NODE_ENV,
         },
+        recursionLimit: 100,
       };
 
       if (stream) {

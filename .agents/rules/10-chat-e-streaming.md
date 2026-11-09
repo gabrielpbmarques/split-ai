@@ -25,11 +25,13 @@ Após chamar `res.hijack()` no `QuestionController`, escreva exclusivamente com 
 <regras>
 - Os cabeçalhos HTTP são escritos com `res.raw.writeHead(200, ...)` antes do primeiro chunk:
   - `Content-Type: application/x-ndjson; charset=utf-8`
-  - `Cache-Control: no-cache, no-transform`
+  - `Cache-Control: no-store, no-transform`
   - `Connection: keep-alive`
   - `X-Accel-Buffering: no` (obrigatório para impedir que proxies reversos façam buffer dos chunks).
+- O timeout do socket bruto é desativado via `res.raw.setTimeout(0)` para permitir respostas extensas e processamento longo sem corte da conexão.
+- O envio de eventos trata backpressure: se `res.raw.write(...)` retornar `false`, aguarda-se o evento `'drain'` antes de continuar ou finalizar a resposta, garantindo que respostas de grande porte não sofram truncamento no encerramento.
 - `QuestionController` é a **única exceção sancionada** à regra "proibido `try/catch` em controllers": como os headers `200` já foram enviados antes da execução do agente, o `GlobalExceptionFilter` não pode transformar uma falha em `ErrorResponse`. O bloco `catch` do controller escreve um evento NDJSON `{ type: 'error', message: '...' }` seguido de `{ type: 'done' }` e encerra o stream (PC-003).
-- Cada linha do stream é um JSON válido terminado por `\n` (`step`, `token`, `final`, `error`, `done`).
+- Cada linha do stream é um JSON válido terminado por `\n` (`step`, `token`, `final`, `error`, `done`). Respostas extensas ou truncadas em `invalid_tool_calls` têm seu conteúdo recuperado sem bloqueio do fluxo.
 </regras>
 
 ## Sessões e persistência de mensagens
@@ -38,8 +40,8 @@ Após chamar `res.hijack()` no `QuestionController`, escreva exclusivamente com 
 - **Sessões com expiração de 8 horas (`CreateSessionIfNotExistsService`):** sessões de conversa expiram após 8 horas de inatividade (`moment().add(8, 'hours')`), sendo renovadas a cada nova mensagem ativa.
 - **`thread_id` e variáveis do prompt (`promptVariables`):** quando o cliente envia `conversationId` (ou `threadId`), ele determina o `thread_id` do LangGraph (`conversationId ?? session.id`). `QuestionController` extrai o header `Authorization` (`@Headers('authorization')`) e `QuestionService` o repassa junto de `sessionId`, `threadId` e `dto.variables` em `promptVariables` para `ResolveAgentService.execute(param.agentId, promptVariables)`. A segunda verificação do JWT é delegada ao próprio agente por meio do `CreateAuthMiddlewareService` (`JwtAuthenticationMiddleware` + ferramenta `verify_jwt`). As chaves controladas pelo servidor (`sessionId`, `threadId`, `authorization`) sempre sobrescrevem qualquer valor de mesmo nome enviado pelo cliente.
 - **Persistir a mensagem do usuário ANTES da chamada à IA:** uma execução que falhe na IA deixa intencionalmente a linha "usuário disse X" gravada no banco sem resposta do agente, permitindo auditoria, retentativa e replay.
-- **Gravar exclusivamente via `RecordChatMessageService`:** ele gera o embedding da mensagem via `EMBEDDINGS_SERVICE`, grava na tabela `messages` e engole eventuais erros de gravação para que uma falha secundária de persistência ou embedding nunca aborte a conversa em andamento. Nunca chame `MessageRepository` diretamente de fora de `RecordChatMessageService` para gravar turnos de chat.
-- **A resposta do agente só é gravada quando o evento `final` produzir texto não vazio:** uma execução vazia ou abortada não grava linha de resposta para o agente.
+- **Gravar exclusivamente via `RecordChatMessageService`:** ele gera o embedding da mensagem via `EMBEDDINGS_SERVICE` (com truncamento preventivo seguro e tratamento isolado de erro de embedding) e grava na tabela `messages`. Mesmo se a geração de embedding falhar (por exemplo, por exceder limites da API de embeddings ou timeout), a mensagem do chat é persistida normalmente com `embedding: null`.
+- **A resposta do agente é gravada quando houver texto (evento `final` ou deltas acumulados):** uma execução que gere texto substancial não se perde se a finalização não contiver um evento `final` isolado.
 - **Consulta de histórico (`src/modules/sessions/`):**
   - `GET /conversation/sessions` (`ListSessionsController`, permissão `session.read`): lista sessões paginadas com filtros;
   - `GET /conversation/sessions/:sessionId/messages` (`GetSessionMessagesController`, permissão `session.read`): retorna as mensagens ordenadas da sessão para retomada de conversa no `split-client`.

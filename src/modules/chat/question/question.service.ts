@@ -24,7 +24,7 @@ export class QuestionService {
     param: { agentId: string },
     user: AuthenticatedUser,
     authorization: string | undefined,
-    onEvent: (event: StreamEvent) => void,
+    onEvent: (event: StreamEvent) => unknown,
   ): Promise<void> {
     const { question } = dto;
 
@@ -60,15 +60,19 @@ export class QuestionService {
     )) as AsyncIterable<StreamEvent>;
 
     let finalText: string | null = null;
+    let accumulatedText = '';
 
     for await (const event of aiResponse) {
-      onEvent(event);
-      if (event.type === 'final') {
+      await onEvent(event);
+      if (event.type === 'content') {
+        accumulatedText += event.delta;
+      } else if (event.type === 'final') {
         finalText = event.text;
       }
     }
 
-    const fullResponse = finalText;
+    const fullResponse =
+      finalText ?? (accumulatedText.trim() ? accumulatedText : null);
 
     if (fullResponse) {
       await this.recordChatMessageService.execute(
