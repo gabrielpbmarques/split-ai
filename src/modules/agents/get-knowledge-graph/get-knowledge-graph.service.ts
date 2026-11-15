@@ -1,5 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import type { PostgresStore } from '@langchain/langgraph-checkpoint-postgres/store';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 
+import type { AgentEntity } from 'src/infrastructure/database/schema';
+import { AgentConnectionRepository } from 'src/modules/agent-connections/repositories/agent-connection.repository';
 import { AgentRepository } from 'src/modules/agents/repositories/agent.repository';
 import { SourceRepository } from 'src/modules/sources/repositories/source.repository';
 import { LoadStoreService } from 'src/modules/store/load-store/load-store.service';
@@ -41,10 +44,21 @@ export interface KnowledgeGraphData {
   stats: KnowledgeGraphStats;
 }
 
+interface StoreKnowledgeItem {
+  key: string;
+  value: unknown;
+  updatedAt?: Date;
+}
+
+const STORE_PAGE_SIZE = 100;
+
 @Injectable()
 export class GetKnowledgeGraphService {
+  private readonly logger = new Logger(GetKnowledgeGraphService.name);
+
   constructor(
     private readonly agentRepository: AgentRepository,
+    private readonly agentConnectionRepository: AgentConnectionRepository,
     private readonly sourceRepository: SourceRepository,
     private readonly loadStoreService: LoadStoreService,
   ) {}
@@ -55,6 +69,12 @@ export class GetKnowledgeGraphService {
     if (!agent) {
       throw new NotFoundException('Agente não encontrado.');
     }
+
+    const [storeKnowledge, sources, connections] = await Promise.all([
+      this.loadStoreKnowledge(agent),
+      this.sourceRepository.listByAgent(agent.id),
+      this.agentConnectionRepository.findEnabledByPrincipalAgentId(agent.id),
+    ]);
 
     const nodes: KnowledgeGraphNode[] = [];
     const edges: KnowledgeGraphEdge[] = [];
@@ -74,18 +94,15 @@ export class GetKnowledgeGraphService {
       },
     });
 
-    const tools = agent.tools ?? [];
-    for (const tool of tools) {
+    const seenToolIds = new Set<string>();
+    for (const tool of agent.tools ?? []) {
       const toolNodeId = `tool:${tool}`;
+      if (seenToolIds.has(toolNodeId)) continue;
+      seenToolIds.add(toolNodeId);
       nodes.push({
         id: toolNodeId,
         type: 'tool',
-        label:
-          tool === 'vector_search'
-            ? 'Busca vetorial'
-            : tool === 'tavily_search'
-              ? 'Busca web (Tavily)'
-              : tool,
+        label: this.resolveToolLabel(tool),
         category: 'tool',
         data: { tool },
       });
@@ -97,68 +114,75 @@ export class GetKnowledgeGraphService {
       });
     }
 
-    let memoryCount = 0;
-    let skillCount = 0;
+    for (const connection of connections) {
+      const toolNodeId = `tool:${connection.tool_name}`;
+      if (seenToolIds.has(toolNodeId)) continue;
+      seenToolIds.add(toolNodeId);
+      nodes.push({
+        id: toolNodeId,
+        type: 'tool',
+        label: connection.tool_name,
+        category: 'connection',
+        data: {
+          tool: connection.tool_name,
+          description: connection.tool_description,
+          childAgentId: connection.child_agent_id,
+        },
+      });
+      edges.push({
+        id: `edge:${agentNodeId}-${toolNodeId}`,
+        source: agentNodeId,
+        target: toolNodeId,
+        label: 'usa',
+      });
+    }
 
-    try {
-      const store = await this.loadStoreService.execute();
-      const [storeMemories, storeSkills] = await Promise.all([
-        store.search(['memories', agent.id, 'filesystem']),
-        store.search(['skills', agent.id, 'filesystem']),
-      ]);
-
-      for (const item of storeMemories) {
-        const rawKey = String(item.key);
-        const label = rawKey.split('/').pop() || rawKey;
-        const memId = `mem:store:${rawKey}`;
-        memoryCount++;
-        nodes.push({
-          id: memId,
-          type: 'memory',
-          label,
+    for (const item of storeKnowledge.memories) {
+      const label = item.key.split('/').pop() || item.key;
+      const memId = `mem:store:${item.key}`;
+      nodes.push({
+        id: memId,
+        type: 'memory',
+        label,
+        category: 'learned',
+        data: {
+          path: item.key,
+          preview: this.extractPreview(item.value),
           category: 'learned',
-          data: {
-            path: rawKey,
-            preview: this.extractPreview(item.value),
-            category: 'learned',
-            updatedAt:
-              item.updatedAt?.toISOString() ?? new Date().toISOString(),
-          },
-        });
-        edges.push({
-          id: `edge:${agentNodeId}-${memId}`,
-          source: agentNodeId,
-          target: memId,
-          label: 'lembra',
-        });
-      }
+          updatedAt: item.updatedAt?.toISOString() ?? new Date().toISOString(),
+        },
+      });
+      edges.push({
+        id: `edge:${agentNodeId}-${memId}`,
+        source: agentNodeId,
+        target: memId,
+        label: 'lembra',
+      });
+    }
 
-      for (const item of storeSkills) {
-        const rawKey = String(item.key);
-        const label = rawKey.split('/').pop() || rawKey;
-        const skillId = `skill:store:${rawKey}`;
-        skillCount++;
-        nodes.push({
-          id: skillId,
-          type: 'skill',
-          label,
-          category: 'learned',
-          data: {
-            name: label,
-            path: rawKey,
-            description: this.extractPreview(item.value),
-          },
-        });
-        edges.push({
-          id: `edge:${agentNodeId}-${skillId}`,
-          source: agentNodeId,
-          target: skillId,
-          label: 'domina',
-        });
-      }
-    } catch {}
+    for (const item of storeKnowledge.skills) {
+      const label = item.key.split('/').pop() || item.key;
+      const skillId = `skill:store:${item.key}`;
+      const category = item.key.startsWith('/shared/') ? 'shared' : 'learned';
+      nodes.push({
+        id: skillId,
+        type: 'skill',
+        label,
+        category,
+        data: {
+          name: label,
+          path: item.key,
+          description: this.extractPreview(item.value),
+        },
+      });
+      edges.push({
+        id: `edge:${agentNodeId}-${skillId}`,
+        source: agentNodeId,
+        target: skillId,
+        label: 'domina',
+      });
+    }
 
-    const sources = await this.sourceRepository.listByAgent(agent.id);
     for (const source of sources) {
       const sourceNodeId = `source:${source.id}`;
       nodes.push({
@@ -183,7 +207,7 @@ export class GetKnowledgeGraphService {
         label: 'consulta',
       });
 
-      if (tools.includes('vector_search')) {
+      if (seenToolIds.has('tool:vector_search')) {
         edges.push({
           id: `edge:tool:vector_search-${sourceNodeId}`,
           source: 'tool:vector_search',
@@ -205,25 +229,121 @@ export class GetKnowledgeGraphService {
       stats: {
         totalNodes: nodes.length,
         totalEdges: edges.length,
-        memoryCount,
-        skillCount,
+        memoryCount: storeKnowledge.memories.length,
+        skillCount: storeKnowledge.skills.length,
         sourceCount: sources.length,
-        toolCount: tools.length,
+        toolCount: seenToolIds.size,
         lastUpdated: new Date().toISOString(),
       },
     };
   }
 
+  private async loadStoreKnowledge(agent: AgentEntity): Promise<{
+    memories: StoreKnowledgeItem[];
+    skills: StoreKnowledgeItem[];
+  }> {
+    try {
+      const store = await this.loadStoreService.execute();
+      const scopes = Array.from(
+        new Set(
+          [agent.agent_identifier, agent.id].filter((value): value is string =>
+            Boolean(value),
+          ),
+        ),
+      );
+
+      const [memoryBatches, skillBatches] = await Promise.all([
+        Promise.all(
+          scopes.map((scope) =>
+            this.searchAllStoreItems(store, ['memories', scope, 'filesystem']),
+          ),
+        ),
+        Promise.all(
+          scopes.map((scope) =>
+            this.searchAllStoreItems(store, ['skills', scope, 'filesystem']),
+          ),
+        ),
+      ]);
+
+      return {
+        memories: this.deduplicateStoreItems(memoryBatches.flat()),
+        skills: this.deduplicateStoreItems(skillBatches.flat()),
+      };
+    } catch (error) {
+      this.logger.warn(
+        `Falha ao consultar store de memórias/skills do agente ${agent.id}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      return { memories: [], skills: [] };
+    }
+  }
+
+  private async searchAllStoreItems(
+    store: PostgresStore,
+    namespace: string[],
+  ): Promise<StoreKnowledgeItem[]> {
+    const collected: StoreKnowledgeItem[] = [];
+    let offset = 0;
+
+    while (true) {
+      const batch = await store.search(namespace, {
+        limit: STORE_PAGE_SIZE,
+        offset,
+      });
+
+      for (const item of batch) {
+        collected.push({
+          key: String(item.key),
+          value: item.value,
+          updatedAt: item.updatedAt,
+        });
+      }
+
+      if (batch.length < STORE_PAGE_SIZE) {
+        break;
+      }
+
+      offset += STORE_PAGE_SIZE;
+    }
+
+    return collected;
+  }
+
+  private deduplicateStoreItems(
+    items: StoreKnowledgeItem[],
+  ): StoreKnowledgeItem[] {
+    const byKey = new Map<string, StoreKnowledgeItem>();
+    for (const item of items) {
+      const normalizedKey = item.key.startsWith('/')
+        ? item.key
+        : `/${item.key}`;
+      if (!byKey.has(normalizedKey)) {
+        byKey.set(normalizedKey, { ...item, key: normalizedKey });
+      }
+    }
+    return Array.from(byKey.values());
+  }
+
+  private resolveToolLabel(tool: string): string {
+    if (tool === 'vector_search') return 'Busca vetorial';
+    if (tool === 'tavily_search') return 'Busca web (Tavily)';
+    return tool;
+  }
+
   private extractPreview(value: unknown): string {
     if (typeof value === 'string') {
-      return value.slice(0, 300);
+      return value;
     }
     if (value && typeof value === 'object') {
       const record = value as Record<string, unknown>;
       if (typeof record.content === 'string') {
-        return record.content.slice(0, 300);
+        return record.content;
       }
-      return JSON.stringify(value).slice(0, 300);
+      if (Array.isArray(record.content)) {
+        return record.content.map(String).join('\n');
+      }
+      return JSON.stringify(value, null, 2);
     }
     return '';
   }

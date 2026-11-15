@@ -156,8 +156,8 @@ test/                        e2e por domínio + support/ (test-app, factories, d
 - **Zero comentários e três casts aceitos (`01-topologia-e-convencoes.md`):** `bun run lint` falha em qualquer comentário sob `src/`. Os únicos casts aceitos são `data as QueryDeepPartialEntity<Entity>` (PC-015), `as unknown as AdapterPlugin` no Fastify (PC-016) e os tipos CJS/ESM do LangChain (PC-005, PC-012).
 - **Pipeline de IA (`08-agentes-de-ia.md`, `09-ferramentas-e-rag.md`, `10-chat-e-streaming.md`):**
   - `POST /chat/:agentId` (stream NDJSON via `res.hijack()`) → `CreateSessionIfNotExistsService` (8h) → `ResolveAgentService` (`Promise.all` de `LoadStoreService`, `LoadCheckpointerService`, `ToolLoaderService`, `ResolveSystemPromptService`, `ResolveMemorySourcesService`, `ResolveSkillSourcesService` + `createDeepAgent`) → `RecordChatMessageService('user')` → `GenerateAiResponseService` (`thread_id = conversationId ?? session.id`) → `RecordChatMessageService('agent')`.
-  - `CompositeBackend` monta `StateBackend` na raiz e `StoreBackend` em `/memories/` (`['memories', agentId, 'filesystem']`), `/skills/` (`['skills', agentId, 'filesystem']`) e `/scratchpad/` (`['scratchpad', agentId, 'filesystem']`).
-  - `GET /agent/:id/knowledge-graph` retorna `{ nodes, edges, stats }` unificando agente, tools, memórias, skills e fontes.
+  - `CompositeBackend` monta `StateBackend` na raiz e `StoreBackend` em `/memories/` (`['memories', agentIdentifier, 'filesystem']`), `/skills/` (`['skills', agentIdentifier, 'filesystem']`) e `/scratchpad/` (`['scratchpad', agentIdentifier, 'filesystem']`).
+  - `GET /agent/:id/knowledge-graph` retorna `{ nodes, edges, stats }` unificando agente, tools (`agent.tools` e conexões ativas em `agent_connections`), memórias, skills e fontes.
   - `vector_similarity_search` fecha `agent_id` por closure no servidor e usa busca por limiar via `VoyageRerankCompressor` (`VECTOR_SEARCH_CANDIDATE_K=50`, `VECTOR_SEARCH_MIN_SCORE=0.8`, `VECTOR_SEARCH_MAX_RESULTS=10`).
   - `POST /agent/generate-source` responde `202` e indexa em background garantindo `agent_id` e `source_id` nos metadados de cada chunk.
 

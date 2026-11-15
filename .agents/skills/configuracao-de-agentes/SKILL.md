@@ -69,10 +69,10 @@ Cada rota possui seu próprio módulo de caso de uso (um controller com `handle(
 
 ## Grafo de conhecimento (`GetKnowledgeGraphService`)
 
-`GET /agent/:id/knowledge-graph` resolve o agente por UUID ou `agent_identifier` e executa `LoadStoreService` + buscas no `PostgresStore` (`['memories', agent.id, 'filesystem']` e `['skills', agent.id, 'filesystem']`) + `SourceRepository.listByAgent(agent.id)` em paralelo (`Promise.all`). Ele monta:
+`GET /agent/:id/knowledge-graph` resolve o agente por UUID ou `agent_identifier` e executa `LoadStoreService` + buscas paginadas no `PostgresStore` (`['memories', agent.agent_identifier, 'filesystem']` e `['skills', agent.agent_identifier, 'filesystem']`, com fallback para `agent.id`) + `SourceRepository.listByAgent(agent.id)` + `AgentConnectionRepository.findEnabledByPrincipalAgentId(agent.id)` em paralelo (`Promise.all`). Ele monta:
 
-- Nós (`KnowledgeGraphNode`): o agente central (`agent`), ferramentas ativas (`tool`), arquivos de memória (`memory`), arquivos de skill (`skill`) e fontes indexadas (`source`).
-- Arestas (`KnowledgeGraphEdge`): ligações diretas do agente para cada recurso e arestas implícitas quando o texto de uma memória ou skill referencia o nome ou caminho de outro nó.
+- Nós (`KnowledgeGraphNode`): o agente central (`agent`), ferramentas ativas e conexões habilitadas (`tool`), arquivos de memória (`memory`), arquivos de skill (`skill`) e fontes indexadas (`source`).
+- Arestas (`KnowledgeGraphEdge`): ligações diretas do agente para cada recurso (`usa`, `lembra`, `domina`, `consulta`) e de `tool:vector_search` para cada fonte (`indexa`).
 
 ## Armadilhas comuns
 

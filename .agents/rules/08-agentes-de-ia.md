@@ -36,11 +36,10 @@ Cobre: configuração e CRUD de agentes (`src/modules/agents/`), conexões hier�
 <regras>
 - `GetKnowledgeGraphController` (`GET /agent/:id/knowledge-graph`, permissão `agent.read`) e `GetKnowledgeGraphService` constroem o grafo de conhecimento completo do agente (`nodes`, `edges`, `stats`) combinando em paralelo (`Promise.all`):
   - o próprio agente (`type: 'agent'`);
-  - suas ferramentas ativas em `agent.tools` (`type: 'tool'`);
-  - os arquivos de memória no `PostgresStore` sob o namespace `['memories', agent.id, 'filesystem']` (`type: 'memory'`);
-  - os arquivos de skills no `PostgresStore` sob o namespace `['skills', agent.id, 'filesystem']` (`type: 'skill'`);
+  - suas ferramentas ativas em `agent.tools` e conexões habilitadas em `agent_connections` (`type: 'tool'`);
+  - os arquivos de memória no `PostgresStore` sob `['memories', agent.agent_identifier, 'filesystem']` (com fallback para `agent.id`) (`type: 'memory'`);
+  - os arquivos de skills no `PostgresStore` sob `['skills', agent.agent_identifier, 'filesystem']` (com fallback para `agent.id`) (`type: 'skill'`);
   - as fontes de conhecimento indexadas em `SourceRepository.listByAgent(agent.id)` (`type: 'source'`).
-- Arestas implícitas também são inferidas quando o conteúdo de uma memória ou skill menciona o nome ou caminho de outro nó.
 </regras>
 
 ## Runtime de execução (`src/modules/agent-runtime/` e `src/modules/store/`)
@@ -54,7 +53,7 @@ ResolveAgentService.execute(agentIdOrIdentifier)
        loadCheckpointerService.execute(),                            → PostgresSaver (ou MemorySaver em mock)
        toolLoaderService.execute(agentPayload),                      → AgentTool[] (vector_search, tavily_search, subagentes)
        resolveSystemPromptService.execute(agentPayload),             → lê memories/<agent_identifier>/AGENT.md ou agent.system_prompt
-       resolveMemorySourcesService.execute(agentPayload.id),         → ['/memories/...', '/scratchpad/notes.md']
+       resolveMemorySourcesService.execute(agentPayload.agent_identifier), → ['/memories/...', '/scratchpad/notes.md']
        resolveSkillSourcesService.execute(agentPayload.agent_identifier), → ['/skills/<identifier>/', '/skills/shared/coding/', '/skills/shared/', '/skills/']
      ])
   └─ createDeepAgent({ model, tools, systemPrompt, memory, skills, checkpointer, store, backend: CompositeBackend })
@@ -65,11 +64,11 @@ ResolveAgentService.execute(agentIdOrIdentifier)
 - **Modelo em produção (`CHAT_MODEL_SERVICE`):** `ResolveAgentService` instancia o modelo via `IChatModelService.createModel` (`ChatAnthropic`, modelo padrão `deepseek-chat-v3.2` em `ResolveAgentService` através do endpoint configurável em `ANTHROPIC_BASE_URL`).
 - **Resolução do System Prompt (`ResolveSystemPromptService`) e Middleware de Autenticação (`CreateAuthMiddlewareService`):** se `agent.agent_identifier` estiver preenchido, `ResolveSystemPromptService` lê `memories/<agent_identifier>/AGENT.md` do disco (`process.cwd()`) e anexa a seção `## Variáveis` com os pares chave/valor de `promptVariables` (omitindo o header `authorization` bruto). A segunda verificação do JWT recebido em `promptVariables.authorization` é executada pelo próprio agente através do middleware `CreateAuthMiddlewareService` (`JwtAuthenticationMiddleware` via `createMiddleware` do `langchain`), que valida a assinatura com `TokenVerifier` + `PrincipalResolverService` em `wrapModelCall` (injetando `## Verificação de Autenticação JWT (Middleware)` no `systemMessage`) e expõe a ferramenta `verify_jwt` para o agente verificar o token ativamente.
 - **Deep Agents com `CompositeBackend` e `PostgresStore`:** `ResolveAgentService` instancia o agente com `createDeepAgent` (`deepagents`), montando um `CompositeBackend` com `StateBackend` efêmero na raiz e três rotas persistidas no `PostgresStore` (`@langchain/langgraph-checkpoint-postgres/store`, ou `InMemoryStore` quando `INTEGRATION_MODE === 'mock'`):
-  - `/memories/` → `StoreBackend` com namespace `['memories', agentPayload.id, 'filesystem']`;
-  - `/skills/` → `StoreBackend` com namespace `['skills', agentPayload.id, 'filesystem']`;
-  - `/scratchpad/` → `StoreBackend` com namespace `['scratchpad', agentPayload.id, 'filesystem']`.
+  - `/memories/` → `StoreBackend` com namespace `['memories', agentPayload.agent_identifier, 'filesystem']`;
+  - `/skills/` → `StoreBackend` com namespace `['skills', agentPayload.agent_identifier, 'filesystem']`;
+  - `/scratchpad/` → `StoreBackend` com namespace `['scratchpad', agentPayload.agent_identifier, 'filesystem']`.
 - **Fontes de memória e skills no VFS:**
-  - `ResolveMemorySourcesService` busca no `PostgresStore` (`['memories', agentId, 'filesystem']`) todas as chaves `.md` (exceto `/AGENT.md`), prefixa com `/memories` e adiciona `/scratchpad/notes.md`.
+  - `ResolveMemorySourcesService` busca no `PostgresStore` (`['memories', agentIdentifier, 'filesystem']`) todas as chaves `.md` (exceto `/AGENT.md`), prefixa com `/memories` e adiciona `/scratchpad/notes.md`.
   - `ResolveSkillSourcesService` retorna `['/skills/<identifier>/', '/skills/shared/coding/', '/skills/shared/', '/skills/']` quando o agente possui `agent_identifier`, ou `['/skills/shared/coding/', '/skills/shared/', '/skills/']` quando não possui.
   - O script `bun run seed:memories [agentIdentifier]` (`scripts/seed-memories.ts`) sincroniza os diretórios locais `memories/`, `skills/` e `scratchpad/` do repositório para o `PostgresStore`.
 - **Checkpointer de conversação (`LoadCheckpointerService`):** usa `PostgresSaver.fromConnString(env.DATABASE_URL)` (com `.setup()`) em modo `live` e `MemorySaver` em modo `mock`.

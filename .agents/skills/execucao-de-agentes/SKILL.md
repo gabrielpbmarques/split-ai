@@ -19,14 +19,14 @@ Cobre: como um agente é montado e executado em `src/modules/agent-runtime/` e `
    - `toolLoaderService.execute(agentPayload.agent_identifier)`: instancia as ferramentas do agente;
    - `resolveSystemPromptService.execute(agentPayload.agent_identifier, promptVariables)`: lê `memories/<agent_identifier>/AGENT.md` do disco (`process.cwd()`) quando disponível e anexa a seção `## Variáveis` com os valores não nulos de `promptVariables` (omitindo `authorization` bruto);
    - `createAuthMiddlewareService.execute(promptVariables)`: cria o middleware `JwtAuthenticationMiddleware` (`createMiddleware` de `langchain`), que verifica o JWT em `wrapModelCall` via `TokenVerifier` + `PrincipalResolverService` (anexando `## Verificação de Autenticação JWT (Middleware)` ao `systemMessage`) e expõe a ferramenta `verify_jwt` para o próprio agente validar o token;
-   - `resolveMemorySourcesService.execute(agentPayload.id)`: lista os arquivos `.md` (exceto `/AGENT.md`) no namespace `['memories', agentId, 'filesystem']` do `PostgresStore`, prefixa com `/memories` e adiciona `/scratchpad/notes.md`;
-   - `resolveSkillSourcesService.execute(agentPayload.agent_identifier)`: retorna `['/skills/<identifier>/', '/skills/shared/', '/skills/']` (ou `['/skills/shared/', '/skills/']` sem identificador).
+   - `resolveMemorySourcesService.execute(agentPayload.agent_identifier)`: lista os arquivos `.md` (exceto `/AGENT.md`) no namespace `['memories', agentIdentifier, 'filesystem']` do `PostgresStore`, prefixa com `/memories` e adiciona `/scratchpad/notes.md`;
+   - `resolveSkillSourcesService.execute(agentPayload.agent_identifier)`: retorna `['/skills/<identifier>/', '/skills/shared/coding/', '/skills/shared/', '/skills/']` (ou `['/skills/shared/coding/', '/skills/shared/', '/skills/']` sem identificador).
 3. **Modelo de chat:** `this.chatModelService.createModel({ model: agentPayload.model ?? 'deepseek-chat-v3.2', temperature: agentPayload.temperature ?? 0.3 })` via `CHAT_MODEL_SERVICE` (`ChatAnthropic`).
 4. **Montagem do Deep Agent (`createDeepAgent` de `deepagents`):**
    - `backend`: `CompositeBackend` com `StateBackend` efêmero na raiz e três rotas persistidas via `StoreBackend`:
-     - `/memories/` → namespace `['memories', agentPayload.id, 'filesystem']`
-     - `/skills/` → namespace `['skills', agentPayload.id, 'filesystem']`
-     - `/scratchpad/` → namespace `['scratchpad', agentPayload.id, 'filesystem']`
+     - `/memories/` → namespace `['memories', agentPayload.agent_identifier, 'filesystem']`
+     - `/skills/` → namespace `['skills', agentPayload.agent_identifier, 'filesystem']`
+     - `/scratchpad/` → namespace `['scratchpad', agentPayload.agent_identifier, 'filesystem']`
    - Retorna o `DeepAgent` anexado aos metadados do `AgentEntity` (`ResolvedAgent`).
 
 ## `LoadStoreService` e `LoadCheckpointerService` — `src/modules/store/`

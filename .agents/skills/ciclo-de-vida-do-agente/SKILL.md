@@ -18,7 +18,7 @@ O produto é um motor pessoal de IA sem multi-tenancy: não há organização, c
 | HTTP / Streaming        | NestJS 11 + Fastify 5 (`res.hijack()` com NDJSON em `POST /chat/:agentId`); porta padrão `4000`                                                                                      |
 | Modelo de chat (LLM)    | `ChatAnthropic` via provedor `CHAT_MODEL_SERVICE` (`IChatModelService`). Padrão no runtime: `deepseek-chat-v3.2` (ou `deepseek-flash` na criação do agente) via `ANTHROPIC_BASE_URL` |
 | Orquestração de agentes | `deepagents` (`createDeepAgent`), `streamMode: 'updates'`, `CompositeBackend` (`StateBackend` + `StoreBackend`)                                                                      |
-| Memória e Skills (VFS)  | `PostgresStore` via `LoadStoreService`, montado nos namespaces `['memories'\|'skills'\|'scratchpad', agentId, 'filesystem']`                                                         |
+| Memória e Skills (VFS)  | `PostgresStore` via `LoadStoreService`, montado nos namespaces `['memories'\|'skills'\|'scratchpad', agentIdentifier, 'filesystem']`                                                 |
 | Histórico de thread     | `PostgresSaver` via `LoadCheckpointerService` (`MemorySaver` em modo `mock`), chaveado por `thread_id = conversationId ?? session.id`                                                |
 | Embeddings              | Provedor `EMBEDDINGS_SERVICE` — Voyage AI `voyage-3-large` (1024 dimensões)                                                                                                          |
 | Vector store            | Provedor `VECTOR_STORE_SERVICE` — Supabase `pgvector` (tabela `documents`, RPC `match_documents`)                                                                                    |

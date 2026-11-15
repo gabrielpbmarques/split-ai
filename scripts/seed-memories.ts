@@ -102,10 +102,11 @@ async function run(): Promise<void> {
     for (const agent of targetAgents) {
       const identifier = agent.agent_identifier;
       const agentId = agent.id;
+      const storeScope = identifier || agentId;
 
-      const memoriesNamespace = ['memories', agentId, 'filesystem'];
-      const skillsNamespace = ['skills', agentId, 'filesystem'];
-      const scratchpadNamespace = ['scratchpad', agentId, 'filesystem'];
+      const memoriesNamespace = ['memories', storeScope, 'filesystem'];
+      const skillsNamespace = ['skills', storeScope, 'filesystem'];
+      const scratchpadNamespace = ['scratchpad', storeScope, 'filesystem'];
 
       const memoriesDir = join(process.cwd(), 'memories', identifier);
       const memoryFiles = collectFiles(memoriesDir);
